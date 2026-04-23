@@ -1,6 +1,6 @@
 # ArriendoSeguro (web)
 
-MVP en **Next.js 15 (App Router) + TypeScript + Tailwind**. Objetivo: formalizar arriendos de vivienda **ya acordados** entre particulares en Colombia, con trazabilidad, validaciones de negocio y preparación de Firabase/Vercel.
+MVP en **Next.js 15 (App Router) + TypeScript + Tailwind**. Objetivo: formalizar arriendos de vivienda **ya acordados** entre personas en Colombia, con trazabilidad, validaciones de negocio y preparación de Firebase/Vercel.
 
 ## Desarrollo
 

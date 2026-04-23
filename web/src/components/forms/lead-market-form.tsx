@@ -33,10 +33,24 @@ export function LeadMarketForm() {
           contactConsent: values.contactConsent ?? false,
         }),
       });
-      const data = (await res.json()) as { ok?: boolean; message?: string; error?: string };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        message?: string;
+        error?: string;
+        stored?: boolean;
+        duplicate?: boolean;
+      };
       if (!res.ok) {
         setStatus("error");
         setMessage(data.error ?? "No se pudo enviar. Intenta de nuevo.");
+        return;
+      }
+      if (data.duplicate) {
+        setStatus("done");
+        setMessage(
+          data.message ??
+            "Ese correo ya figura en nuestra lista. No duplicamos registros con el mismo e-mail."
+        );
         return;
       }
       setStatus("done");
@@ -82,7 +96,7 @@ export function LeadMarketForm() {
           }
         >
           <option value="agency">Inmobiliaria o agencia</option>
-          <option value="direct">Directo entre particulares</option>
+          <option value="direct">Directo, persona a persona</option>
           <option value="both">Ambas</option>
           <option value="never">Aún no he arrendado</option>
         </select>
@@ -104,7 +118,7 @@ export function LeadMarketForm() {
         </select>
       </Field>
 
-      <Field label="¿Usarías una app de costo bajo (vs. agencia) con contrato, firma, inventario y acompañamiento?">
+      <Field label="¿Usarías una app de costo bajo (vs. agencia) con modelos predefinidos de contratos, firma, inventario de tu propiedad, acompañamiento y mucho más?">
         <select
           className="input"
           value={values.q4LowCostApp}

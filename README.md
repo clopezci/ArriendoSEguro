@@ -13,4 +13,4 @@ Repositorio del emprendimiento **ArriendoSeguro** (formalización y trazabilidad
 
 ## Próximos hitos (según Instrucciones)
 
-Autenticación (correo + verificación, consentimientos), expediente de arriendo, partes, inmueble, motor de contrato, firma con bitácora, inventario, pagos, reajuste IPC, evaluación estructurada, cierre y panel de auditoría básica.
+Autenticación (correo + verificación, consentimientos), expediente de arriendo, partes, inmueble, motor de contrato, firma con bitácora, inventario, pagos, reajuste, evaluación estructurada, cierre y panel de auditoría básica.

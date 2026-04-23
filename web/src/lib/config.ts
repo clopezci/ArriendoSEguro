@@ -4,7 +4,7 @@
  */
 export const appConfig = {
   name: "ArriendoSeguro",
-  tagline: "Arrienda fácil y seguro entre particulares",
+  tagline: "Arrienda fácil y seguro entre personas",
   publicUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
 } as const;
 

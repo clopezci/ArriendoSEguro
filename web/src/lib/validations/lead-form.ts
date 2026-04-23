@@ -35,7 +35,12 @@ export const leadFormSchema = z.object({
     "integrated",
   ]),
   email: z.preprocess(
-    (v) => (typeof v === "string" ? v.trim() : ""),
+    (v) => {
+      if (typeof v !== "string") return "";
+      const t = v.trim();
+      if (t === "") return "";
+      return t.toLowerCase();
+    },
     z
       .string()
       .refine(

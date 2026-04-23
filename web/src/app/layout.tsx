@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ArriendoSeguro | Formaliza arriendos entre particulares",
+  title: "ArriendoSeguro | Formaliza arriendos entre personas",
   description:
-    "Plataforma para formalizar arriendos de vivienda en Colombia: contrato, inventario, firma con trazabilidad, registro de pagos y evaluación estructurada y privada.",
+    "Acompañamiento para arreglar en papel tu arriendo de vivienda en Colombia: contrato, inventario, firma, registro de pagos y respeto por tu privacidad.",
 };
 
 export default function RootLayout({

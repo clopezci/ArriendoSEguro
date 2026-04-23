@@ -32,7 +32,12 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env.local
 
+# Cuenta de servicio Firebase (nunca al repositorio)
+serviceAccountKey.json
+arriendoseguro-firebase.json
+firebase-adminsdk-*.json
 # vercel
 .vercel
 
