@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+/** Raíz de la app Next (carpeta `web`); fija el tracing cuando hay varios `package-lock` en el PC o monorepos. */
+const appDir = path.dirname(fileURLToPath(import.meta.url));
 
 const csp = [
   "default-src 'self'",
@@ -13,6 +18,7 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: appDir,
   async headers() {
     return [
       {
