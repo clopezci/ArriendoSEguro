@@ -1,0 +1,21 @@
+# Node / Next
+web/node_modules
+web/.next
+web/out
+web/.env
+web/.env.local
+web/.env.*.local
+web/*.tsbuildinfo
+web/.vercel
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea
+.vscode
+
+# Otros
+*.log
+npm-debug.log*
