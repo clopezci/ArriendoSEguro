@@ -6,7 +6,7 @@ export const appConfig = {
   name: "ArriendoSeguro",
   /** Título principal de la landing MVP */
   tagline:
-    "Necesitas arrendar tu propiedad? Te lo hacemos facil, seguro y asequible.",
+    "¿Necesitas arrendar tu propiedad? Te lo hacemos fácil, seguro y asequible.",
   /** Resumen breve para meta tags y previsualizaciones */
   seoDescription:
     "Formaliza contratos de arrendamiento entre personas en Colombia: contrato, inventario, firma y registro de pagos.",

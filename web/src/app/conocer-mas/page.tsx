@@ -2,7 +2,7 @@ import { appConfig } from "@/lib/config";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Conocer mas",
+  title: "Conocer más",
 };
 
 export default function ConocerMasPage() {
@@ -11,17 +11,17 @@ export default function ConocerMasPage() {
       <main className="mx-auto max-w-5xl space-y-8">
         <header className="space-y-3">
           <h1 className="text-3xl font-bold tracking-tight">
-            Conocer mas sobre <span className="text-violet-400">{appConfig.name}</span>
+            Conocer más sobre <span className="text-violet-400">{appConfig.name}</span>
           </h1>
           <p className="max-w-3xl text-slate-300">
-            Queremos democratizar el acceso a garantias y cumplimiento legal para protegerte de
-            manera facil y de bajo costo. Empezamos por lo esencial y seguimos creciendo contigo.
+            Queremos democratizar el acceso a garantías y cumplimiento legal para protegerte de
+            manera fácil y de bajo costo. Empezamos por lo esencial y seguimos creciendo contigo.
           </p>
         </header>
 
         <section className="grid gap-5 sm:grid-cols-2">
           <article className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.22)]">
-            <h2 className="text-lg font-semibold">Lo basico</h2>
+            <h2 className="text-lg font-semibold">Lo básico</h2>
             <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-slate-300">
               <li>Contrato de arrendamiento guiado</li>
               <li>Inventario del inmueble y actas</li>
@@ -39,21 +39,21 @@ export default function ConocerMasPage() {
           <article className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.22)]">
             <h2 className="text-lg font-semibold">Extras con aliados</h2>
             <p className="mt-3 text-sm text-slate-300">
-              Seguro de arrendamiento, gestion de cobranza, estudios legales y apoyo juridico
-              especializado, solo si tu decides tomar esos servicios.
+              Seguro de arrendamiento, gestión de cobranza, estudios legales y apoyo jurídico
+              especializado, solo si tú decides tomar esos servicios.
             </p>
           </article>
           <article className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.22)]">
             <h2 className="text-lg font-semibold">Lo que viene</h2>
             <p className="mt-3 text-sm text-slate-300">
-              Modulos adicionales de reputacion, recomendaciones, y mas adelante marketplace y
-              busqueda para quienes tambien quieran publicar.
+              Módulos adicionales de reputación, recomendaciones, y más adelante marketplace y
+              búsqueda para quienes también quieran publicar.
             </p>
           </article>
         </section>
 
         <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-[0_12px_30px_rgba(139,92,246,0.22)]">
-          <h2 className="text-lg font-semibold">Quienes somos y por que lo hacemos</h2>
+          <h2 className="text-lg font-semibold">Quiénes somos y por qué lo hacemos</h2>
           <p className="mt-3 text-slate-300">
             Nacimos para que arrendar no sea un dolor de cabeza ni un privilegio costoso. Creemos
             que cada familia merece acuerdos claros, respaldo y herramientas simples para vivir con
@@ -72,7 +72,7 @@ export default function ConocerMasPage() {
             href="/panel"
             className="rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-medium text-white shadow-[0_0_18px_rgba(139,92,246,0.45)] hover:bg-violet-500"
           >
-            Ir al menu inicio
+            Ir al menú inicio
           </Link>
         </div>
       </main>

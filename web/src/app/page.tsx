@@ -18,7 +18,7 @@ export default function Home() {
               href="/panel"
               className="shrink-0 rounded-lg border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-200 shadow-[0_0_0_1px_rgba(139,92,246,0.28)] transition hover:border-violet-400 hover:text-violet-300"
             >
-              Ir al menu inicio
+              Ir al menú inicio
             </Link>
             <a
               href="#interes"
@@ -43,16 +43,16 @@ export default function Home() {
               {appConfig.tagline}
             </h1>
             <p className="text-sm font-semibold uppercase tracking-wide text-sky-300">
-              Menos dudas, mas tranquilidad
+              Menos dudas, más tranquilidad
             </p>
             <p className="max-w-3xl text-sm leading-relaxed text-slate-300 sm:text-base">
               Ayudamos a crear tu contrato con pocos datos y en pocos pasos, guiamos inventario,
               facilitamos firma digital y registro de pagos, entre otros.
             </p>
             <p className="max-w-3xl text-sm leading-relaxed text-slate-400 sm:text-base">
-              Tambien puedes sumar opciones con aliados si lo decides o lo requieres: seguro,
+              También puedes sumar opciones con aliados si lo decides o lo requieres: seguro,
               cobranza y apoyo legal. No reemplazamos al abogado cuando haga falta, pero te damos
-              un camino facil y seguro para seguir.
+              un camino fácil y seguro para seguir.
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
               <a
@@ -65,7 +65,7 @@ export default function Home() {
                 href="/conocer-mas"
                 className="rounded-lg border border-slate-700 px-5 py-2.5 text-sm font-medium text-slate-200 shadow-[0_0_0_1px_rgba(139,92,246,0.28)] transition hover:border-sky-500 hover:text-sky-300"
               >
-                Conocer mas
+                Conocer más
               </Link>
             </div>
           </div>
@@ -76,15 +76,15 @@ export default function Home() {
             <h2 className="text-xl font-semibold">Lo que pasa hoy</h2>
             <p className="mt-2 text-slate-300">
               Si hoy quieres arrendar tu propiedad tienes dos caminos: buscas una agencia con los
-              costos mensuales que eso implica, o te arriesgas a hacerlo directo con el estres de no
-              tener garantias suficientes.
+              costos mensuales que eso implica, o te arriesgas a hacerlo directo con el estrés de no
+              tener garantías suficientes.
             </p>
           </article>
           <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
-            <h2 className="text-xl font-semibold">En que te apoyaremos</h2>
+            <h2 className="text-xl font-semibold">En qué te apoyaremos</h2>
             <p className="mt-2 text-slate-300">
-              Una guia facil de seguir entre las partes, con pocos pasos, que te permitira tener
-              soporte y trazabilidad, y te dara alternativas profesionales adicionales si decides
+              Una guía fácil de seguir entre las partes, con pocos pasos, que te permitirá tener
+              soporte y trazabilidad, y te dará alternativas profesionales adicionales si decides
               elegirlas cuando las necesites.
             </p>
           </article>
@@ -92,18 +92,18 @@ export default function Home() {
 
         <section className="flex flex-col items-start gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-5 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
           <p className="text-sm text-slate-300">
-            Quieres conocer el detalle completo de lo que incluye hoy y lo que viene despues.
+            ¿Quieres conocer el detalle completo de lo que incluye hoy y lo que viene después?
           </p>
           <Link
             href="/conocer-mas"
             className="inline-flex items-center justify-center rounded-lg bg-sky-700 px-6 py-2.5 text-sm font-medium text-white shadow-[0_0_18px_rgba(56,189,248,0.35)] transition hover:bg-sky-600"
           >
-            Conocer mas
+            Conocer más
           </Link>
         </section>
 
         <section id="interes" className="scroll-mt-8">
-          <h2 className="text-2xl font-bold text-slate-100">Tu opinion nos guia</h2>
+          <h2 className="text-2xl font-bold text-slate-100">Tu opinión nos guía</h2>
           <p className="mt-2 max-w-2xl text-slate-300">
             Responde esta encuesta y ayúdanos a simplificar el arriendo para todos.
           </p>

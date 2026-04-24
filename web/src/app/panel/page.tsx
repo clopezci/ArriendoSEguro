@@ -84,7 +84,7 @@ export default function PanelPage() {
         <li>
           <ModuleCard
             title="4 · Reputación y calificaciones"
-            description="Cuando el flujo tenga cierre, podrán evaluarse con criterio y reglas claras, para cuidar a quienes arrienda en serio."
+            description="Cuando el flujo tenga cierre, podrán evaluarse con criterio y reglas claras, para cuidar a quienes arriendan en serio."
             href="/panel"
             state={featureFlags.reviewsAndReputation ? "activo" : "proximamente"}
           />

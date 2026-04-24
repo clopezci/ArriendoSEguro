@@ -8,7 +8,7 @@ export const metadata = {
 const pasos = [
   {
     t: "Identificar a las partes",
-    d: "Quien arrienda (arrendatario) y quien pone el inmueble (arrendador), con datos de contacto serios, sin inventar. Esto pasa por consentimiento bajo Habeas Data (Ley 1581) en Colombia.",
+    d: "Quién arrienda (arrendatario) y quién pone el inmueble (arrendador), con datos de contacto serios, sin inventar. Esto pasa por consentimiento bajo Habeas Data (Ley 1581) en Colombia.",
   },
   {
     t: "Describir el inmueble y el término",
