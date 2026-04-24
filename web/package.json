@@ -10,6 +10,7 @@
     "test": "tsx --test src/lib/domain/rent-law.test.ts"
   },
   "dependencies": {
+    "firebase": "^12.0.0",
     "firebase-admin": "^13.8.0",
     "next": "15.5.15",
     "react": "19.1.0",

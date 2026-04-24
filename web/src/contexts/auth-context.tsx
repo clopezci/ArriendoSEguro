@@ -1,0 +1,85 @@
+"use client";
+
+import { getAuthClient, isFirebaseClientConfigured } from "@/lib/firebase/client";
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut as firebaseSignOut,
+  type User,
+} from "firebase/auth";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
+
+type AuthState = {
+  user: User | null;
+  loading: boolean;
+  configError: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthState | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [configError, setConfigError] = useState(false);
+
+  useEffect(() => {
+    if (!isFirebaseClientConfigured()) {
+      setConfigError(true);
+      setLoading(false);
+      return;
+    }
+    const auth = getAuthClient();
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
+    await signInWithEmailAndPassword(getAuthClient(), email.trim(), password);
+  }, []);
+
+  const signUp = useCallback(async (email: string, password: string) => {
+    if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
+    await createUserWithEmailAndPassword(getAuthClient(), email.trim(), password);
+  }, []);
+
+  const signOut = useCallback(async () => {
+    if (!isFirebaseClientConfigured()) return;
+    await firebaseSignOut(getAuthClient());
+  }, []);
+
+  const value = useMemo<AuthState>(
+    () => ({
+      user,
+      loading,
+      configError,
+      signIn,
+      signUp,
+      signOut,
+    }),
+    [user, loading, configError, signIn, signUp, signOut]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth(): AuthState {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth dentro de AuthProvider");
+  return ctx;
+}

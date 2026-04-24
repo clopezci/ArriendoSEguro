@@ -1,0 +1,15 @@
+---
+description: ArriendoSeguro — producto, usuarios y marco Colombia
+alwaysApply: true
+---
+
+# ArriendoSeguro (Colombia)
+
+- **Propuesta de valor (PUV):** Arrienda seguro, de persona a persona, sin agencia al medio, con calificaciones y reputación visibles para decidir con confianza.
+- **Público:** Arrendatarios y arrendadores en **Colombia** (lenguaje cotidiano colombiano: *canon, arriendo, inmueble, contrato*; tuteo aceptable en UI con tono respetuoso). No asumir leyes de otro país.
+- **Alcance legal en copy y UI:** La app ofrece **organización, plantillas, firma, inventario y trazas**, no asesoría legal sustitutiva. Cualquier texto legal debe dejar claro **orientación / apoyo a formalizar** y remitir a asesoría profesional si aplica. Referencias normativas: marco de **vivienda urbana (Ley 820 y normas conexas, reglamentación y jurisprudencia actual)** solo de forma **general y no taxativa**; un abogado debe validar plantillas.
+- **Datos personales (Habeas data):** Mencionar tratamiento bajo la **Ley 1581** cuando haya recolección en formularios o cuentas; mínimo necesario, consentimiento claro, fines explícitos.
+- **Dinero:** No recaudar el canon por la plataforma en fases iniciales; el registro de pagos es **informativo** salvo producto distinto.
+- **Orden de módulos (MVP y siguientes):** (1) Cuenta y **expediente** del arriendo (partes, borrador, hitos), (2) **Inventario** / entrega-recepción, (3) **Registro de pagos** (informativo), (4) **Reputación y calificaciones** (tras cierre o hitos definidos), luego publicación o marketplace si aplica. No mezclar lógica de fase 2 con formalización.
+- **Stack producto (recordatorio):** Next.js 15 (app `web/`), Vercel, Firebase (Auth + Firestore según fase), validación estricta en API.
+- **Comunicación con el usuario de este proyecto:** dar instrucciones **paso a paso**, numeradas y sin saltos, especialmente para consola, Firebase y Vercel. Evitar asumir conocimiento técnico; cada paso debe decir dónde hacer clic, qué copiar y cómo validar que quedó bien.

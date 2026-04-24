@@ -1,3 +1,5 @@
+import { AppProviders } from "@/components/providers/app-providers";
+import { appConfig } from "@/lib/config";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -13,9 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ArriendoSeguro | Formaliza arriendos entre personas",
-  description:
-    "Acompañamiento para arreglar en papel tu arriendo de vivienda en Colombia: contrato, inventario, firma, registro de pagos y respeto por tu privacidad.",
+  title: {
+    default: `${appConfig.name} | Arriendo entre personas en Colombia`,
+    template: `%s | ${appConfig.name}`,
+  },
+  description: appConfig.seoDescription,
 };
 
 export default function RootLayout({
@@ -28,7 +32,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

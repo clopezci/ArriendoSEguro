@@ -21,6 +21,10 @@ export const leadFormSchema = z.object({
     "all",
   ]),
   q4LowCostApp: z.enum(["yes", "maybe", "no"]),
+  q4NoReason: z
+    .enum(["price", "hard_to_use", "not_needed", "prefer_agency", "other"])
+    .optional(),
+  q4NoReasonOther: z.string().trim().max(280).optional(),
   q5WillingToPay: z.enum([
     "range_20_40",
     "range_40_60",
@@ -49,6 +53,26 @@ export const leadFormSchema = z.object({
       )
   ),
   contactConsent: z.boolean().optional(),
+}).superRefine((data, ctx) => {
+  if (data.q4LowCostApp !== "no") return;
+  if (!data.q4NoReason) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["q4NoReason"],
+      message: "Selecciona por qué no usarías la app",
+    });
+    return;
+  }
+  if (data.q4NoReason === "other") {
+    const text = data.q4NoReasonOther?.trim() ?? "";
+    if (text.length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["q4NoReasonOther"],
+        message: "Cuéntanos brevemente el motivo",
+      });
+    }
+  }
 });
 
 export type LeadFormInput = z.infer<typeof leadFormSchema>;

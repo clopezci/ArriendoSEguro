@@ -115,6 +115,8 @@ export async function POST(request: Request) {
     q2: data.q2RentalChannel,
     q3: data.q3MainConcern,
     q4: data.q4LowCostApp,
+    q4NoReason: data.q4NoReason ?? null,
+    q4NoReasonOther: data.q4NoReasonOther?.trim() || null,
     q5: data.q5WillingToPay,
     q6: data.q6ValuedModule,
     email,

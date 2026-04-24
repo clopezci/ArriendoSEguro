@@ -1,0 +1,16 @@
+---
+description: Stack y convenciones Next.js / web ArriendoSeguro
+globs: web/**
+alwaysApply: false
+---
+
+# Web (Next.js 15, `web/`)
+
+- **Cambios mínimos:** tocar solo lo necesario; seguir estilo existente (Tailwind, componentes en `web/src/components`, libs en `web/src/lib`).
+- **Seguridad:** nunca commitear `.env.local`, JSON de servicio, ni claves. Variables públicas solo con `NEXT_PUBLIC_`. Admin SDK **solo** en `route.ts` / server.
+- **Auth cliente:** `firebase` SDK en **client components**; estado de sesión vía `AuthProvider`; rutas de panel con guard cliente (`RequireAuth`) hasta exista sesión por cookie/ servidor.
+- **Formularios y API:** validar con Zod; APIs en `app/api/**` con `runtime: "nodejs"` si usan Admin.
+- **Build:** `npm run build` en `web/` antes de dar por cerrada una entrega. Root Vercel = directorio `web/`.
+- **Diseño visual base (obligatorio):** paleta principal en **grises y azules oscuros** con acento **morado brillante** para marca. El texto `ArriendoSeguro` debe usar tono morado vibrante.
+- **Sombras (obligatorio):** botones, menú/navegación y tarjetas/cuadros deben llevar sombra con matiz morado (`violet`) para coherencia de marca.
+- **CTA fijo en landing:** mantener botón visible `Inscribirse ahora` que lleve a `/#interes`.

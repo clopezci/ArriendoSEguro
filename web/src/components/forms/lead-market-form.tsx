@@ -8,6 +8,8 @@ const initial: LeadFormInput = {
   q2RentalChannel: "never",
   q3MainConcern: "all",
   q4LowCostApp: "maybe",
+  q4NoReason: undefined,
+  q4NoReasonOther: "",
   q5WillingToPay: "range_20_40",
   q6ValuedModule: "integrated",
   email: "",
@@ -70,7 +72,7 @@ export function LeadMarketForm() {
       className="mt-4 space-y-6 rounded-2xl border border-slate-200/80 bg-white/90 p-6 shadow-sm dark:border-slate-700/80 dark:bg-slate-900/50"
     >
       <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-        Validación de interés (6 preguntas)
+        Validación de interés
       </h3>
 
       <Field label="¿Tienes una vivienda para arrendar o la arrendarás pronto?">
@@ -131,6 +133,45 @@ export function LeadMarketForm() {
           <option value="no">No</option>
         </select>
       </Field>
+
+      {values.q4LowCostApp === "no" && (
+        <>
+          <Field label="Si respondiste NO, ¿por qué no la usarías?">
+            <select
+              className="input"
+              value={values.q4NoReason ?? ""}
+              onChange={(e) =>
+                setValues((v) => ({
+                  ...v,
+                  q4NoReason: (e.target.value || undefined) as LeadFormInput["q4NoReason"],
+                  q4NoReasonOther: e.target.value === "other" ? v.q4NoReasonOther : "",
+                }))
+              }
+            >
+              <option value="">Selecciona una opción</option>
+              <option value="price">Precio</option>
+              <option value="hard_to_use">Me parece difícil de usar</option>
+              <option value="not_needed">No lo considero necesario</option>
+              <option value="prefer_agency">Prefiero una agencia</option>
+              <option value="other">Otro</option>
+            </select>
+          </Field>
+          {values.q4NoReason === "other" && (
+            <div>
+              <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">
+                Cuéntanos cuál
+              </label>
+              <textarea
+                className="input mt-1 min-h-24"
+                placeholder="Escribe aquí tu motivo"
+                value={values.q4NoReasonOther ?? ""}
+                onChange={(e) => setValues((v) => ({ ...v, q4NoReasonOther: e.target.value }))}
+                maxLength={280}
+              />
+            </div>
+          )}
+        </>
+      )}
 
       <Field label="Si costara mucho menos que una inmobiliaria, ¿qué rango te parece razonable?">
         <select
