@@ -43,7 +43,14 @@ export const leadFormSchema = z.object({
     "other",
   ]),
   q6Other: z.string().trim().max(280).optional(),
-  sourcePage: z.enum(["landing", "entiendelo-facil"]).default("landing"),
+  sourcePage: z
+    .enum([
+      "landing",
+      "entiendelo-facil",
+      "landing_mvp",
+      "landing_comercial_interno",
+    ])
+    .default("landing"),
   email: z.preprocess(
     (v) => {
       if (typeof v !== "string") return "";

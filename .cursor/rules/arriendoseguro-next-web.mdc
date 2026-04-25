@@ -13,4 +13,5 @@ alwaysApply: false
 - **Build:** `npm run build` en `web/` antes de dar por cerrada una entrega. Root Vercel = directorio `web/`.
 - **Diseño visual base (obligatorio):** paleta principal en **grises y azules oscuros** con acento **morado brillante** para marca. El texto `ArriendoSeguro` debe usar tono morado vibrante.
 - **Sombras (obligatorio):** botones, menú/navegación y tarjetas/cuadros deben llevar sombra con matiz morado (`violet`) para coherencia de marca.
-- **CTA fijo en landing:** mantener botón visible `Inscribirse ahora` que lleve a `/#interes`.
+- **Landing pública (`/`):** landing corta de validación MVP; CTA principal a la encuesta (`/#interes`).
+- **Landing comercial (interna, no enlazada):** `/interno/landing-principal` — versión larga para cuando se active comercialmente; no enlazar desde el sitio público.
