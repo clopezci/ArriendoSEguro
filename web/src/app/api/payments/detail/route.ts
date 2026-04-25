@@ -16,7 +16,16 @@ export async function GET(request: Request) {
     if (!snap.exists) {
       return NextResponse.json({ success: false, errors: [{ field: "paymentLogId", message: "Pago no existe." }] }, { status: 404 });
     }
-    return NextResponse.json({ success: true, payment: snap.data() });
+    const payment = snap.data();
+    const historySnap = await firestore
+      .collection("audit_logs")
+      .where("paymentLogId", "==", paymentLogId)
+      .get();
+    return NextResponse.json({
+      success: true,
+      payment,
+      history: historySnap.docs.map((d) => d.data()),
+    });
   } catch {
     return NextResponse.json({ success: false, errors: [{ field: "server", message: "No se pudo cargar pago." }] }, { status: 500 });
   }

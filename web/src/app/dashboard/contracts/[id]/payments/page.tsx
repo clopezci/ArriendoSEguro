@@ -16,9 +16,18 @@ type Payment = {
   amountDue: number;
   amountPaid: number;
   paymentMethod: string;
-  paymentStatus: "pending" | "reported_paid" | "partial" | "late" | "disputed" | "cancelled";
+  paymentStatus:
+    | "pending"
+    | "pending_support"
+    | "reported_without_support"
+    | "reported_paid"
+    | "partial"
+    | "late"
+    | "disputed"
+    | "cancelled";
   notes?: string;
 };
+type ScheduledPayment = { id: string; periodLabel: string; dueDate: string; status: string };
 
 export default function PaymentsPage() {
   const id = String(useParams<{ id: string }>().id);
@@ -28,6 +37,7 @@ export default function PaymentsPage() {
   const [canon, setCanon] = useState<number>(0);
   const [paymentDay, setPaymentDay] = useState<number>(1);
   const [error, setError] = useState("");
+  const [scheduledPayments, setScheduledPayments] = useState<ScheduledPayment[]>([]);
 
   useEffect(() => {
     const run = async () => {
@@ -39,19 +49,23 @@ export default function PaymentsPage() {
       if (!versionId) return;
       const list = await fetch(`/api/payments/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`).then((r) => r.json());
       if (list?.success) setPayments(list.payments ?? []);
+      const sch = await fetch(`/api/payments/schedule/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`).then((r) => r.json());
+      if (sch?.success) setScheduledPayments(sch.scheduledPayments ?? []);
     };
     void run();
   }, [id]);
 
   const summary = useMemo(() => {
     const today = Date.now();
-    const pending = payments.filter((p) => p.paymentStatus === "pending").length;
+    const pending = payments.filter((p) => p.paymentStatus === "pending" || p.paymentStatus === "pending_support" || p.paymentStatus === "reported_without_support").length;
     const partial = payments.filter((p) => p.paymentStatus === "partial").length;
     const disputed = payments.filter((p) => p.paymentStatus === "disputed").length;
     const overdue = payments.filter((p) => !p.paidDate && new Date(p.dueDate).getTime() < today).length;
-    const nextDue = payments
+    const nextDue = scheduledPayments
       .filter((p) => new Date(p.dueDate).getTime() >= today)
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+    const overdueSchedule = scheduledPayments.filter((p) => p.status === "late").length;
+    const upcomingSchedule = scheduledPayments.filter((p) => new Date(p.dueDate).getTime() >= today).length;
     return {
       pending,
       partial,
@@ -59,8 +73,11 @@ export default function PaymentsPage() {
       overdue,
       nextDue: nextDue ? `${nextDue.periodLabel} (${nextDue.dueDate})` : "Sin pagos próximos",
       allGood: pending === 0 && partial === 0 && disputed === 0 && overdue === 0,
+      overdueSchedule,
+      upcomingSchedule,
+      calendarState: scheduledPayments.length ? "Generado" : "Sin generar",
     };
-  }, [payments]);
+  }, [payments, scheduledPayments]);
 
   if (state !== "ready") return <p className="text-sm text-slate-300">Cargando...</p>;
 
@@ -104,9 +121,18 @@ export default function PaymentsPage() {
       </section>
 
       <div className="mt-4 flex flex-wrap gap-2">
+        <Link href={`/dashboard/contracts/${id}/payment-schedule`} className="rounded border border-sky-500 px-3 py-2 text-sm text-sky-200">Calendario</Link>
+        <button type="button" className="rounded border border-slate-600 px-3 py-2 text-sm text-slate-200">Pagos registrados</button>
+        <button type="button" className="rounded border border-slate-600 px-3 py-2 text-sm text-slate-200">Soportes</button>
+        <button type="button" className="rounded border border-slate-600 px-3 py-2 text-sm text-slate-200">Recordatorios</button>
         <Link href={`/dashboard/contracts/${id}/payments/new?contractVersionId=${encodeURIComponent(contractVersionId)}`} className="rounded bg-violet-600 px-3 py-2 text-sm text-white">Registrar pago</Link>
         <button type="button" onClick={generateAnnex} className="rounded border border-emerald-500 px-3 py-2 text-sm text-emerald-200">Generar anexo de pagos</button>
       </div>
+      <section className="mt-3 grid gap-3 md:grid-cols-3">
+        <Card label="Próximo vencimiento" value={summary.nextDue} />
+        <Card label="Pagos próximos (calendario)" value={`${summary.upcomingSchedule}`} />
+        <Card label="Estado calendario" value={`${summary.calendarState} / Vencidos: ${summary.overdueSchedule}`} />
+      </section>
 
       <div className="mt-4 overflow-auto rounded border border-slate-700">
         <table className="min-w-full text-xs text-slate-300">
@@ -130,7 +156,7 @@ export default function PaymentsPage() {
                 <td className="px-2 py-1">{p.paidDate ?? "-"}</td>
                 <td className="px-2 py-1">{p.amountDue.toLocaleString("es-CO")}</td>
                 <td className="px-2 py-1">{p.amountPaid.toLocaleString("es-CO")}</td>
-                <td className="px-2 py-1">{p.paymentStatus}</td>
+                <td className="px-2 py-1">{humanStatus(p.paymentStatus)}</td>
                 <td className="px-2 py-1">{visualPaymentState(p)}</td>
                 <td className="px-2 py-1">
                   <Link href={`/dashboard/contracts/${id}/payments/${p.id}`} className="text-violet-300">Ver/Editar</Link>
@@ -147,6 +173,17 @@ export default function PaymentsPage() {
       </div>
     </WizardShell>
   );
+}
+
+function humanStatus(status: Payment["paymentStatus"]): string {
+  if (status === "pending") return "Pendiente";
+  if (status === "pending_support" || status === "reported_without_support") return "Pendiente de soporte";
+  if (status === "reported_paid") return "Reportado pagado";
+  if (status === "partial") return "Parcial";
+  if (status === "late") return "Vencido";
+  if (status === "disputed") return "En disputa";
+  if (status === "cancelled") return "Cancelado";
+  return status;
 }
 
 function Card({ label, value }: { label: string; value: string }) {

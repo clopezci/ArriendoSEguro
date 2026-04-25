@@ -27,6 +27,17 @@ export async function POST(request: Request) {
       },
       { merge: true },
     );
+    const scheduleSnap = await firestore
+      .collection("scheduled_payments")
+      .where("paymentLogId", "==", parsed.data.paymentLogId)
+      .limit(1)
+      .get();
+    if (!scheduleSnap.empty) {
+      await scheduleSnap.docs[0]?.ref.set(
+        { status: "disputed", updatedAt: now },
+        { merge: true },
+      );
+    }
     await firestore.collection("audit_logs").add({
       event: "payment_marked_disputed",
       paymentLogId: parsed.data.paymentLogId,
@@ -35,6 +46,10 @@ export async function POST(request: Request) {
       at: now,
     });
     auditEvent("payment_marked_disputed", { paymentLogId: parsed.data.paymentLogId });
+    auditEvent("payment_status_changed", {
+      paymentLogId: parsed.data.paymentLogId,
+      to: "disputed",
+    });
     return NextResponse.json({ success: true, paymentStatus: "disputed" });
   } catch {
     return NextResponse.json({ success: false, errors: [{ field: "server", message: "No se pudo marcar disputa." }] }, { status: 500 });

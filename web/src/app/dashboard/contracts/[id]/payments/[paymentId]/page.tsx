@@ -15,7 +15,15 @@ type PaymentDetail = {
   paymentMethod: string;
   notes?: string;
   paymentStatus: string;
+  reportedByUserId?: string;
+  reportedByRole?: string;
+  reportedAt?: string;
+  supportFileUrl?: string;
+  supportFileName?: string;
+  supportValidationStatus?: "pending" | "valid" | "invalid";
+  updatedAt?: string;
 };
+type PaymentHistoryItem = { event?: string; at?: string; actor?: string };
 
 export default function PaymentDetailPage() {
   const params = useParams<{ id: string; paymentId: string }>();
@@ -27,12 +35,16 @@ export default function PaymentDetailPage() {
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [history, setHistory] = useState<PaymentHistoryItem[]>([]);
 
   useEffect(() => {
     const run = async () => {
       const res = await fetch(`/api/payments/detail?paymentLogId=${encodeURIComponent(paymentId)}`);
       const data = await res.json();
-      if (res.ok && data.success) setPayment(data.payment as PaymentDetail);
+      if (res.ok && data.success) {
+        setPayment(data.payment as PaymentDetail);
+        setHistory((data.history ?? []) as PaymentHistoryItem[]);
+      }
     };
     void run();
   }, [paymentId]);
@@ -112,6 +124,18 @@ export default function PaymentDetailPage() {
         <textarea className="mt-1 min-h-24 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm" value={paymentData.notes ?? ""} onChange={(e) => setPayment((prev) => (prev ? { ...prev, notes: e.target.value } : prev))} />
       </label>
       <p className="mt-2 text-xs text-slate-400">Estado actual: {paymentData.paymentStatus}</p>
+      <div className="mt-2 rounded border border-slate-700 p-3 text-xs text-slate-300">
+        <p>Reportado por: {paymentData.reportedByUserId ?? "-"}</p>
+        <p>Rol del reporte: {paymentData.reportedByRole ?? "-"}</p>
+        <p>Fecha reporte: {paymentData.reportedAt ?? paymentData.updatedAt ?? "-"}</p>
+        <p>Soporte adjunto: {paymentData.supportFileName ?? "-"}</p>
+        <p>Estado del soporte: {paymentData.supportValidationStatus ?? "pending"}</p>
+        {paymentData.supportFileUrl ? (
+          <a className="text-violet-300" href={paymentData.supportFileUrl} target="_blank" rel="noreferrer">
+            Ver soporte
+          </a>
+        ) : null}
+      </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button type="button" onClick={saveChanges} disabled={saving} className="rounded bg-violet-600 px-4 py-2 text-sm text-white">{saving ? "Guardando..." : "Guardar cambios"}</button>
@@ -121,6 +145,17 @@ export default function PaymentDetailPage() {
         <p className="text-xs text-amber-200">Marcar como disputado</p>
         <input className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo de disputa" />
         <button type="button" onClick={markDisputed} disabled={saving || reason.trim().length < 3} className="mt-2 rounded border border-amber-500 px-3 py-2 text-xs text-amber-200">Marcar en revisión</button>
+      </div>
+      <div className="mt-5 rounded border border-slate-700 p-3">
+        <p className="text-xs text-slate-300">Historial de cambios</p>
+        <ul className="mt-2 space-y-1 text-xs text-slate-400">
+          {history.map((item, idx) => (
+            <li key={`${item.event ?? "evt"}-${idx}`}>
+              {item.event ?? "evento"} - {item.at ?? "-"} - {item.actor ?? "sistema"}
+            </li>
+          ))}
+          {history.length === 0 ? <li>Sin historial.</li> : null}
+        </ul>
       </div>
     </WizardShell>
   );

@@ -6,9 +6,11 @@ export function computePaymentStatus(input: {
   amountDue: number;
   amountPaid: number;
   forceDisputed?: boolean;
+  hasValidSupport?: boolean;
 }): PaymentStatus {
   if (input.forceDisputed) return "disputed";
-  if (!input.paidDate) return "pending";
+  if (!input.paidDate) return input.amountPaid > 0 ? "reported_without_support" : "pending";
+  if (!input.hasValidSupport) return "pending_support";
   if (input.amountPaid < input.amountDue) return "partial";
   const due = new Date(input.dueDate).getTime();
   const paid = new Date(input.paidDate).getTime();
@@ -24,6 +26,7 @@ export function visualPaymentState(input: {
   paymentStatus: PaymentStatus;
 }): "Vencido" | "Pago parcial" | "En revisión" | "Al día" | "Pendiente" {
   if (input.paymentStatus === "disputed") return "En revisión";
+  if (input.paymentStatus === "pending_support" || input.paymentStatus === "reported_without_support") return "Pendiente";
   if (input.amountPaid < input.amountDue && input.paidDate) return "Pago parcial";
   const due = new Date(input.dueDate).getTime();
   const now = Date.now();

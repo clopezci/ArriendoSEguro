@@ -17,6 +17,13 @@ export const paymentCreateSchema = z.object({
   ]),
   notes: z.string().optional(),
   supportFileUrl: z.string().optional(),
+  supportFileName: z.string().optional(),
+  supportFileType: z.string().optional(),
+  supportFileSize: z.number().int().positive().optional(),
+  scheduledPaymentId: z.string().optional(),
+  reportedByUserId: z.string().min(3),
+  reportedByRole: z.enum(["landlord", "tenant", "solidaryCoDebtor"]),
+  reportedByEmail: z.string().email(),
 });
 
 export const paymentUpdateSchema = z.object({
@@ -31,11 +38,52 @@ export const paymentUpdateSchema = z.object({
     .optional(),
   notes: z.string().optional(),
   supportFileUrl: z.string().optional(),
+  supportFileName: z.string().optional(),
+  supportFileType: z.string().optional(),
+  supportFileSize: z.number().int().positive().optional(),
 });
 
 export const markDisputedSchema = z.object({
   paymentLogId: z.string().min(3),
   reason: z.string().min(3),
+});
+
+export const scheduleGenerateSchema = z.object({
+  leaseProcessId: z.string().min(3),
+  contractId: z.string().min(3),
+  contractVersionId: z.string().min(3),
+  reminderSettings: z
+    .object({
+      enabled: z.boolean().optional(),
+      defaultDaysBefore: z.number().int().positive().optional(),
+      tenantEmail: z.string().email().optional(),
+      landlordCopyEnabled: z.boolean().optional(),
+      landlordEmail: z.string().email().optional(),
+      customMessage: z.string().optional(),
+    })
+    .optional(),
+});
+
+export const scheduleSettingsSchema = z.object({
+  leaseProcessId: z.string().min(3),
+  contractId: z.string().min(3),
+  enabled: z.boolean(),
+  defaultDaysBefore: z.number().int().positive(),
+  tenantEmail: z.string().email(),
+  landlordCopyEnabled: z.boolean(),
+  landlordEmail: z.string().email().optional(),
+  customMessage: z.string().optional(),
+});
+
+export const updateScheduledOneSchema = z.object({
+  scheduledPaymentId: z.string().min(3),
+  dueDate: z.string().optional(),
+  expectedAmount: z.number().nonnegative().optional(),
+  reminderEnabled: z.boolean().optional(),
+  reminderDaysBefore: z.number().int().positive().optional(),
+  status: z
+    .enum(["scheduled", "pending", "pending_support", "reported_paid", "partial", "late", "disputed", "cancelled"])
+    .optional(),
 });
 
 export function validatePaymentBusinessRules(input: {
