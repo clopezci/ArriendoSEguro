@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import {
+  getAuthenticatedUser,
+  requestClientIp,
+  requestUserAgent,
+  requireContractParticipant,
+} from "@/lib/auth/serverAuth";
+import {
   paymentUpdateSchema,
   validatePaymentBusinessRules,
 } from "@/domain/payments/validatePaymentLog";
@@ -11,10 +17,13 @@ import {
   validatePaymentSupportFile,
 } from "@/domain/payments/supportValidation";
 import { auditEvent } from "@/features/contracts/audit";
+import { logPaymentAudit } from "@/features/payments/paymentAuditLog";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const ip = requestClientIp(request);
+  const userAgent = requestUserAgent(request);
   try {
     const parsed = paymentUpdateSchema.safeParse(await request.json());
     if (!parsed.success) {
@@ -43,6 +52,36 @@ export async function POST(request: Request) {
       supportFileType?: string;
       supportFileSize?: number;
     };
+    const participant = await requireContractParticipant(
+      request,
+      firestore,
+      current.contractId,
+      { kind: "by_version", contractVersionId: current.contractVersionId },
+    );
+    if (!participant.ok) {
+      if (participant.response.status === 403) {
+        const u = await getAuthenticatedUser(request);
+        await logPaymentAudit("payment_report_blocked_unauthorized", {
+          reason: "not_participant",
+          contractId: current.contractId,
+          paymentLogId: parsed.data.paymentLogId,
+          reportedByUserId: u?.uid ?? "",
+          reportedByEmail: u?.email ?? "",
+          ipAddress: ip ?? "",
+          userAgent: userAgent ?? "",
+        });
+      } else if (participant.response.status === 401) {
+        await logPaymentAudit("payment_report_blocked_unauthorized", {
+          reason: "unauthenticated",
+          contractId: current.contractId,
+          paymentLogId: parsed.data.paymentLogId,
+          ipAddress: ip ?? "",
+          userAgent: userAgent ?? "",
+        });
+      }
+      return participant.response;
+    }
+
     const contractSnap = await firestore.collection("contracts").doc(current.contractId).get();
     const contract = contractSnap.data() as { status?: string } | undefined;
     if (contract?.status === "closed" || contract?.status === "voided") {
@@ -61,6 +100,19 @@ export async function POST(request: Request) {
       supportFileType: parsed.data.supportFileType ?? current.supportFileType,
       supportFileSize: parsed.data.supportFileSize ?? current.supportFileSize,
     });
+    if (!supportValidation.isEmpty && !supportValidation.ok) {
+      await logPaymentAudit("payment_support_validation_failed", {
+        contractId: current.contractId,
+        paymentLogId: parsed.data.paymentLogId,
+        reportedByUserId: participant.user.uid,
+        reportedByEmail: participant.user.email,
+        reportedByRole: participant.role,
+        errors: JSON.stringify(supportValidation.errors),
+        ipAddress: ip ?? "",
+        userAgent: userAgent ?? "",
+      });
+      return NextResponse.json({ success: false, errors: supportValidation.errors }, { status: 422 });
+    }
     const status = current.paymentStatus === "disputed"
       ? "disputed"
       : computePaymentStatus({
@@ -104,21 +156,35 @@ export async function POST(request: Request) {
             : effectiveStatus === "pending_support" || effectiveStatus === "reported_without_support"
               ? "pending_support"
               : effectiveStatus === "pending"
-              ? "pending"
-              : "reported_paid";
+                ? "pending"
+                : "reported_paid";
       await scheduleSnap.docs[0]?.ref.set(
         { status: nextScheduleStatus, updatedAt: now },
         { merge: true },
       );
     }
+    await logPaymentAudit("payment_log_updated", {
+      paymentLogId: parsed.data.paymentLogId,
+      actor: participant.user.uid,
+      from: current.paymentStatus,
+      to: effectiveStatus,
+      ipAddress: ip ?? "",
+      userAgent: userAgent ?? "",
+    });
     await firestore.collection("audit_logs").add({
       event: "payment_log_updated",
       paymentLogId: parsed.data.paymentLogId,
       at: now,
-      actor: current.reportedByUserId ?? "unknown",
+      actor: participant.user.uid,
       changes: parsed.data,
     });
     auditEvent("payment_log_updated", { paymentLogId: parsed.data.paymentLogId });
+    await logPaymentAudit("payment_status_changed", {
+      paymentLogId: parsed.data.paymentLogId,
+      from: current.paymentStatus,
+      to: effectiveStatus,
+      reportedByUserId: participant.user.uid,
+    });
     auditEvent("payment_status_changed", {
       paymentLogId: parsed.data.paymentLogId,
       from: current.paymentStatus,
@@ -127,10 +193,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       paymentStatus: effectiveStatus,
-      supportValidationErrors: supportValidation.errors,
     });
   } catch {
     return NextResponse.json({ success: false, errors: [{ field: "server", message: "No se pudo actualizar el pago." }] }, { status: 500 });
   }
 }
-

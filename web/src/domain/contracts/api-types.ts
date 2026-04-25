@@ -46,10 +46,12 @@ const payloadSchema = z.object({
 
 export const contractPreviewRequestSchema = z.object({
   contractPayload: payloadSchema,
+  isDemo: z.boolean().optional(),
 });
 
 export type ContractPreviewRequest = {
   contractPayload: ResidentialLeaseContractInput;
+  isDemo?: boolean;
 };
 
 export type ContractPreviewResponse =

@@ -19,6 +19,9 @@ export default function DashboardLayout({
               <Link className="rounded-md px-2 py-1 hover:bg-slate-800" href="/dashboard/contracts">
                 Contratos
               </Link>
+              <Link className="rounded-md px-2 py-1 hover:bg-slate-800" href="/dashboard/billing">
+                Facturación
+              </Link>
               <Link className="rounded-md px-2 py-1 hover:bg-slate-800" href="/panel">
                 Menú principal
               </Link>

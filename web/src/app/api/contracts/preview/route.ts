@@ -4,6 +4,7 @@ import {
   type ContractPreviewResponse,
 } from "@/domain/contracts/api-types";
 import { renderResidentialLeaseContract } from "@/domain/contracts/renderResidentialLeaseContract";
+import { applyDemoWatermark } from "@/domain/contracts/demoWatermark";
 import { validateContractData } from "@/domain/contracts/validateContractData";
 
 export const runtime = "nodejs";
@@ -73,9 +74,10 @@ export async function POST(request: Request) {
     }
 
     const rendered = renderResidentialLeaseContract(payload);
+    const html = parsedReq.data.isDemo ? applyDemoWatermark(rendered.html) : rendered.html;
     return NextResponse.json<ContractPreviewResponse>({
       success: true,
-      html: rendered.html,
+      html,
       validationErrors: [],
       contractVersionDraft: {
         versionNumber: 1,

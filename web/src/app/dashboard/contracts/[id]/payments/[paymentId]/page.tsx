@@ -4,6 +4,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
+import { useAuth } from "@/contexts/auth-context";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 
 type PaymentDetail = {
   id: string;
@@ -16,6 +18,7 @@ type PaymentDetail = {
   notes?: string;
   paymentStatus: string;
   reportedByUserId?: string;
+  reportedByEmail?: string;
   reportedByRole?: string;
   reportedAt?: string;
   supportFileUrl?: string;
@@ -30,6 +33,7 @@ export default function PaymentDetailPage() {
   const contractId = String(params.id);
   const paymentId = String(params.paymentId);
   const { state } = useDraftGuard(contractId);
+  const { user } = useAuth();
   const router = useRouter();
   const [payment, setPayment] = useState<PaymentDetail | null>(null);
   const [reason, setReason] = useState("");
@@ -59,7 +63,7 @@ export default function PaymentDetailPage() {
     try {
       const res = await fetch("/api/payments/update", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user ?? null)) },
         body: JSON.stringify({
           paymentLogId: paymentData.id,
           periodLabel: paymentData.periodLabel,
@@ -87,7 +91,7 @@ export default function PaymentDetailPage() {
     try {
       const res = await fetch("/api/payments/mark-disputed", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user ?? null)) },
         body: JSON.stringify({ paymentLogId: paymentData.id, reason }),
       });
       const data = await res.json();
@@ -125,7 +129,8 @@ export default function PaymentDetailPage() {
       </label>
       <p className="mt-2 text-xs text-slate-400">Estado actual: {paymentData.paymentStatus}</p>
       <div className="mt-2 rounded border border-slate-700 p-3 text-xs text-slate-300">
-        <p>Reportado por: {paymentData.reportedByUserId ?? "-"}</p>
+        <p>Reportado por (uid): {paymentData.reportedByUserId ?? "-"}</p>
+        <p>Correo del reporte: {paymentData.reportedByEmail ?? "-"}</p>
         <p>Rol del reporte: {paymentData.reportedByRole ?? "-"}</p>
         <p>Fecha reporte: {paymentData.reportedAt ?? paymentData.updatedAt ?? "-"}</p>
         <p>Soporte adjunto: {paymentData.supportFileName ?? "-"}</p>

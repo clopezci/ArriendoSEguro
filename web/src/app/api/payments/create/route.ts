@@ -2,22 +2,42 @@ import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import {
+  bodyContainsIgnoredIdentityFields,
+  getAuthenticatedUser,
+  requestClientIp,
+  requestUserAgent,
+  requireContractParticipant,
+} from "@/lib/auth/serverAuth";
+import {
   paymentCreateSchema,
   validatePaymentBusinessRules,
 } from "@/domain/payments/validatePaymentLog";
 import { computePaymentStatus } from "@/domain/payments/paymentStatus";
-import { validatePaymentReporter } from "@/domain/payments/paymentAuthorization";
 import {
   sanitizeSupportFileName,
   validatePaymentSupportFile,
 } from "@/domain/payments/supportValidation";
 import { auditEvent } from "@/features/contracts/audit";
+import { logPaymentAudit } from "@/features/payments/paymentAuditLog";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  const ip = requestClientIp(request);
+  const userAgent = requestUserAgent(request);
+
   try {
-    const parsed = paymentCreateSchema.safeParse(await request.json());
+    const rawText = await request.text();
+    let rawJson: unknown;
+    try {
+      rawJson = JSON.parse(rawText) as unknown;
+    } catch {
+      return NextResponse.json(
+        { success: false, errors: [{ field: "json", message: "JSON inválido." }] },
+        { status: 422 },
+      );
+    }
+    const parsed = paymentCreateSchema.safeParse(rawJson);
     if (!parsed.success) {
       return NextResponse.json(
         {
@@ -40,48 +60,46 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     }
-    const versionSnap = await firestore.collection("contract_versions").doc(parsed.data.contractVersionId).get();
-    if (!versionSnap.exists) {
-      return NextResponse.json(
-        { success: false, errors: [{ field: "contractVersionId", message: "Versión no encontrada." }] },
-        { status: 404 },
-      );
-    }
-    const v = versionSnap.data() as {
-      contractId?: string;
-      contractPayload?: {
-        landlord?: { email?: string };
-        tenant?: { email?: string };
-        solidaryCoDebtor?: { email?: string };
-      };
-    } | undefined;
-    if (v?.contractId !== parsed.data.contractId) {
-      return NextResponse.json(
-        { success: false, errors: [{ field: "contractVersionId", message: "La versión no pertenece al contrato." }] },
-        { status: 422 },
-      );
+
+    const participant = await requireContractParticipant(
+      request,
+      firestore,
+      parsed.data.contractId,
+      { kind: "by_version", contractVersionId: parsed.data.contractVersionId },
+    );
+    if (!participant.ok) {
+      const st = participant.response.status;
+      if (st === 403) {
+        const u = await getAuthenticatedUser(request);
+        await logPaymentAudit("payment_report_blocked_unauthorized", {
+          reason: "not_participant",
+          contractId: parsed.data.contractId,
+          reportedByUserId: u?.uid ?? "",
+          reportedByEmail: u?.email ?? "",
+          ipAddress: ip ?? "",
+          userAgent: userAgent ?? "",
+        });
+      } else if (st === 401) {
+        await logPaymentAudit("payment_report_blocked_unauthorized", {
+          reason: "unauthenticated",
+          contractId: parsed.data.contractId,
+          ipAddress: ip ?? "",
+          userAgent: userAgent ?? "",
+        });
+      }
+      return participant.response;
     }
 
-    const now = new Date().toISOString();
-    auditEvent("payment_report_attempted", {
-      contractId: parsed.data.contractId,
-      contractVersionId: parsed.data.contractVersionId,
-      reportedByRole: parsed.data.reportedByRole,
-      reportedByUserId: parsed.data.reportedByUserId,
-    });
-
-    const reporterValidation = validatePaymentReporter({
-      contractPayload: v?.contractPayload,
-      userEmail: parsed.data.reportedByEmail,
-      reportedByRole: parsed.data.reportedByRole,
-    });
-    if (!reporterValidation.ok) {
-      auditEvent("payment_report_blocked_unauthorized", {
+    if (bodyContainsIgnoredIdentityFields(rawJson)) {
+      await logPaymentAudit("payment_identity_body_ignored", {
         contractId: parsed.data.contractId,
-        reportedByUserId: parsed.data.reportedByUserId,
-        reportedByRole: parsed.data.reportedByRole,
+        contractVersionId: parsed.data.contractVersionId,
+        reportedByUserId: participant.user.uid,
+        reportedByEmail: participant.user.email,
+        ipAddress: ip ?? "",
+        userAgent: userAgent ?? "",
       });
-      return NextResponse.json({ success: false, errors: reporterValidation.errors }, { status: 403 });
+      auditEvent("payment_identity_body_ignored", { contractId: parsed.data.contractId });
     }
 
     const supportValidation = validatePaymentSupportFile({
@@ -89,6 +107,20 @@ export async function POST(request: Request) {
       supportFileType: parsed.data.supportFileType,
       supportFileSize: parsed.data.supportFileSize,
     });
+    if (!supportValidation.isEmpty && !supportValidation.ok) {
+      await logPaymentAudit("payment_support_validation_failed", {
+        contractId: parsed.data.contractId,
+        contractVersionId: parsed.data.contractVersionId,
+        reportedByUserId: participant.user.uid,
+        reportedByEmail: participant.user.email,
+        reportedByRole: participant.role,
+        ipAddress: ip ?? "",
+        userAgent: userAgent ?? "",
+        errors: JSON.stringify(supportValidation.errors),
+      });
+      auditEvent("payment_support_validation_failed", { contractId: parsed.data.contractId });
+      return NextResponse.json({ success: false, errors: supportValidation.errors }, { status: 422 });
+    }
     const hasValidSupport = supportValidation.ok;
     const status = computePaymentStatus({
       dueDate: parsed.data.dueDate,
@@ -102,6 +134,18 @@ export async function POST(request: Request) {
         ? (parsed.data.paidDate ? "pending_support" : "reported_without_support")
         : status;
 
+    const now = new Date().toISOString();
+    await logPaymentAudit("payment_report_attempted", {
+      contractId: parsed.data.contractId,
+      contractVersionId: parsed.data.contractVersionId,
+      reportedByUserId: participant.user.uid,
+      reportedByEmail: participant.user.email,
+      reportedByRole: participant.role,
+      ipAddress: ip ?? "",
+      userAgent: userAgent ?? "",
+    });
+    auditEvent("payment_report_attempted", { contractId: parsed.data.contractId });
+
     const ref = firestore.collection("payments_log").doc();
     const safeFileName = parsed.data.supportFileName
       ? sanitizeSupportFileName(parsed.data.supportFileName)
@@ -110,12 +154,13 @@ export async function POST(request: Request) {
       ? parsed.data.supportFileUrl ?? `mock://payment-support/${ref.id}/${safeFileName}`
       : undefined;
 
-    await ref.set({
+    const row = {
       id: ref.id,
       ...parsed.data,
-      registeredByUserId: parsed.data.reportedByUserId,
-      reportedByUserId: parsed.data.reportedByUserId,
-      reportedByRole: reporterValidation.role,
+      registeredByUserId: participant.user.uid,
+      reportedByUserId: participant.user.uid,
+      reportedByEmail: participant.user.email,
+      reportedByRole: participant.role,
       reportedAt: now,
       paymentStatus: effectiveStatus,
       supportRequired: true,
@@ -127,7 +172,8 @@ export async function POST(request: Request) {
       updatedAt: now,
       createdAtServer: FieldValue.serverTimestamp(),
       updatedAtServer: FieldValue.serverTimestamp(),
-    });
+    };
+    await ref.set(row);
     if (safeFileName && supportFileUrl) {
       await firestore.collection("payment_support_files").doc().set({
         id: `psf_${Date.now()}`,
@@ -136,8 +182,17 @@ export async function POST(request: Request) {
         fileUrl: supportFileUrl,
         fileType: parsed.data.supportFileType ?? "unknown",
         fileSize: parsed.data.supportFileSize ?? 0,
-        uploadedByUserId: parsed.data.reportedByUserId,
+        uploadedByUserId: participant.user.uid,
         uploadedAt: now,
+      });
+      await logPaymentAudit("payment_support_uploaded", {
+        paymentLogId: ref.id,
+        contractId: parsed.data.contractId,
+        reportedByUserId: participant.user.uid,
+        reportedByEmail: participant.user.email,
+        reportedByRole: participant.role,
+        ipAddress: ip ?? "",
+        userAgent: userAgent ?? "",
       });
       auditEvent("payment_support_uploaded", {
         paymentLogId: ref.id,
@@ -153,10 +208,9 @@ export async function POST(request: Request) {
           paymentLogId?: string;
           contractId?: string;
           contractVersionId?: string;
-          dueDate?: string;
         } | undefined;
         if (sp?.contractId === parsed.data.contractId && sp?.contractVersionId === parsed.data.contractVersionId) {
-          if (sp.paymentLogId && sp.paymentLogId !== ref.id && status === "reported_paid") {
+          if (sp.paymentLogId && sp.paymentLogId !== ref.id && effectiveStatus === "reported_paid") {
             return NextResponse.json(
               {
                 success: false,
@@ -178,8 +232,8 @@ export async function POST(request: Request) {
                 : effectiveStatus === "pending_support" || effectiveStatus === "reported_without_support"
                   ? "pending_support"
                   : status === "pending"
-                  ? "pending"
-                  : "reported_paid";
+                    ? "pending"
+                    : "reported_paid";
           await spRef.set(
             {
               paymentLogId: ref.id,
@@ -188,11 +242,13 @@ export async function POST(request: Request) {
             },
             { merge: true },
           );
-          await firestore.collection("audit_logs").add({
-            event: "payment_linked_to_schedule",
+          await logPaymentAudit("payment_linked_to_schedule", {
             scheduledPaymentId: parsed.data.scheduledPaymentId,
             paymentLogId: ref.id,
             at: now,
+            reportedByUserId: participant.user.uid,
+            ipAddress: ip ?? "",
+            userAgent: userAgent ?? "",
           });
           auditEvent("payment_linked_to_schedule", {
             scheduledPaymentId: parsed.data.scheduledPaymentId,
@@ -202,23 +258,46 @@ export async function POST(request: Request) {
       }
     }
     if (effectiveStatus === "pending_support" || effectiveStatus === "reported_without_support") {
+      await logPaymentAudit("payment_reported_without_support", {
+        paymentLogId: ref.id,
+        contractId: parsed.data.contractId,
+        reportedByUserId: participant.user.uid,
+        reportedByEmail: participant.user.email,
+        reportedByRole: participant.role,
+        ipAddress: ip ?? "",
+        userAgent: userAgent ?? "",
+      });
       auditEvent("payment_reported_without_support", {
         paymentLogId: ref.id,
         contractId: parsed.data.contractId,
       });
     } else if (effectiveStatus === "reported_paid" || effectiveStatus === "late" || effectiveStatus === "partial") {
+      await logPaymentAudit("payment_reported_with_support", {
+        paymentLogId: ref.id,
+        contractId: parsed.data.contractId,
+        reportedByUserId: participant.user.uid,
+        reportedByEmail: participant.user.email,
+        reportedByRole: participant.role,
+        ipAddress: ip ?? "",
+        userAgent: userAgent ?? "",
+      });
       auditEvent("payment_reported_with_support", {
         paymentLogId: ref.id,
         contractId: parsed.data.contractId,
       });
     }
+    await logPaymentAudit("payment_status_changed", {
+      paymentLogId: ref.id,
+      from: "new",
+      to: effectiveStatus,
+      reportedByUserId: participant.user.uid,
+    });
     auditEvent("payment_status_changed", { paymentLogId: ref.id, from: "new", to: effectiveStatus });
     auditEvent("payment_log_created", { paymentLogId: ref.id, contractId: parsed.data.contractId });
     return NextResponse.json({
       success: true,
       paymentLogId: ref.id,
       paymentStatus: effectiveStatus,
-      supportValidationErrors: supportValidation.errors,
     });
   } catch {
     return NextResponse.json(
@@ -227,4 +306,3 @@ export async function POST(request: Request) {
     );
   }
 }
-

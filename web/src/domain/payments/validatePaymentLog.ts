@@ -21,9 +21,6 @@ export const paymentCreateSchema = z.object({
   supportFileType: z.string().optional(),
   supportFileSize: z.number().int().positive().optional(),
   scheduledPaymentId: z.string().optional(),
-  reportedByUserId: z.string().min(3),
-  reportedByRole: z.enum(["landlord", "tenant", "solidaryCoDebtor"]),
-  reportedByEmail: z.string().email(),
 });
 
 export const paymentUpdateSchema = z.object({

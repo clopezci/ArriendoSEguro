@@ -83,7 +83,10 @@ export default function PreviewStepPage() {
       const res = await fetch("/api/contracts/preview", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ contractPayload: toContractInput(activeDraft) }),
+        body: JSON.stringify({
+          contractPayload: toContractInput(activeDraft),
+          isDemo: Boolean(activeDraft.isDemo),
+        }),
       });
       const data = (await res.json()) as ContractPreviewResponse;
       if (!res.ok || !data.success) {

@@ -5,6 +5,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
+import { useAuth } from "@/contexts/auth-context";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 
 type ScheduledPayment = {
   id: string;
@@ -21,6 +23,7 @@ type ScheduledPayment = {
 export default function PaymentSchedulePage() {
   const id = String(useParams<{ id: string }>().id);
   const { state } = useDraftGuard(id);
+  const { user } = useAuth();
   const [contractVersionId, setContractVersionId] = useState("");
   const [schedule, setSchedule] = useState<ScheduledPayment[]>([]);
   const [leaseData, setLeaseData] = useState({ monthlyRent: 0, termMonths: 0, startDate: "", paymentDueDay: 1 });
@@ -120,7 +123,7 @@ export default function PaymentSchedulePage() {
   async function updateOne(row: ScheduledPayment, patch: Partial<ScheduledPayment>) {
     const res = await fetch("/api/payments/schedule/update-one", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...(await buildAuthHeaders(user ?? null)) },
       body: JSON.stringify({
         scheduledPaymentId: row.id,
         dueDate: patch.dueDate,

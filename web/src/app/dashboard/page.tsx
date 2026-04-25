@@ -16,6 +16,12 @@ export default function DashboardPage() {
           >
             Ir al módulo contractual
           </Link>
+          <Link
+            href="/dashboard/billing"
+            className="ml-2 rounded-lg border border-violet-400 px-4 py-2 text-sm font-medium text-violet-200 shadow-[0_0_16px_rgba(139,92,246,0.2)]"
+          >
+            Ver facturación
+          </Link>
         </div>
       </div>
     </section>

@@ -33,6 +33,7 @@ export interface PaymentLog {
   supportFileSize?: number;
   supportUploadedAt?: string;
   reportedByUserId?: string;
+  reportedByEmail?: string;
   reportedByRole?: "landlord" | "tenant" | "solidaryCoDebtor";
   reportedAt?: string;
   supportRequired?: boolean;

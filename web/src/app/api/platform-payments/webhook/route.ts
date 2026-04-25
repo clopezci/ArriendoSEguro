@@ -1,0 +1,215 @@
+import { NextResponse } from "next/server";
+import { FieldValue } from "firebase-admin/firestore";
+import { getAdminFirestore } from "@/lib/firebase/admin";
+import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
+import { verifyWompiWebhookSignature } from "@/domain/platform-payments/wompi-signature";
+import { decideWebhookHandling } from "@/domain/platform-payments/webhook-logic";
+
+export const runtime = "nodejs";
+
+export async function POST(request: Request) {
+  const firestore = getAdminFirestore();
+  if (!firestore) {
+    return NextResponse.json(
+      { success: false, errors: [{ field: "server", message: "Firestore/Firebase Admin no configurado." }] },
+      { status: 503 },
+    );
+  }
+
+  const rawBody = await request.text();
+  let event: {
+    event?: string;
+    data?: {
+      transaction?: {
+        id?: string;
+        status?: string;
+        amount_in_cents?: number;
+        currency?: string;
+        reference?: string;
+        payment_method_type?: string;
+      };
+    };
+    signature?: { checksum?: string; properties?: string[] };
+  };
+  try {
+    event = JSON.parse(rawBody) as {
+      event?: string;
+      data?: {
+        transaction?: {
+          id?: string;
+          status?: string;
+          amount_in_cents?: number;
+          currency?: string;
+          reference?: string;
+          payment_method_type?: string;
+        };
+      };
+      signature?: { checksum?: string; properties?: string[] };
+    };
+  } catch {
+    return NextResponse.json(
+      { success: false, errors: [{ field: "payload", message: "Webhook body inválido." }] },
+      { status: 422 },
+    );
+  }
+
+  const sig = verifyWompiWebhookSignature(event, request.headers);
+  const validSignature = sig.valid;
+  await auditPlatformPaymentEvent(firestore, "platform_payment_webhook_received", {
+    validSignature,
+  });
+  if (!validSignature) {
+    await auditPlatformPaymentEvent(firestore, "platform_payment_webhook_invalid_signature", {});
+    return NextResponse.json({ success: false, errors: [{ field: "signature", message: "Firma webhook inválida." }] }, { status: 401 });
+  }
+
+  try {
+    const tx = event.data?.transaction;
+    const providerReference = tx?.reference ?? "";
+    const amount = Math.floor((tx?.amount_in_cents ?? 0) / 100);
+    const currency = tx?.currency ?? "";
+    const providerPaymentId = tx?.id ?? "";
+
+    const orderSnap = await firestore
+      .collection("platform_orders")
+      .where("providerReference", "==", providerReference)
+      .limit(1)
+      .get();
+    const orderDoc = orderSnap.docs[0];
+    const order = (orderDoc?.data() as {
+      id: string;
+      userId: string;
+      userEmail: string;
+      leaseProcessId?: string | null;
+      status: string;
+      planCode?: string;
+    }) ?? {
+      id: "",
+      userId: "",
+      userEmail: "",
+      status: "",
+      planCode: undefined,
+    };
+
+    const duplicatePayment = orderDoc
+      ? await firestore
+          .collection("platform_payments")
+          .where("orderId", "==", order.id)
+          .where("providerPaymentId", "==", providerPaymentId)
+          .limit(1)
+          .get()
+      : null;
+    const decision = decideWebhookHandling({
+      eventName: event.event,
+      amount,
+      currency,
+      providerReference,
+      orderFound: Boolean(orderDoc),
+      orderPlanCode: order?.planCode,
+      orderStatus: order?.status,
+      duplicatePayment: Boolean(duplicatePayment && !duplicatePayment.empty),
+      transactionStatus: tx?.status,
+    });
+    if (decision.kind === "ignore") {
+      return NextResponse.json({ success: true, ignored: decision.reason });
+    }
+    if (decision.kind === "reject") {
+      if (decision.auditEvent) {
+        await auditPlatformPaymentEvent(firestore, decision.auditEvent, {
+          providerReference,
+          amount,
+          currency,
+        });
+      }
+      const statusCode = decision.field === "order" ? 404 : 422;
+      return NextResponse.json(
+        { success: false, errors: [{ field: decision.field, message: decision.message }] },
+        { status: statusCode },
+      );
+    }
+    if (!orderDoc) {
+      return NextResponse.json({ success: false, errors: [{ field: "order", message: "Orden no encontrada para referencia." }] }, { status: 404 });
+    }
+    const now = new Date().toISOString();
+    if (decision.kind === "duplicate") {
+      await auditPlatformPaymentEvent(firestore, "platform_payment_webhook_duplicate_ignored", {
+        orderId: order.id,
+        providerPaymentId,
+      });
+      return NextResponse.json({ success: true, duplicated: true });
+    }
+    if (decision.kind === "approve") {
+      const duplicatePayment = await firestore
+        .collection("platform_payments")
+        .where("orderId", "==", order.id)
+        .where("providerPaymentId", "==", providerPaymentId)
+        .limit(1)
+        .get();
+      if (!duplicatePayment.empty) return NextResponse.json({ success: true, duplicated: true });
+
+      await orderDoc.ref.set(
+        { status: "approved", updatedAt: now, updatedAtServer: FieldValue.serverTimestamp() },
+        { merge: true },
+      );
+      const payRef = firestore.collection("platform_payments").doc();
+      await payRef.set({
+        id: payRef.id,
+        orderId: order.id,
+        userId: order.userId,
+        userEmail: order.userEmail,
+        provider: "wompi",
+        providerPaymentId: providerPaymentId || payRef.id,
+        amount,
+        currency: "COP",
+        status: tx?.status ?? "APPROVED",
+        paymentMethod: tx?.payment_method_type ?? "unknown",
+        rawProviderResponse: JSON.stringify(event),
+        approvedAt: now,
+        createdAt: now,
+        createdAtServer: FieldValue.serverTimestamp(),
+      });
+      const entitlementRef = firestore.collection("access_entitlements").doc();
+      await entitlementRef.set({
+        id: entitlementRef.id,
+        userId: order.userId,
+        userEmail: order.userEmail,
+        leaseProcessId: order.leaseProcessId ?? null,
+        planCode: "plus",
+        accessType: "plus_paid",
+        status: "active",
+        maxContractsAllowed: 1,
+        contractsUsed: 0,
+        validUntil: null,
+        createdAt: now,
+        updatedAt: now,
+        createdAtServer: FieldValue.serverTimestamp(),
+        updatedAtServer: FieldValue.serverTimestamp(),
+      });
+      await auditPlatformPaymentEvent(firestore, "platform_payment_approved", {
+        orderId: order.id,
+        paymentId: payRef.id,
+        providerPaymentId,
+      });
+      await auditPlatformPaymentEvent(firestore, "access_entitlement_created", {
+        entitlementId: entitlementRef.id,
+        orderId: order.id,
+      });
+      return NextResponse.json({ success: true, status: "approved" });
+    }
+    const mappedOrderStatus = decision.status;
+    await orderDoc.ref.set(
+      { status: mappedOrderStatus, updatedAt: now, updatedAtServer: FieldValue.serverTimestamp() },
+      { merge: true },
+    );
+    if (mappedOrderStatus === "rejected") {
+      await auditPlatformPaymentEvent(firestore, "platform_payment_rejected", { orderId: order.id });
+    }
+    return NextResponse.json({ success: true, status: mappedOrderStatus });
+  } catch {
+    return NextResponse.json(
+      { success: false, errors: [{ field: "server", message: "No se pudo procesar webhook Wompi." }] },
+      { status: 500 },
+    );
+  }
+}
+

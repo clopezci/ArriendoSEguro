@@ -87,18 +87,18 @@ export function AccessBlocked({
       <h2 className="text-xl font-semibold text-amber-200">Acceso bloqueado</h2>
       <p className="mt-2 text-amber-100/90">{message}</p>
       <div className="mt-4 flex flex-wrap justify-center gap-3">
-        <button
-          type="button"
+        <Link
+          href="/dashboard/billing"
           className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_18px_rgba(139,92,246,0.35)]"
         >
-          Ir a pago (próximamente)
-        </button>
-        <button
-          type="button"
+          Activar Plan Plus
+        </Link>
+        <Link
+          href="/dashboard/contracts/access-blocked"
           className="rounded-lg border border-violet-400 px-4 py-2 text-sm font-medium text-violet-200"
         >
-          Solicitar demo (próximamente)
-        </button>
+          Probar demo
+        </Link>
       </div>
     </div>
   );

@@ -5,6 +5,13 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { renderPaymentLogAnnex } from "@/domain/payments/renderPaymentLogAnnex";
 import type { PaymentLog } from "@/domain/payments/types";
 import { auditEvent } from "@/features/contracts/audit";
+import {
+  getAuthenticatedUser,
+  requestClientIp,
+  requestUserAgent,
+  requireContractParticipant,
+} from "@/lib/auth/serverAuth";
+import { logPaymentAudit } from "@/features/payments/paymentAuditLog";
 
 export const runtime = "nodejs";
 
@@ -14,6 +21,8 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  const ip = requestClientIp(request);
+  const userAgent = requestUserAgent(request);
   try {
     const parsed = schema.safeParse(await request.json());
     if (!parsed.success) {
@@ -21,6 +30,36 @@ export async function POST(request: Request) {
     }
     const firestore = getAdminFirestore();
     if (!firestore) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });
+
+    const participant = await requireContractParticipant(
+      request,
+      firestore,
+      parsed.data.contractId,
+      { kind: "by_version", contractVersionId: parsed.data.contractVersionId },
+    );
+    if (!participant.ok) {
+      if (participant.response.status === 403) {
+        const u = await getAuthenticatedUser(request);
+        await logPaymentAudit("payment_report_blocked_unauthorized", {
+          reason: "not_participant",
+          contractId: parsed.data.contractId,
+          action: "generate_annex",
+          reportedByUserId: u?.uid ?? "",
+          reportedByEmail: u?.email ?? "",
+          ipAddress: ip ?? "",
+          userAgent: userAgent ?? "",
+        });
+      } else if (participant.response.status === 401) {
+        await logPaymentAudit("payment_report_blocked_unauthorized", {
+          reason: "unauthenticated",
+          contractId: parsed.data.contractId,
+          action: "generate_annex",
+          ipAddress: ip ?? "",
+          userAgent: userAgent ?? "",
+        });
+      }
+      return participant.response;
+    }
 
     const versionSnap = await firestore.collection("contract_versions").doc(parsed.data.contractVersionId).get();
     if (!versionSnap.exists) {
@@ -72,6 +111,15 @@ export async function POST(request: Request) {
       },
       { merge: true },
     );
+    await logPaymentAudit("payment_log_annex_generated", {
+      contractId: parsed.data.contractId,
+      contractVersionId: parsed.data.contractVersionId,
+      reportedByUserId: participant.user.uid,
+      reportedByEmail: participant.user.email,
+      reportedByRole: participant.role,
+      ipAddress: ip ?? "",
+      userAgent: userAgent ?? "",
+    });
     auditEvent("payment_log_annex_generated", { contractId: parsed.data.contractId });
     return NextResponse.json({ success: true, documentHash: rendered.hash });
   } catch {

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { useAuth } from "@/contexts/auth-context";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 
 export default function NewPaymentPage() {
   const id = String(useParams<{ id: string }>().id);
@@ -23,7 +24,6 @@ export default function NewPaymentPage() {
   const [supportFileName, setSupportFileName] = useState("");
   const [supportFileType, setSupportFileType] = useState("");
   const [supportFileSize, setSupportFileSize] = useState(0);
-  const [reportedByRole, setReportedByRole] = useState<"landlord" | "tenant" | "solidaryCoDebtor">("tenant");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -50,7 +50,10 @@ export default function NewPaymentPage() {
     try {
       const res = await fetch("/api/payments/create", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          ...(await buildAuthHeaders(user ?? null)),
+        },
         body: JSON.stringify({
           leaseProcessId: id,
           contractId: id,
@@ -67,9 +70,6 @@ export default function NewPaymentPage() {
           supportFileSize: supportFileSize || undefined,
           notes,
           scheduledPaymentId: scheduledPaymentId || undefined,
-          reportedByUserId: user?.uid ?? "unknown_user",
-          reportedByEmail: user?.email ?? "",
-          reportedByRole,
         }),
       });
       const data = await res.json();
@@ -102,14 +102,6 @@ export default function NewPaymentPage() {
         </label>
         <Input label="Soporte de pago (URL opcional)" value={supportFileUrl} onChange={setSupportFileUrl} placeholder="https://..." />
         <label className="text-xs text-slate-300">
-          Rol que reporta
-          <select className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm" value={reportedByRole} onChange={(e) => setReportedByRole(e.target.value as "landlord" | "tenant" | "solidaryCoDebtor")}>
-            <option value="tenant">tenant</option>
-            <option value="landlord">landlord</option>
-            <option value="solidaryCoDebtor">solidaryCoDebtor</option>
-          </select>
-        </label>
-        <label className="text-xs text-slate-300">
           Soporte de pago (archivo)
           <input
             type="file"
@@ -125,7 +117,7 @@ export default function NewPaymentPage() {
         </label>
       </div>
       <p className="mt-2 rounded border border-slate-700 bg-slate-900/70 p-3 text-xs text-slate-300">
-        Para marcar este pago como realizado debes adjuntar un soporte valido. Arriendo Seguro no recauda dinero ni verifica automaticamente con bancos; el soporte ayuda a dejar evidencia documental del pago.
+        Para marcar este pago como realizado debes adjuntar un soporte válido. Arriendo Seguro no recauda dinero ni verifica automáticamente con bancos; el soporte ayuda a dejar evidencia documental del pago. Tu rol (arrendador, arrendatario o codeudor) lo determina el sistema según tu usuario y el contrato.
       </p>
       <label className="mt-3 block text-xs text-slate-300">
         Observaciones

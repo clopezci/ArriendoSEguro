@@ -2,34 +2,66 @@
 
 import { useAuth } from "@/contexts/auth-context";
 import {
-  canCreateContract,
   createContractDraft,
-  getUserAccessStatus,
 } from "@/features/contracts/wizard-state";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 
 export default function NewContractPage() {
   const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) {
-      router.replace("/ingresar?redirect=/dashboard/contracts/new");
-      return;
-    }
-    const access = getUserAccessStatus(user.uid);
-    const gate = canCreateContract(user, access);
-    if (!gate.allowed) {
-      router.replace("/dashboard/contracts");
-      return;
-    }
-    const draft = createContractDraft({
-      userId: user.uid,
-      accessStatus: access,
-      isDemo: access === "demo",
-    });
-    router.replace(`/dashboard/contracts/${draft.id}/landlord`);
+    const run = async () => {
+      if (!user) {
+        router.replace("/ingresar?redirect=/dashboard/contracts/new");
+        return;
+      }
+      const accessRes = await fetch("/api/access/entitlements/me", {
+        headers: { ...(await buildAuthHeaders(user)) },
+      });
+      const accessData = (await accessRes.json()) as {
+        success?: boolean;
+        plusActive?: boolean;
+        demoActive?: boolean;
+      };
+      if (!accessRes.ok || !accessData.success) {
+        router.replace("/dashboard/contracts/access-blocked");
+        return;
+      }
+
+      if (accessData.plusActive) {
+        const consume = await fetch("/api/access/contracts/consume-plus", {
+          method: "POST",
+          headers: { ...(await buildAuthHeaders(user)) },
+        });
+        const consumeData = (await consume.json()) as { success?: boolean };
+        if (!consume.ok || !consumeData.success) {
+          router.replace("/dashboard/contracts/access-blocked");
+          return;
+        }
+        const realDraft = createContractDraft({
+          userId: user.uid,
+          accessStatus: "paid",
+          isDemo: false,
+        });
+        router.replace(`/dashboard/contracts/${realDraft.id}/landlord`);
+        return;
+      }
+
+      if (accessData.demoActive) {
+        const demoDraft = createContractDraft({
+          userId: user.uid,
+          accessStatus: "demo",
+          isDemo: true,
+        });
+        router.replace(`/dashboard/contracts/${demoDraft.id}/landlord`);
+        return;
+      }
+      router.replace("/dashboard/contracts/access-blocked");
+    };
+    void run();
   }, [user, router]);
 
   return <p className="text-sm text-slate-300">Creando expediente…</p>;

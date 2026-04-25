@@ -1,7 +1,13 @@
 import { getApps, initializeApp, cert, type App } from "firebase-admin/app";
+import { getAuth, type Auth } from "firebase-admin/auth";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+
+declare global {
+  var __TEST_FIRESTORE__: Firestore | undefined;
+  var __TEST_ADMIN_AUTH__: Auth | undefined;
+}
 
 let adminApp: App | null = null;
 
@@ -54,7 +60,15 @@ function initAdmin(): App | null {
 }
 
 export function getAdminFirestore(): Firestore | null {
+  if (globalThis.__TEST_FIRESTORE__) return globalThis.__TEST_FIRESTORE__;
   const app = initAdmin();
   if (!app) return null;
   return getFirestore(app);
+}
+
+export function getAdminAuth(): Auth | null {
+  if (globalThis.__TEST_ADMIN_AUTH__) return globalThis.__TEST_ADMIN_AUTH__;
+  const app = initAdmin();
+  if (!app) return null;
+  return getAuth(app);
 }

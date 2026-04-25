@@ -9,33 +9,50 @@ export function validatePaymentSupportFile(input: {
 }): {
   ok: boolean;
   supportValidationStatus: "pending" | "valid" | "invalid";
+  isEmpty: boolean;
   errors: Array<{ field: string; message: string }>;
 } {
   const fileName = (input.supportFileName ?? "").trim();
+  const hasSize = typeof input.supportFileSize === "number" && input.supportFileSize > 0;
+  if (!fileName && !hasSize) {
+    return { ok: false, supportValidationStatus: "pending", isEmpty: true, errors: [] };
+  }
   if (!fileName) {
-    return { ok: false, supportValidationStatus: "pending", errors: [{ field: "support", message: "Debes adjuntar soporte para marcar pago reportado." }] };
+    return {
+      ok: false,
+      supportValidationStatus: "invalid",
+      isEmpty: false,
+      errors: [{ field: "supportFileName", message: "Indica el nombre del archivo de soporte." }],
+    };
   }
   const extension = fileName.includes(".") ? fileName.split(".").pop()?.toLowerCase() ?? "" : "";
   if (!extension || BLOCKED_EXTENSIONS.has(extension) || !ALLOWED_EXTENSIONS.has(extension)) {
     return {
       ok: false,
       supportValidationStatus: "invalid",
+      isEmpty: false,
       errors: [{ field: "supportFileName", message: "El soporte debe ser PDF, JPG, JPEG, PNG o WEBP." }],
     };
   }
   if (typeof input.supportFileSize !== "number" || input.supportFileSize <= 0) {
-    return { ok: false, supportValidationStatus: "invalid", errors: [{ field: "supportFileSize", message: "Tamaño de soporte inválido." }] };
+    return {
+      ok: false,
+      supportValidationStatus: "invalid",
+      isEmpty: false,
+      errors: [{ field: "supportFileSize", message: "Tamaño de soporte inválido." }],
+    };
   }
   if (input.supportFileSize > MAX_SUPPORT_FILE_SIZE_BYTES) {
     return {
       ok: false,
       supportValidationStatus: "invalid",
+      isEmpty: false,
       errors: [{ field: "supportFileSize", message: "El soporte supera 5 MB." }],
     };
   }
   // TODO: validar contenido binario real y magic numbers cuando exista upload backend real.
   void input.supportFileType;
-  return { ok: true, supportValidationStatus: "valid", errors: [] };
+  return { ok: true, supportValidationStatus: "valid", isEmpty: false, errors: [] };
 }
 
 export function sanitizeSupportFileName(fileName: string): string {
