@@ -20,6 +20,12 @@ export default function Home() {
             >
               Ir al menú inicio
             </Link>
+            <Link
+              href="/entiendelo-facil"
+              className="shrink-0 rounded-lg border border-violet-500 px-3 py-1.5 text-sm font-medium text-violet-200 shadow-[0_0_14px_rgba(139,92,246,0.35)] transition hover:bg-violet-900/30"
+            >
+              ¿Primera vez arrendando? Entiéndelo fácil
+            </Link>
             <a
               href="#interes"
               className="shrink-0 rounded-lg border border-violet-500 px-3 py-1.5 text-sm font-medium text-violet-200 shadow-[0_0_18px_rgba(139,92,246,0.35)] transition hover:bg-violet-900/30"
@@ -67,6 +73,12 @@ export default function Home() {
               >
                 Conocer más
               </Link>
+              <Link
+                href="/entiendelo-facil"
+                className="rounded-lg border border-violet-500 px-5 py-2.5 text-sm font-medium text-violet-200 shadow-[0_0_14px_rgba(139,92,246,0.35)] transition hover:bg-violet-900/30"
+              >
+                ¿Primera vez arrendando? Entiéndelo fácil
+              </Link>
             </div>
           </div>
         </section>
@@ -107,7 +119,7 @@ export default function Home() {
           <p className="mt-2 max-w-2xl text-slate-300">
             Responde esta encuesta y ayúdanos a simplificar el arriendo para todos.
           </p>
-          <LeadMarketForm />
+          <LeadMarketForm sourcePage="landing" />
         </section>
       </main>
     </div>

@@ -82,6 +82,7 @@ export async function POST(request: Request) {
   const data = parsed.data;
   const email =
     data.email.trim() === "" ? null : data.email.trim().toLowerCase();
+  const userAgent = request.headers.get("user-agent");
 
   const firestore = getAdminFirestore();
   if (!firestore) {
@@ -111,17 +112,19 @@ export async function POST(request: Request) {
   }
 
   const ref = await firestore.collection("lead_forms").add({
-    q1: data.q1PropertySituation,
-    q2: data.q2RentalChannel,
-    q3: data.q3MainConcern,
-    q4: data.q4LowCostApp,
+    propertyStatusAnswer: data.q1PropertySituation,
+    rentalChannelAnswer: data.q2RentalChannel,
+    mainConcernAnswer: data.q3MainConcern,
+    appInterestAnswer: data.q4LowCostApp,
     q4NoReason: data.q4NoReason ?? null,
     q4NoReasonOther: data.q4NoReasonOther?.trim() || null,
-    q5: data.q5WillingToPay,
-    q6: data.q6ValuedModule,
+    willingnessToPayAnswer: data.q5WillingToPay,
+    mostValuableModuleAnswer: data.q6ValuedModule,
+    mostValuableModuleOther: data.q6Other?.trim() || null,
     email,
     contactConsent: data.contactConsent ?? false,
-    source: "landing",
+    sourcePage: data.sourcePage,
+    userAgent: userAgent ?? null,
     createdAt: FieldValue.serverTimestamp(),
   });
 

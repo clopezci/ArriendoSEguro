@@ -1,0 +1,104 @@
+import type { PersonParty, ResidentialLeaseContractInput, ValidationIssue, ValidationResult } from "./types";
+
+function isBlank(value: unknown): boolean {
+  return typeof value !== "string" || value.trim() === "";
+}
+
+function validateParty(prefix: string, party: PersonParty, issues: ValidationIssue[]) {
+  if (isBlank(party.fullName)) issues.push({ field: `${prefix}.fullName`, message: "Nombre completo requerido." });
+  if (isBlank(party.documentType)) issues.push({ field: `${prefix}.documentType`, message: "Tipo de documento requerido." });
+  if (isBlank(party.documentNumber)) issues.push({ field: `${prefix}.documentNumber`, message: "Número de documento requerido." });
+  if (isBlank(party.city)) issues.push({ field: `${prefix}.city`, message: "Ciudad requerida." });
+  if (isBlank(party.email)) issues.push({ field: `${prefix}.email`, message: "Correo requerido." });
+  if (isBlank(party.phone)) issues.push({ field: `${prefix}.phone`, message: "Teléfono requerido." });
+  if (isBlank(party.notificationAddress)) {
+    issues.push({ field: `${prefix}.notificationAddress`, message: "Dirección de notificación requerida." });
+  }
+}
+
+export function validateContractData(input: ResidentialLeaseContractInput): ValidationResult {
+  const issues: ValidationIssue[] = [];
+
+  validateParty("landlord", input.landlord, issues);
+  validateParty("tenant", input.tenant, issues);
+
+  if (input.hasSolidaryCoDebtor) {
+    if (!input.solidaryCoDebtor) {
+      issues.push({
+        field: "solidaryCoDebtor",
+        message: "Si hay codeudor solidario, se deben informar sus datos.",
+      });
+    } else {
+      validateParty("solidaryCoDebtor", input.solidaryCoDebtor, issues);
+    }
+  }
+
+  if (isBlank(input.property.address)) issues.push({ field: "property.address", message: "Dirección del inmueble requerida." });
+  if (isBlank(input.property.city)) issues.push({ field: "property.city", message: "Ciudad del inmueble requerida." });
+  if (isBlank(input.property.department)) issues.push({ field: "property.department", message: "Departamento requerido." });
+  if (isBlank(input.property.type)) issues.push({ field: "property.type", message: "Tipo de inmueble requerido." });
+  if (isBlank(input.property.registryNumber)) {
+    issues.push({ field: "property.registryNumber", message: "Matrícula/registro del inmueble requerido." });
+  }
+  if (input.property.commercialValue <= 0) {
+    issues.push({ field: "property.commercialValue", message: "Valor comercial inválido." });
+  }
+  if (input.property.legalRentCap <= 0) {
+    issues.push({ field: "property.legalRentCap", message: "Tope legal de canon inválido." });
+  }
+
+  if (input.lease.monthlyRent <= 0) issues.push({ field: "lease.monthlyRent", message: "Canon mensual inválido." });
+  if (isBlank(input.lease.monthlyRentText)) {
+    issues.push({ field: "lease.monthlyRentText", message: "Canon mensual en letras requerido." });
+  }
+  if (input.lease.paymentDueDay < 1 || input.lease.paymentDueDay > 31) {
+    issues.push({ field: "lease.paymentDueDay", message: "Día de pago inválido (1-31)." });
+  }
+  if (isBlank(input.lease.paymentMethod)) {
+    issues.push({ field: "lease.paymentMethod", message: "Método de pago requerido." });
+  }
+  if (isBlank(input.lease.startDate)) issues.push({ field: "lease.startDate", message: "Fecha de inicio requerida." });
+  if (isBlank(input.lease.endDate)) issues.push({ field: "lease.endDate", message: "Fecha de fin requerida." });
+  if (input.lease.termMonths <= 0) issues.push({ field: "lease.termMonths", message: "Duración en meses inválida." });
+  if (input.lease.latePaymentMonthsThreshold <= 0) {
+    issues.push({
+      field: "lease.latePaymentMonthsThreshold",
+      message: "Umbral de meses de mora inválido.",
+    });
+  }
+
+  if (isBlank(input.utilities.responsibleParty)) {
+    issues.push({ field: "utilities.responsibleParty", message: "Debe definirse responsable de servicios públicos." });
+  }
+  if (isBlank(input.utilities.details)) {
+    issues.push({ field: "utilities.details", message: "Debe describirse el detalle de servicios públicos." });
+  }
+  if (isBlank(input.utilities.adminFeesDetails)) {
+    issues.push({ field: "utilities.adminFeesDetails", message: "Debe definirse detalle de administración/expensas." });
+  }
+
+  if (input.lease.monthlyRent > input.property.legalRentCap) {
+    issues.push({
+      field: "lease.monthlyRent",
+      message: "El canon mensual supera el tope legal permitido para este inmueble.",
+    });
+  }
+
+  if ((input.securityDepositAmount ?? 0) > 0) {
+    issues.push({
+      field: "securityDepositAmount",
+      message: "No se permite depósito en dinero para vivienda urbana en este flujo.",
+    });
+  }
+
+  // Cláusulas obligatorias de cumplimiento mínimo (MVP):
+  if (isBlank(input.contractVersion)) {
+    issues.push({ field: "contractVersion", message: "Versión de contrato requerida." });
+  }
+  if (isBlank(input.generatedAt)) {
+    issues.push({ field: "generatedAt", message: "Fecha de generación requerida." });
+  }
+
+  return { ok: issues.length === 0, issues };
+}
+

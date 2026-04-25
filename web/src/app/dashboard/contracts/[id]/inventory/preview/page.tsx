@@ -1,0 +1,60 @@
+"use client";
+
+import Link from "next/link";
+import { useParams, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { WizardShell } from "@/components/contracts/wizard-shell";
+import { useDraftGuard } from "@/components/contracts/draft-tools";
+
+export default function InventoryPreviewPage() {
+  const id = String(useParams<{ id: string }>().id);
+  const qs = useSearchParams();
+  const inventoryId = qs.get("inventoryId") ?? "";
+  const { state } = useDraftGuard(id);
+  const [html, setHtml] = useState("");
+  const [hash, setHash] = useState("");
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const run = async () => {
+      if (!inventoryId) return;
+      const res = await fetch(`/api/inventory/detail?inventoryId=${encodeURIComponent(inventoryId)}`);
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data?.errors?.[0]?.message ?? "No se pudo cargar inventario.");
+        return;
+      }
+      setHtml(data.inventory?.generatedHtml ?? "");
+      setHash(data.inventory?.documentHash ?? "");
+      setPdfUrl(data.inventory?.generatedPdfUrl ?? "");
+    };
+    void run();
+  }, [inventoryId]);
+
+  if (state !== "ready") return <p className="text-sm text-slate-300">Cargando...</p>;
+  return (
+    <WizardShell title="Reporte de inventario inicial del inmueble" currentStep={9} contractId={id}>
+      {error && <p className="mb-3 text-sm text-rose-300">{error}</p>}
+      {!html ? (
+        <p className="text-sm text-slate-300">El inventario aún no está completado.</p>
+      ) : (
+        <>
+          <div className="max-h-[70vh] overflow-auto rounded-lg border border-slate-700 bg-white p-4 text-slate-900">
+            <div dangerouslySetInnerHTML={{ __html: html }} />
+          </div>
+          <p className="mt-2 text-xs text-slate-400">Hash inventario: {hash}</p>
+        </>
+      )}
+      <div className="mt-4 flex gap-3">
+        <Link href={`/dashboard/contracts/${id}/inventory`} className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-200">Volver</Link>
+        {pdfUrl && (
+          <a href={pdfUrl} target="_blank" rel="noreferrer" className="rounded border border-emerald-600 px-3 py-2 text-sm text-emerald-200">
+            Descargar PDF
+          </a>
+        )}
+      </div>
+    </WizardShell>
+  );
+}
+

@@ -6,6 +6,7 @@ export const leadFormSchema = z.object({
     "yes_rented_before",
     "yes_first_time",
     "evaluating",
+    "no_property",
   ]),
   q2RentalChannel: z.enum([
     "agency",
@@ -18,6 +19,7 @@ export const leadFormSchema = z.object({
     "counterparty_validation",
     "payment_risk",
     "delivery_state",
+    "conflict_resolution",
     "all",
   ]),
   q4LowCostApp: z.enum(["yes", "maybe", "no"]),
@@ -26,18 +28,22 @@ export const leadFormSchema = z.object({
     .optional(),
   q4NoReasonOther: z.string().trim().max(280).optional(),
   q5WillingToPay: z.enum([
-    "range_20_40",
-    "range_40_60",
-    "range_60_80",
+    "under_50",
+    "range_50_70",
+    "range_70_100",
+    "would_not_pay",
   ]),
   q6ValuedModule: z.enum([
-    "contract",
+    "guided_contract",
     "signature",
     "inventory",
     "payments",
     "evaluation",
     "integrated",
+    "other",
   ]),
+  q6Other: z.string().trim().max(280).optional(),
+  sourcePage: z.enum(["landing", "entiendelo-facil"]).default("landing"),
   email: z.preprocess(
     (v) => {
       if (typeof v !== "string") return "";
@@ -70,6 +76,16 @@ export const leadFormSchema = z.object({
         code: z.ZodIssueCode.custom,
         path: ["q4NoReasonOther"],
         message: "Cuéntanos brevemente el motivo",
+      });
+    }
+  }
+  if (data.q6ValuedModule === "other") {
+    const text = data.q6Other?.trim() ?? "";
+    if (text.length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["q6Other"],
+        message: "Escribe qué debería contener la aplicación",
       });
     }
   }
