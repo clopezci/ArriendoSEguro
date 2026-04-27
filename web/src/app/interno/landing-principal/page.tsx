@@ -207,7 +207,7 @@ export default function LandingPrincipalInterna() {
                 <li>No genera contratos reales.</li>
               </ul>
               <Link
-                href="/dashboard/billing"
+                href="/dashboard/plans"
                 className="mt-3 inline-flex rounded bg-violet-600 px-3 py-2 text-sm text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] transition hover:bg-violet-500"
               >
                 Probar demo
@@ -269,7 +269,7 @@ export default function LandingPrincipalInterna() {
               Responder encuesta
             </a>
             <Link
-              href="/dashboard/billing"
+              href="/dashboard/plans"
               className="rounded-lg border border-slate-700 px-5 py-2.5 text-sm font-medium text-slate-200 shadow-[0_0_0_1px_rgba(139,92,246,0.28)] transition hover:border-sky-500 hover:text-sky-300"
             >
               Probar demo

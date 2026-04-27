@@ -35,7 +35,14 @@ export default function UtilitiesStepPage() {
 
   return (
     <WizardShell title="Servicios públicos y administración" currentStep={7} contractId={id}>
-      <form id="wizard-form" action={onSubmit} className="space-y-3">
+      <form
+        id="wizard-form"
+        className="space-y-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(new FormData(e.currentTarget));
+        }}
+      >
         <label className="text-sm">
           <span className="mb-1 block text-slate-300">Responsable principal</span>
           <select
@@ -62,6 +69,7 @@ export default function UtilitiesStepPage() {
       </form>
       <StepNav
         backHref={`/dashboard/contracts/${id}/terms`}
+        backLabel="Anterior"
         nextHref={`/dashboard/contracts/${id}/review`}
       />
     </WizardShell>

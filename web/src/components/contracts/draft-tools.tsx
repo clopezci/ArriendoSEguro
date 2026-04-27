@@ -26,7 +26,7 @@ export function useDraftGuard(id: string) {
     const access = getUserAccessStatus(user.uid);
     const gate = canCreateContract(user, access);
     if (!gate.allowed) {
-      router.replace("/dashboard/contracts");
+      router.replace("/dashboard/leases");
       return;
     }
     const found = getDraft(id);
@@ -43,10 +43,12 @@ export function useDraftGuard(id: string) {
 
 export function StepNav({
   backHref,
+  backLabel = "Anterior",
   nextHref,
   nextLabel = "Guardar y continuar",
 }: {
   backHref?: string;
+  backLabel?: string;
   nextHref?: string;
   nextLabel?: string;
 }) {
@@ -57,7 +59,7 @@ export function StepNav({
           href={backHref}
           className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-violet-400"
         >
-          Volver
+          {backLabel}
         </Link>
       )}
       {nextHref && (

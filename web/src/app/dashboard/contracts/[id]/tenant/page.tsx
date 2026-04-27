@@ -1,7 +1,12 @@
 "use client";
 
+import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import {
+  formatColombianNotificationAddress,
+  parseNotificationAddressFromForm,
+} from "@/domain/colombia/structured-address";
 import { appendAudit, tenantSchema, updateDraft } from "@/features/contracts/wizard-state";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -15,6 +20,13 @@ export default function TenantStepPage() {
   if (state !== "ready" || !draft) return <p className="text-sm text-slate-300">Cargando…</p>;
 
   function onSubmit(formData: FormData) {
+    const addrParsed = parseNotificationAddressFromForm(formData);
+    if (!addrParsed.success) {
+      setError(addrParsed.error.issues[0]?.message ?? "Revisá la dirección de notificación.");
+      return;
+    }
+    const notificationAddress = formatColombianNotificationAddress(addrParsed.data);
+
     const parsed = tenantSchema.safeParse({
       fullName: String(formData.get("fullName") ?? ""),
       documentType: String(formData.get("documentType") ?? ""),
@@ -22,15 +34,24 @@ export default function TenantStepPage() {
       city: String(formData.get("city") ?? ""),
       email: String(formData.get("email") ?? ""),
       phone: String(formData.get("phone") ?? ""),
-      notificationAddress: String(formData.get("notificationAddress") ?? ""),
+      notificationAddress,
     });
+
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Revisa los datos del arrendatario.");
       return;
     }
+
     updateDraft(id, (d) =>
       appendAudit(
-        { ...d, tenant: parsed.data, status: "data_in_progress" },
+        {
+          ...d,
+          tenant: {
+            ...parsed.data,
+            notificationAddressParts: addrParsed.data,
+          },
+          status: "data_in_progress",
+        },
         "tenant_data_saved",
       ),
     );
@@ -39,51 +60,27 @@ export default function TenantStepPage() {
 
   return (
     <WizardShell title="Datos del arrendatario" currentStep={3} contractId={id}>
-      <form id="wizard-form" action={onSubmit} className="grid gap-3 sm:grid-cols-2">
-        <Input name="fullName" label="Nombre completo" defaultValue={draft.tenant.fullName} />
-        <Input name="documentType" label="Tipo de documento" defaultValue={draft.tenant.documentType} />
-        <Input name="documentNumber" label="Número de documento" defaultValue={draft.tenant.documentNumber} />
-        <Input name="city" label="Ciudad" defaultValue={draft.tenant.city} />
-        <Input name="email" label="Correo" type="email" defaultValue={draft.tenant.email} />
-        <Input name="phone" label="Teléfono" defaultValue={draft.tenant.phone} />
-        <div className="sm:col-span-2">
-          <Input
-            name="notificationAddress"
-            label="Dirección de notificación"
-            defaultValue={draft.tenant.notificationAddress}
-          />
-        </div>
+      <form
+        id="wizard-form"
+        className="grid gap-3 sm:grid-cols-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(new FormData(e.currentTarget));
+        }}
+      >
+        <PartyDataFields
+          party={draft.tenant}
+          legacyFreeTextAddressMessage={
+            !!draft.tenant.notificationAddress && !draft.tenant.notificationAddressParts
+          }
+        />
         {error && <p className="sm:col-span-2 text-sm text-rose-300">{error}</p>}
       </form>
       <StepNav
         backHref={`/dashboard/contracts/${id}/landlord`}
+        backLabel="Anterior"
         nextHref={`/dashboard/contracts/${id}/codebtor`}
       />
     </WizardShell>
   );
 }
-
-function Input({
-  name,
-  label,
-  defaultValue,
-  type = "text",
-}: {
-  name: string;
-  label: string;
-  defaultValue?: string;
-  type?: string;
-}) {
-  return (
-    <label className="text-sm">
-      <span className="mb-1 block text-slate-300">{label}</span>
-      <input
-        name={name}
-        defaultValue={defaultValue ?? ""}
-        type={type}
-        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-      />
-    </label>
-  );
-}
-

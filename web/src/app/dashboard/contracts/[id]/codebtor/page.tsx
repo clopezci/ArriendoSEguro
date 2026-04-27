@@ -1,7 +1,12 @@
 "use client";
 
+import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import {
+  formatColombianNotificationAddress,
+  parseNotificationAddressFromForm,
+} from "@/domain/colombia/structured-address";
 import { appendAudit, codebtorSchema, updateDraft } from "@/features/contracts/wizard-state";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -24,25 +29,33 @@ export default function CodebtorStepPage() {
   }
 
   function onSubmit(formData: FormData) {
-    if (!draft) return;
-    if (!draft.hasSolidaryCoDebtor) return;
-    const payload = {
+    if (!draft?.hasSolidaryCoDebtor) return;
+
+    const addrParsed = parseNotificationAddressFromForm(formData);
+    if (!addrParsed.success) {
+      setError(addrParsed.error.issues[0]?.message ?? "Revisá la dirección de notificación.");
+      return;
+    }
+    const notificationAddress = formatColombianNotificationAddress(addrParsed.data);
+
+    const parsed = codebtorSchema.safeParse({
       fullName: String(formData.get("fullName") ?? ""),
       documentType: String(formData.get("documentType") ?? ""),
       documentNumber: String(formData.get("documentNumber") ?? ""),
       city: String(formData.get("city") ?? ""),
       email: String(formData.get("email") ?? ""),
       phone: String(formData.get("phone") ?? ""),
-      notificationAddress: String(formData.get("notificationAddress") ?? ""),
+      notificationAddress,
       dataProcessingConsent: formData.get("dataProcessingConsent") === "on",
       electronicSignatureConsent: formData.get("electronicSignatureConsent") === "on",
       solidaryObligationAcceptance: formData.get("solidaryObligationAcceptance") === "on",
-    };
-    const parsed = codebtorSchema.safeParse(payload);
+    });
+
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? "Completa los datos y consentimientos.");
       return;
     }
+
     updateDraft(id, (d) =>
       appendAudit(
         {
@@ -55,6 +68,7 @@ export default function CodebtorStepPage() {
             email: parsed.data.email,
             phone: parsed.data.phone,
             notificationAddress: parsed.data.notificationAddress,
+            notificationAddressParts: addrParsed.data,
           },
           codebtorConsents: {
             dataProcessingConsent: true,
@@ -106,20 +120,21 @@ export default function CodebtorStepPage() {
       </div>
 
       {draft.hasSolidaryCoDebtor && (
-        <form id="wizard-form" action={onSubmit} className="mt-5 grid gap-3 sm:grid-cols-2">
-          <Input name="fullName" label="Nombre completo" defaultValue={draft.solidaryCoDebtor.fullName} />
-          <Input name="documentType" label="Tipo de documento" defaultValue={draft.solidaryCoDebtor.documentType} />
-          <Input name="documentNumber" label="Número de documento" defaultValue={draft.solidaryCoDebtor.documentNumber} />
-          <Input name="city" label="Ciudad" defaultValue={draft.solidaryCoDebtor.city} />
-          <Input name="email" label="Correo" type="email" defaultValue={draft.solidaryCoDebtor.email} />
-          <Input name="phone" label="Teléfono" defaultValue={draft.solidaryCoDebtor.phone} />
-          <div className="sm:col-span-2">
-            <Input
-              name="notificationAddress"
-              label="Dirección de notificación"
-              defaultValue={draft.solidaryCoDebtor.notificationAddress}
-            />
-          </div>
+        <form
+          id="wizard-form"
+          className="mt-5 grid gap-3 sm:grid-cols-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onSubmit(new FormData(e.currentTarget));
+          }}
+        >
+          <PartyDataFields
+            party={draft.solidaryCoDebtor}
+            legacyFreeTextAddressMessage={
+              !!draft.solidaryCoDebtor.notificationAddress &&
+              !draft.solidaryCoDebtor.notificationAddressParts
+            }
+          />
           <Check name="dataProcessingConsent" label="Acepto tratamiento de datos." />
           <Check name="electronicSignatureConsent" label="Acepto firma electrónica." />
           <div className="sm:col-span-2">
@@ -134,33 +149,10 @@ export default function CodebtorStepPage() {
 
       <StepNav
         backHref={`/dashboard/contracts/${id}/tenant`}
+        backLabel="Anterior"
         nextHref={`/dashboard/contracts/${id}/property`}
       />
     </WizardShell>
-  );
-}
-
-function Input({
-  name,
-  label,
-  defaultValue,
-  type = "text",
-}: {
-  name: string;
-  label: string;
-  defaultValue?: string;
-  type?: string;
-}) {
-  return (
-    <label className="text-sm">
-      <span className="mb-1 block text-slate-300">{label}</span>
-      <input
-        name={name}
-        defaultValue={defaultValue ?? ""}
-        type={type}
-        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-      />
-    </label>
   );
 }
 
@@ -172,4 +164,3 @@ function Check({ name, label }: { name: string; label: string }) {
     </label>
   );
 }
-

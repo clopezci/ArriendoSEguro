@@ -17,7 +17,7 @@ export function IngresarForm() {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
 
-  const redirect = searchParams.get("redirect") || "/panel";
+  const redirect = searchParams.get("redirect") || "/dashboard";
 
   const goPanel = useCallback(() => {
     router.replace(redirect);

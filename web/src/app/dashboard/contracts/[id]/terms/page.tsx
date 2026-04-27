@@ -37,7 +37,14 @@ export default function TermsStepPage() {
 
   return (
     <WizardShell title="Términos del arriendo" currentStep={6} contractId={id}>
-      <form id="wizard-form" action={onSubmit} className="grid gap-3 sm:grid-cols-2">
+      <form
+        id="wizard-form"
+        className="grid gap-3 sm:grid-cols-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(new FormData(e.currentTarget));
+        }}
+      >
         <Input name="monthlyRent" label="Canon mensual" type="number" defaultValue={String(draft.lease.monthlyRent ?? "")} />
         <Input
           name="monthlyRentText"
@@ -70,6 +77,7 @@ export default function TermsStepPage() {
       </form>
       <StepNav
         backHref={`/dashboard/contracts/${id}/property`}
+        backLabel="Anterior"
         nextHref={`/dashboard/contracts/${id}/utilities`}
       />
     </WizardShell>

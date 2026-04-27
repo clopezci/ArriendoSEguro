@@ -39,6 +39,14 @@ export function buildContractVariables(input: ResidentialLeaseContractInput): Co
       `${escapeHtml(input.tenant.phone)} y dirección de notificación ${escapeHtml(input.tenant.notificationAddress)}, ` +
       `quien para efectos del presente contrato se denominará EL ARRENDATARIO;`,
     DIRECCION_INMUEBLE: escapeHtml(input.property.address),
+    /** Aclaración legal/orientativa: dirección urbana ≠ certificación catastral; enlace a canal nacional de referencia. */
+    NOTA_DIRECCION_URBANA_Y_CATASTRO:
+      "Las partes reconocen que la dirección indicada se expresa en nomenclatura urbana habitual y " +
+      "no sustituye la certificación ni la verificación catastral o registral del predio. Para identificar el inmueble " +
+      "ante terceros y autoridades deberán contrastar la información (incluida la matrícula inmobiliaria, si aplica) " +
+      "con los registros oficiales. Como referencia general pueden consultar el sitio del " +
+      '<a href="https://www.igac.gov.co/" target="_blank" rel="noopener noreferrer">Instituto Geográfico Agustín Codazzi (IGAC)</a> ' +
+      "y las ventanillas catastrales o de registro competentes para el municipio; Arriendo Seguro no sustituye esas consultas.",
     CIUDAD_INMUEBLE: escapeHtml(input.property.city),
     DEPARTAMENTO_INMUEBLE: escapeHtml(input.property.department),
     MATRICULA_INMOBILIARIA: escapeHtml(input.property.registryNumber),

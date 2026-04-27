@@ -2,7 +2,16 @@
 
 import type { User } from "firebase/auth";
 import { z } from "zod";
-import type { PersonParty, ResidentialLeaseContractInput } from "@/domain/contracts/types";
+import type { ColombianNotificationAddressParts } from "@/domain/colombia/structured-address";
+import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
+import type { PartyDraft } from "@/features/contracts/draft-types";
+
+export type { PartyDraft } from "@/features/contracts/draft-types";
+import {
+  mergePropertyDraftForValidation,
+  partyDraftToPersonParty,
+  type PropertyDraftWithParts,
+} from "@/features/contracts/party-normalize";
 
 export type AccessStatus = "demo" | "paid" | "pending_payment" | "expired";
 export type ContractFlowStatus =
@@ -41,8 +50,6 @@ export interface CodebtorExtraConsents {
   solidaryObligationAcceptance: boolean;
 }
 
-type PartyDraft = Partial<PersonParty>;
-
 export interface ContractDraft {
   id: string;
   userId: string;
@@ -58,6 +65,7 @@ export interface ContractDraft {
   codebtorConsents: CodebtorExtraConsents;
   property: Partial<ResidentialLeaseContractInput["property"]> & {
     monthlyRentProposed?: number;
+    addressParts?: ColombianNotificationAddressParts | null;
   };
   lease: Partial<ResidentialLeaseContractInput["lease"]>;
   utilities: Partial<ResidentialLeaseContractInput["utilities"]>;
@@ -69,23 +77,11 @@ const DRAFTS_KEY = "arriendoseguro.contract.drafts.v1";
 const ACCESS_KEY = "arriendoseguro.contract.access.v1";
 const AUDIT_KEY = "arriendoseguro.contract.audit.v1";
 
-const zParty = z.object({
-  fullName: z.string().min(3),
-  documentType: z.string().min(1),
-  documentNumber: z.string().min(3),
-  city: z.string().min(2),
-  email: z.string().email(),
-  phone: z.string().min(6),
-  notificationAddress: z.string().min(4),
-});
-
-export const landlordSchema = zParty;
-export const tenantSchema = zParty;
-export const codebtorSchema = zParty.extend({
-  dataProcessingConsent: z.literal(true),
-  electronicSignatureConsent: z.literal(true),
-  solidaryObligationAcceptance: z.literal(true),
-});
+export {
+  landlordSchema,
+  tenantSchema,
+  codebtorSchema,
+} from "@/features/contracts/party-schemas";
 
 export const propertySchema = z
   .object({
@@ -285,18 +281,21 @@ export function updateDraft(
 }
 
 export function toContractInput(draft: ContractDraft): ResidentialLeaseContractInput {
+  const mergedProp = mergePropertyDraftForValidation(draft.property as PropertyDraftWithParts);
   return {
-    landlord: draft.landlord as PersonParty,
-    tenant: draft.tenant as PersonParty,
-    solidaryCoDebtor: draft.hasSolidaryCoDebtor ? (draft.solidaryCoDebtor as PersonParty) : undefined,
+    landlord: partyDraftToPersonParty(draft.landlord),
+    tenant: partyDraftToPersonParty(draft.tenant),
+    solidaryCoDebtor: draft.hasSolidaryCoDebtor
+      ? partyDraftToPersonParty(draft.solidaryCoDebtor)
+      : undefined,
     property: {
-      address: draft.property.address ?? "",
-      city: draft.property.city ?? "",
-      department: draft.property.department ?? "",
-      type: draft.property.type ?? "",
-      registryNumber: draft.property.registryNumber ?? "",
-      commercialValue: Number(draft.property.commercialValue ?? 0),
-      legalRentCap: Number(draft.property.legalRentCap ?? 0),
+      address: mergedProp.address ?? "",
+      city: mergedProp.city ?? "",
+      department: mergedProp.department ?? "",
+      type: mergedProp.type ?? "",
+      registryNumber: mergedProp.registryNumber ?? "",
+      commercialValue: Number(mergedProp.commercialValue ?? 0),
+      legalRentCap: Number(mergedProp.legalRentCap ?? 0),
     },
     lease: {
       monthlyRent: Number(draft.lease.monthlyRent ?? 0),

@@ -5,7 +5,7 @@ import type { PlatformOrder, WompiWebhookEvent } from "../types";
 export const mockPaymentProvider: PaymentProviderAdapter = {
   async createCheckout(order: PlatformOrder) {
     return {
-      checkoutUrl: `/dashboard/billing?mockOrder=${encodeURIComponent(order.id)}`,
+      checkoutUrl: `/dashboard/plans?mockOrder=${encodeURIComponent(order.id)}`,
       providerReference: order.providerReference || `mock_${randomUUID()}`,
     };
   },

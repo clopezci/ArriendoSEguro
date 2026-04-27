@@ -17,6 +17,7 @@ export const CONTRACT_TEMPLATE = `
     departamento de [DEPARTAMENTO_INMUEBLE], identificado, si aplica, con matrícula inmobiliaria No.
     [MATRICULA_INMOBILIARIA].
   </p>
+  <p>[NOTA_DIRECCION_URBANA_Y_CATASTRO]</p>
   <p>El inmueble objeto del presente contrato corresponde a: [TIPO_INMUEBLE].</p>
 
   <h2>SEGUNDA. DESTINACIÓN</h2>

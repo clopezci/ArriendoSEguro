@@ -3,7 +3,6 @@ export type DocumentType =
   | "CE"
   | "PASAPORTE"
   | "NIT"
-  | "TI"
   | "OTRO";
 
 export type SourceLegalFramework =

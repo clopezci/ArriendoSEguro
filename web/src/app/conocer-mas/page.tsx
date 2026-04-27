@@ -69,10 +69,10 @@ export default function ConocerMasPage() {
             Volver a landing
           </Link>
           <Link
-            href="/panel"
+            href="/dashboard"
             className="rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-medium text-white shadow-[0_0_18px_rgba(139,92,246,0.45)] hover:bg-violet-500"
           >
-            Ir al menú inicio
+            Ir al panel principal
           </Link>
         </div>
       </main>

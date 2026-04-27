@@ -1,7 +1,12 @@
 "use client";
 
+import { UrbanAddressFields } from "@/components/contracts/urban-address-fields";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import {
+  formatColombianNotificationAddress,
+  parseUrbanAddressFromForm,
+} from "@/domain/colombia/structured-address";
 import { appendAudit, propertySchema, updateDraft } from "@/features/contracts/wizard-state";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -15,12 +20,19 @@ export default function PropertyStepPage() {
   if (state !== "ready" || !draft) return <p className="text-sm text-slate-300">Cargando…</p>;
 
   function onSubmit(formData: FormData) {
+    const addrParsed = parseUrbanAddressFromForm(formData, "propAddr");
+    if (!addrParsed.success) {
+      const msg = addrParsed.error.issues[0]?.message ?? "Revisá la dirección del inmueble.";
+      setError(msg);
+      return;
+    }
+    const address = formatColombianNotificationAddress(addrParsed.data);
     const commercialValue = Number(formData.get("commercialValue") ?? 0);
     const monthlyRentProposed = Number(formData.get("monthlyRentProposed") ?? 0);
     const legalRentCap = Number((commercialValue * 0.01).toFixed(0));
 
     const parsed = propertySchema.safeParse({
-      address: String(formData.get("address") ?? ""),
+      address,
       city: String(formData.get("city") ?? ""),
       department: String(formData.get("department") ?? ""),
       type: String(formData.get("type") ?? ""),
@@ -39,7 +51,10 @@ export default function PropertyStepPage() {
       appendAudit(
         {
           ...d,
-          property: parsed.data,
+          property: {
+            ...parsed.data,
+            addressParts: addrParsed.data,
+          },
           lease: { ...d.lease, monthlyRent: parsed.data.monthlyRentProposed },
         },
         "property_data_saved",
@@ -49,10 +64,25 @@ export default function PropertyStepPage() {
     router.push(`/dashboard/contracts/${id}/terms`);
   }
 
+  const legacyAddress =
+    !!draft.property.address && !draft.property.addressParts;
+
   return (
     <WizardShell title="Datos del inmueble" currentStep={5} contractId={id}>
-      <form id="wizard-form" action={onSubmit} className="grid gap-3 sm:grid-cols-2">
-        <Input name="address" label="Dirección" defaultValue={draft.property.address} />
+      <form
+        id="wizard-form"
+        className="grid gap-3 sm:grid-cols-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit(new FormData(e.currentTarget));
+        }}
+      >
+        <UrbanAddressFields
+          prefix="propAddr"
+          parts={draft.property.addressParts}
+          variant="inmueble"
+          legacyFreeTextAddress={legacyAddress}
+        />
         <Input name="city" label="Ciudad" defaultValue={draft.property.city} />
         <Input name="department" label="Departamento" defaultValue={draft.property.department} />
         <Input name="type" label="Tipo de inmueble" defaultValue={draft.property.type} />
@@ -75,7 +105,12 @@ export default function PropertyStepPage() {
         {error && <p className="sm:col-span-2 text-sm text-rose-300">{error}</p>}
       </form>
       <StepNav
-        backHref={`/dashboard/contracts/${id}/codebtor`}
+        backHref={
+          draft.hasSolidaryCoDebtor
+            ? `/dashboard/contracts/${id}/codebtor`
+            : `/dashboard/contracts/${id}/tenant`
+        }
+        backLabel="Anterior"
         nextHref={`/dashboard/contracts/${id}/terms`}
       />
     </WizardShell>
@@ -105,4 +140,3 @@ function Input({
     </label>
   );
 }
-

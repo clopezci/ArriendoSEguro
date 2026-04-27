@@ -8,7 +8,7 @@ import { useEffect, type ReactNode } from "react";
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading, configError } = useAuth();
   const router = useRouter();
-  const pathname = usePathname() ?? "/panel";
+  const pathname = usePathname() ?? "/dashboard";
 
   useEffect(() => {
     if (loading || configError) return;
