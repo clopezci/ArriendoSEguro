@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test src/**/*.test.ts",
+    "grant:plus": "tsx scripts/grant-plus-access.ts"
   },
   "dependencies": {
     "firebase": "^12.0.0",

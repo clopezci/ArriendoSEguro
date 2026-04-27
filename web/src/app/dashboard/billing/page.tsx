@@ -21,6 +21,15 @@ export default function BillingPage() {
   const [orderId, setOrderId] = useState("");
   const [loading, setLoading] = useState(false);
   const [entitlements, setEntitlements] = useState<EntitlementsResponse | null>(null);
+  const isLocalDev = process.env.NODE_ENV !== "production";
+  const internalUiEnabled = isLocalDev || process.env.NEXT_PUBLIC_ADMIN_INTERNAL_ENABLED === "true";
+  const internalAllowedEmails = (process.env.NEXT_PUBLIC_ADMIN_INTERNAL_EMAILS ?? "")
+    .split(",")
+    .map((v) => v.trim().toLowerCase())
+    .filter(Boolean);
+  const canSeeInternalButton =
+    internalUiEnabled &&
+    (isLocalDev || (user?.email ? internalAllowedEmails.includes(user.email.toLowerCase()) : false));
 
   async function loadAccess() {
     if (!user) return;
@@ -123,6 +132,38 @@ export default function BillingPage() {
     await loadAccess();
   }
 
+  async function activateManualPlusForCurrentUser() {
+    if (!user?.email) return;
+    setLoading(true);
+    setMsg("");
+    setError("");
+    try {
+      const res = await fetch("/api/platform-payments/internal/grant-plus", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ email: user.email, validDays: 30 }),
+      });
+      const data = (await res.json()) as {
+        success?: boolean;
+        status?: "created" | "already_exists";
+        errors?: { message?: string }[];
+      };
+      if (!res.ok || !data.success) {
+        throw new Error(data.errors?.[0]?.message ?? "No se pudo activar Plan Plus de prueba.");
+      }
+      setMsg(
+        data.status === "already_exists"
+          ? "Ya tenías un Plan Plus activo disponible para pruebas."
+          : "Plan Plus de prueba activado correctamente.",
+      );
+      await loadAccess();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error activando Plan Plus de prueba.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <section className="space-y-5">
       <h1 className="text-2xl font-bold">Facturación de Arriendo Seguro</h1>
@@ -137,6 +178,16 @@ export default function BillingPage() {
         >
           Actualizar estado
         </button>
+        {canSeeInternalButton && (
+          <button
+            type="button"
+            onClick={activateManualPlusForCurrentUser}
+            disabled={loading || !user?.email}
+            className="rounded border border-amber-500 px-3 py-2 text-xs text-amber-200"
+          >
+            Activar Plan Plus de prueba
+          </button>
+        )}
       </div>
 
       {msg && <p className="rounded border border-emerald-600/40 bg-emerald-900/20 p-2 text-sm text-emerald-200">{msg}</p>}
