@@ -1,165 +1,141 @@
 import { LeadMarketForm } from "@/components/forms/lead-market-form";
 import { appConfig } from "@/lib/config";
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Contrato de arrendamiento en Colombia | ArriendoSeguro",
+  description:
+    "Formaliza tu contrato de arrendamiento en Colombia con firma electrónica, inventario fotográfico, registro de pagos y trazabilidad documental para arriendos entre particulares.",
+  keywords: [
+    "contrato de arrendamiento",
+    "contrato de arriendo",
+    "arrendar sin inmobiliaria",
+    "arriendo directo",
+    "arrendamiento entre particulares",
+    "firma electrónica",
+    "inventario fotográfico",
+    "registro de pagos",
+    "Colombia",
+  ],
+  openGraph: {
+    title: "Contrato de arrendamiento en Colombia | ArriendoSeguro",
+    description:
+      "Formaliza tu contrato de arriendo con firma electrónica, inventario y registro de pagos, sin inmobiliaria y sin dejarlo informal.",
+    type: "website",
+    locale: "es_CO",
+  },
+};
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900 text-slate-100">
-      <header className="border-b border-slate-800/80 bg-slate-950/90 shadow-[0_8px_30px_rgba(139,92,246,0.15)] backdrop-blur">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <span className="text-lg font-semibold tracking-tight text-violet-400">{appConfig.name}</span>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+      <header className="shrink-0 border-b border-slate-800/60 bg-slate-950/90 shadow-[0_6px_20px_rgba(139,92,246,0.12)] backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2 sm:px-6">
+          <span className="text-sm font-semibold tracking-tight text-violet-400 sm:text-base">
+            {appConfig.name}
+          </span>
+          <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
             <Link
-              href="/entiendelo-facil"
-              className="rounded-lg border border-violet-500 px-3 py-1.5 text-xs font-medium text-violet-200 shadow-[0_0_14px_rgba(139,92,246,0.35)] transition hover:bg-violet-900/30 sm:text-sm"
+              href="/dashboard"
+              className="rounded-md border border-slate-600 px-2 py-1 text-[11px] font-medium text-slate-200 transition hover:border-violet-500/50 hover:text-slate-100 sm:px-2.5 sm:text-xs"
             >
-              ¿Primera vez arrendando?
+              Ir a ArriendoSeguro
             </Link>
             <Link
               href="/ingresar"
-              className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-100 shadow-[0_0_0_1px_rgba(139,92,246,0.28)] transition hover:border-slate-500 sm:text-sm"
+              className="rounded-md border border-slate-600 px-2 py-1 text-[11px] font-medium text-slate-200 transition hover:border-slate-500 sm:px-2.5 sm:text-xs"
             >
               Ingresar
             </Link>
-            <a
-              href="#interes"
-              className="rounded-lg border border-slate-600 px-2.5 py-1 text-[11px] font-medium text-slate-400 shadow-[0_0_0_1px_rgba(139,92,246,0.15)] transition hover:border-violet-500/50 hover:text-violet-200"
+            <Link
+              href="/registro"
+              className="rounded-md border border-violet-500/60 bg-violet-600/20 px-2 py-1 text-[11px] font-medium text-violet-200 shadow-[0_0_12px_rgba(139,92,246,0.2)] transition hover:bg-violet-600/30 sm:px-2.5 sm:text-xs"
             >
-              Responder encuesta
-            </a>
+              Registrarse
+            </Link>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-10 px-4 py-10 sm:space-y-12 sm:px-6 sm:py-14">
-        <section className="space-y-6 text-center sm:space-y-8">
-          <h1 className="mx-auto max-w-2xl text-balance text-2xl font-extrabold leading-tight tracking-tight text-slate-50 sm:text-4xl">
-            ¿Vas a arrendar tu propiedad, pero los costos de una agencia son altos y hacerlo
-            directo no te da tranquilidad?
-            <span className="mt-3 block text-violet-300">Llegaste al lugar adecuado.</span>
-          </h1>
-          <div className="mx-auto max-w-xl space-y-3 text-left text-sm leading-relaxed text-slate-300 sm:text-base">
-            <p>
-              Si ya encontraste arrendador o arrendatario, Arriendo Seguro te ayuda a crear
-              contrato, firmar digitalmente, inventariar el inmueble y dejar soportes de pago y del
-              acuerdo.
-            </p>
-            <p className="text-slate-400">
-              A futuro podrás sumar, si quieres, alianzas con expertos en seguros, asesoría jurídica
-              y cobranza.
-            </p>
-          </div>
-          <p className="text-sm font-semibold text-violet-300 sm:text-base">
-            Una guía digital para arrendar directo con más claridad y respaldo.
-          </p>
-          <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
-            <a
-              href="#interes"
-              className="rounded-lg bg-violet-600 px-6 py-3 text-center text-sm font-semibold text-white shadow-[0_0_22px_rgba(139,92,246,0.45)] transition hover:bg-violet-500"
-            >
-              Responder encuesta
-            </a>
-            <Link
-              href="/conocer-mas"
-              className="rounded-lg border border-slate-600 px-6 py-3 text-center text-sm font-medium text-slate-200 shadow-[0_0_0_1px_rgba(139,92,246,0.25)] transition hover:border-sky-500 hover:text-sky-300"
-            >
-              Entender cómo funciona
-            </Link>
-          </div>
-        </section>
-
-        <section className="space-y-4">
-          <h2 className="text-center text-lg font-semibold text-slate-100 sm:text-xl">
-            Hoy, arrendar directo suele tener dos caminos
-          </h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <article className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 text-left shadow-[0_8px_22px_rgba(139,92,246,0.12)]">
-              <h3 className="font-semibold text-sky-300">Pagar una inmobiliaria</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">
-                Puede darte acompañamiento completo, pero no siempre es necesario si ya encontraste
-                a la otra parte.
+      <main className="mx-auto max-w-6xl px-4 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-5 lg:min-h-[calc(100vh-3.25rem)] lg:pb-6">
+        <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
+          <div className="flex min-h-0 flex-col gap-3 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto lg:pr-1">
+            <section className="space-y-3">
+              <h1 className="text-balance text-center text-2xl font-extrabold leading-tight tracking-tight text-slate-50 sm:text-3xl lg:text-left">
+                <span className="block">¿Vas a arrendar?</span>
+                <span className="mt-0.5 block">¿Necesitas hacer tu contrato de arrendamiento?</span>
+              </h1>
+              <p className="rounded-xl border border-violet-500/35 bg-violet-950/40 px-4 py-3 text-center text-base font-semibold leading-snug text-violet-100 shadow-[0_0_28px_rgba(139,92,246,0.22)] sm:text-lg sm:leading-snug lg:text-left lg:text-[1.05rem]">
+                Si prefieres evitar los costos de una agencia y te preocupa hacer un arriendo
+                directo sin suficiente respaldo… llegaste al lugar adecuado.
               </p>
-            </article>
-            <article className="rounded-xl border border-slate-800 bg-slate-900/50 p-4 text-left shadow-[0_8px_22px_rgba(139,92,246,0.12)]">
-              <h3 className="font-semibold text-sky-300">Hacerlo informal</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">
-                Puede parecer más fácil, pero muchas veces deja contratos incompletos, pagos sin
-                soporte o problemas al entregar el inmueble.
+              <div className="space-y-2 text-center text-sm leading-snug text-slate-400 sm:text-[0.95rem] lg:text-left">
+                <p className="text-slate-300">
+                  ArriendoSeguro es una plataforma digital para arriendos en Colombia que ayuda a
+                  formalizar un arrendamiento entre particulares.
+                </p>
+                <p>
+                  Crea tu contrato de arriendo con firma electrónica, inventario fotográfico,
+                  registro de pagos, notificaciones y trazabilidad documental, sin pago de
+                  mensualidades. Todo en un solo flujo, pensado para quienes quieren arrendar sin
+                  inmobiliaria y sin dejarlo informal.
+                </p>
+              </div>
+              <div className="flex justify-center lg:justify-start">
+                <Link
+                  href="/entiendelo-facil"
+                  className="inline-flex rounded-lg border border-slate-600 px-5 py-2.5 text-sm font-medium text-slate-200 shadow-[0_0_0_1px_rgba(139,92,246,0.2)] transition hover:border-sky-500/60 hover:text-sky-200"
+                >
+                  Entender cómo funciona
+                </Link>
+              </div>
+            </section>
+
+            <p className="text-center text-[11px] leading-snug text-slate-500 lg:text-left">
+              A futuro se esperan convenios con aseguradoras, asesoría legal, agencias de cobranza y
+              otros aliados, por si en algún momento necesitas ir un paso más allá.
+            </p>
+
+            <section className="space-y-2 rounded-lg border border-slate-800/50 bg-slate-900/25 p-3 sm:p-3.5">
+              <h2 className="text-center text-sm font-semibold text-slate-100 lg:text-left sm:text-base">
+                Ayúdanos a construir una solución útil para arrendar mejor
+              </h2>
+              <p className="text-center text-[11px] leading-relaxed text-slate-500 sm:text-xs lg:text-left">
+                Estamos validando ArriendoSeguro con propietarios y arrendatarios reales. Responde
+                esta encuesta corta y ayúdanos a saber si esta solución te serviría, qué debería
+                incluir y cuánto estarías dispuesto a pagar.
               </p>
-            </article>
+              <p className="text-center text-[10px] font-medium text-violet-300/90 sm:text-[11px] lg:text-left">
+                Los primeros inscritos podrán recibir acceso anticipado y beneficios de lanzamiento
+                cuando abramos la prueba del MVP.
+              </p>
+              <div className="flex justify-center lg:justify-start">
+                <a
+                  href="#interes"
+                  className="inline-flex rounded-lg bg-violet-600 px-5 py-2 text-sm font-semibold text-white shadow-[0_0_18px_rgba(139,92,246,0.35)] transition hover:bg-violet-500"
+                >
+                  Responder encuesta
+                </a>
+              </div>
+            </section>
           </div>
-        </section>
 
-        <section className="rounded-xl border border-slate-800 bg-slate-900/45 p-5 shadow-[0_10px_24px_rgba(139,92,246,0.14)] sm:p-6">
-          <h2 className="text-lg font-semibold text-slate-100 sm:text-xl">
-            Arriendo Seguro propone una tercera opción
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-slate-300 sm:text-base">
-            Una plataforma sencilla para formalizar un arriendo ya acordado entre particulares,
-            con contrato, firma electrónica, inventario y registro de pagos.
-          </p>
-          <ul className="mt-4 space-y-2 text-sm text-slate-200">
-            <li className="flex gap-2">
-              <span className="text-violet-400">·</span>
-              Contrato más claro.
-            </li>
-            <li className="flex gap-2">
-              <span className="text-violet-400">·</span>
-              Inventario con evidencias.
-            </li>
-            <li className="flex gap-2">
-              <span className="text-violet-400">·</span>
-              Firma electrónica simple.
-            </li>
-            <li className="flex gap-2">
-              <span className="text-violet-400">·</span>
-              Soportes de pagos y acuerdos.
-            </li>
-          </ul>
-        </section>
-
-        <section className="space-y-4 rounded-xl border border-violet-500/30 bg-slate-900/55 p-5 text-center shadow-[0_12px_28px_rgba(139,92,246,0.18)] sm:p-6">
-          <h2 className="text-lg font-semibold text-slate-50 sm:text-xl">Ayúdanos a construirlo bien</h2>
-          <p className="mx-auto max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
-            Estamos validando esta idea con propietarios y arrendatarios reales. Responde una
-            encuesta corta y ayúdanos a saber si esta solución te serviría, qué debería incluir y
-            cuánto estarías dispuesto a pagar.
-          </p>
-          <p className="mx-auto max-w-lg text-xs font-medium text-violet-300 sm:text-sm">
-            Los primeros inscritos podrán recibir acceso anticipado y beneficio de lanzamiento
-            cuando abramos la prueba del MVP.
-          </p>
-          <a
-            href="#interes"
-            className="inline-flex rounded-lg bg-violet-600 px-8 py-3 text-sm font-semibold text-white shadow-[0_0_24px_rgba(139,92,246,0.45)] transition hover:bg-violet-500"
+          <div
+            id="interes"
+            className="min-h-0 scroll-mt-20 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto lg:pr-1"
           >
-            Responder encuesta
-          </a>
-        </section>
-
-        <section id="interes" className="scroll-mt-6 space-y-3">
-          <LeadMarketForm sourcePage="landing_mvp" />
-        </section>
-
-        <footer className="space-y-4 border-t border-slate-800/80 pt-8 text-center">
-          <p className="mx-auto max-w-xl text-xs leading-relaxed text-slate-500 sm:text-sm">
-            Arriendo Seguro no reemplaza una inmobiliaria ni una asesoría legal. Es una herramienta
-            digital para ayudar a formalizar y documentar arriendos ya acordados entre particulares.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <a
-              href="#interes"
-              className="rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-medium text-white shadow-[0_0_18px_rgba(139,92,246,0.4)] transition hover:bg-violet-500"
-            >
-              Responder encuesta
-            </a>
-            <Link
-              href="/entiendelo-facil"
-              className="rounded-lg border border-violet-500 px-5 py-2.5 text-sm font-medium text-violet-200 shadow-[0_0_12px_rgba(139,92,246,0.25)] transition hover:bg-violet-900/30"
-            >
-              ¿Primera vez arrendando? Entiéndelo fácil
-            </Link>
+            <LeadMarketForm sourcePage="landing_mvp" />
           </div>
+        </div>
+
+        <footer className="mt-4 border-t border-slate-800/50 pt-4 text-center lg:mt-5 lg:pt-3">
+          <p className="mx-auto max-w-3xl text-[10px] leading-relaxed text-slate-500 sm:text-[11px] lg:text-left">
+            ArriendoSeguro no reemplaza una inmobiliaria ni una asesoría legal. Es una herramienta
+            digital para ayudar a formalizar y documentar arriendos ya acordados entre
+            particulares, de modo que cuentes con respaldo escrito y trazable si más adelante
+            necesitas acudir por una vía legal o de conciliación.
+          </p>
         </footer>
       </main>
     </div>
