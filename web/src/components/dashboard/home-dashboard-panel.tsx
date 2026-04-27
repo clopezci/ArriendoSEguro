@@ -190,7 +190,7 @@ export function HomeDashboardPanel() {
             Ver planes y activar Plus
           </Link>
           <Link
-            href="/dashboard/demo"
+            href="/demo"
             className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:border-violet-400"
           >
             Ver demo guiado

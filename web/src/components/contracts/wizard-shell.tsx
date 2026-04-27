@@ -94,7 +94,7 @@ export function AccessBlocked({
           Activar Plan Plus
         </Link>
         <Link
-          href="/dashboard/demo"
+          href="/demo"
           className="rounded-lg border border-violet-400 px-4 py-2 text-sm font-medium text-violet-200"
         >
           Probar demo

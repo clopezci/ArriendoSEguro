@@ -43,6 +43,12 @@ export default function Home() {
               Responder encuesta
             </a>
             <Link
+              href="/demo"
+              className="rounded-md border border-slate-600 px-2 py-1 text-[11px] font-medium text-slate-200 transition hover:border-violet-500/50 hover:text-slate-100 sm:px-2.5 sm:text-xs"
+            >
+              Ver demo guiado
+            </Link>
+            <Link
               href="/dashboard"
               className="rounded-md border border-slate-600 px-2 py-1 text-[11px] font-medium text-slate-200 transition hover:border-violet-500/50 hover:text-slate-100 sm:px-2.5 sm:text-xs"
             >

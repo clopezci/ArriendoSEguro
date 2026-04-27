@@ -36,7 +36,11 @@ export type AuditEventName =
   | "lease_terms_saved"
   | "utilities_saved"
   | "contract_preview_generated"
-  | "contract_draft_saved";
+  | "contract_draft_saved"
+  /** Recorrido /demo (localStorage); no implica expediente real. */
+  | "demo_viewed"
+  | "demo_step_opened"
+  | "demo_plus_cta_clicked";
 
 export interface AuditEvent {
   event: AuditEventName;

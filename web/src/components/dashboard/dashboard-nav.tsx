@@ -10,7 +10,7 @@ const navMain = [
   { href: "/dashboard/leases", label: "Mis arriendos" },
   { href: "/entiendelo-facil", label: "Cómo funciona" },
   { href: "/dashboard/plans", label: "Planes" },
-  { href: "/dashboard/demo", label: "Demo" },
+  { href: "/demo", label: "Demo" },
 ] as const;
 
 export function DashboardNav() {
