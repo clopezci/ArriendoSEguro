@@ -3,8 +3,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Política de tratamiento de datos personales",
-  description: "Tratamiento de datos personales de ArriendoSeguro conforme a la normativa colombiana.",
+  title: "Política de tratamiento de la información personal",
+  description:
+    "Política de tratamiento de la información personal (datos personales) de ArriendoSeguro conforme a la normativa colombiana.",
 };
 
 export default function PrivacidadPage() {
@@ -13,7 +14,7 @@ export default function PrivacidadPage() {
       <header className="space-y-2 border-b border-slate-800 pb-6">
         <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Información legal</p>
         <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-          Política de tratamiento de datos personales
+          Política de tratamiento de la información personal (datos personales)
         </h1>
         <p className="text-xs text-slate-500">
           Marco: Ley 1581 de 2012, Decreto 1377 de 2013 y demás normas concordantes (Colombia).
@@ -51,10 +52,15 @@ export default function PrivacidadPage() {
         <p>Tratamos datos para:</p>
         <ul className="list-inside list-disc space-y-1 text-slate-400">
           <li>Prestar el servicio de software (creación de expediente, plantillas, almacenamiento, notificaciones).</li>
-          <li>Gestionar la cuenta, autenticación, seguridad y prevención de fraude.</li>
+          <li>Gestionar la cuenta, autenticación, seguridad, control de acceso y prevención de fraude.</li>
+          <li>Gestionar la evaluación estructurada de experiencia arrendaticia mediante preguntas cerradas y trazabilidad.</li>
           <li>Cumplir obligaciones legales y responder a requerimientos de autoridades competentes.</li>
-          <li>Mejorar el producto de forma agregada cuando sea posible sin identificarlo.</li>
-          <li>Facturación y cobro de planes, reclamaciones y soporte.</li>
+          <li>Mejorar el producto con analítica, auditoría técnica y métricas agregadas cuando sea posible sin identificarlo.</li>
+          <li>Facturación y cobro de planes, reclamaciones, soporte y gestión comercial con el titular.</li>
+          <li>
+            Evaluar y habilitar servicios con futuros aliados estratégicos (tecnológicos, financieros, aseguradores u
+            operativos), siempre bajo base legal, principio de necesidad y minimización de datos.
+          </li>
         </ul>
       </section>
 
@@ -149,12 +155,20 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">13. Transferencia a proveedores</h2>
+        <h2 className="text-lg font-semibold text-white">13. Transferencia y transmisión a proveedores y aliados estratégicos</h2>
         <p>
-          Podemos encargar el tratamiento a proveedores de nube, autenticación, correo electrónico, pasarela de pagos o
-          soporte, con contratos o cláusulas tipo encargo según la ley. Los proveedores en el extranjero implican
-          transferencia internacional cuando aplique; en ese caso informaremos los países o categorías de destino en la
-          medida en que la ley lo exija.
+          Podemos encargar el tratamiento a proveedores de nube, autenticación, correo electrónico, pasarela de pagos,
+          soporte o seguridad, con contratos de encargo y deberes de confidencialidad conforme a la ley.
+        </p>
+        <p>
+          Además, para funciones presentes o futuras del producto, podremos compartir datos con aliados estratégicos
+          estrictamente necesarios (por ejemplo, firma electrónica, validaciones, cobertura o servicios complementarios),
+          siempre que exista base legal, finalidad compatible y medidas de seguridad razonables.
+        </p>
+        <p>
+          No vendemos bases de datos personales como activo autónomo. Cuando haya proveedores o aliados en el exterior,
+          aplicarán reglas de transferencia internacional y se informará la categoría de destinatarios en los términos
+          exigidos por la normativa colombiana.
         </p>
       </section>
 

@@ -38,9 +38,14 @@ export default function AvisoPrivacidadPage() {
       </p>
 
       <p>
+        También tratamos datos para la evaluación estructurada de experiencia y, cuando aplique legalmente, para
+        integrar servicios con aliados estratégicos bajo principios de minimización y necesidad.
+      </p>
+
+      <p>
         El texto completo con encargos, transferencias, conservación y seguridad está en la{" "}
         <Link href="/legal/privacidad" className="text-violet-400 hover:underline">
-          Política de tratamiento de datos personales
+          Política de tratamiento de la información personal (datos personales)
         </Link>
         .
       </p>

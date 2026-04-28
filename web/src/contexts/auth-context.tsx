@@ -4,6 +4,7 @@ import { getAuthClient, isFirebaseClientConfigured } from "@/lib/firebase/client
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   type User,
@@ -24,6 +25,7 @@ type AuthState = {
   configError: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -63,6 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await firebaseSignOut(getAuthClient());
   }, []);
 
+  const resetPassword = useCallback(async (email: string) => {
+    if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
+    await sendPasswordResetEmail(getAuthClient(), email.trim());
+  }, []);
+
   const value = useMemo<AuthState>(
     () => ({
       user,
@@ -70,9 +77,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       configError,
       signIn,
       signUp,
+      resetPassword,
       signOut,
     }),
-    [user, loading, configError, signIn, signUp, signOut]
+    [user, loading, configError, signIn, signUp, resetPassword, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

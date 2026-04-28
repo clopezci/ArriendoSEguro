@@ -180,14 +180,17 @@ export default function EntiendeloFacilPage() {
             Una gestión inmobiliaria completa puede tener costos asociados a un porcentaje del
             canon mensual, dependiendo de la ciudad, empresa y servicios incluidos. Arriendo Seguro
             busca ofrecer una alternativa digital de pago único para personas que ya se encontraron
-            y necesitan formalizar el arriendo.
+            y necesitan formalizar el arriendo. <br />
+            <br />
+            <h2 className="text-2xl font-semibold">Mira los ejemplos a continuación y compara los posibles costos ilustrativos:</h2>
+            
           </p>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[620px] border-collapse text-sm">
               <thead>
                 <tr className="bg-slate-800/80 text-left">
                   <th className="border border-slate-700 px-3 py-2">Canon mensual</th>
-                  <th className="border border-slate-700 px-3 py-2">Referencia agencia 8%-10% mensual</th>
+                  <th className="border border-slate-700 px-3 py-2">Costo gencia 8%-10% mensual</th>
                   <th className="border border-slate-700 px-3 py-2">Arriendo Seguro</th>
                 </tr>
               </thead>
@@ -195,17 +198,17 @@ export default function EntiendeloFacilPage() {
                 <tr>
                   <td className="border border-slate-700 px-3 py-2">$1.000.000</td>
                   <td className="border border-slate-700 px-3 py-2">$80.000 a $100.000 al mes</td>
-                  <td className="border border-slate-700 px-3 py-2">Pago único bajo por formalización</td>
+                  <td className="border border-slate-700 px-3 py-2">Pago único muy bajo por contrato</td>
                 </tr>
                 <tr>
                   <td className="border border-slate-700 px-3 py-2">$2.000.000</td>
                   <td className="border border-slate-700 px-3 py-2">$160.000 a $200.000 al mes</td>
-                  <td className="border border-slate-700 px-3 py-2">Pago único bajo por formalización</td>
+                  <td className="border border-slate-700 px-3 py-2">Pago único muy bajo por contrato</td>
                 </tr>
                 <tr>
                   <td className="border border-slate-700 px-3 py-2">$3.000.000</td>
                   <td className="border border-slate-700 px-3 py-2">$240.000 a $300.000 al mes</td>
-                  <td className="border border-slate-700 px-3 py-2">Pago único bajo por formalización</td>
+                  <td className="border border-slate-700 px-3 py-2">Pago único muy bajo por contrato</td>
                 </tr>
               </tbody>
             </table>
@@ -225,7 +228,10 @@ export default function EntiendeloFacilPage() {
             Para ser claros, Arriendo Seguro no es una inmobiliaria tradicional, no administra tu
             inmueble, no recauda el canon, no garantiza el pago, no reemplaza un abogado, no
             publica listas negras, no permite comentarios ofensivos y no hace búsqueda pública por
-            cédula.
+            cédula. <br /><br />
+            AS es una herramienta digital para ayudar a formalizar y documentar arriendos ya acordados entre persoas 
+            particulares, de modo que cuentes con respaldo escrito y trazable si más adelante necesitas acudir 
+            por una vía legal o de conciliación.
           </p>
         </section>
 
