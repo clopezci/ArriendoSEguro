@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { leadFormSchema } from "@/lib/validations/lead-form";
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { surveyThankYouEmail } from "@/services/email/emailTemplates";
+import { sendEmail } from "@/services/email/sendEmail";
 
 export const runtime = "nodejs";
 
@@ -127,6 +129,19 @@ export async function POST(request: Request) {
     userAgent: userAgent ?? null,
     createdAt: FieldValue.serverTimestamp(),
   });
+
+  if (email) {
+    const template = surveyThankYouEmail();
+    await sendEmail({
+      to: email,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+      templateCode: "surveyThankYouEmail",
+      relatedEntityType: "lead_form",
+      relatedEntityId: ref.id,
+    });
+  }
 
   return NextResponse.json({ ok: true, stored: true, id: ref.id });
 }

@@ -4,6 +4,8 @@ import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin";
 import { grantManualPlusEntitlement } from "@/domain/platform-payments/manual-grant";
+import { plusAccessConfirmedEmail } from "@/services/email/emailTemplates";
+import { sendEmail } from "@/services/email/sendEmail";
 
 export const runtime = "nodejs";
 
@@ -75,6 +77,20 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+
+  const plusTemplate = plusAccessConfirmedEmail({
+    userEmail: result.userEmail,
+    source: "manual",
+  });
+  await sendEmail({
+    to: result.userEmail,
+    subject: plusTemplate.subject,
+    html: plusTemplate.html,
+    text: plusTemplate.text,
+    templateCode: "plusAccessConfirmedEmail",
+    relatedEntityType: "access_entitlement",
+    relatedEntityId: result.entitlementId,
+  });
 
   return NextResponse.json({
     success: true,

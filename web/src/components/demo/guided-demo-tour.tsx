@@ -2,7 +2,7 @@
 
 import { DEMO_WATERMARK_TEXT } from "@/domain/contracts/demoWatermark";
 import { logGlobalAudit } from "@/features/contracts/wizard-state";
-import { appConfig } from "@/lib/config";
+import { BrandLockup } from "@/components/brand/brand-lockup";
 import {
   DEMO_BADGE,
   buildDemoContractSnippet,
@@ -74,7 +74,7 @@ export function GuidedDemoTour() {
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex flex-wrap items-center gap-2">
             <Link href="/" className="text-sm font-semibold text-violet-300 hover:text-violet-200">
-              {appConfig.name}
+              <BrandLockup />
             </Link>
             <DemoBadge />
           </div>

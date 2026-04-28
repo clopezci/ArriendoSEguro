@@ -1,13 +1,29 @@
 export async function sendPaymentReminderEmail(input: {
   to: string;
-  cc?: string;
-  subject: string;
-  message: string;
-}): Promise<{ status: "sent_mock" | "failed"; providerResponse: string }> {
-  // TODO: integrar proveedor real de correo.
-  if (process.env.NODE_ENV !== "production") {
-    console.info("[payment_reminder_mock]", input);
-  }
-  return { status: "sent_mock", providerResponse: "MVP mock send" };
+  periodLabel: string;
+  dueDate: string;
+  expectedAmount: number;
+  relatedEntityId?: string;
+}): Promise<{ status: "sent" | "failed" | "mock" | "skipped"; providerResponse: string }> {
+  const { paymentReminderEmail } = await import("@/services/email/emailTemplates");
+  const { sendEmail } = await import("@/services/email/sendEmail");
+  const template = paymentReminderEmail({
+    periodLabel: input.periodLabel,
+    dueDate: input.dueDate,
+    expectedAmount: input.expectedAmount,
+  });
+  const result = await sendEmail({
+    to: input.to,
+    subject: template.subject,
+    html: template.html,
+    text: template.text,
+    templateCode: "paymentReminderEmail",
+    relatedEntityType: "scheduled_payment",
+    relatedEntityId: input.relatedEntityId,
+  });
+  return {
+    status: result.status,
+    providerResponse: result.errorMessage ?? result.provider,
+  };
 }
 

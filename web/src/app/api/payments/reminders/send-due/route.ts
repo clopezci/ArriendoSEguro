@@ -31,18 +31,18 @@ export async function POST() {
       const due = new Date(row.dueDate);
       const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       if (diffDays !== row.reminderDaysBefore) continue;
-      const subject = `Recordatorio de pago de arriendo - ${row.periodLabel}`;
-      const message = `Hola,\n\nTe recordamos que el pago del canon de arriendo correspondiente a ${row.periodLabel} vence el día ${row.dueDate}.\n\nValor esperado: $${row.expectedAmount.toLocaleString("es-CO")}\n\nEste mensaje es un recordatorio automático generado por Arriendo Seguro. La plataforma no recauda dinero ni procesa pagos; el pago debe realizarse por el medio acordado entre las partes en el contrato.\n\nSi ya realizaste el pago, puedes cargar o compartir el soporte correspondiente según lo acordado.`;
       const send = await sendPaymentReminderEmail({
         to: row.reminderEmailTo,
-        subject,
-        message,
+        periodLabel: row.periodLabel,
+        dueDate: row.dueDate,
+        expectedAmount: row.expectedAmount,
+        relatedEntityId: row.id,
       });
       const sentAt = new Date().toISOString();
       await Promise.all([
         doc.ref.set(
           {
-            reminderStatus: send.status === "sent_mock" ? "sent" : "failed",
+            reminderStatus: send.status === "sent" || send.status === "mock" ? "sent" : "failed",
             reminderLastSentAt: sentAt,
             updatedAt: sentAt,
           },
@@ -54,15 +54,18 @@ export async function POST() {
           contractId: row.contractId,
           sentTo: row.reminderEmailTo,
           copiedTo: "",
-          subject,
-          message,
-          status: send.status === "sent_mock" ? "sent" : "failed",
+          subject: `Recordatorio de pago de arriendo - ${row.periodLabel}`,
+          message: `Recordatorio automático de pago para ${row.periodLabel}`,
+          status: send.status === "sent" || send.status === "mock" ? "sent" : "failed",
           providerResponse: send.providerResponse,
           sentAt,
           createdAt: sentAt,
         }),
       ]);
-      auditEvent(send.status === "sent_mock" ? "payment_reminder_sent" : "payment_reminder_failed", { scheduledPaymentId: row.id });
+      auditEvent(send.status === "sent" || send.status === "mock" ? "payment_reminder_sent" : "payment_reminder_failed", {
+        scheduledPaymentId: row.id,
+        status: send.status,
+      });
       processed += 1;
     }
     return NextResponse.json({ success: true, processed });

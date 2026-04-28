@@ -4,6 +4,8 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
 import { verifyWompiWebhookSignature } from "@/domain/platform-payments/wompi-signature";
 import { decideWebhookHandling } from "@/domain/platform-payments/webhook-logic";
+import { plusAccessConfirmedEmail } from "@/services/email/emailTemplates";
+import { sendEmail } from "@/services/email/sendEmail";
 
 export const runtime = "nodejs";
 
@@ -193,6 +195,16 @@ export async function POST(request: Request) {
       await auditPlatformPaymentEvent(firestore, "access_entitlement_created", {
         entitlementId: entitlementRef.id,
         orderId: order.id,
+      });
+      const plusTemplate = plusAccessConfirmedEmail({ userEmail: order.userEmail, source: "payment" });
+      await sendEmail({
+        to: order.userEmail,
+        subject: plusTemplate.subject,
+        html: plusTemplate.html,
+        text: plusTemplate.text,
+        templateCode: "plusAccessConfirmedEmail",
+        relatedEntityType: "platform_order",
+        relatedEntityId: order.id,
       });
       return NextResponse.json({ success: true, status: "approved" });
     }

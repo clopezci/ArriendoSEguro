@@ -1,4 +1,5 @@
 import { RequireAuth } from "@/components/auth/require-auth";
+import { BrandLockup } from "@/components/brand/brand-lockup";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav";
 import Link from "next/link";
 
@@ -14,7 +15,7 @@ export default function DashboardLayout({
           <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <Link href="/dashboard" className="text-lg font-semibold tracking-tight text-violet-300">
-                ArriendoSeguro
+                <BrandLockup />
               </Link>
             </div>
             <DashboardNav />

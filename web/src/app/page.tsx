@@ -1,5 +1,5 @@
 import { LeadMarketForm } from "@/components/forms/lead-market-form";
-import { appConfig } from "@/lib/config";
+import { BrandLockup } from "@/components/brand/brand-lockup";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     "Colombia",
   ],
   openGraph: {
-    title: "Contrato de arrendamiento en Colombia | ArriendoSeguro",
+    title: "Contrato de arrendamiento en Colombia | ArriendoSeguro - AS",
     description:
       "Formaliza tu contrato de arriendo con firma electrónica, inventario y registro de pagos, sin inmobiliaria y sin dejarlo informal.",
     type: "website",
@@ -32,8 +32,8 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900 text-slate-100">
       <header className="shrink-0 border-b border-slate-800/60 bg-slate-950/90 shadow-[0_6px_20px_rgba(139,92,246,0.12)] backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-2 sm:px-6">
-          <span className="text-sm font-semibold tracking-tight text-violet-400 sm:text-base">
-            {appConfig.name}
+          <span className="text-sm font-semibold tracking-tight text-violet-300 sm:text-base">
+            <BrandLockup />
           </span>
           <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
             <a

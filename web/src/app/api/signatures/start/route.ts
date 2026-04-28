@@ -166,10 +166,14 @@ export async function POST(request: Request) {
         partyType: party,
         signingUrl,
         tokenExpiresAt,
+        contractId,
+        useInviteTemplate: party !== "landlord",
+        inviterName: version.contractPayload.landlord.fullName,
       });
-      auditEvent(emailResult.delivered ? "signature_email_sent" : "signature_email_placeholder", {
+      auditEvent(emailResult.delivered ? "signature_email_sent" : "signature_email_failed", {
         contractId,
         partyType: party,
+        mode: emailResult.mode,
       });
 
       signatures.push({

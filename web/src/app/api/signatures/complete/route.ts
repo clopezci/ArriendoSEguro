@@ -12,6 +12,8 @@ import { allRequiredSignaturesCompleted } from "@/domain/signatures/signatureRul
 import type { SignatureRecord } from "@/domain/signatures/types";
 import { auditEvent } from "@/features/contracts/audit";
 import { renderElectronicSignatureEvidenceAnnex } from "@/domain/contracts/annexes/renderAnnex";
+import { contractSignedEmail } from "@/services/email/emailTemplates";
+import { sendEmail } from "@/services/email/sendEmail";
 
 export const runtime = "nodejs";
 
@@ -150,6 +152,30 @@ export async function POST(request: Request) {
 
       const contractSnap = await contractRef.get();
       const contractData = contractSnap.data() as { draftId?: string; status?: string } | undefined;
+      const signedTemplate = contractSignedEmail({
+        contractId: signature.contractId,
+        leaseProcessId: contractData?.draftId,
+      });
+      const uniqueEmails = Array.from(
+        new Set(
+          signatures
+            .map((item) => item.signerEmail?.trim().toLowerCase())
+            .filter((email): email is string => Boolean(email)),
+        ),
+      );
+      await Promise.all(
+        uniqueEmails.map((email) =>
+          sendEmail({
+            to: email,
+            subject: signedTemplate.subject,
+            html: signedTemplate.html,
+            text: signedTemplate.text,
+            templateCode: "contractSignedEmail",
+            relatedEntityType: "contract",
+            relatedEntityId: signature.contractId,
+          }),
+        ),
+      );
       if (version?.documentHash) {
         const annex = renderElectronicSignatureEvidenceAnnex({
           contract: { id: signature.contractId, status: "signed" },

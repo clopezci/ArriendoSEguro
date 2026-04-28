@@ -66,6 +66,30 @@ const steps = [
   "Se cierra el contrato con soportes.",
 ];
 
+const conocerMasCards = [
+  {
+    title: "Lo básico",
+    bullets: [
+      "Contrato de arrendamiento guiado.",
+      "Inventario del inmueble y actas.",
+      "Firma digital entre las partes.",
+      "Registro informativo de pagos.",
+    ],
+  },
+  {
+    title: "Complementario",
+    text: "Recordatorios, reportes, trazabilidad y herramientas para que no se pierda nada importante durante el arriendo.",
+  },
+  {
+    title: "Extras con aliados",
+    text: "Seguro de arrendamiento, gestión de cobranza, estudios legales y apoyo jurídico especializado, solo si tú decides tomar esos servicios.",
+  },
+  {
+    title: "Lo que viene",
+    text: "Módulos adicionales de reputación, recomendaciones, y más adelante marketplace y búsqueda para quienes también quieran publicar.",
+  },
+] as const;
+
 export default function EntiendeloFacilPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-900 text-slate-100">
@@ -180,17 +204,17 @@ export default function EntiendeloFacilPage() {
             Una gestión inmobiliaria completa puede tener costos asociados a un porcentaje del
             canon mensual, dependiendo de la ciudad, empresa y servicios incluidos. Arriendo Seguro
             busca ofrecer una alternativa digital de pago único para personas que ya se encontraron
-            y necesitan formalizar el arriendo. <br />
-            <br />
-            <h2 className="text-2xl font-semibold">Mira los ejemplos a continuación y compara los posibles costos ilustrativos:</h2>
-            
+            y necesitan formalizar el arriendo.
           </p>
+          <h3 className="mt-4 text-xl font-semibold">
+            Mira los ejemplos a continuación y compara los posibles costos ilustrativos:
+          </h3>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[620px] border-collapse text-sm">
               <thead>
                 <tr className="bg-slate-800/80 text-left">
                   <th className="border border-slate-700 px-3 py-2">Canon mensual</th>
-                  <th className="border border-slate-700 px-3 py-2">Costo gencia 8%-10% mensual</th>
+                  <th className="border border-slate-700 px-3 py-2">Costo agencia 8%-10% mensual</th>
                   <th className="border border-slate-700 px-3 py-2">Arriendo Seguro</th>
                 </tr>
               </thead>
@@ -222,6 +246,42 @@ export default function EntiendeloFacilPage() {
           </p>
         </section>
 
+        <section id="conocer-mas" className="space-y-5 rounded-2xl border border-slate-800 bg-slate-900/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
+          <h2 className="text-2xl font-semibold">Conocer más: visión completa de Arriendo Seguro</h2>
+          <p className="max-w-4xl text-slate-300">
+            Queremos democratizar el acceso a garantías y cumplimiento legal para protegerte de manera
+            fácil y de bajo costo. Empezamos por lo esencial y seguimos creciendo contigo, sin perder
+            claridad sobre qué hacemos hoy y qué podemos habilitar mañana.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {conocerMasCards.map((card) => (
+              <article
+                key={card.title}
+                className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.22)]"
+              >
+                <h3 className="text-lg font-semibold">{card.title}</h3>
+                {"bullets" in card ? (
+                  <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-slate-300">
+                    {card.bullets.map((bullet) => (
+                      <li key={bullet}>{bullet}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-3 text-sm text-slate-300">{card.text}</p>
+                )}
+              </article>
+            ))}
+          </div>
+          <article className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.22)]">
+            <h3 className="text-lg font-semibold">Quiénes somos y por qué lo hacemos</h3>
+            <p className="mt-3 text-slate-300">
+              Nacimos para que arrendar no sea un dolor de cabeza ni un privilegio costoso. Creemos
+              que cada familia merece acuerdos claros, respaldo y herramientas simples para vivir con
+              tranquilidad y construir confianza entre personas.
+            </p>
+          </article>
+        </section>
+
         <section className="rounded-2xl border border-violet-500/50 bg-violet-900/20 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.2)]">
           <h2 className="text-2xl font-semibold">Qué no hace Arriendo Seguro</h2>
           <p className="mt-3 text-violet-100">
@@ -229,7 +289,7 @@ export default function EntiendeloFacilPage() {
             inmueble, no recauda el canon, no garantiza el pago, no reemplaza un abogado, no
             publica listas negras, no permite comentarios ofensivos y no hace búsqueda pública por
             cédula. <br /><br />
-            AS es una herramienta digital para ayudar a formalizar y documentar arriendos ya acordados entre persoas 
+            AS es una herramienta digital para ayudar a formalizar y documentar arriendos ya acordados entre personas
             particulares, de modo que cuentes con respaldo escrito y trazable si más adelante necesitas acudir 
             por una vía legal o de conciliación.
           </p>

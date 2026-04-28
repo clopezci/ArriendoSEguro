@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
-import { appConfig } from "@/lib/config";
+import { BrandLockup } from "@/components/brand/brand-lockup";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -27,7 +27,7 @@ export function PanelHeader() {
             href="/panel"
             className="text-sm font-semibold text-violet-400"
           >
-            {appConfig.name}
+            <BrandLockup />
           </Link>
           <span className="max-w-[12rem] truncate text-xs text-slate-400 sm:hidden" title={user?.email ?? ""}>
             {user?.email}
