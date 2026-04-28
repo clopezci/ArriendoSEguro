@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin";
 import { grantManualPlusEntitlement } from "@/domain/platform-payments/manual-grant";
@@ -17,11 +18,7 @@ function isInternalEnabled() {
 
 function isAllowedAdmin(email: string) {
   if (process.env.NODE_ENV === "development") return true;
-  const allow = (process.env.ADMIN_INTERNAL_EMAILS ?? "")
-    .split(",")
-    .map((v) => v.trim().toLowerCase())
-    .filter(Boolean);
-  return allow.includes(email.toLowerCase());
+  return isInternalAdminEmail(email);
 }
 
 export async function POST(request: Request) {

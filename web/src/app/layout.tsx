@@ -1,3 +1,4 @@
+import { LegalFooter } from "@/components/layout/legal-footer";
 import { AppProviders } from "@/components/providers/app-providers";
 import { appConfig } from "@/lib/config";
 import type { Metadata } from "next";
@@ -32,7 +33,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <div className="flex min-h-screen flex-col">
+            <div className="flex-1">{children}</div>
+            <LegalFooter />
+          </div>
+        </AppProviders>
       </body>
     </html>
   );
