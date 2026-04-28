@@ -66,7 +66,7 @@ export interface ResidentialLeaseContractInput {
   contractVersion: ContractVersion | string;
   generatedAt: string;
   /**
-   * Campo opcional para proteger el MVP:
+   * Campo opcional para proteger la fase inicial del producto:
    * en vivienda urbana no se debe pactar depósito en dinero.
    */
   securityDepositAmount?: number;

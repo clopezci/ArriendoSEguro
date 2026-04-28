@@ -13,7 +13,9 @@ export default function TerminosPage() {
       <header className="space-y-2 border-b border-slate-800 pb-6">
         <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Información legal</p>
         <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Términos y condiciones de uso</h1>
-        <p className="text-xs text-slate-500">Última actualización orientativa para el MVP. Vigencia: Colombia.</p>
+        <p className="text-xs text-slate-500">
+          Última actualización orientativa para esta fase inicial del servicio. Vigencia: Colombia.
+        </p>
         <Link href="/" className="inline-block text-xs text-violet-400 hover:underline">
           Volver al inicio
         </Link>

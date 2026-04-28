@@ -91,7 +91,7 @@ export default function MisArriendosPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm text-slate-400">
-              Estado local del navegador (MVP):{" "}
+              Estado local del navegador (fase inicial):{" "}
               <strong className="text-slate-200">{statusLabel(accessStatus)}</strong>
             </p>
             {!gate.allowed && (

@@ -47,6 +47,8 @@ export const leadFormSchema = z.object({
     .enum([
       "landing",
       "entiendelo-facil",
+      "landing_fase_inicial",
+      /** Compatibilidad con envíos previos desde la landing */
       "landing_mvp",
       "landing_comercial_interno",
     ])

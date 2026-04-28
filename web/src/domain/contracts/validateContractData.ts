@@ -91,7 +91,7 @@ export function validateContractData(input: ResidentialLeaseContractInput): Vali
     });
   }
 
-  // Cláusulas obligatorias de cumplimiento mínimo (MVP):
+  // Cláusulas obligatorias de cumplimiento mínimo (fase inicial):
   if (isBlank(input.contractVersion)) {
     issues.push({ field: "contractVersion", message: "Versión de contrato requerida." });
   }

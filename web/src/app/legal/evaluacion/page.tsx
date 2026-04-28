@@ -29,7 +29,7 @@ export default function EvaluacionPage() {
         <p>
           Las respuestas del cuestionario estructurado sobre la experiencia de arriendo se consideran información con
           fines de mejora del servicio y, cuando se implemente, retroalimentación entre partes bajo reglas de
-          visibilidad que {appConfig.name} publique. En el MVP no hay perfil público de reputación salvo que se indique
+          visibilidad que {appConfig.name} publique. En esta fase inicial no hay perfil público de reputación salvo que se indique
           expresamente en el producto.
         </p>
       </section>
@@ -53,7 +53,7 @@ export default function EvaluacionPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-white">4. No búsqueda pública por cédula</h2>
         <p>
-          No habrá, en el alcance del MVP, un buscador público que permita localizar historiales ingresando el número
+          No habrá, en el alcance de esta fase inicial, un buscador público que permita localizar historiales ingresando el número
           de cédula u otro documento de identidad de terceros. Cualquier cambio futuro de modelo de visibilidad será
           comunicado con antelación y, cuando corresponda, con nueva base legal.
         </p>

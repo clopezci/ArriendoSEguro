@@ -254,7 +254,7 @@ export default function PreviewStepPage() {
           | { success: false };
         if (sigRes.ok && sigData.success) setSignatureRows(sigData.signatures);
       } catch {
-        // silencioso en MVP
+        // silencioso en fase inicial
       }
       try {
         const annexRes = await fetch(
@@ -274,7 +274,7 @@ export default function PreviewStepPage() {
           | { success: false };
         if (annexRes.ok && annexData.success) setEvidenceAnnex(annexData.annex);
       } catch {
-        // silencioso en MVP
+        // silencioso en fase inicial
       }
       try {
         const listRes = await fetch(
@@ -285,7 +285,7 @@ export default function PreviewStepPage() {
           | { success: false };
         if (listRes.ok && listData.success) setAnnexRows(listData.annexes);
       } catch {
-        // silencioso en MVP
+        // silencioso en fase inicial
       }
     };
     void load();

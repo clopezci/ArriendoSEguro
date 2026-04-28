@@ -21,7 +21,7 @@ export function computeDocumentHash(html: string): string {
 
 /**
  * TODO(PDF): integrar librería de generación PDF y devolver buffer/base64.
- * Se deja preparado para no bloquear el MVP documental HTML.
+ * Se deja preparado para no bloquear el documento HTML de la fase inicial.
  */
 export async function renderContractPdfFromHtml(html: string): Promise<never> {
   void html;

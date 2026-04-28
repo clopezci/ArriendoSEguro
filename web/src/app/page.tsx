@@ -49,22 +49,10 @@ export default function Home() {
               Ver demo guiado
             </Link>
             <Link
-              href="/dashboard"
-              className="rounded-md border border-slate-600 px-2 py-1 text-[11px] font-medium text-slate-200 transition hover:border-violet-500/50 hover:text-slate-100 sm:px-2.5 sm:text-xs"
-            >
-              Ir a ArriendoSeguro
-            </Link>
-            <Link
               href="/ingresar"
-              className="rounded-md border border-slate-600 px-2 py-1 text-[11px] font-medium text-slate-200 transition hover:border-slate-500 sm:px-2.5 sm:text-xs"
-            >
-              Ingresar
-            </Link>
-            <Link
-              href="/registro"
               className="rounded-md border border-violet-500/60 bg-violet-600/20 px-2 py-1 text-[11px] font-medium text-violet-200 shadow-[0_0_12px_rgba(139,92,246,0.2)] transition hover:bg-violet-600/30 sm:px-2.5 sm:text-xs"
             >
-              Registrarse
+              Acceder al panel
             </Link>
           </div>
         </div>
@@ -120,7 +108,7 @@ export default function Home() {
               </p>
               <p className="text-center text-[10px] font-medium text-violet-300/90 sm:text-[11px] lg:text-left">
                 Los primeros inscritos podrán recibir acceso anticipado y beneficios de lanzamiento
-                cuando abramos la prueba del MVP.
+                cuando abramos la prueba en esta fase inicial.
               </p>
             </section>
           </div>
@@ -129,7 +117,7 @@ export default function Home() {
             id="interes"
             className="min-h-0 scroll-mt-20 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto lg:pr-1"
           >
-            <LeadMarketForm sourcePage="landing_mvp" />
+            <LeadMarketForm sourcePage="landing_fase_inicial" />
           </div>
         </div>
 

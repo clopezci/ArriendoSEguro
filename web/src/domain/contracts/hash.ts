@@ -1,4 +1,4 @@
-// Hash documental para contrato (MVP, portable en server/client).
+// Hash documental para contrato (fase inicial, portable en server/client).
 export function generateDocumentHash(content: string): string {
   let hash = 0x811c9dc5;
   for (let i = 0; i < content.length; i += 1) {

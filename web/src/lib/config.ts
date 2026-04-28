@@ -1,10 +1,10 @@
 /**
- * Valores de producto y feature flags. Los módulos desactivados en MVP
+ * Valores de producto y feature flags. Los módulos desactivados en esta fase inicial
  * quedan explícitos para no mezclar lógica de marketplace con formalización.
  */
 export const appConfig = {
   name: "ArriendoSeguro",
-  /** Título principal de la landing MVP */
+  /** Título principal de la landing (fase inicial) */
   tagline:
     "¿Necesitas arrendar tu propiedad? Te lo hacemos fácil, seguro y asequible.",
   /** Resumen breve para meta tags y previsualizaciones */
@@ -14,9 +14,9 @@ export const appConfig = {
 } as const;
 
 export const featureFlags = {
-  /** Búsqueda, publicación y matching: fase 2, desactivado en MVP */
+  /** Búsqueda, publicación y matching: fase 2, desactivado en la fase inicial */
   marketplaceAndListing: false,
-  /** Expediente de arriendo / formalización: núcleo del MVP (orden 1) */
+  /** Expediente de arriendo / formalización: núcleo de la fase inicial (orden 1) */
   leaseFormalization: true,
   /** Inventario / acta: orden 2 */
   propertyInventory: false,

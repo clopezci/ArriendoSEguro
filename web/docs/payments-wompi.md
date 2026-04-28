@@ -67,7 +67,7 @@ Se evita duplicar pagos/accesos cuando llega el mismo webhook más de una vez:
 - no crea segundo `platform_payment`.
 - no crea segundo `access_entitlement`.
 
-## Cómo probar en mock (MVP)
+## Cómo probar en mock (fase inicial)
 
 1. Crear orden Plus.
 2. Usar `POST /api/platform-payments/mock-approve` con `orderId`.

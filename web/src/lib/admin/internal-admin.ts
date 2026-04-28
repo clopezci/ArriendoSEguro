@@ -4,7 +4,7 @@ import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 
 /**
  * Lista blanca server-side. Nunca uses NEXT_PUBLIC_* para autorizar en API.
- * Ejemplo MVP: ADMIN_INTERNAL_EMAILS=clopezci@hotmail.com
+ * Ejemplo: ADMIN_INTERNAL_EMAILS=clopezci@hotmail.com
  */
 export function getAdminInternalEmailSet(): Set<string> {
   const raw = process.env.ADMIN_INTERNAL_EMAILS ?? "";

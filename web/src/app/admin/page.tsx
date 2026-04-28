@@ -147,7 +147,7 @@ export default function AdminPage() {
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <header className="mb-6 flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 pb-4">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Interno MVP</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Herramienta interna</p>
             <h1 className="text-2xl font-bold text-white">Panel administrativo</h1>
             <p className="mt-1 text-xs text-slate-500">
               Acceso validado en el servidor con <code className="text-slate-400">ADMIN_INTERNAL_EMAILS</code>. No

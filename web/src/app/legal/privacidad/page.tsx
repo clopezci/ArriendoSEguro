@@ -28,8 +28,8 @@ export default function PrivacidadPage() {
         <h2 className="text-lg font-semibold text-white">1. Responsable del tratamiento</h2>
         <p>
           El responsable del tratamiento de los datos personales tratados a través de la plataforma {appConfig.name} es
-          quien se identifique como titular del servicio en los avisos de registro y en la sección de contacto (en el
-          MVP puede figurar la razón social o nombre del operador y NIT cuando estén disponibles públicamente). Los
+          quien se identifique como titular del servicio en los avisos de registro y en la sección de contacto (en
+          esta fase inicial puede figurar la razón social o nombre del operador y NIT cuando estén disponibles públicamente). Los
           datos de contacto para ejercer derechos se indican al final de esta política.
         </p>
       </section>
@@ -111,7 +111,7 @@ export default function PrivacidadPage() {
           <Link href="/legal/evaluacion" className="text-violet-400 hover:underline">
             Política de evaluación estructurada
           </Link>
-          : no publicamos listas negras ni permitimos búsqueda pública por cédula en el MVP.
+          : no publicamos listas negras ni permitimos búsqueda pública por cédula en esta fase inicial.
         </p>
       </section>
 
