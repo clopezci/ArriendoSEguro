@@ -59,6 +59,10 @@ export function IngresarForm() {
     return humanA + humanB;
   }, [humanA, humanB]);
 
+  const turnstileSiteKey = (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "").trim();
+  /** Solo obligatorio si definís explícitamente NEXT_PUBLIC_TURNSTILE_REQUIRED=true (después de verificar el widget en Turnstile). */
+  const turnstileStrict = turnstileSiteKey.length > 0 && process.env.NEXT_PUBLIC_TURNSTILE_REQUIRED === "true";
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -71,18 +75,20 @@ export function IngresarForm() {
       setError("No se pudo validar el formulario. Recargá e intentá de nuevo.");
       return;
     }
-    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !turnstileToken) {
-      setError("Completá primero el control anti-bot.");
+    if (turnstileStrict && !turnstileToken) {
+      setError(
+        "Completá primero el recuadro de Cloudflare Turnstile (debajo de la suma). Si no aparece, revisá dominios permitidos en Cloudflare o desactivá el modo estricto quitando NEXT_PUBLIC_TURNSTILE_REQUIRED.",
+      );
       return;
     }
-    if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+    if (turnstileStrict && turnstileToken) {
       const sec = await fetch("/api/security/turnstile/verify", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ token: turnstileToken, action: "auth_form" }),
       });
       if (!sec.ok) {
-        setError("No se pudo validar el control anti-bot. Recargá la página e intentá de nuevo.");
+        setError("No se pudo validar Turnstile en el servidor. Recargá la página e intentá de nuevo.");
         return;
       }
     }
@@ -224,7 +230,7 @@ export function IngresarForm() {
         className="hidden"
         name="website"
       />
-      <TurnstileWidget onToken={setTurnstileToken} action="auth_form" />
+      <TurnstileWidget onToken={setTurnstileToken} action="auth_form" requiredForSubmit={turnstileStrict} />
       {notice && (
         <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-100">
           {notice}
