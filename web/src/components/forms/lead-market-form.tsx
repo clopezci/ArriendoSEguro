@@ -183,25 +183,83 @@ export function LeadMarketForm({
     setStatus("sending");
     setMessage("");
     try {
+      // Sanitizar el body: el schema del servidor (Zod) trata estas claves como
+      // enum opcional o string opcional. Si enviamos "" cuando no aplica, falla
+      // la validación y la API responde { error: "Validación" }. Aquí mandamos
+      // `undefined` (lo cual JSON.stringify omite) para mantener el contrato limpio.
+      const body = {
+        q1PropertySituation: values.q1PropertySituation,
+        q2RentalChannel: values.q2RentalChannel,
+        q3MainConcern: values.q3MainConcern,
+        q4LowCostApp: values.q4LowCostApp,
+        q4NoReason:
+          values.q4LowCostApp === "no" && values.q4NoReason
+            ? values.q4NoReason
+            : undefined,
+        q4NoReasonOther:
+          values.q4LowCostApp === "no" &&
+          values.q4NoReason === "other" &&
+          values.q4NoReasonOther.trim() !== ""
+            ? values.q4NoReasonOther.trim()
+            : undefined,
+        q5WillingToPay: values.q5WillingToPay,
+        q6ValuedModule: values.q6ValuedModule,
+        q6Other:
+          values.q6ValuedModule === "other" && values.q6Other.trim() !== ""
+            ? values.q6Other.trim()
+            : undefined,
+        sourcePage,
+        email: values.email,
+        contactConsent: values.contactConsent ?? false,
+      };
+
       const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...values,
-          sourcePage,
-          contactConsent: values.contactConsent ?? false,
-        }),
+        body: JSON.stringify(body),
       });
-      const data = (await res.json()) as {
+      // Algunas respuestas de error (p. ej. 500 sin handler) llegan como HTML.
+      // Parseamos defensivamente para no caer al catch con "Error de conexión".
+      const rawText = await res.text();
+      let data: {
         ok?: boolean;
         message?: string;
         error?: string;
         stored?: boolean;
         duplicate?: boolean;
-      };
+        issues?: { fieldErrors?: Record<string, string[]> };
+      } = {};
+      try {
+        data = rawText ? (JSON.parse(rawText) as typeof data) : {};
+      } catch {
+        data = {};
+      }
       if (!res.ok) {
         setStatus("error");
-        setMessage(data.error ?? "No se pudo enviar. Intenta de nuevo.");
+        if (data.error === "Validación") {
+          // Mostrar un mensaje útil en lugar de la palabra suelta "Validación"
+          // (suele indicar que faltó algún dato obligatorio en el formulario).
+          const fieldErrors = data.issues?.fieldErrors ?? {};
+          const detalles = Object.entries(fieldErrors)
+            .map(([campo, msgs]) => `${campo}: ${(msgs ?? []).join(", ")}`)
+            .filter((s) => s.trim().length > 0)
+            .join(" | ");
+          setMessage(
+            detalles
+              ? `Hay un dato inválido en el formulario. ${detalles}`
+              : "Hay un dato inválido en el formulario. Vuelve a revisar tus respuestas e inténtalo de nuevo.",
+          );
+        } else if (data.error) {
+          setMessage(data.error);
+        } else if (res.status >= 500) {
+          // Caso típico cuando el backend cayó (p. ej. Firestore inalcanzable
+          // por SSL/red local) y devolvió HTML en vez de JSON.
+          setMessage(
+            "Hubo un problema temporal en nuestro servicio. Por favor inténtalo de nuevo en unos minutos.",
+          );
+        } else {
+          setMessage("No se pudo enviar. Intenta de nuevo.");
+        }
         return;
       }
       if (data.duplicate) {

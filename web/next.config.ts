@@ -19,6 +19,14 @@ const csp = [
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: appDir,
+  /**
+   * `resend` (v6) hace `import("@react-email/render")` de forma diferida para
+   * soportar plantillas en React. Nosotros enviamos HTML plano, así que ese
+   * módulo opcional no está instalado y Turbopack falla al bundlearlo.
+   * Marcando `resend` como external del servidor, Next no lo bundlea y Node
+   * lo carga en runtime, donde la importación dinámica nunca se ejecuta.
+   */
+  serverExternalPackages: ["resend"],
   async headers() {
     return [
       {

@@ -46,8 +46,28 @@ export function OPTIONS() {
  * Lead público: validación con Zod, tope de tamaño, email normalizado,
  * y evita duplicar por el mismo correo (cuando el usuario lo informa).
  * Abuso: mitigar más adelante con rate limit (Edge/KV) o reglas de red en Vercel.
+ *
+ * Importante: este handler siempre debe responder JSON estructurado
+ * ({ ok, error, message }), incluso ante fallos del backend, para que el
+ * formulario pueda mostrar un mensaje útil y no caiga al catch genérico.
  */
 export async function POST(request: Request) {
+  try {
+    return await handlePost(request);
+  } catch (err) {
+    console.error("[/api/leads] POST falló:", err);
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "Hubo un problema temporal al guardar tu respuesta. Por favor inténtalo de nuevo en unos minutos.",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+async function handlePost(request: Request) {
   const len = request.headers.get("content-length");
   if (len != null) {
     const n = Number(len);
