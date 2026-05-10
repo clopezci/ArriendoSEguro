@@ -1,0 +1,44 @@
+---
+description: Mobile-first y PWA para ArriendoSeguro (web/)
+globs: web/**
+alwaysApply: false
+---
+
+# Mobile-first + PWA
+
+Toda UI nueva o ajustada en `web/` debe ser **mobile-first** y compatible con la **PWA** de ArriendoSeguro.
+
+## Mobile-first (obligatorio)
+
+- Diseñar primero a **360–390px** de ancho; ampliar con `sm:`/`md:`/`lg:`.
+- Targets táctiles **`min-h-11`** (≈44 px) en botones, links de acción y filas clickeables.
+- Padding base **`p-4`** en contenedores; `sm:p-6` desde tablet.
+- Botones primarios a **`w-full`** en móvil; en fila desde `sm` (`sm:w-auto`).
+- Cuerpo legible (≥14 px). Evitar `text-xs` para texto principal.
+- Tablas largas: `overflow-x-auto` + columnas críticas con `whitespace-normal break-words` cuando llevan texto largo.
+- Imágenes con `sizes` y `priority` solo cuando aplique (ver `next/image`).
+
+## Formularios (mobile-first)
+
+- Selects de encuestas/diagnóstico **sin valor preseleccionado**: forzar elección consciente.
+- Validar **antes de enviar**; resaltar en **rojo** el campo y hacer
+  `scrollIntoView({ behavior: "smooth", block: "center" })` al primero inválido **+ foco**.
+- Usar `aria-invalid`, `role="status"` para éxito y `role="alert"` para error.
+- Poner `noValidate` en `<form>` para evitar tooltips nativos que rompen estilos en PWA instalada.
+- Tras envío exitoso: mensaje claro de éxito y reiniciar el formulario.
+
+## PWA (objetivo cercano)
+
+- `web/public/manifest.webmanifest` con `display: "standalone"`, `theme_color: "#0b0f1a"`,
+  `background_color: "#0b0f1a"`, íconos morados (AS) 192/512 px y maskable.
+- Registrar Service Worker (preferir `next-pwa` o ruta propia simple) con
+  cache-first para assets estáticos y network-first para `/api/*`.
+- Ningún flujo crítico debe depender 100% de offline en fase inicial.
+- Probar instalación en Android (Chrome) y iOS (Safari → Compartir → Añadir a pantalla de inicio).
+
+## Accesibilidad y rendimiento
+
+- Contraste mínimo AA (texto normal 4.5:1).
+- Foco visible: no eliminar `outline` sin reemplazo equivalente.
+- `<label>` real en todo input; placeholders no sustituyen etiquetas.
+- Lazy-load de pestañas pesadas del panel; evitar paquetes grandes en la landing pública.

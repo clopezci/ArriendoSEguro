@@ -307,23 +307,36 @@ function Encuestas({ rows, onExport }: { rows: Record<string, unknown>[]; onExpo
       >
         Exportar CSV
       </button>
-      <TablaGenerica rows={rows} />
+      <TablaGenerica rows={rows} tableStyle="surveys" />
     </div>
   );
 }
 
-function TablaGenerica({ rows }: { rows: Record<string, unknown>[] }) {
+function TablaGenerica({
+  rows,
+  tableStyle = "default",
+}: {
+  rows: Record<string, unknown>[];
+  tableStyle?: "default" | "surveys";
+}) {
   if (!rows.length) {
     return <p className="text-sm text-slate-500">Sin filas.</p>;
   }
   const keys = Object.keys(rows[0] ?? {});
+  const isSurveys = tableStyle === "surveys";
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-800">
-      <table className="w-full min-w-[640px] border-collapse text-left text-xs">
-        <thead className="border-b border-slate-800 bg-slate-950/80 text-[10px] uppercase text-slate-500">
+      <table
+        className={`w-full border-collapse text-left text-xs ${isSurveys ? "min-w-[1100px]" : "min-w-[640px]"}`}
+      >
+        <thead
+          className={`border-b border-slate-800 bg-slate-950/80 text-[10px] font-medium ${
+            isSurveys ? "normal-case leading-tight text-slate-400" : "uppercase text-slate-500"
+          }`}
+        >
           <tr>
             {keys.map((k) => (
-              <th key={k} className="px-2 py-2 font-medium">
+              <th key={k} className={`px-2 py-2 align-bottom ${isSurveys ? "max-w-[11rem] whitespace-normal" : ""}`}>
                 {k}
               </th>
             ))}
@@ -333,7 +346,13 @@ function TablaGenerica({ rows }: { rows: Record<string, unknown>[] }) {
           {rows.map((row, i) => (
             <tr key={i} className="border-b border-slate-800/80 odd:bg-slate-900/40">
               {keys.map((k) => (
-                <td key={k} className="max-w-[220px] truncate px-2 py-1.5 text-slate-300" title={String(row[k] ?? "")}>
+                <td
+                  key={k}
+                  className={`px-2 py-1.5 align-top text-slate-300 ${
+                    isSurveys ? "max-w-[14rem] break-words whitespace-normal" : "max-w-[220px] truncate"
+                  }`}
+                  title={String(row[k] ?? "")}
+                >
                   {formatCell(row[k])}
                 </td>
               ))}

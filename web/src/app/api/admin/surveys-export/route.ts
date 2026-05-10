@@ -2,6 +2,18 @@ import { NextResponse } from "next/server";
 import { Timestamp } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireInternalAdmin } from "@/lib/admin/internal-admin";
+import {
+  LEAD_FORM_CSV_HEADERS,
+  labelAppInterestAnswer,
+  labelContactConsent,
+  labelMainConcernAnswer,
+  labelMostValuableModuleAnswer,
+  labelPropertyStatusAnswer,
+  labelQ4NoReason,
+  labelRentalChannelAnswer,
+  labelSourcePage,
+  labelWillingnessToPayAnswer,
+} from "@/lib/validations/lead-form-export-labels";
 
 export const runtime = "nodejs";
 
@@ -43,43 +55,41 @@ export async function GET(request: Request) {
     }
   }
 
-  const header = [
-    "id",
-    "createdAt",
-    "email",
-    "sourcePage",
-    "propertyStatusAnswer",
-    "rentalChannelAnswer",
-    "mainConcernAnswer",
-    "appInterestAnswer",
-    "q4NoReason",
-    "q4NoReasonOther",
-    "willingnessToPayAnswer",
-    "mostValuableModuleAnswer",
-    "mostValuableModuleOther",
-    "contactConsent",
-    "userAgent",
-  ];
-
-  const lines = [header.join(",")];
+  const lines = [[...LEAD_FORM_CSV_HEADERS].map((h) => csvCell(h)).join(",")];
   for (const d of snap.docs) {
     const x = d.data() as Record<string, unknown>;
+    const sp = x.sourcePage;
+    const ps = x.propertyStatusAnswer;
+    const rc = x.rentalChannelAnswer;
+    const mc = x.mainConcernAnswer;
+    const ai = x.appInterestAnswer;
+    const q4r = x.q4NoReason;
+    const wt = x.willingnessToPayAnswer;
+    const mv = x.mostValuableModuleAnswer;
     lines.push(
       [
         csvCell(d.id),
         csvCell(iso(x.createdAt) || iso(x.createdAtServer)),
         csvCell(x.email),
-        csvCell(x.sourcePage),
-        csvCell(x.propertyStatusAnswer),
-        csvCell(x.rentalChannelAnswer),
-        csvCell(x.mainConcernAnswer),
-        csvCell(x.appInterestAnswer),
-        csvCell(x.q4NoReason),
+        csvCell(labelSourcePage(sp)),
+        csvCell(sp),
+        csvCell(labelPropertyStatusAnswer(ps)),
+        csvCell(ps),
+        csvCell(labelRentalChannelAnswer(rc)),
+        csvCell(rc),
+        csvCell(labelMainConcernAnswer(mc)),
+        csvCell(mc),
+        csvCell(labelAppInterestAnswer(ai)),
+        csvCell(ai),
+        csvCell(labelQ4NoReason(q4r)),
+        csvCell(q4r),
         csvCell(x.q4NoReasonOther),
-        csvCell(x.willingnessToPayAnswer),
-        csvCell(x.mostValuableModuleAnswer),
+        csvCell(labelWillingnessToPayAnswer(wt)),
+        csvCell(wt),
+        csvCell(labelMostValuableModuleAnswer(mv)),
+        csvCell(mv),
         csvCell(x.mostValuableModuleOther),
-        csvCell(x.contactConsent),
+        csvCell(labelContactConsent(x.contactConsent)),
         csvCell(x.userAgent),
       ].join(","),
     );

@@ -1,0 +1,355 @@
+ARRENDOSEGURO - CONTRATO IMPLEMENTADO (REVISIÓN LEGAL)
+Versión de contrato: AS-LEASE-MVP-2026.1
+Fecha de extracción: 2026-05-06
+
+==================================================
+1) FUENTE REAL USADA POR LA APLICACIÓN
+==================================================
+
+Plantilla base:
+- web/src/domain/contracts/contractClauses.ts
+  - CONTRACT_TEMPLATE
+  - COMPARECENCIA_CODEUDOR
+  - CLAUSULA_CODEUDOR
+  - NOTIFICACION_CODEUDOR
+  - FIRMA_CODEUDOR
+
+Motor de render:
+- web/src/domain/contracts/renderResidentialLeaseContract.ts
+  - Activa/desactiva bloques condicionales de codeudor
+  - Inserta variables dinámicas en placeholders [VARIABLE]
+
+Variables dinámicas:
+- web/src/domain/contracts/contractVariables.ts
+  - buildContractVariables()
+  - injectVariables()
+
+
+==================================================
+2) TEXTO COMPLETO ACTUAL - VERSIÓN SIN CODEUDOR
+==================================================
+
+CONTRATO DE ARRENDAMIENTO DE VIVIENDA URBANA
+
+Entre los suscritos a saber:
+[COMPARECENCIA_ARRENDADOR]
+[COMPARECENCIA_ARRENDATARIO]
+
+hemos celebrado el presente Contrato de Arrendamiento de Vivienda Urbana, que se regirá por las normas civiles y comerciales aplicables, especialmente por la Ley 820 de 2003 y por las siguientes cláusulas:
+
+PRIMERA. OBJETO
+EL ARRENDADOR entrega a título de arrendamiento a EL ARRENDATARIO, y este recibe en tal calidad, el inmueble urbano destinado exclusivamente a vivienda, ubicado en [DIRECCION_INMUEBLE], ciudad de [CIUDAD_INMUEBLE], departamento de [DEPARTAMENTO_INMUEBLE], identificado, si aplica, con matrícula inmobiliaria No. [MATRICULA_INMOBILIARIA].
+[NOTA_DIRECCION_URBANA_Y_CATASTRO]
+El inmueble objeto del presente contrato corresponde a: [TIPO_INMUEBLE].
+
+SEGUNDA. DESTINACIÓN
+EL ARRENDATARIO se obliga a destinar el inmueble exclusivamente para vivienda propia y/o de su grupo autorizado, sin que pueda darle destinación comercial, industrial, turística, hotelera, subarrendarlo, cederlo o permitir su ocupación por terceros no autorizados, salvo autorización previa, expresa y escrita de EL ARRENDADOR.
+
+TERCERA. CANON DE ARRENDAMIENTO
+EL ARRENDATARIO pagará a EL ARRENDADOR, por concepto de canon de arrendamiento, la suma mensual de [CANON_MENSUAL_LETRAS] ($[CANON_MENSUAL]), pagadera dentro de los primeros [DIA_PAGO] días de cada mes, mediante [METODO_PAGO], o por el medio que las partes acuerden por escrito.
+Las partes declaran que el canon pactado ha sido revisado frente al valor comercial informado del inmueble y que no supera el límite legal aplicable para vivienda urbana.
+
+CUARTA. DURACIÓN
+El término de duración del presente contrato será de [DURACION_MESES] meses, contados a partir del día [FECHA_INICIO] y hasta el día [FECHA_FIN].
+Si las partes desean renovar el contrato, podrán hacerlo conforme a la ley y dejando constancia escrita o electrónica de las condiciones aplicables.
+
+QUINTA. REAJUSTE DEL CANON
+El canon de arrendamiento solo podrá reajustarse cada doce meses de ejecución del contrato bajo un mismo precio, de conformidad con los límites establecidos por la normatividad colombiana aplicable.
+El incremento no podrá superar el porcentaje legalmente permitido para el periodo correspondiente. Arriendo Seguro podrá servir como herramienta de cálculo y registro del reajuste, sin que ello sustituya la responsabilidad de las partes de verificar la normatividad vigente.
+
+SEXTA. FORMA DE PAGO Y SOPORTES
+EL ARRENDATARIO deberá pagar el canon en la forma y fecha pactadas.
+EL ARRENDADOR deberá entregar o permitir constancia del pago recibido. Cuando las partes usen Arriendo Seguro, podrán registrar los pagos realizados dentro de la plataforma como soporte documental.
+Las partes reconocen que Arriendo Seguro no recauda dinero, no administra recursos, no actúa como intermediario financiero y no garantiza el pago del canon.
+
+SÉPTIMA. SERVICIOS PÚBLICOS, ADMINISTRACIÓN Y OTROS GASTOS
+Las partes acuerdan que el pago de los servicios públicos domiciliarios asociados al inmueble será responsabilidad de [RESPONSABLE_SERVICIOS_PUBLICOS], conforme a las siguientes condiciones:
+[DETALLE_SERVICIOS_PUBLICOS]
+En caso de existir cuotas de administración, expensas comunes u otros gastos asociados al inmueble, las partes acuerdan lo siguiente:
+[DETALLE_ADMINISTRACION_EXPENSAS]
+Las partes dejan constancia de que no se exige depósito en dinero efectivo ni caución real prohibida para garantizar obligaciones del contrato de vivienda urbana.
+
+OCTAVA. ENTREGA DEL INMUEBLE E INVENTARIO
+EL ARRENDADOR entregará el inmueble en condiciones aptas para el uso convenido. Las partes podrán elaborar un inventario inicial del inmueble, incluyendo estado general, elementos entregados, medidores, llaves, fotografías y observaciones.
+
+NOVENA. OBLIGACIONES DEL ARRENDADOR
+1. Entregar el inmueble en la fecha acordada y en condiciones aptas para vivienda.
+2. Permitir el uso y goce pacífico del inmueble durante el término del contrato.
+3. Entregar copia del contrato a EL ARRENDATARIO.
+4. Respetar las condiciones pactadas.
+5. Cumplir las obligaciones legales aplicables.
+6. Atender las reparaciones que legal o contractualmente le correspondan.
+7. Respetar la privacidad y derechos de EL ARRENDATARIO.
+
+DÉCIMA. OBLIGACIONES DEL ARRENDATARIO
+1. Pagar oportunamente el canon de arrendamiento.
+2. Pagar los servicios públicos, administración u otros gastos que le correspondan según lo pactado.
+3. Usar el inmueble exclusivamente para vivienda.
+4. Cuidar el inmueble y responder por daños causados por mal uso, culpa o negligencia.
+5. No subarrendar, ceder ni cambiar la destinación sin autorización.
+6. Restituir el inmueble al finalizar el contrato en condiciones adecuadas.
+7. Cumplir las obligaciones legales aplicables.
+
+DÉCIMA PRIMERA. PROHIBICIÓN DE DEPÓSITOS EN DINERO
+Las partes reconocen que, tratándose de arrendamiento de vivienda urbana, no se exige ni se pacta depósito en dinero efectivo u otra caución real prohibida para garantizar las obligaciones asumidas por EL ARRENDATARIO.
+
+DÉCIMA SEGUNDA. FIRMA ELECTRÓNICA
+Las partes aceptan que el presente contrato pueda ser firmado mediante mecanismos de firma electrónica simple, siempre que permitan identificar al firmante, evidenciar su aprobación del contenido y conservar trazabilidad del evento de firma.
+
+DÉCIMA TERCERA. TRATAMIENTO DE DATOS PERSONALES
+Las partes autorizan el tratamiento de sus datos personales por parte de la plataforma Arriendo Seguro para las finalidades relacionadas con creación, gestión, firma, trazabilidad, conservación documental y soporte del contrato.
+
+DÉCIMA CUARTA. EVALUACIÓN ESTRUCTURADA DE LA EXPERIENCIA ARRENDATICIA
+Las partes aceptan que podrán registrar una evaluación estructurada de la experiencia arrendaticia mediante formularios cerrados. No constituye lista negra pública ni consulta libre por cédula.
+
+DÉCIMA QUINTA. NOTIFICACIONES
+EL ARRENDADOR: Dirección [DIRECCION_NOTIFICACION_ARRENDADOR] - Correo [EMAIL_ARRENDADOR]
+EL ARRENDATARIO: Dirección [DIRECCION_NOTIFICACION_ARRENDATARIO] - Correo [EMAIL_ARRENDATARIO]
+
+DÉCIMA SEXTA. MORA, TERMINACIÓN Y RESTITUCIÓN LEGAL DEL INMUEBLE
+En caso de mora igual o superior a [NUMERO_MESES_MORA] canon(es), EL ARRENDADOR podrá iniciar actuaciones legales para terminación y restitución conforme a la ley.
+
+DÉCIMA SÉPTIMA. TERMINACIÓN
+1. Vencimiento del plazo pactado.
+2. Mutuo acuerdo.
+3. Incumplimiento de obligaciones legales o contractuales.
+4. Causales previstas en normatividad colombiana aplicable.
+5. Demás causales reconocidas por la ley.
+
+DÉCIMA OCTAVA. RESTITUCIÓN DEL INMUEBLE
+Al finalizar el contrato, EL ARRENDATARIO deberá restituir el inmueble en condiciones adecuadas, salvo deterioro normal por uso legítimo.
+
+DÉCIMA NOVENA. ANEXOS
+Hacen parte integral del presente contrato, cuando hayan sido generados o cargados en la plataforma, los anexos de inventario, actas, registros de pago, evidencia de firma electrónica, autorizaciones de tratamiento de datos y evaluación estructurada.
+
+VIGÉSIMA. USO DE LA PLATAFORMA ARRIENDO SEGURO
+Arriendo Seguro actúa como herramienta tecnológica de apoyo documental. No actúa como inmobiliaria, aseguradora, entidad financiera, abogado ni garante del cumplimiento.
+
+VIGÉSIMA PRIMERA. ACEPTACIÓN
+Leído el presente contrato por las partes, y aceptado su contenido, se firma electrónicamente en la fecha registrada por la plataforma.
+EL ARRENDADOR: [NOMBRE_ARRENDADOR] - [DOCUMENTO_ARRENDADOR] - Firma: [FIRMA_ARRENDADOR] - Fecha: [FECHA_FIRMA_ARRENDADOR]
+EL ARRENDATARIO: [NOMBRE_ARRENDATARIO] - [DOCUMENTO_ARRENDATARIO] - Firma: [FIRMA_ARRENDATARIO] - Fecha: [FECHA_FIRMA_ARRENDATARIO]
+
+
+==================================================
+3) TEXTO COMPLETO ACTUAL - VERSIÓN CON CODEUDOR
+==================================================
+
+CONTRATO DE ARRENDAMIENTO DE VIVIENDA URBANA
+
+Entre los suscritos a saber:
+[COMPARECENCIA_ARRENDADOR]
+[COMPARECENCIA_ARRENDATARIO]
+y
+[NOMBRE_CODEUDOR], mayor de edad, identificado(a) con [TIPO_DOCUMENTO_CODEUDOR] No. [NUMERO_DOCUMENTO_CODEUDOR], domiciliado(a) en [CIUDAD_CODEUDOR], con correo electrónico [EMAIL_CODEUDOR], teléfono [TELEFONO_CODEUDOR] y dirección de notificación [DIRECCION_NOTIFICACION_CODEUDOR], quien para efectos del presente contrato se denominará EL CODEUDOR SOLIDARIO;
+
+hemos celebrado el presente Contrato de Arrendamiento de Vivienda Urbana, que se regirá por las normas civiles y comerciales aplicables, especialmente por la Ley 820 de 2003 y por las siguientes cláusulas:
+
+PRIMERA. OBJETO
+EL ARRENDADOR entrega a título de arrendamiento a EL ARRENDATARIO, y este recibe en tal calidad, el inmueble urbano destinado exclusivamente a vivienda, ubicado en [DIRECCION_INMUEBLE], ciudad de [CIUDAD_INMUEBLE], departamento de [DEPARTAMENTO_INMUEBLE], identificado, si aplica, con matrícula inmobiliaria No. [MATRICULA_INMOBILIARIA].
+[NOTA_DIRECCION_URBANA_Y_CATASTRO]
+El inmueble objeto del presente contrato corresponde a: [TIPO_INMUEBLE].
+
+SEGUNDA. DESTINACIÓN
+EL ARRENDATARIO se obliga a destinar el inmueble exclusivamente para vivienda propia y/o de su grupo autorizado, sin que pueda darle destinación comercial, industrial, turística, hotelera, subarrendarlo, cederlo o permitir su ocupación por terceros no autorizados, salvo autorización previa, expresa y escrita de EL ARRENDADOR.
+
+TERCERA. CANON DE ARRENDAMIENTO
+EL ARRENDATARIO pagará a EL ARRENDADOR, por concepto de canon de arrendamiento, la suma mensual de [CANON_MENSUAL_LETRAS] ($[CANON_MENSUAL]), pagadera dentro de los primeros [DIA_PAGO] días de cada mes, mediante [METODO_PAGO], o por el medio que las partes acuerden por escrito.
+Las partes declaran que el canon pactado ha sido revisado frente al valor comercial informado del inmueble y que no supera el límite legal aplicable para vivienda urbana.
+
+CUARTA. DURACIÓN
+El término de duración del presente contrato será de [DURACION_MESES] meses, contados a partir del día [FECHA_INICIO] y hasta el día [FECHA_FIN].
+Si las partes desean renovar el contrato, podrán hacerlo conforme a la ley y dejando constancia escrita o electrónica de las condiciones aplicables.
+
+QUINTA. REAJUSTE DEL CANON
+El canon de arrendamiento solo podrá reajustarse cada doce meses de ejecución del contrato bajo un mismo precio, de conformidad con los límites establecidos por la normatividad colombiana aplicable.
+El incremento no podrá superar el porcentaje legalmente permitido para el periodo correspondiente. Arriendo Seguro podrá servir como herramienta de cálculo y registro del reajuste, sin que ello sustituya la responsabilidad de las partes de verificar la normatividad vigente.
+
+SEXTA. FORMA DE PAGO Y SOPORTES
+EL ARRENDATARIO deberá pagar el canon en la forma y fecha pactadas.
+EL ARRENDADOR deberá entregar o permitir constancia del pago recibido. Cuando las partes usen Arriendo Seguro, podrán registrar los pagos realizados dentro de la plataforma como soporte documental.
+Las partes reconocen que Arriendo Seguro no recauda dinero, no administra recursos, no actúa como intermediario financiero y no garantiza el pago del canon.
+
+SÉPTIMA. SERVICIOS PÚBLICOS, ADMINISTRACIÓN Y OTROS GASTOS
+Las partes acuerdan que el pago de los servicios públicos domiciliarios asociados al inmueble será responsabilidad de [RESPONSABLE_SERVICIOS_PUBLICOS], conforme a las siguientes condiciones:
+[DETALLE_SERVICIOS_PUBLICOS]
+En caso de existir cuotas de administración, expensas comunes u otros gastos asociados al inmueble, las partes acuerdan lo siguiente:
+[DETALLE_ADMINISTRACION_EXPENSAS]
+Las partes dejan constancia de que no se exige depósito en dinero efectivo ni caución real prohibida para garantizar obligaciones del contrato de vivienda urbana.
+
+OCTAVA. ENTREGA DEL INMUEBLE E INVENTARIO
+EL ARRENDADOR entregará el inmueble en condiciones aptas para el uso convenido. Las partes podrán elaborar un inventario inicial del inmueble, incluyendo estado general, elementos entregados, medidores, llaves, fotografías y observaciones.
+
+NOVENA. OBLIGACIONES DEL ARRENDADOR
+1. Entregar el inmueble en la fecha acordada y en condiciones aptas para vivienda.
+2. Permitir el uso y goce pacífico del inmueble durante el término del contrato.
+3. Entregar copia del contrato a EL ARRENDATARIO.
+4. Respetar las condiciones pactadas.
+5. Cumplir las obligaciones legales aplicables.
+6. Atender las reparaciones que legal o contractualmente le correspondan.
+7. Respetar la privacidad y derechos de EL ARRENDATARIO.
+
+DÉCIMA. OBLIGACIONES DEL ARRENDATARIO
+1. Pagar oportunamente el canon de arrendamiento.
+2. Pagar los servicios públicos, administración u otros gastos que le correspondan según lo pactado.
+3. Usar el inmueble exclusivamente para vivienda.
+4. Cuidar el inmueble y responder por daños causados por mal uso, culpa o negligencia.
+5. No subarrendar, ceder ni cambiar la destinación sin autorización.
+6. Restituir el inmueble al finalizar el contrato en condiciones adecuadas.
+7. Cumplir las obligaciones legales aplicables.
+
+DÉCIMA PRIMERA. PROHIBICIÓN DE DEPÓSITOS EN DINERO
+Las partes reconocen que, tratándose de arrendamiento de vivienda urbana, no se exige ni se pacta depósito en dinero efectivo u otra caución real prohibida para garantizar las obligaciones asumidas por EL ARRENDATARIO.
+
+CLÁUSULA DE CODEUDOR SOLIDARIO
+Comparece al presente contrato [NOMBRE_CODEUDOR], mayor de edad, identificado(a) con [TIPO_DOCUMENTO_CODEUDOR] No. [NUMERO_DOCUMENTO_CODEUDOR], domiciliado(a) en [CIUDAD_CODEUDOR], con correo electrónico [EMAIL_CODEUDOR], teléfono [TELEFONO_CODEUDOR] y dirección de notificación [DIRECCION_NOTIFICACION_CODEUDOR], quien para efectos del presente contrato actuará como CODEUDOR SOLIDARIO de EL ARRENDATARIO.
+
+DÉCIMA SEGUNDA. FIRMA ELECTRÓNICA
+Las partes aceptan que el presente contrato pueda ser firmado mediante mecanismos de firma electrónica simple, siempre que permitan identificar al firmante, evidenciar su aprobación del contenido y conservar trazabilidad del evento de firma.
+
+DÉCIMA TERCERA. TRATAMIENTO DE DATOS PERSONALES
+Las partes autorizan el tratamiento de sus datos personales por parte de la plataforma Arriendo Seguro para las finalidades relacionadas con creación, gestión, firma, trazabilidad, conservación documental y soporte del contrato.
+
+DÉCIMA CUARTA. EVALUACIÓN ESTRUCTURADA DE LA EXPERIENCIA ARRENDATICIA
+Las partes aceptan que podrán registrar una evaluación estructurada de la experiencia arrendaticia mediante formularios cerrados. No constituye lista negra pública ni consulta libre por cédula.
+
+DÉCIMA QUINTA. NOTIFICACIONES
+EL ARRENDADOR: Dirección [DIRECCION_NOTIFICACION_ARRENDADOR] - Correo [EMAIL_ARRENDADOR]
+EL ARRENDATARIO: Dirección [DIRECCION_NOTIFICACION_ARRENDATARIO] - Correo [EMAIL_ARRENDATARIO]
+EL CODEUDOR SOLIDARIO:
+Dirección: [DIRECCION_NOTIFICACION_CODEUDOR]
+Correo: [EMAIL_CODEUDOR]
+
+DÉCIMA SEXTA. MORA, TERMINACIÓN Y RESTITUCIÓN LEGAL DEL INMUEBLE
+En caso de mora igual o superior a [NUMERO_MESES_MORA] canon(es), EL ARRENDADOR podrá iniciar actuaciones legales para terminación y restitución conforme a la ley.
+
+DÉCIMA SÉPTIMA. TERMINACIÓN
+1. Vencimiento del plazo pactado.
+2. Mutuo acuerdo.
+3. Incumplimiento de obligaciones legales o contractuales.
+4. Causales previstas en normatividad colombiana aplicable.
+5. Demás causales reconocidas por la ley.
+
+DÉCIMA OCTAVA. RESTITUCIÓN DEL INMUEBLE
+Al finalizar el contrato, EL ARRENDATARIO deberá restituir el inmueble en condiciones adecuadas, salvo deterioro normal por uso legítimo.
+
+DÉCIMA NOVENA. ANEXOS
+Hacen parte integral del presente contrato, cuando hayan sido generados o cargados en la plataforma, los anexos de inventario, actas, registros de pago, evidencia de firma electrónica, autorizaciones de tratamiento de datos y evaluación estructurada.
+
+VIGÉSIMA. USO DE LA PLATAFORMA ARRIENDO SEGURO
+Arriendo Seguro actúa como herramienta tecnológica de apoyo documental. No actúa como inmobiliaria, aseguradora, entidad financiera, abogado ni garante del cumplimiento.
+
+VIGÉSIMA PRIMERA. ACEPTACIÓN
+Leído el presente contrato por las partes, y aceptado su contenido, se firma electrónicamente en la fecha registrada por la plataforma.
+EL ARRENDADOR: [NOMBRE_ARRENDADOR] - [DOCUMENTO_ARRENDADOR] - Firma: [FIRMA_ARRENDADOR] - Fecha: [FECHA_FIRMA_ARRENDADOR]
+EL ARRENDATARIO: [NOMBRE_ARRENDATARIO] - [DOCUMENTO_ARRENDATARIO] - Firma: [FIRMA_ARRENDATARIO] - Fecha: [FECHA_FIRMA_ARRENDATARIO]
+EL CODEUDOR SOLIDARIO:
+Nombre: [NOMBRE_CODEUDOR]
+Documento: [DOCUMENTO_CODEUDOR]
+Firma electrónica: [FIRMA_CODEUDOR]
+Fecha de firma: [FECHA_FIRMA_CODEUDOR]
+
+
+==================================================
+4) MAPA LEGAL-TÉCNICO PARA REVISIÓN CON ABOGADO
+==================================================
+
+A. QUÉ CLÁUSULAS SON FIJAS (SIEMPRE PRESENTES)
+- Todas las cláusulas numeradas PRIMERA a VIGÉSIMA PRIMERA, excepto los 4 bloques de codeudor.
+- En especial están siempre: firma electrónica, tratamiento de datos, evaluación estructurada, mora/terminación/restitución, prohibición de depósitos en dinero.
+
+B. QUÉ BLOQUES SON CONDICIONALES
+Se insertan solo si hasSolidaryCoDebtor = true:
+1) Comparecencia de codeudor (en encabezado de comparecencia)
+2) Cláusula de codeudor solidario (después de DÉCIMA PRIMERA)
+3) Notificación de codeudor (en DÉCIMA QUINTA)
+4) Bloque de firma de codeudor (en VIGÉSIMA PRIMERA)
+
+C. VARIABLES DINÁMICAS QUE SE REEMPLAZAN
+- COMPARECENCIA_ARRENDADOR
+- COMPARECENCIA_ARRENDATARIO
+- DIRECCION_INMUEBLE
+- NOTA_DIRECCION_URBANA_Y_CATASTRO
+- CIUDAD_INMUEBLE
+- DEPARTAMENTO_INMUEBLE
+- MATRICULA_INMOBILIARIA
+- TIPO_INMUEBLE
+- CANON_MENSUAL
+- CANON_MENSUAL_LETRAS
+- DIA_PAGO
+- METODO_PAGO
+- DURACION_MESES
+- FECHA_INICIO
+- FECHA_FIN
+- RESPONSABLE_SERVICIOS_PUBLICOS
+- DETALLE_SERVICIOS_PUBLICOS
+- DETALLE_ADMINISTRACION_EXPENSAS
+- DIRECCION_NOTIFICACION_ARRENDADOR
+- EMAIL_ARRENDADOR
+- DIRECCION_NOTIFICACION_ARRENDATARIO
+- EMAIL_ARRENDATARIO
+- NUMERO_MESES_MORA
+- NOMBRE_ARRENDADOR
+- DOCUMENTO_ARRENDADOR
+- FIRMA_ARRENDADOR
+- FECHA_FIRMA_ARRENDADOR
+- NOMBRE_ARRENDATARIO
+- DOCUMENTO_ARRENDATARIO
+- FIRMA_ARRENDATARIO
+- FECHA_FIRMA_ARRENDATARIO
+- NOMBRE_CODEUDOR
+- TIPO_DOCUMENTO_CODEUDOR
+- NUMERO_DOCUMENTO_CODEUDOR
+- CIUDAD_CODEUDOR
+- EMAIL_CODEUDOR
+- TELEFONO_CODEUDOR
+- DIRECCION_NOTIFICACION_CODEUDOR
+- DOCUMENTO_CODEUDOR
+- FIRMA_CODEUDOR
+- FECHA_FIRMA_CODEUDOR
+
+D. DÓNDE SE INSERTA LA CLÁUSULA DE CODEUDOR
+- Justo después de "DÉCIMA PRIMERA. PROHIBICIÓN DE DEPÓSITOS EN DINERO"
+- Antes de "DÉCIMA SEGUNDA. FIRMA ELECTRÓNICA"
+
+E. DÓNDE SE INSERTAN CLÁUSULAS ESPECIALES (ESTADO ACTUAL)
+- Actualmente NO existe placeholder ni bloque formal de "cláusulas especiales/adicionales".
+- Tampoco hay campo en el flujo para capturarlas y persistirlas en ResidentialLeaseContractInput.
+
+F. ¿EXISTE CLÁUSULA DE EVALUACIÓN ESTRUCTURADA?
+- Sí: "DÉCIMA CUARTA. EVALUACIÓN ESTRUCTURADA DE LA EXPERIENCIA ARRENDATICIA".
+
+G. ¿EXISTE CLÁUSULA DE MORA, TERMINACIÓN Y RESTITUCIÓN LEGAL?
+- Sí: "DÉCIMA SEXTA. MORA, TERMINACIÓN Y RESTITUCIÓN LEGAL DEL INMUEBLE".
+- También hay soporte complementario en "DÉCIMA SÉPTIMA. TERMINACIÓN" y "DÉCIMA OCTAVA. RESTITUCIÓN DEL INMUEBLE".
+
+H. ¿EXISTE CLÁUSULA DE PROHIBICIÓN DE DEPÓSITOS EN DINERO?
+- Sí: "DÉCIMA PRIMERA. PROHIBICIÓN DE DEPÓSITOS EN DINERO".
+
+I. ¿EXISTE CLÁUSULA DE FIRMA ELECTRÓNICA?
+- Sí: "DÉCIMA SEGUNDA. FIRMA ELECTRÓNICA".
+
+J. ¿EXISTE CLÁUSULA DE TRATAMIENTO DE DATOS?
+- Sí: "DÉCIMA TERCERA. TRATAMIENTO DE DATOS PERSONALES".
+
+K. RECOMENDACIÓN PARA FUTURA IMPLEMENTACIÓN DE CLÁUSULAS ADICIONALES (SERVICIO DE VALOR EXTRA)
+Para habilitar cláusulas particulares solicitadas por cliente (con cobro adicional), la ubicación sugerida en el contrato es:
+- Entre DÉCIMA NOVENA. ANEXOS y VIGÉSIMA. USO DE LA PLATAFORMA
+
+Sugerencia técnica:
+1) Crear placeholder condicional en plantilla:
+   [CLAUSULAS_ESPECIALES_CONDICIONAL]
+2) Agregar en el flujo un campo estructurado (texto largo + título opcional + autoría de quién la solicita).
+3) Guardar trazabilidad:
+   - quién pidió la cláusula,
+   - fecha/hora de inclusión,
+   - versión del contrato donde se incluyó,
+   - hash documental posterior a inclusión.
+4) Mostrar aviso claro:
+   - "Cláusula adicional solicitada por las partes; no sustituye asesoría legal."
+5) Mantener control de cambios por versión (ya existe base de versionado y hash).
+
+L. OBSERVACIÓN IMPORTANTE PARA REVISIÓN LEGAL
+- Este documento refleja la plantilla implementada actualmente en código.
+- La validación jurídica final (redacción, alcance, efectos y ajustes normativos vigentes) debe ser realizada por abogado en Colombia.
+

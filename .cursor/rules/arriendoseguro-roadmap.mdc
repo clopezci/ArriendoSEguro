@@ -1,0 +1,44 @@
+---
+description: ArriendoSeguro — dónde estamos hoy y hacia dónde vamos (mapa de fases)
+alwaysApply: true
+---
+
+# ArriendoSeguro — fases y roadmap
+
+Esta regla complementa `arriendoseguro-colombia.mdc` (orden de módulos) con el estado real del producto.
+Tablero visual sincronizado: `web/docs/roadmap.md` (mantener actualizado al cerrar hitos).
+
+## Dónde estamos (fase inicial)
+
+- **Landing pública** con encuesta de validación (`/`, `/entiendelo-facil`, `/encuesta`).
+- **Auth** con Firebase (cliente) y Admin SDK solo en `route.ts`.
+- **Wizard de contrato vivienda urbana** (Ley 820, vista general): partes, propiedad, términos, servicios, codeudor opcional, preview.
+- **Plantilla versionada** `AS-LEASE-MVP-2026.1` con bloques condicionales y variables dinámicas (ver `web/src/domain/contracts/`).
+- **Inventario inicial y acta de entrega** (PDF).
+- **Registro de pagos informativo** + anexo PDF.
+- **Firma electrónica simple** (token + bitácora `audit_logs`).
+- **Panel `/admin`** con encuestas, accesos, expedientes, auditoría.
+
+## Hacia dónde vamos (orden recomendado)
+
+1. **Validación legal con abogado** de plantilla y cláusulas particulares (servicio adicional con cobro).
+2. **PWA instalable** (manifest + service worker + íconos AS morados). Ver `arriendoseguro-mobile-pwa.mdc`.
+3. **Reputación y calificaciones** tras cierre del arriendo (no antes).
+4. **Cobros reales**: pasarela y entitlements estrictos en servidor (`access_entitlements`).
+5. **Marketplace ligero** opcional cuando la confianza esté validada.
+
+## Reglas de fase (no negociables)
+
+- No mezclar lógica de fases siguientes con la actual (ej: no agregar reputación pública dentro del wizard de contrato).
+- Toda pantalla o feature nueva debe encajar en: cuenta → expediente → inventario → pagos → reputación → marketplace.
+- Si una idea no cabe, va al backlog; no se cuela en el flujo de fase inicial.
+- Cambios que afecten plantilla del contrato deben actualizar `contractVersion` y dejar trazabilidad por hash.
+
+## Cómo decidir en duda
+
+Antes de implementar algo nuevo preguntar:
+1. ¿Es necesario para que un arrendador y un arrendatario firmen su primer contrato?
+2. ¿Reduce fricción real medible (tiempo, errores, abandono)?
+3. ¿Compromete calidad legal, datos personales o seguridad?
+
+Si la 1 o 2 son “no” o la 3 es “sí”, el cambio espera o se replantea.

@@ -3,6 +3,7 @@ import type { UserRecord } from "firebase-admin/auth";
 import { Timestamp, type QuerySnapshot } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin";
 import { requireInternalAdmin } from "@/lib/admin/internal-admin";
+import { buildAdminSurveyRow } from "@/lib/validations/lead-form-export-labels";
 
 export const runtime = "nodejs";
 
@@ -120,21 +121,7 @@ export async function GET(request: Request) {
       ]);
 
     const surveys =
-      leadsSnap?.docs.map((d) => {
-        const x = d.data();
-        return {
-          id: d.id,
-          createdAt: iso(x.createdAt) ?? iso(x.createdAtServer) ?? "",
-          email: (x.email as string | null) ?? "",
-          sourcePage: (x.sourcePage as string) ?? "",
-          q1: x.propertyStatusAnswer,
-          q2: x.rentalChannelAnswer,
-          q3: x.mainConcernAnswer,
-          q4: x.appInterestAnswer,
-          q5: x.willingnessToPayAnswer,
-          q6: x.mostValuableModuleAnswer,
-        };
-      }) ?? [];
+      leadsSnap?.docs.map((d) => buildAdminSurveyRow(d.id, d.data() as Record<string, unknown>)) ?? [];
 
     const auditRows =
       auditSnap?.docs.map((d) => {

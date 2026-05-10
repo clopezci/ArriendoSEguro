@@ -1,0 +1,53 @@
+---
+description: Criterios de calidad para que ArriendoSeguro pueda salir al mercado y ser exitoso
+alwaysApply: true
+---
+
+# Calidad y lanzamiento
+
+Esta regla se suma a `arriendoseguro-next-web.mdc` con criterios operativos para producción.
+
+## Antes de cerrar cualquier feature
+
+- `npm run build` en `web/` sin errores.
+- `ReadLints` sin issues nuevos en archivos tocados.
+- Probar en móvil real o DevTools a 360 px.
+- Revisar copy: tildes, signos `¿` `¡`, tono colombiano respetuoso, sin tecnicismos innecesarios.
+- Si tocaste contrato, plantilla legal, datos personales o pagos: dejar nota explícita en el PR/commit.
+
+## Seguridad (no negociable)
+
+- Nunca commitear `.env.local`, JSON de servicio o claves; revisar antes de cada commit.
+- Admin SDK **solo** en `route.ts` con `runtime: "nodejs"`.
+- Validar todo input con **Zod** del lado servidor, además de la validación de UI.
+- Reglas de Firestore por defecto `allow read, write: if false`; abrir colección por colección, exigiendo `request.auth`.
+- Endpoints públicos (`/api/leads`, `/api/contact`, etc.): rate-limit y verificación básica antiabuso (ej. Turnstile cuando aplique).
+
+## Datos personales (Habeas data, Ley 1581)
+
+- Recolectar **lo mínimo** necesario; consentimiento explícito (`contactConsent` u equivalente).
+- Aviso de privacidad y autorización de tratamiento accesibles desde el footer.
+- No exportar datos personales sin un caso de uso documentado y autorización clara del responsable.
+
+## Observabilidad y soporte
+
+- Persistir auditoría en `audit_logs` para eventos críticos: creación de contrato, firma, pago, baja, cambio de plan.
+- Errores hacia el usuario en **español natural** (mapear `auth/*` y otros códigos a textos legibles, ver `firebase-errors.ts`).
+- Email transaccional vía `web/src/services/email/`, siempre con plantilla y registro en `email_logs`.
+- Logs del servidor sin datos personales completos (enmascarar correo y documento).
+
+## Métricas para “ser un éxito”
+
+Definir y revisar mensualmente:
+
+- Funnel: visita landing → respuesta encuesta → registro → primer contrato firmado.
+- % de contratos completados sin abandono en el wizard.
+- Tiempo medio para generar el primer contrato.
+- NPS post-firma vía evaluación estructurada.
+- Tasa de errores de firma o de generación de PDF.
+
+## Política de cambios
+
+- Cambios mínimos al estilo existente; no introducir librerías sin necesidad clara.
+- Cambios mayores (nueva dependencia, microservicio, integración pesada, cambios de plantilla legal): proponer en **plan** antes de implementar.
+- Toda decisión sin precedente claro debe quedar documentada (comentario en código o nota en `web/docs/`).

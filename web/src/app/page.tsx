@@ -92,9 +92,16 @@ export default function Home() {
               </div>
             </section>
 
-            <p className="text-center text-[11px] leading-snug text-slate-500 lg:text-left">
-              A futuro se esperan convenios con aseguradoras, asesoría legal, agencias de cobranza y
-              otros aliados, por si en algún momento necesitas ir un paso más allá.
+            <p className="flex flex-wrap items-center justify-center gap-2 text-[11px] leading-snug text-slate-400 lg:justify-start">
+              <span className="inline-flex items-center rounded-full border border-violet-500/40 bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-200">
+                Próximamente
+              </span>
+              <span>
+                Convenios con <strong className="font-semibold text-slate-200">aseguradoras</strong>,{" "}
+                <strong className="font-semibold text-slate-200">asesoría legal</strong>,{" "}
+                <strong className="font-semibold text-slate-200">agencias de cobranza</strong> y otros
+                aliados, por si en algún momento necesitas ir un paso más allá.
+              </span>
             </p>
 
             <section className="space-y-2 rounded-lg border border-slate-800/50 bg-slate-900/25 p-3 sm:p-3.5">
@@ -106,9 +113,17 @@ export default function Home() {
                 esta encuesta corta y ayúdanos a saber si esta solución te serviría, qué debería
                 incluir y cuánto estarías dispuesto a pagar.
               </p>
-              <p className="text-center text-[10px] font-medium text-violet-300/90 sm:text-[11px] lg:text-left">
-                Los primeros inscritos podrán recibir acceso anticipado y beneficios de lanzamiento
-                cuando abramos la prueba en esta fase inicial.
+              <p className="flex flex-wrap items-center justify-center gap-2 rounded-lg border border-violet-500/40 bg-violet-500/10 px-3 py-2 text-[11px] leading-snug text-violet-100 sm:text-xs lg:justify-start">
+                <span className="inline-flex items-center rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm shadow-violet-500/40">
+                  ¡Cupos limitados!
+                </span>
+                <span>
+                  Los primeros en inscribirse aseguran{" "}
+                  <strong className="font-semibold text-white">50% de descuento</strong> en su{" "}
+                  <strong className="font-semibold text-white">primer contrato</strong> cuando
+                  abramos la fase inicial.{" "}
+                  <strong className="font-semibold text-white">Responde la encuesta y reserva tu beneficio.</strong>
+                </span>
               </p>
             </section>
           </div>
