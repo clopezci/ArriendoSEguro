@@ -33,6 +33,12 @@ export type AuditEventName =
   | "property_data_saved"
   | "rent_cap_validation_failed"
   | "rent_cap_validation_passed"
+  /**
+   * El arrendador declaró desconocer el valor comercial del inmueble y aceptó
+   * expresamente la responsabilidad de no superar el 1% (Ley 820 de 2003).
+   * Queda registrado en el expediente como evidencia.
+   */
+  | "property_cap_unknown_acknowledged"
   | "lease_terms_saved"
   | "utilities_saved"
   | "contract_preview_generated"
@@ -77,6 +83,21 @@ export interface ContractDraft {
   property: Partial<ResidentialLeaseContractInput["property"]> & {
     monthlyRentProposed?: number;
     addressParts?: ColombianNotificationAddressParts | null;
+    /**
+     * El arrendador declaró que NO conoce el valor comercial del inmueble.
+     * En ese escenario ArriendoSeguro no calcula el tope legal del 1%
+     * (Ley 820 de 2003) y exige una aceptación expresa en
+     * `noCapAcknowledgement`. Opcional por compatibilidad con borradores
+     * anteriores a este ajuste de UX.
+     */
+    commercialValueUnknown?: boolean;
+    /**
+     * Aceptación expresa del arrendador de la responsabilidad de no superar
+     * el 1% del valor comercial real del inmueble como canon mensual,
+     * cuando declaró desconocer dicho valor. Sirve como evidencia legal y
+     * exime a ArriendoSeguro de responsabilidad sobre ese tope.
+     */
+    noCapAcknowledgement?: boolean;
   };
   lease: Partial<ResidentialLeaseContractInput["lease"]>;
   utilities: Partial<ResidentialLeaseContractInput["utilities"]>;
@@ -106,47 +127,118 @@ export {
   codebtorSchema,
 } from "@/features/contracts/party-schemas";
 
+/**
+ * Esquema del paso “Inmueble a arrendar”.
+ *
+ * - Mensajes pensados para usuario final colombiano: dicen qué falta y
+ *   cómo corregirlo, no la jerga interna de Zod.
+ * - `commercialValueUnknown` permite a un arrendador que no conoce el
+ *   avalúo seguir adelante, pero exige aceptación explícita
+ *   (`noCapAcknowledgement`) de la responsabilidad de no exceder el 1%
+ *   (Ley 820 de 2003). En ese caso no validamos el tope porque no hay
+ *   referencia.
+ */
 export const propertySchema = z
   .object({
-    address: z.string().min(4),
-    city: z.string().min(2),
-    department: z.string().min(2),
-    type: z.string().min(2),
-    registryNumber: z.string().min(2),
-    commercialValue: z.number().positive(),
-    legalRentCap: z.number().positive(),
-    monthlyRentProposed: z.number().positive(),
+    address: z
+      .string()
+      .min(4, "Completa la dirección del inmueble a arrendar."),
+    city: z.string().min(2, "Indica la ciudad donde está el inmueble."),
+    department: z
+      .string()
+      .min(2, "Indica el departamento donde está el inmueble."),
+    type: z
+      .string()
+      .min(2, "Indica el tipo de inmueble (apartamento, casa, local, etc.)."),
+    registryNumber: z
+      .string()
+      .min(2, "Indica el número de matrícula o registro del inmueble."),
+    commercialValue: z.number().nonnegative().optional(),
+    legalRentCap: z.number().nonnegative().optional(),
+    monthlyRentProposed: z
+      .number()
+      .positive("Indica el canon mensual propuesto."),
+    commercialValueUnknown: z.boolean().optional().default(false),
+    noCapAcknowledgement: z.boolean().optional().default(false),
   })
   .superRefine((data, ctx) => {
+    if (data.commercialValueUnknown) {
+      if (!data.noCapAcknowledgement) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["noCapAcknowledgement"],
+          message:
+            "Debes aceptar expresamente la responsabilidad de no superar el 1% del valor comercial del inmueble como canon mensual.",
+        });
+      }
+      return;
+    }
+    if (!data.commercialValue || data.commercialValue <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["commercialValue"],
+        message:
+          "Indica el valor comercial del inmueble o marca «No conozco el valor comercial».",
+      });
+      return;
+    }
+    if (!data.legalRentCap || data.legalRentCap <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["legalRentCap"],
+        message: "El sistema no pudo calcular el tope legal. Revisa el valor comercial.",
+      });
+      return;
+    }
     if (data.monthlyRentProposed > data.legalRentCap) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["monthlyRentProposed"],
         message:
-          "El canon propuesto supera el límite legal estimado para vivienda urbana. Ajusta el valor para continuar.",
+          "El canon propuesto supera el 1% del valor comercial (límite legal para vivienda urbana según la Ley 820 de 2003). Ajusta el canon o el valor comercial.",
       });
     }
   });
 
+/**
+ * Esquema del paso “Términos del arriendo”. Todos los mensajes están en
+ * español para el usuario final.
+ */
 export const termsSchema = z.object({
-  monthlyRent: z.number().positive(),
-  monthlyRentText: z.string().min(4),
-  paymentDueDay: z.number().int().min(1).max(31),
-  paymentMethod: z.enum([
-    "transferencia bancaria",
-    "efectivo con constancia",
-    "otro medio acordado",
-  ]),
-  startDate: z.string().min(4),
-  endDate: z.string().min(4),
-  termMonths: z.number().int().positive(),
-  latePaymentMonthsThreshold: z.number().int().min(1),
+  monthlyRent: z.number().positive("Indica el canon mensual del arriendo."),
+  monthlyRentText: z
+    .string()
+    .min(4, "Escribe el canon mensual en letras (ej. «un millón quinientos mil pesos»)."),
+  paymentDueDay: z
+    .number({ message: "Indica el día de pago." })
+    .int("Indica un día válido (1 a 31).")
+    .min(1, "El día de pago debe estar entre 1 y 31.")
+    .max(31, "El día de pago debe estar entre 1 y 31."),
+  paymentMethod: z.enum(
+    ["transferencia bancaria", "efectivo con constancia", "otro medio acordado"],
+    { message: "Selecciona un método de pago válido." },
+  ),
+  startDate: z.string().min(4, "Selecciona la fecha de inicio del contrato."),
+  endDate: z.string().min(4, "Selecciona la fecha de finalización del contrato."),
+  termMonths: z
+    .number({ message: "Indica la duración del contrato en meses." })
+    .int("La duración debe ser un número entero de meses.")
+    .positive("La duración del contrato debe ser mayor a cero."),
+  latePaymentMonthsThreshold: z
+    .number({ message: "Indica el umbral de mora." })
+    .int("Indica un número entero de meses.")
+    .min(1, "El umbral mínimo es de 1 mes de mora."),
 });
 
 export const utilitiesSchema = z.object({
-  responsibleParty: z.enum(["arrendatario", "arrendador", "compartido"]),
-  details: z.string().min(3),
-  adminFeesDetails: z.string().min(3),
+  responsibleParty: z.enum(
+    ["arrendatario", "arrendador", "compartido"],
+    { message: "Selecciona quién paga los servicios públicos." },
+  ),
+  details: z.string().min(3, "Describe brevemente cómo se pagan los servicios públicos."),
+  adminFeesDetails: z
+    .string()
+    .min(3, "Describe brevemente cómo se manejan los gastos de administración."),
 });
 
 function readJson<T>(key: string, fallback: T): T {

@@ -3,25 +3,36 @@
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { appendAudit, updateDraft, utilitiesSchema } from "@/features/contracts/wizard-state";
+import { sanitizeFreeText } from "@/lib/text/sanitize";
+import { humanizeZodIssues } from "@/lib/validations/zod-errors-es";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+
+const UTILITIES_FIELD_LABELS: Record<string, string> = {
+  responsibleParty: "Responsable de los servicios públicos",
+  details: "Detalle de servicios públicos",
+  adminFeesDetails: "Detalle de administración y expensas",
+};
 
 export default function UtilitiesStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
   const router = useRouter();
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
 
-  if (state !== "ready" || !draft) return <p className="text-sm text-slate-300">Cargando…</p>;
+  if (state !== "ready" || !draft) {
+    return <p className="text-sm text-slate-300">Cargando…</p>;
+  }
 
   function onSubmit(formData: FormData) {
+    setErrors([]);
     const parsed = utilitiesSchema.safeParse({
       responsibleParty: String(formData.get("responsibleParty") ?? ""),
-      details: String(formData.get("details") ?? ""),
-      adminFeesDetails: String(formData.get("adminFeesDetails") ?? ""),
+      details: sanitizeFreeText(String(formData.get("details") ?? "")),
+      adminFeesDetails: sanitizeFreeText(String(formData.get("adminFeesDetails") ?? "")),
     });
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Revisa servicios públicos.");
+      setErrors(humanizeZodIssues(parsed.error.issues, UTILITIES_FIELD_LABELS));
       return;
     }
     updateDraft(id, (d) =>
@@ -65,7 +76,19 @@ export default function UtilitiesStepPage() {
           label="Detalle de administración y expensas"
           defaultValue={draft.utilities.adminFeesDetails}
         />
-        {error && <p className="text-sm text-rose-300">{error}</p>}
+        {errors.length > 0 && (
+          <div
+            role="alert"
+            className="rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100"
+          >
+            <p className="font-semibold">Revisa estos campos antes de continuar:</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              {errors.map((msg, i) => (
+                <li key={i}>{msg}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </form>
       <StepNav
         backHref={`/dashboard/contracts/${id}/terms`}

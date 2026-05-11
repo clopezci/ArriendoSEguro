@@ -9,6 +9,11 @@
  */
 
 import { z } from "zod";
+import {
+  toTitleCaseEs,
+  toUpperTrimmed,
+  trimAndCollapse,
+} from "@/lib/text/sanitize";
 
 /** Tipos de vía frecuentes en norma urbana colombiana (nomenclatura de vías). */
 export const VIA_TIPO_VALUES = [
@@ -108,21 +113,27 @@ export type UrbanAddressFormPrefix = "addr" | "propAddr";
 
 /**
  * Lee campos `{prefix}ViaTipo`, `{prefix}ViaNumero`, etc. del `FormData`.
- * Si el tipo de vía no es «Otro», ignora el texto de especificación para evitar datos colgados.
+ *
+ * Aplica sanitización ANTES de validar para que la base de datos quede
+ * con datos homogéneos: trim + colapso de espacios y mayúsculas iniciales
+ * en partes propias (barrio, complemento, especificación de la vía).
+ * Si el tipo de vía no es «Otro», ignora el texto de especificación para
+ * evitar datos colgados.
  */
 export function parseUrbanAddressFromForm(formData: FormData, prefix: UrbanAddressFormPrefix) {
-  const g = (suffix: string) => String(formData.get(`${prefix}${suffix}`) ?? "").trim();
-  const viaTipo = g("ViaTipo") as ViaTipoColombia;
-  const viaTipoOtro = viaTipo === "OTRO" ? g("ViaTipoOtro") || undefined : undefined;
+  const raw = (suffix: string) => String(formData.get(`${prefix}${suffix}`) ?? "");
+  const viaTipo = trimAndCollapse(raw("ViaTipo")).toUpperCase() as ViaTipoColombia;
+  const viaTipoOtro =
+    viaTipo === "OTRO" ? toTitleCaseEs(raw("ViaTipoOtro")) || undefined : undefined;
   return colombianNotificationAddressPartsSchema.safeParse({
     viaTipo,
     viaTipoOtro,
-    viaNumero: g("ViaNumero"),
-    viaLetra: g("ViaLetra") || undefined,
-    cruceNumero: g("CruceNumero"),
-    placa: g("Placa"),
-    complemento: g("Complemento") || undefined,
-    barrio: g("Barrio"),
+    viaNumero: trimAndCollapse(raw("ViaNumero")),
+    viaLetra: toUpperTrimmed(raw("ViaLetra")) || undefined,
+    cruceNumero: trimAndCollapse(raw("CruceNumero")),
+    placa: toUpperTrimmed(raw("Placa")),
+    complemento: toTitleCaseEs(raw("Complemento")) || undefined,
+    barrio: toTitleCaseEs(raw("Barrio")),
   });
 }
 

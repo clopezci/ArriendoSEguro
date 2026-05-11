@@ -8,6 +8,8 @@ import {
   parseNotificationAddressFromForm,
 } from "@/domain/colombia/structured-address";
 import { appendAudit, landlordSchema, updateDraft } from "@/features/contracts/wizard-state";
+import { sanitizePartyFromForm, PARTY_FIELD_LABELS } from "@/features/contracts/party-sanitize";
+import { humanizeZodIssues } from "@/lib/validations/zod-errors-es";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -15,30 +17,25 @@ export default function LandlordStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
   const router = useRouter();
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
 
-  if (state !== "ready" || !draft) return <p className="text-sm text-slate-300">Cargando…</p>;
+  if (state !== "ready" || !draft) {
+    return <p className="text-sm text-slate-300">Cargando…</p>;
+  }
 
   function onSubmit(formData: FormData) {
+    setErrors([]);
     const addrParsed = parseNotificationAddressFromForm(formData);
     if (!addrParsed.success) {
-      setError(addrParsed.error.issues[0]?.message ?? "Revisá la dirección de notificación.");
+      setErrors(humanizeZodIssues(addrParsed.error.issues));
       return;
     }
     const notificationAddress = formatColombianNotificationAddress(addrParsed.data);
-
-    const parsed = landlordSchema.safeParse({
-      fullName: String(formData.get("fullName") ?? ""),
-      documentType: String(formData.get("documentType") ?? ""),
-      documentNumber: String(formData.get("documentNumber") ?? ""),
-      city: String(formData.get("city") ?? ""),
-      email: String(formData.get("email") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
-      notificationAddress,
-    });
+    const sanitized = sanitizePartyFromForm(formData, { notificationAddress });
+    const parsed = landlordSchema.safeParse(sanitized);
 
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Revisa los datos del arrendador.");
+      setErrors(humanizeZodIssues(parsed.error.issues, PARTY_FIELD_LABELS));
       return;
     }
 
@@ -74,7 +71,19 @@ export default function LandlordStepPage() {
             !!draft.landlord.notificationAddress && !draft.landlord.notificationAddressParts
           }
         />
-        {error && <p className="sm:col-span-2 text-sm text-rose-300">{error}</p>}
+        {errors.length > 0 && (
+          <div
+            role="alert"
+            className="sm:col-span-2 rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100"
+          >
+            <p className="font-semibold">Revisa estos campos antes de continuar:</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              {errors.map((msg, i) => (
+                <li key={i}>{msg}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </form>
       <StepNav
         backHref="/dashboard/leases"

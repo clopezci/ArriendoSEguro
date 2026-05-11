@@ -8,6 +8,8 @@ import {
   parseNotificationAddressFromForm,
 } from "@/domain/colombia/structured-address";
 import { appendAudit, codebtorSchema, updateDraft } from "@/features/contracts/wizard-state";
+import { sanitizeCodebtorFromForm, PARTY_FIELD_LABELS } from "@/features/contracts/party-sanitize";
+import { humanizeZodIssues } from "@/lib/validations/zod-errors-es";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -45,7 +47,7 @@ export default function CodebtorStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
   const router = useRouter();
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<string[]>([]);
   const [decision, setDecision] = useState<CodebtorDecision>("pending");
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export default function CodebtorStepPage() {
       }),
     );
     setDecision(has ? "yes" : "no");
-    setError("");
+    setErrors([]);
     if (!has) {
       router.push(`/dashboard/contracts/${id}/property`);
     }
@@ -72,29 +74,19 @@ export default function CodebtorStepPage() {
 
   function onSubmit(formData: FormData) {
     if (decision !== "yes") return;
+    setErrors([]);
 
     const addrParsed = parseNotificationAddressFromForm(formData);
     if (!addrParsed.success) {
-      setError(addrParsed.error.issues[0]?.message ?? "Revisá la dirección de notificación.");
+      setErrors(humanizeZodIssues(addrParsed.error.issues));
       return;
     }
     const notificationAddress = formatColombianNotificationAddress(addrParsed.data);
-
-    const parsed = codebtorSchema.safeParse({
-      fullName: String(formData.get("fullName") ?? ""),
-      documentType: String(formData.get("documentType") ?? ""),
-      documentNumber: String(formData.get("documentNumber") ?? ""),
-      city: String(formData.get("city") ?? ""),
-      email: String(formData.get("email") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
-      notificationAddress,
-      dataProcessingConsent: formData.get("dataProcessingConsent") === "on",
-      electronicSignatureConsent: formData.get("electronicSignatureConsent") === "on",
-      solidaryObligationAcceptance: formData.get("solidaryObligationAcceptance") === "on",
-    });
+    const sanitized = sanitizeCodebtorFromForm(formData, { notificationAddress });
+    const parsed = codebtorSchema.safeParse(sanitized);
 
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Completa los datos y consentimientos.");
+      setErrors(humanizeZodIssues(parsed.error.issues, PARTY_FIELD_LABELS));
       return;
     }
 
@@ -198,7 +190,19 @@ export default function CodebtorStepPage() {
               label="Acepto la obligación solidaria dentro del contrato."
             />
           </div>
-          {error && <p className="sm:col-span-2 text-sm text-rose-300">{error}</p>}
+          {errors.length > 0 && (
+            <div
+              role="alert"
+              className="sm:col-span-2 rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100"
+            >
+              <p className="font-semibold">Revisa estos campos antes de continuar:</p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                {errors.map((msg, i) => (
+                  <li key={i}>{msg}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </form>
       )}
 
