@@ -2,8 +2,12 @@
 
 import { useAuth } from "@/contexts/auth-context";
 import { TurnstileWidget } from "@/components/security/turnstile-widget";
+import { DataConsentCheckbox } from "@/components/consent/data-consent-checkbox";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { mapFirebaseAuthError } from "@/lib/auth/firebase-errors";
 import { appConfig } from "@/lib/config";
+import { CONSENT_CURRENT_VERSION } from "@/domain/consents/consentVersions";
+import { getAuthClient } from "@/lib/firebase/client";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
@@ -25,6 +29,8 @@ export function IngresarForm() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [consentAccepted, setConsentAccepted] = useState(false);
+  const [consentInvalid, setConsentInvalid] = useState(false);
 
   const redirect = searchParams.get("redirect") || "/dashboard";
   const now = Date.now();
@@ -47,6 +53,7 @@ export function IngresarForm() {
 
   useEffect(() => {
     regenerateHumanChallenge();
+    setConsentInvalid(false);
   }, [mode, regenerateHumanChallenge]);
 
   useEffect(() => {
@@ -97,10 +104,40 @@ export function IngresarForm() {
       regenerateHumanChallenge();
       return;
     }
+    if (mode === "crear" && !consentAccepted) {
+      setConsentInvalid(true);
+      setError(
+        "Para crear tu cuenta debes aceptar el tratamiento de datos personales (Ley 1581 de 2012).",
+      );
+      return;
+    }
     setSending(true);
     try {
       if (mode === "iniciar") await signIn(email, password);
-      else await signUp(email, password);
+      else {
+        await signUp(email, password);
+        // Tras el alta exitosa, registramos el consentimiento en backend con
+        // el token recién emitido. Si falla, no bloqueamos: el wizard volverá
+        // a pedirlo al iniciar el primer contrato.
+        try {
+          const current = getAuthClient().currentUser;
+          if (current) {
+            await fetch("/api/consents/register", {
+              method: "POST",
+              headers: {
+                "content-type": "application/json",
+                ...(await buildAuthHeaders(current)),
+              },
+              body: JSON.stringify({
+                version: CONSENT_CURRENT_VERSION,
+                surface: "REGISTRATION",
+              }),
+            });
+          }
+        } catch {
+          // El consentimiento se reintentará desde el wizard.
+        }
+      }
       setFailedAttempts(0);
       goPanel();
     } catch (err) {
@@ -231,6 +268,17 @@ export function IngresarForm() {
         name="website"
       />
       <TurnstileWidget onToken={setTurnstileToken} action="auth_form" requiredForSubmit={turnstileStrict} />
+      {mode === "crear" && (
+        <DataConsentCheckbox
+          checked={consentAccepted}
+          onChange={(v) => {
+            setConsentAccepted(v);
+            if (v) setConsentInvalid(false);
+          }}
+          invalid={consentInvalid}
+          errorMessage="Debes aceptar el tratamiento de datos para crear tu cuenta."
+        />
+      )}
       {notice && (
         <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-100">
           {notice}

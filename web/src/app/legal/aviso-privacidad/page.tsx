@@ -1,4 +1,5 @@
 import { appConfig } from "@/lib/config";
+import { getCurrentConsentText } from "@/domain/consents/consentVersions";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -8,12 +9,15 @@ export const metadata: Metadata = {
 };
 
 export default function AvisoPrivacidadPage() {
+  const consent = getCurrentConsentText();
   return (
     <article className="space-y-6 text-sm leading-relaxed text-slate-300">
       <header className="space-y-2 border-b border-slate-800 pb-6">
         <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Información legal</p>
         <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Aviso de privacidad</h1>
-        <p className="text-xs text-slate-500">Versión corta. El detalle completo está en la política de datos.</p>
+        <p className="text-xs text-slate-500">
+          Versión {consent.version} · Publicado {consent.publishedAt}
+        </p>
         <Link href="/" className="inline-block text-xs text-violet-400 hover:underline">
           Volver al inicio
         </Link>

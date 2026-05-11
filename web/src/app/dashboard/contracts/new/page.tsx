@@ -18,9 +18,29 @@ export default function NewContractPage() {
         router.replace("/ingresar?redirect=/dashboard/contracts/new");
         return;
       }
-      const accessRes = await fetch("/api/access/entitlements/me", {
-        headers: { ...(await buildAuthHeaders(user)) },
-      });
+      const headers = await buildAuthHeaders(user);
+
+      // Verificamos que el usuario tenga consentimiento vigente de
+      // tratamiento de datos antes de habilitar la creación de un contrato.
+      // Si la consulta falla, no bloqueamos: la pantalla del wizard hará el
+      // chequeo otra vez en su contexto.
+      try {
+        const consentRes = await fetch("/api/consents/check", { headers });
+        const consentData = (await consentRes.json()) as {
+          success?: boolean;
+          hasActiveConsent?: boolean;
+        };
+        if (consentRes.ok && consentData.success && !consentData.hasActiveConsent) {
+          router.replace(
+            "/dashboard/consentimiento?redirect=/dashboard/contracts/new",
+          );
+          return;
+        }
+      } catch {
+        // continuamos; el siguiente paso volverá a pedirlo si hace falta.
+      }
+
+      const accessRes = await fetch("/api/access/entitlements/me", { headers });
       const accessData = (await accessRes.json()) as {
         success?: boolean;
         plusActive?: boolean;
@@ -34,7 +54,7 @@ export default function NewContractPage() {
       if (accessData.plusActive) {
         const consume = await fetch("/api/access/contracts/consume-plus", {
           method: "POST",
-          headers: { ...(await buildAuthHeaders(user)) },
+          headers,
         });
         const consumeData = (await consume.json()) as { success?: boolean };
         if (!consume.ok || !consumeData.success) {
