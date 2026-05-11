@@ -431,6 +431,11 @@ export function toContractInput(draft: ContractDraft): ResidentialLeaseContractI
       registryNumber: mergedProp.registryNumber ?? "",
       commercialValue: Number(mergedProp.commercialValue ?? 0),
       legalRentCap: Number(mergedProp.legalRentCap ?? 0),
+      // Propagamos el caso "no conozco el valor comercial" para que el
+      // validador final omita la regla del 1% y la generación del HTML
+      // sepa que debe insertar el aviso correspondiente.
+      commercialValueUnknown: Boolean(draft.property.commercialValueUnknown),
+      noCapAcknowledgement: Boolean(draft.property.noCapAcknowledgement),
     },
     lease: {
       monthlyRent: Number(draft.lease.monthlyRent ?? 0),

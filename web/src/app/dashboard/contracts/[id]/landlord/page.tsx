@@ -39,17 +39,20 @@ export default function LandlordStepPage() {
       return;
     }
 
+    const { truthfulnessOath, ...landlordData } = parsed.data;
     updateDraft(id, (d) =>
       appendAudit(
         {
           ...d,
           landlord: {
-            ...parsed.data,
+            ...landlordData,
             notificationAddressParts: addrParsed.data,
+            truthfulnessOathAccepted: Boolean(truthfulnessOath),
           },
           status: "data_in_progress",
         },
         "landlord_data_saved",
+        { truthfulnessOathAccepted: Boolean(truthfulnessOath) },
       ),
     );
     router.push(`/dashboard/contracts/${id}/tenant`);

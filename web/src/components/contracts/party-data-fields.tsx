@@ -114,6 +114,28 @@ export function PartyDataFields({
         variant="notificacion"
         legacyFreeTextAddress={!!legacyFreeTextAddressMessage && !!party.notificationAddress}
       />
+
+      <div className="sm:col-span-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-xs leading-relaxed text-amber-100">
+        <label className="flex cursor-pointer items-start gap-2">
+          <input
+            type="checkbox"
+            name="truthfulnessOath"
+            required
+            defaultChecked={Boolean(party.truthfulnessOathAccepted)}
+            className="mt-0.5 h-4 w-4 accent-amber-300"
+          />
+          <span>
+            <strong>Declaración bajo gravedad de juramento.</strong> Manifiesto
+            que la información aquí consignada (nombres, documento, contacto,
+            dirección y demás datos) es verídica, completa y actualizada.
+            Conozco que entregar información falsa puede acarrear sanciones
+            civiles, comerciales y penales (artículos 442 y 443 del Código
+            Penal colombiano sobre falso testimonio y fraude procesal, y
+            demás normas aplicables), y autorizo a la contraparte a
+            verificarla por los medios legales disponibles.
+          </span>
+        </label>
+      </div>
     </>
   );
 }

@@ -27,18 +27,30 @@ const citySchema = z
 
 /** Objeto base antes de refinamientos (permite codebtorSchema.extend). */
 const partyObjectSchema = z.object({
-  fullName: z.string().min(5, "Indicá el nombre completo.").max(120),
+  fullName: z.string().min(5, "Indica el nombre completo.").max(120),
   documentType: z.preprocess(
     (v) => (String(v) === "TI" ? "CC" : v),
     DOCUMENT_ENUM,
   ),
-  documentNumber: z.string().min(1, "Indicá el número de documento."),
+  documentNumber: z.string().min(1, "Indica el número de documento."),
   city: citySchema,
   email: z.string().email("Correo electrónico inválido."),
   phone: zPhoneCo,
   notificationAddress: z
     .string()
     .min(12, "La dirección de notificación es demasiado corta o está incompleta."),
+  /**
+   * Declaración bajo gravedad de juramento. La persona reconoce que la
+   * información ingresada es verídica. Se exige aceptar la casilla para
+   * permitir avanzar; el `wizard-state` la guarda como
+   * `truthfulnessOathAccepted` en el draft con la fecha del audit trail.
+   * Marco normativo: artículos 442 y 443 del Código Penal colombiano
+   * (falso testimonio / fraude procesal) y normas civiles aplicables.
+   */
+  truthfulnessOath: z.literal(true, {
+    message:
+      "Debes aceptar la declaración bajo gravedad de juramento de que la información es verdadera.",
+  }),
 });
 
 function refineDocument(data: z.infer<typeof partyObjectSchema>, ctx: z.RefinementCtx) {

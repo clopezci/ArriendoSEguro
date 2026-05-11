@@ -16,7 +16,11 @@ export default function ReviewStepPage() {
 
   const cap = Number(draft.property.legalRentCap ?? 0);
   const rent = Number(draft.lease.monthlyRent ?? draft.property.monthlyRentProposed ?? 0);
-  const capExceeded = rent > cap;
+  const valueUnknown = Boolean(draft.property.commercialValueUnknown);
+  // Solo se considera "tope excedido" cuando hay un valor comercial declarado
+  // y un tope estimado vigente. Si el arrendador aceptó desconocer el valor
+  // comercial, la verificación queda bajo su responsabilidad.
+  const capExceeded = !valueUnknown && cap > 0 && rent > cap;
 
   return (
     <WizardShell title="Resumen previo" currentStep={8} contractId={id}>
@@ -44,7 +48,14 @@ export default function ReviewStepPage() {
         <Card title="Inmueble y canon">
           <p>{draft.property.address}</p>
           <p>Canon propuesto: ${rent.toLocaleString("es-CO")}</p>
-          <p>Canon máximo estimado: ${cap.toLocaleString("es-CO")}</p>
+          {valueUnknown ? (
+            <p className="text-amber-200">
+              Valor comercial no informado — el arrendador asumió la
+              responsabilidad expresa de no superar el 1% legal.
+            </p>
+          ) : (
+            <p>Canon máximo estimado (1%): ${cap.toLocaleString("es-CO")}</p>
+          )}
         </Card>
         <Card title="Términos">
           <p>Duración: {draft.lease.termMonths} meses</p>
@@ -69,7 +80,13 @@ export default function ReviewStepPage() {
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>No se permite depósito en dinero en este flujo de vivienda urbana.</li>
           <li>Arriendo Seguro no recauda dinero ni garantiza pagos.</li>
-          {capExceeded ? (
+          {valueUnknown ? (
+            <li className="text-amber-200">
+              El arrendador declaró desconocer el valor comercial del inmueble y aceptó
+              expresamente la responsabilidad de no superar el 1% del valor real
+              (Ley 820 de 2003). ArriendoSeguro no calcula el tope en este caso.
+            </li>
+          ) : capExceeded ? (
             <li className="text-rose-300">
               El canon propuesto supera el máximo estimado. Debes editar inmueble/términos.
             </li>

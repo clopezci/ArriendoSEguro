@@ -40,11 +40,24 @@ export function validateContractData(input: ResidentialLeaseContractInput): Vali
   if (isBlank(input.property.registryNumber)) {
     issues.push({ field: "property.registryNumber", message: "Matrícula/registro del inmueble requerido." });
   }
-  if (input.property.commercialValue <= 0) {
-    issues.push({ field: "property.commercialValue", message: "Valor comercial inválido." });
-  }
-  if (input.property.legalRentCap <= 0) {
-    issues.push({ field: "property.legalRentCap", message: "Tope legal de canon inválido." });
+  // Si el arrendador declaró desconocer el valor comercial y aceptó la
+  // responsabilidad expresa (Ley 820 de 2003), omitimos las validaciones
+  // del valor comercial y del tope. La aceptación se conserva como
+  // evidencia en el expediente.
+  const commercialValueUnknown = input.property.commercialValueUnknown === true;
+  if (!commercialValueUnknown) {
+    if (input.property.commercialValue <= 0) {
+      issues.push({ field: "property.commercialValue", message: "Valor comercial inválido." });
+    }
+    if (input.property.legalRentCap <= 0) {
+      issues.push({ field: "property.legalRentCap", message: "Tope legal de canon inválido." });
+    }
+  } else if (input.property.noCapAcknowledgement !== true) {
+    issues.push({
+      field: "property.noCapAcknowledgement",
+      message:
+        "Marcaste que no conoces el valor comercial pero falta aceptar la declaración de responsabilidad del arrendador.",
+    });
   }
 
   if (input.lease.monthlyRent <= 0) issues.push({ field: "lease.monthlyRent", message: "Canon mensual inválido." });
@@ -77,7 +90,14 @@ export function validateContractData(input: ResidentialLeaseContractInput): Vali
     issues.push({ field: "utilities.adminFeesDetails", message: "Debe definirse detalle de administración/expensas." });
   }
 
-  if (input.lease.monthlyRent > input.property.legalRentCap) {
+  // Solo aplica el tope cuando hay un valor comercial declarado. Si el
+  // arrendador aceptó desconocerlo, esta verificación se omite (la
+  // responsabilidad queda en él, según la declaración firmada).
+  if (
+    !commercialValueUnknown &&
+    input.property.legalRentCap > 0 &&
+    input.lease.monthlyRent > input.property.legalRentCap
+  ) {
     issues.push({
       field: "lease.monthlyRent",
       message: "El canon mensual supera el tope legal permitido para este inmueble.",

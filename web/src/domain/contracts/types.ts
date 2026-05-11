@@ -88,6 +88,22 @@ export interface PropertyData {
   registryNumber: string;
   commercialValue: number;
   legalRentCap: number;
+  /**
+   * El arrendador declaró NO conocer el valor comercial del inmueble al
+   * generar el contrato. Cuando es `true`, ArriendoSeguro no puede calcular
+   * el tope del 1% (Ley 820 de 2003) y se omite esa validación. Requiere
+   * además aceptación expresa en `noCapAcknowledgement`.
+   *
+   * Opcional para mantener compatibilidad con expedientes generados antes
+   * de habilitar esta opción.
+   */
+  commercialValueUnknown?: boolean;
+  /**
+   * Aceptación expresa del arrendador asumiendo la responsabilidad de no
+   * superar el 1% del valor comercial real, eximiendo a ArriendoSeguro.
+   * Solo es relevante cuando `commercialValueUnknown` es `true`.
+   */
+  noCapAcknowledgement?: boolean;
 }
 
 export interface LeaseTerms {

@@ -8,7 +8,11 @@ import {
   parseNotificationAddressFromForm,
 } from "@/domain/colombia/structured-address";
 import { appendAudit, codebtorSchema, updateDraft } from "@/features/contracts/wizard-state";
-import { sanitizeCodebtorFromForm, PARTY_FIELD_LABELS } from "@/features/contracts/party-sanitize";
+import {
+  sanitizeCodebtorFromForm,
+  sanitizeCodebtorEconomicSupportFromForm,
+  PARTY_FIELD_LABELS,
+} from "@/features/contracts/party-sanitize";
 import { humanizeZodIssues } from "@/lib/validations/zod-errors-es";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -90,6 +94,7 @@ export default function CodebtorStepPage() {
       return;
     }
 
+    const economicSupport = sanitizeCodebtorEconomicSupportFromForm(formData);
     updateDraft(id, (d) =>
       appendAudit(
         {
@@ -103,6 +108,8 @@ export default function CodebtorStepPage() {
             phone: parsed.data.phone,
             notificationAddress: parsed.data.notificationAddress,
             notificationAddressParts: addrParsed.data,
+            truthfulnessOathAccepted: Boolean(parsed.data.truthfulnessOath),
+            economicSupport,
           },
           codebtorConsents: {
             dataProcessingConsent: true,
@@ -111,6 +118,10 @@ export default function CodebtorStepPage() {
           },
         },
         "codebtor_data_saved",
+        {
+          truthfulnessOathAccepted: Boolean(parsed.data.truthfulnessOath),
+          hasEconomicSupport: Boolean(economicSupport),
+        },
       ),
     );
     router.push(`/dashboard/contracts/${id}/property`);
@@ -190,6 +201,11 @@ export default function CodebtorStepPage() {
               label="Acepto la obligación solidaria dentro del contrato."
             />
           </div>
+
+          <CodebtorEconomicSupportSection
+            initial={draft.solidaryCoDebtor.economicSupport}
+          />
+
           {errors.length > 0 && (
             <div
               role="alert"
@@ -255,5 +271,136 @@ function Check({ name, label }: { name: string; label: string }) {
       <input type="checkbox" name={name} className="h-4 w-4 rounded border-slate-500" />
       {label}
     </label>
+  );
+}
+
+/**
+ * Bloque OPCIONAL de respaldo económico del codeudor solidario.
+ *
+ * En el mercado informal colombiano es común que el arrendador pida al
+ * codeudor carta laboral, colilla de pago y/o certificado de libertad y
+ * tradición de un inmueble. ArriendoSeguro no custodia esos documentos
+ * (la carga digital queda como mejora futura): solo registramos qué se
+ * entregó y los datos básicos para que el arrendador pueda dejar la
+ * trazabilidad en el expediente.
+ */
+function CodebtorEconomicSupportSection({
+  initial,
+}: {
+  initial?: import("@/features/contracts/draft-types").CodebtorEconomicSupportDraft;
+}) {
+  const docOptions: Array<{
+    value:
+      | "CARTA_LABORAL"
+      | "COLILLA_PAGO"
+      | "CERTIFICADO_LIBERTAD_TRADICION"
+      | "EXTRACTO_BANCARIO"
+      | "DECLARACION_RENTA"
+      | "OTRO";
+    label: string;
+  }> = [
+    { value: "CARTA_LABORAL", label: "Carta laboral" },
+    { value: "COLILLA_PAGO", label: "Colilla / desprendible de pago" },
+    {
+      value: "CERTIFICADO_LIBERTAD_TRADICION",
+      label: "Certificado de libertad y tradición de un inmueble del codeudor",
+    },
+    { value: "EXTRACTO_BANCARIO", label: "Extracto bancario" },
+    { value: "DECLARACION_RENTA", label: "Declaración de renta" },
+    { value: "OTRO", label: "Otro soporte" },
+  ];
+  const initialDocs = new Set(initial?.documentsProvided ?? []);
+
+  return (
+    <div className="sm:col-span-2 rounded-xl border border-violet-500/30 bg-violet-500/5 p-4">
+      <h4 className="text-sm font-semibold text-violet-100">
+        Respaldo económico del codeudor (opcional)
+      </h4>
+      <p className="mt-1 text-xs text-slate-300">
+        En Colombia es habitual pedirle al codeudor carta laboral, colilla
+        de pago, certificado de libertad y tradición de un inmueble u otros
+        soportes de capacidad de pago. Estos datos son <strong>informativos</strong>{" "}
+        para el arrendador y quedan en el expediente; ArriendoSeguro no
+        custodia los documentos físicos en esta fase.
+      </p>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <label className="text-sm">
+          <span className="mb-1 block text-slate-300">Empresa donde labora</span>
+          <input
+            name="supportEmployerName"
+            defaultValue={initial?.employerName ?? ""}
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            placeholder="Ej. ACME S.A.S."
+          />
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-slate-300">Cargo</span>
+          <input
+            name="supportPosition"
+            defaultValue={initial?.position ?? ""}
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            placeholder="Ej. Coordinador de operaciones"
+          />
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-slate-300">Ingreso mensual aprox. (COP)</span>
+          <input
+            name="supportMonthlyIncome"
+            type="number"
+            inputMode="numeric"
+            defaultValue={
+              initial?.monthlyIncome ? String(initial.monthlyIncome) : ""
+            }
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            placeholder="Ej. 4500000"
+          />
+        </label>
+      </div>
+
+      <fieldset className="mt-3">
+        <legend className="mb-1 block text-xs font-medium text-slate-300">
+          Soportes que entregó al arrendador
+        </legend>
+        <div className="grid gap-1 sm:grid-cols-2">
+          {docOptions.map((opt) => (
+            <label key={opt.value} className="flex items-start gap-2 text-xs text-slate-200">
+              <input
+                type="checkbox"
+                name={`supportDoc_${opt.value}`}
+                defaultChecked={initialDocs.has(opt.value)}
+                className="mt-0.5 h-4 w-4 accent-violet-500"
+              />
+              <span>{opt.label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <label className="mt-3 block text-sm">
+        <span className="mb-1 block text-slate-300">Notas del arrendador (opcional)</span>
+        <textarea
+          name="supportNotes"
+          rows={2}
+          defaultValue={initial?.notes ?? ""}
+          placeholder="Ej. Carta laboral expedida el 12/04/2026; colilla de marzo recibida en físico."
+          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+        />
+      </label>
+
+      <label className="mt-2 flex cursor-pointer items-start gap-2 text-xs text-slate-200">
+        <input
+          type="checkbox"
+          name="supportLandlordVerified"
+          defaultChecked={Boolean(initial?.landlordVerifiedConsent)}
+          className="mt-0.5 h-4 w-4 accent-violet-500"
+        />
+        <span>
+          Como arrendador, declaro haber recibido y verificado los soportes
+          marcados arriba (la verificación de autenticidad es de mi
+          responsabilidad).
+        </span>
+      </label>
+    </div>
   );
 }

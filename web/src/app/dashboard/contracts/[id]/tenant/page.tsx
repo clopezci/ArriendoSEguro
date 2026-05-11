@@ -39,17 +39,20 @@ export default function TenantStepPage() {
       return;
     }
 
+    const { truthfulnessOath, ...tenantData } = parsed.data;
     updateDraft(id, (d) =>
       appendAudit(
         {
           ...d,
           tenant: {
-            ...parsed.data,
+            ...tenantData,
             notificationAddressParts: addrParsed.data,
+            truthfulnessOathAccepted: Boolean(truthfulnessOath),
           },
           status: "data_in_progress",
         },
         "tenant_data_saved",
+        { truthfulnessOathAccepted: Boolean(truthfulnessOath) },
       ),
     );
     router.push(`/dashboard/contracts/${id}/codebtor`);

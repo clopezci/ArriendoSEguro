@@ -61,20 +61,36 @@ export default function UtilitiesStepPage() {
             defaultValue={draft.utilities.responsibleParty ?? "arrendatario"}
             className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
           >
-            <option value="arrendatario">arrendatario</option>
-            <option value="arrendador">arrendador</option>
-            <option value="compartido">compartido</option>
+            <option value="arrendatario">Arrendatario</option>
+            <option value="arrendador">Arrendador</option>
+            <option value="compartido">Compartido</option>
           </select>
+          <span className="mt-1 block text-xs text-slate-400">
+            Quién asume los servicios públicos (agua, luz, gas, internet, etc.)
+            durante la vigencia del contrato.
+          </span>
         </label>
         <Area
           name="details"
           label="Detalle de servicios públicos"
           defaultValue={draft.utilities.details}
+          placeholder={
+            "Ejemplos: el arrendatario asume agua, luz, gas, internet y aseo a su nombre. " +
+            "El primer y último mes los servicios se liquidan al corte de factura, no por días corridos. " +
+            "Los servicios deben quedar al día al momento de la entrega del inmueble; los recibos se entregan como soporte."
+          }
+          hint="Aclara qué servicios incluye el inmueble, a nombre de quién están y cómo se liquidan al inicio y al final del contrato."
         />
         <Area
           name="adminFeesDetails"
           label="Detalle de administración y expensas"
           defaultValue={draft.utilities.adminFeesDetails}
+          placeholder={
+            "Ejemplos: la administración mensual es de $250.000, a cargo del arrendatario, pagaderos en la oficina de la copropiedad antes del día 5 de cada mes. " +
+            "Las cuotas extraordinarias decretadas por la asamblea son responsabilidad del arrendador. " +
+            "Si el inmueble no tiene administración, escribe «No aplica»."
+          }
+          hint="Indica el valor mensual de la administración, quién la paga, dónde se paga y qué pasa con cuotas extraordinarias."
         />
         {errors.length > 0 && (
           <div
@@ -103,10 +119,14 @@ function Area({
   name,
   label,
   defaultValue,
+  placeholder,
+  hint,
 }: {
   name: string;
   label: string;
   defaultValue?: string;
+  placeholder?: string;
+  hint?: string;
 }) {
   return (
     <label className="block text-sm">
@@ -114,9 +134,11 @@ function Area({
       <textarea
         name={name}
         defaultValue={defaultValue ?? ""}
-        rows={4}
-        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+        rows={5}
+        placeholder={placeholder}
+        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 placeholder:text-slate-500/80"
       />
+      {hint && <span className="mt-1 block text-xs text-slate-400">{hint}</span>}
     </label>
   );
 }

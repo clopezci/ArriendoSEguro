@@ -21,6 +21,7 @@ export const PARTY_FIELD_LABELS: Record<string, string> = {
   email: "Correo electrónico",
   phone: "Teléfono",
   notificationAddress: "Dirección de notificación",
+  truthfulnessOath: "Declaración bajo gravedad de juramento",
   dataProcessingConsent: "Autorización de tratamiento de datos",
   electronicSignatureConsent: "Consentimiento de firma electrónica",
   solidaryObligationAcceptance: "Aceptación de obligación solidaria",
@@ -34,6 +35,7 @@ interface BaseSanitizedParty {
   email: string;
   phone: string;
   notificationAddress: string;
+  truthfulnessOath: boolean;
 }
 
 /**
@@ -53,6 +55,7 @@ export function sanitizePartyFromForm(
     email: trimAndCollapse(String(formData.get("email") ?? "")).toLowerCase(),
     phone: sanitizeFreeText(String(formData.get("phone") ?? "")),
     notificationAddress: extras.notificationAddress,
+    truthfulnessOath: formData.get("truthfulnessOath") === "on",
   };
 }
 
@@ -74,5 +77,53 @@ export function sanitizeCodebtorFromForm(
     electronicSignatureConsent: formData.get("electronicSignatureConsent") === "on",
     solidaryObligationAcceptance:
       formData.get("solidaryObligationAcceptance") === "on",
+  };
+}
+
+/**
+ * Lee los datos opcionales de respaldo económico del codeudor desde el
+ * `FormData`. Devuelve `undefined` si el arrendador no marcó ninguna
+ * opción (no inflar el draft con objetos vacíos).
+ */
+export function sanitizeCodebtorEconomicSupportFromForm(
+  formData: FormData,
+): import("./draft-types").CodebtorEconomicSupportDraft | undefined {
+  const employerName = toTitleCaseEs(String(formData.get("supportEmployerName") ?? ""));
+  const position = toTitleCaseEs(String(formData.get("supportPosition") ?? ""));
+  const monthlyIncomeRaw = String(formData.get("supportMonthlyIncome") ?? "").trim();
+  const monthlyIncome = monthlyIncomeRaw ? Number(monthlyIncomeRaw) : undefined;
+  const notes = sanitizeFreeText(String(formData.get("supportNotes") ?? ""));
+  const landlordVerifiedConsent = formData.get("supportLandlordVerified") === "on";
+  const docKeys = [
+    "CARTA_LABORAL",
+    "COLILLA_PAGO",
+    "CERTIFICADO_LIBERTAD_TRADICION",
+    "EXTRACTO_BANCARIO",
+    "DECLARACION_RENTA",
+    "OTRO",
+  ] as const;
+  const documentsProvided = docKeys.filter(
+    (key) => formData.get(`supportDoc_${key}`) === "on",
+  );
+
+  const isEmpty =
+    !employerName &&
+    !position &&
+    !monthlyIncome &&
+    !notes &&
+    !landlordVerifiedConsent &&
+    documentsProvided.length === 0;
+  if (isEmpty) return undefined;
+
+  return {
+    employerName: employerName || undefined,
+    position: position || undefined,
+    monthlyIncome:
+      typeof monthlyIncome === "number" && Number.isFinite(monthlyIncome) && monthlyIncome > 0
+        ? monthlyIncome
+        : undefined,
+    documentsProvided: documentsProvided.length > 0 ? documentsProvided : undefined,
+    notes: notes || undefined,
+    landlordVerifiedConsent: landlordVerifiedConsent || undefined,
   };
 }

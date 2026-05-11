@@ -14,12 +14,66 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+/**
+ * Etiquetas amigables para los `field` que devuelve `validateContractData`
+ * y los demás endpoints. Permite mostrar al usuario "Canon mensual" en
+ * lugar de "lease.monthlyRent" cuando algo falla en la generación del
+ * contrato o el PDF.
+ */
+const CONTRACT_FIELD_LABELS: Record<string, string> = {
+  "landlord.fullName": "Nombre del arrendador",
+  "landlord.documentNumber": "Documento del arrendador",
+  "landlord.email": "Correo del arrendador",
+  "landlord.phone": "Teléfono del arrendador",
+  "landlord.notificationAddress": "Dirección de notificación del arrendador",
+  "tenant.fullName": "Nombre del arrendatario",
+  "tenant.documentNumber": "Documento del arrendatario",
+  "tenant.email": "Correo del arrendatario",
+  "tenant.phone": "Teléfono del arrendatario",
+  "tenant.notificationAddress": "Dirección de notificación del arrendatario",
+  "solidaryCoDebtor": "Codeudor solidario",
+  "solidaryCoDebtor.fullName": "Nombre del codeudor",
+  "solidaryCoDebtor.documentNumber": "Documento del codeudor",
+  "solidaryCoDebtor.email": "Correo del codeudor",
+  "property.address": "Dirección del inmueble",
+  "property.city": "Ciudad del inmueble",
+  "property.department": "Departamento del inmueble",
+  "property.type": "Tipo de inmueble",
+  "property.registryNumber": "Matrícula / registro del inmueble",
+  "property.commercialValue": "Valor comercial del inmueble",
+  "property.legalRentCap": "Tope legal del canon",
+  "property.noCapAcknowledgement": "Aceptación del arrendador",
+  "lease.monthlyRent": "Canon mensual",
+  "lease.monthlyRentText": "Canon mensual en letras",
+  "lease.paymentDueDay": "Día de pago",
+  "lease.paymentMethod": "Método de pago",
+  "lease.startDate": "Fecha de inicio del contrato",
+  "lease.endDate": "Fecha de fin del contrato",
+  "lease.termMonths": "Duración del contrato",
+  "lease.latePaymentMonthsThreshold": "Umbral de mora",
+  "utilities.responsibleParty": "Responsable de servicios públicos",
+  "utilities.details": "Detalle de servicios públicos",
+  "utilities.adminFeesDetails": "Administración y expensas",
+  contractVersion: "Versión del contrato",
+  generatedAt: "Fecha de generación",
+};
+
+function formatBackendIssues(
+  issues: { field: string; message: string }[],
+): string[] {
+  if (!issues.length) return [];
+  return issues.map((issue) => {
+    const label = CONTRACT_FIELD_LABELS[issue.field] ?? issue.field;
+    return `${label}: ${issue.message}`;
+  });
+}
+
 export default function PreviewStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [savingVersion, setSavingVersion] = useState(false);
-  const [renderError, setRenderError] = useState("");
+  const [renderErrors, setRenderErrors] = useState<string[]>([]);
   const [previewHtml, setPreviewHtml] = useState("");
   const [versionInfo, setVersionInfo] = useState<{
     versionNumber: number;
@@ -77,7 +131,7 @@ export default function PreviewStepPage() {
   async function requestPreview() {
     if (!activeDraft) return;
     setLoadingPreview(true);
-    setRenderError("");
+    setRenderErrors([]);
     setSaveMessage("");
     auditEvent("contract_preview_requested", { contractDraftId: id });
     try {
@@ -92,11 +146,10 @@ export default function PreviewStepPage() {
       const data = (await res.json()) as ContractPreviewResponse;
       if (!res.ok || !data.success) {
         const issues = !data.success ? data.validationErrors : [];
-        const msg =
-          issues.length > 0
-            ? issues.map((i) => `${i.field}: ${i.message}`).join(" | ")
-            : "No se pudo generar vista previa.";
-        setRenderError(msg);
+        const list = formatBackendIssues(issues);
+        setRenderErrors(
+          list.length > 0 ? list : ["No se pudo generar la vista previa del contrato."],
+        );
         auditEvent("contract_preview_validation_failed", {
           contractDraftId: id,
           issues: issues.length,
@@ -117,7 +170,9 @@ export default function PreviewStepPage() {
         hash: data.contractVersionDraft.documentHash,
       });
     } catch {
-      setRenderError("Error de red al generar la vista previa.");
+      setRenderErrors([
+        "No pudimos conectar con el servidor para generar la vista previa. Revisa tu conexión e inténtalo nuevamente.",
+      ]);
     } finally {
       setLoadingPreview(false);
     }
@@ -126,7 +181,7 @@ export default function PreviewStepPage() {
   async function saveDraftVersion() {
     if (!activeDraft) return;
     if (!previewHtml || !versionInfo) {
-      setRenderError("Primero genera la vista previa.");
+      setRenderErrors(["Primero genera la vista previa del contrato."]);
       return;
     }
     setSavingVersion(true);
@@ -146,10 +201,10 @@ export default function PreviewStepPage() {
       });
       const data = (await res.json()) as SaveDraftVersionResponse;
       if (!res.ok || !data.success) {
-        const msg = !data.success && data.errors.length > 0
-          ? data.errors.map((e) => `${e.field}: ${e.message}`).join(" | ")
-          : "No se pudo guardar la versión.";
-        setRenderError(msg);
+        const list = !data.success ? formatBackendIssues(data.errors) : [];
+        setRenderErrors(
+          list.length > 0 ? list : ["No se pudo guardar la versión del contrato."],
+        );
         return;
       }
       setSaveMessage(
@@ -163,7 +218,9 @@ export default function PreviewStepPage() {
       });
       updateDraft(id, (d) => appendAudit({ ...d, status: "version_saved" }, "contract_draft_saved"));
     } catch {
-      setRenderError("Error de red al guardar la versión.");
+      setRenderErrors([
+        "No pudimos conectar con el servidor para guardar la versión. Inténtalo nuevamente.",
+      ]);
     } finally {
       setSavingVersion(false);
     }
@@ -171,11 +228,11 @@ export default function PreviewStepPage() {
 
   async function generatePdf() {
     if (!savedVersion) {
-      setRenderError("Primero guarda una versión del contrato.");
+      setRenderErrors(["Primero guarda una versión del contrato."]);
       return;
     }
     setGeneratingPdf(true);
-    setRenderError("");
+    setRenderErrors([]);
     try {
       const res = await fetch("/api/contracts/generate-pdf", {
         method: "POST",
@@ -187,10 +244,8 @@ export default function PreviewStepPage() {
       });
       const data = (await res.json()) as GenerateContractPdfResponse;
       if (!res.ok || !data.success) {
-        const msg = !data.success && data.errors.length > 0
-          ? data.errors.map((e) => `${e.field}: ${e.message}`).join(" | ")
-          : "No se pudo generar el PDF.";
-        setRenderError(msg);
+        const list = !data.success ? formatBackendIssues(data.errors) : [];
+        setRenderErrors(list.length > 0 ? list : ["No se pudo generar el PDF del contrato."]);
         return;
       }
       setPdfInfo({
@@ -200,7 +255,9 @@ export default function PreviewStepPage() {
         documentHash: data.documentHash,
       });
     } catch {
-      setRenderError("Error de red al generar PDF.");
+      setRenderErrors([
+        "No pudimos conectar con el servidor para generar el PDF. Inténtalo nuevamente.",
+      ]);
     } finally {
       setGeneratingPdf(false);
     }
@@ -208,11 +265,11 @@ export default function PreviewStepPage() {
 
   async function startSignatureRound() {
     if (!savedVersion) {
-      setRenderError("Primero guarda versión del contrato.");
+      setRenderErrors(["Primero guarda una versión del contrato."]);
       return;
     }
     setStartingSignatures(true);
-    setRenderError("");
+    setRenderErrors([]);
     try {
       const res = await fetch("/api/signatures/start", {
         method: "POST",
@@ -226,14 +283,16 @@ export default function PreviewStepPage() {
         | { success: true; signatures: typeof signatureRows }
         | { success: false; errors: { field: string; message: string }[] };
       if (!res.ok || !data.success) {
-        const msg = !data.success ? data.errors.map((e) => `${e.field}: ${e.message}`).join(" | ") : "No se pudo iniciar firma.";
-        setRenderError(msg);
+        const list = !data.success ? formatBackendIssues(data.errors) : [];
+        setRenderErrors(list.length > 0 ? list : ["No se pudo iniciar la ronda de firmas."]);
         return;
       }
       setSignatureRows(data.signatures);
       setContractStatus("signature_in_progress");
     } catch {
-      setRenderError("Error de red al iniciar la firma.");
+      setRenderErrors([
+        "No pudimos conectar con el servidor para iniciar la firma. Inténtalo nuevamente.",
+      ]);
     } finally {
       setStartingSignatures(false);
     }
@@ -317,7 +376,19 @@ export default function PreviewStepPage() {
           {loadingPreview ? "Generando vista previa…" : "Generar vista previa"}
         </button>
       </div>
-      {renderError && <p className="mb-3 text-sm text-rose-300">{renderError}</p>}
+      {renderErrors.length > 0 && (
+        <div
+          role="alert"
+          className="mb-3 rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100"
+        >
+          <p className="font-semibold">Revisa estos puntos antes de continuar:</p>
+          <ul className="mt-1 list-disc space-y-0.5 pl-5">
+            {renderErrors.map((msg, i) => (
+              <li key={i}>{msg}</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {previewHtml && (
         <div className="max-h-[70vh] overflow-auto rounded-lg border border-slate-700 bg-white p-4 text-slate-900">
           <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
