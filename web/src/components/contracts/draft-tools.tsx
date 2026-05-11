@@ -1,16 +1,26 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import {
-  canCreateContract,
   getDraft,
-  getUserAccessStatus,
   type ContractDraft,
 } from "@/features/contracts/wizard-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+/**
+ * Hook de protección para las pantallas internas del wizard.
+ *
+ * Antes leía el estado de acceso desde `localStorage` (`getUserAccessStatus`),
+ * lo cual generaba una desincronización con Firestore: si el Plan Plus se
+ * activaba desde el módulo admin o desde otra pestaña, el localStorage seguía
+ * marcando "pending_payment" y el wizard rebotaba al usuario a `/dashboard/leases`.
+ *
+ * Ahora consulta `/api/access/entitlements/me`, que es la fuente de verdad
+ * (Firestore). Si plus o demo están activos, se permite continuar.
+ */
 export function useDraftGuard(id: string) {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -18,24 +28,49 @@ export function useDraftGuard(id: string) {
   const [state, setState] = useState<"loading" | "ready" | "blocked">("loading");
 
   useEffect(() => {
-    if (loading) return;
-    if (!user) {
-      router.replace(`/ingresar?redirect=/dashboard/contracts/${id}/landlord`);
-      return;
-    }
-    const access = getUserAccessStatus(user.uid);
-    const gate = canCreateContract(user, access);
-    if (!gate.allowed) {
-      router.replace("/dashboard/leases");
-      return;
-    }
-    const found = getDraft(id);
-    if (!found || found.userId !== user.uid) {
-      setState("blocked");
-      return;
-    }
-    setDraft(found);
-    setState("ready");
+    let cancelled = false;
+    const run = async () => {
+      if (loading) return;
+      if (!user) {
+        router.replace(`/ingresar?redirect=/dashboard/contracts/${id}/landlord`);
+        return;
+      }
+      try {
+        const res = await fetch("/api/access/entitlements/me", {
+          headers: { ...(await buildAuthHeaders(user)) },
+        });
+        const data = (await res.json()) as {
+          success?: boolean;
+          plusActive?: boolean;
+          demoActive?: boolean;
+        };
+        if (cancelled) return;
+        const allowed = res.ok && data.success && (data.plusActive || data.demoActive);
+        if (!allowed) {
+          router.replace("/dashboard/leases");
+          return;
+        }
+      } catch {
+        if (cancelled) return;
+        // Si no podemos consultar entitlements en este momento, no bloqueamos
+        // al usuario que ya está dentro de su propio expediente: redirigirlo
+        // a "Mis arriendos" lo dejaría con la misma pantalla rota. La acción
+        // realmente sensible (guardar versión, generar PDF, firmar) ya valida
+        // permisos en el backend.
+      }
+      if (cancelled) return;
+      const found = getDraft(id);
+      if (!found || found.userId !== user.uid) {
+        setState("blocked");
+        return;
+      }
+      setDraft(found);
+      setState("ready");
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
   }, [id, user, loading, router]);
 
   return { draft, state };
@@ -74,4 +109,3 @@ export function StepNav({
     </div>
   );
 }
-

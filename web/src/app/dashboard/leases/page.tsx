@@ -2,6 +2,7 @@
 
 import { AccessBlocked } from "@/components/contracts/wizard-shell";
 import { useAuth } from "@/contexts/auth-context";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import {
   etiquetaContrato,
   etiquetaFirma,
@@ -13,41 +14,87 @@ import {
 } from "@/lib/dashboard/expediente-ui";
 import { canSeeInternalDashboardTools } from "@/lib/dashboard/internal-tools";
 import {
-  canCreateContract,
-  createContractDraft,
   getAllDrafts,
-  getUserAccessStatus,
   logGlobalAudit,
-  setUserAccessStatus,
-  type AccessStatus,
 } from "@/features/contracts/wizard-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-function statusLabel(access: AccessStatus): string {
-  if (access === "demo") return "Demo activo";
-  if (access === "paid") return "Pago confirmado";
-  if (access === "pending_payment") return "Pendiente de pago";
-  return "Demo expirado";
+/**
+ * Estado de acceso real del usuario, leído de Firestore mediante
+ * `/api/access/entitlements/me`. Antes esta pantalla leía únicamente el
+ * `localStorage`, lo que generaba inconsistencias cuando se activaba Plan
+ * Plus desde el módulo admin u otra pestaña: la página seguía mostrando
+ * "Pendiente de pago" aunque el backend ya tuviera el entitlement activo.
+ */
+type AccessState = {
+  loading: boolean;
+  errored: boolean;
+  plusActive: boolean;
+  demoActive: boolean;
+};
+
+function statusLabel(state: AccessState): string {
+  if (state.loading) return "Consultando estado…";
+  if (state.errored) return "No disponible";
+  if (state.plusActive) return "Plan Plus activo";
+  if (state.demoActive) return "Demo activo";
+  return "Pendiente de pago";
 }
 
 export default function MisArriendosPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [refreshSeed, setRefreshSeed] = useState(0);
-  const [msg, setMsg] = useState("");
+  const [access, setAccess] = useState<AccessState>({
+    loading: true,
+    errored: false,
+    plusActive: false,
+    demoActive: false,
+  });
   const internal = canSeeInternalDashboardTools(user?.email ?? null);
 
-  const accessStatus = useMemo(
-    () => {
-      void refreshSeed;
-      return user ? getUserAccessStatus(user.uid) : "pending_payment";
-    },
-    [user, refreshSeed],
-  );
+  const loadEntitlements = useCallback(async () => {
+    if (!user) return;
+    setAccess((prev) => ({ ...prev, loading: true, errored: false }));
+    try {
+      const res = await fetch("/api/access/entitlements/me", {
+        headers: { ...(await buildAuthHeaders(user)) },
+      });
+      const data = (await res.json()) as {
+        success?: boolean;
+        plusActive?: boolean;
+        demoActive?: boolean;
+      };
+      if (!res.ok || !data.success) {
+        setAccess({
+          loading: false,
+          errored: true,
+          plusActive: false,
+          demoActive: false,
+        });
+        return;
+      }
+      setAccess({
+        loading: false,
+        errored: false,
+        plusActive: Boolean(data.plusActive),
+        demoActive: Boolean(data.demoActive),
+      });
+    } catch {
+      setAccess({
+        loading: false,
+        errored: true,
+        plusActive: false,
+        demoActive: false,
+      });
+    }
+  }, [user]);
 
-  const gate = canCreateContract(user, accessStatus);
+  useEffect(() => {
+    void loadEntitlements();
+  }, [loadEntitlements]);
 
   const drafts = useMemo(
     () => {
@@ -57,24 +104,26 @@ export default function MisArriendosPage() {
     [user, refreshSeed],
   );
 
-  function refresh() {
-    setRefreshSeed((v) => v + 1);
-  }
+  const canCreate = access.plusActive || access.demoActive;
+  const showBlocked = !access.loading && !access.errored && !canCreate;
 
   useEffect(() => {
-    if (gate.reason === "pending_payment") {
+    if (showBlocked) {
       logGlobalAudit("access_blocked_pending_payment");
     }
-  }, [gate.reason]);
+  }, [showBlocked]);
 
   function onCreate() {
-    if (!user || !gate.allowed) return;
-    const draft = createContractDraft({
-      userId: user.uid,
-      accessStatus,
-      isDemo: accessStatus === "demo",
-    });
-    router.push(`/dashboard/contracts/${draft.id}/landlord`);
+    if (!user || !canCreate) return;
+    // Delegamos en /dashboard/contracts/new la creación real del expediente:
+    // ahí se consulta entitlements/me otra vez y, si hay Plus, se consume el
+    // crédito antes de crear el draft (atomicidad y trazabilidad).
+    router.push("/dashboard/contracts/new");
+  }
+
+  function refresh() {
+    setRefreshSeed((v) => v + 1);
+    void loadEntitlements();
   }
 
   return (
@@ -91,12 +140,18 @@ export default function MisArriendosPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm text-slate-400">
-              Estado local del navegador (fase inicial):{" "}
-              <strong className="text-slate-200">{statusLabel(accessStatus)}</strong>
+              Estado de tu acceso:{" "}
+              <strong className="text-slate-200">{statusLabel(access)}</strong>
             </p>
-            {!gate.allowed && (
+            {showBlocked && (
               <p className="mt-2 text-sm text-amber-100/90">
                 Para crear expedientes necesitás Plan Plus activo o modo demo desde Planes.
+              </p>
+            )}
+            {access.errored && (
+              <p className="mt-2 text-sm text-rose-200">
+                No pudimos verificar tu acceso. Refrescá esta página o intentá de nuevo en unos
+                minutos.
               </p>
             )}
           </div>
@@ -111,7 +166,7 @@ export default function MisArriendosPage() {
             <button
               type="button"
               onClick={onCreate}
-              disabled={!gate.allowed}
+              disabled={!canCreate}
               className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] disabled:opacity-45"
             >
               Crear expediente
@@ -122,42 +177,31 @@ export default function MisArriendosPage() {
         {internal && (
           <div className="mt-4 rounded-lg border border-amber-700/50 bg-amber-950/25 p-3 text-xs text-amber-50">
             <p className="font-medium text-amber-100">Herramientas internas</p>
+            <p className="mt-1 text-amber-50/80">
+              Si modificás el estado del acceso desde otra pestaña (por ejemplo, activando un
+              Plan Plus de prueba en <em>Planes</em> o desde el módulo admin), refrescá acá para
+              que esta vista lo reconozca.
+            </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  if (!user) return;
-                  setUserAccessStatus(user.uid, "demo");
-                  logGlobalAudit("access_granted_demo", { userId: user.uid });
-                  setMsg("Demo local activado (solo desarrollo).");
-                  refresh();
-                }}
+                onClick={() => refresh()}
                 className="rounded border border-amber-500/60 px-2 py-1"
               >
-                Activar demo local
+                Refrescar estado de acceso
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!user) return;
-                  setUserAccessStatus(user.uid, "paid");
-                  setMsg("Acceso paid local activado (solo desarrollo).");
-                  refresh();
-                }}
-                className="rounded border border-sky-500/60 px-2 py-1"
+              <Link
+                href="/dashboard/plans"
+                className="rounded border border-amber-500/60 px-2 py-1"
               >
-                Marcar paid local
-              </button>
+                Ir a Planes (Plus de prueba)
+              </Link>
             </div>
           </div>
         )}
-        {msg && <p className="mt-3 text-sm text-emerald-300">{msg}</p>}
       </section>
 
-      {!gate.allowed &&
-        (gate.reason === "pending_payment" || gate.reason === "expired") && (
-          <AccessBlocked reason={gate.reason} />
-        )}
+      {showBlocked && <AccessBlocked reason="pending_payment" />}
 
       <section className="space-y-4">
         {drafts.length === 0 ? (
