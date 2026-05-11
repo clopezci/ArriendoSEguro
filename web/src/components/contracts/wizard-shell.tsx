@@ -8,7 +8,7 @@ const steps = [
   "Arrendador",
   "Arrendatario",
   "Codeudor",
-  "Inmueble",
+  "Inmueble a arrendar",
   "Términos",
   "Servicios",
   "Resumen",

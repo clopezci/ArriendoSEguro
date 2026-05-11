@@ -22,7 +22,8 @@ export default function PropertyStepPage() {
   function onSubmit(formData: FormData) {
     const addrParsed = parseUrbanAddressFromForm(formData, "propAddr");
     if (!addrParsed.success) {
-      const msg = addrParsed.error.issues[0]?.message ?? "Revisá la dirección del inmueble.";
+      const msg =
+        addrParsed.error.issues[0]?.message ?? "Revisá la dirección del inmueble a arrendar.";
       setError(msg);
       return;
     }
@@ -42,7 +43,7 @@ export default function PropertyStepPage() {
       monthlyRentProposed,
     });
     if (!parsed.success) {
-      const msg = parsed.error.issues[0]?.message ?? "Revisa los datos del inmueble.";
+      const msg = parsed.error.issues[0]?.message ?? "Revisa los datos del inmueble a arrendar.";
       setError(msg);
       updateDraft(id, (d) => appendAudit(d, "rent_cap_validation_failed", { reason: msg }));
       return;
@@ -68,7 +69,7 @@ export default function PropertyStepPage() {
     !!draft.property.address && !draft.property.addressParts;
 
   return (
-    <WizardShell title="Datos del inmueble" currentStep={5} contractId={id}>
+    <WizardShell title="Inmueble a arrendar" currentStep={5} contractId={id}>
       <form
         id="wizard-form"
         className="grid gap-3 sm:grid-cols-2"

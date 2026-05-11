@@ -1,21 +1,34 @@
 "use client";
 
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
-import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
+import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import {
   formatColombianNotificationAddress,
   parseNotificationAddressFromForm,
 } from "@/domain/colombia/structured-address";
 import { appendAudit, codebtorSchema, updateDraft } from "@/features/contracts/wizard-state";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 export default function CodebtorStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
   const router = useRouter();
   const [error, setError] = useState("");
+
+  // Derivamos si el usuario ya respondió la pregunta de codeudor. El valor
+  // por defecto de `hasSolidaryCoDebtor` es false, así que no podemos
+  // distinguir "todavía no eligió" de "eligió No" solo con ese flag.
+  // Nos apoyamos en el evento `codebtor_option_selected` del audit trail.
+  const hasMadeChoice = useMemo(
+    () =>
+      Boolean(
+        draft?.auditTrail?.some((event) => event.event === "codebtor_option_selected"),
+      ),
+    [draft?.auditTrail],
+  );
 
   if (state !== "ready" || !draft) return <p className="text-sm text-slate-300">Cargando…</p>;
 
@@ -147,11 +160,48 @@ export default function CodebtorStepPage() {
         </form>
       )}
 
-      <StepNav
-        backHref={`/dashboard/contracts/${id}/tenant`}
-        backLabel="Anterior"
-        nextHref={`/dashboard/contracts/${id}/property`}
-      />
+      {/*
+        Barra de navegación contextual del paso Codeudor. Antes se usaba el
+        componente compartido `StepNav`, pero su botón `Guardar y continuar`
+        es un submit que solo funciona si el formulario del codeudor está
+        montado (es decir, si el usuario eligió "Sí"). Como ese formulario
+        es condicional, al iniciar el paso el botón quedaba inerte y daba
+        la impresión de estar deshabilitado. Ahora la barra refleja el
+        estado real de la decisión.
+      */}
+      <div className="mt-6 flex flex-wrap items-center gap-3">
+        <Link
+          href={`/dashboard/contracts/${id}/tenant`}
+          className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-violet-400"
+        >
+          Anterior
+        </Link>
+
+        {!hasMadeChoice && (
+          <p className="text-sm text-amber-100/90">
+            Elegí si vas a incluir un codeudor solidario para continuar.
+          </p>
+        )}
+
+        {hasMadeChoice && !draft.hasSolidaryCoDebtor && (
+          <Link
+            href={`/dashboard/contracts/${id}/property`}
+            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)]"
+          >
+            Continuar al inmueble
+          </Link>
+        )}
+
+        {hasMadeChoice && draft.hasSolidaryCoDebtor && (
+          <button
+            form="wizard-form"
+            type="submit"
+            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)]"
+          >
+            Guardar codeudor y continuar
+          </button>
+        )}
+      </div>
     </WizardShell>
   );
 }
