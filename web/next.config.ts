@@ -5,13 +5,30 @@ import { fileURLToPath } from "node:url";
 /** Raíz de la app Next (carpeta `web`); fija el tracing cuando hay varios `package-lock` en el PC o monorepos. */
 const appDir = path.dirname(fileURLToPath(import.meta.url));
 
+/**
+ * Content Security Policy de producción.
+ *
+ * El SDK de Firebase Auth y, eventualmente, de Firestore en cliente llaman a
+ * `*.googleapis.com` (identitytoolkit, securetoken, firestore). Si `connect-src`
+ * queda en `'self'`, el navegador bloquea esas requests y el SDK devuelve
+ * `auth/network-request-failed`, que nuestro mapeo traduce a "No hay conexión
+ * con los servidores de Firebase". Aquí dejamos solo los orígenes que
+ * realmente necesitamos.
+ *
+ * Cloudflare Turnstile (cuando esté habilitado) carga su script y un iframe
+ * desde `https://challenges.cloudflare.com`.
+ *
+ * Si en el futuro se usa Google Fonts servido desde CDN o Google reCAPTCHA en
+ * Auth, ampliar `style-src`, `font-src` y `script-src` con sus dominios.
+ */
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://www.gstatic.com",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https://*.googleusercontent.com",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebase.googleapis.com https://challenges.cloudflare.com",
+  "frame-src 'self' https://challenges.cloudflare.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
