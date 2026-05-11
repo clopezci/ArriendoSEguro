@@ -4,6 +4,11 @@ import { generateDocumentHash } from "./hash";
 export const CONTRACT_VERSION_REGISTRY: Record<ContractVersion, string> = {
   "AS-LEASE-MVP-2026.1":
     "Plantilla base de arrendamiento vivienda urbana con bloques condicionales de codeudor.",
+  "AS-LEASE-2026.2":
+    "Borrador 2026.2: refuerza obligaciones de pago, liquidación, codeudor solidario, " +
+    "firma electrónica reforzada con OTP, autenticación notarial opcional y cláusulas " +
+    "especiales solicitadas por las partes. Pendiente de activación oficial y " +
+    "validación final del abogado.",
 };
 
 export function isKnownContractVersion(version: string): version is ContractVersion {

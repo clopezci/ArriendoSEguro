@@ -1,7 +1,7 @@
 # Roadmap visual — ArriendoSeguro
 
 > Tablero rápido del producto. Mantener sincronizado con la regla
-> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-05-10**.
+> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-05-11**.
 >
 > Convenciones:
 > - **[x]** = listo en producción o en `main`.
@@ -73,10 +73,27 @@
 
 ### Validación legal con abogado *(prio 1)*
 - [x] Texto del contrato extraído para revisión (`web/docs/contrato-vivienda-urbana-revision-legal.txt`).
-- [ ] Revisión y observaciones del abogado.
-- [ ] Aplicar cambios → nueva versión `AS-LEASE-2026.x`.
+- [x] Análisis comparativo con modelo del abogado (`web/docs/legal-abogado/analisis-comparativo.md`).
+- [x] Plan de mejoras contrato + flujo (`web/docs/plan-mejoras-contrato-flujo.md`).
+- [ ] Confirmaciones pendientes del abogado (sección 6 del plan).
+- [ ] Aplicar cambios → nueva versión `AS-LEASE-2026.2`.
 - [ ] Definir y precificar **cláusulas particulares** como servicio adicional.
 - [ ] Insertar bloque `[CLAUSULAS_ESPECIALES_CONDICIONAL]` (entre DÉCIMA NOVENA y VIGÉSIMA).
+
+### Mejoras de contrato + flujo (`AS-LEASE-2026.2`) — *(prio 1, ejecución por bloques)*
+Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
+
+- [ ] Bloque 1 — Tipos y borrador del nuevo contrato (`AS-LEASE-2026.2`, sin activar).
+- [ ] Bloque 2 — Consentimiento de datos en registro y en inicio del wizard.
+- [ ] Bloque 3 — Anotaciones especiales del expediente (visibles en UI, no imprimibles).
+- [ ] Bloque 4 — Selector de tipo de contrato (urbano activo; otros “próximamente”).
+- [ ] Bloque 5 — Cláusulas especiales (mascotas, etc.) + aviso de costo adicional.
+- [ ] Bloque 6 — Estudio de crédito (link/aliado o “próximamente”).
+- [ ] Bloque 7 — Firma electrónica reforzada (OTP + evidencia ampliada + snapshot inmutable + certificado PDF).
+- [ ] Bloque 8 — Anexo de evidencia (paquete de descargas por expediente).
+- [ ] Bloque 9 — Autenticación notarial opcional (descarga + carga de PDF autenticado).
+- [ ] Bloque 10 — Módulo de novedades y solicitudes con notificación por email y trazabilidad.
+- [ ] Bloque 11 — Activación oficial de `AS-LEASE-2026.2` para nuevos expedientes.
 
 ### PWA instalable *(prio 2)*
 - [ ] `web/public/manifest.webmanifest` (`display: standalone`, theme/background `#0b0f1a`).

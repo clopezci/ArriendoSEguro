@@ -21,11 +21,25 @@ Tablero visual sincronizado: `web/docs/roadmap.md` (mantener actualizado al cerr
 
 ## Hacia dónde vamos (orden recomendado)
 
-1. **Validación legal con abogado** de plantilla y cláusulas particulares (servicio adicional con cobro).
-2. **PWA instalable** (manifest + service worker + íconos AS morados). Ver `arriendoseguro-mobile-pwa.mdc`.
-3. **Reputación y calificaciones** tras cierre del arriendo (no antes).
-4. **Cobros reales**: pasarela y entitlements estrictos en servidor (`access_entitlements`).
-5. **Marketplace ligero** opcional cuando la confianza esté validada.
+1. **Mejoras de contrato + flujo (`AS-LEASE-2026.2`)** por bloques pequeños y revisables. Ver
+   `web/docs/plan-mejoras-contrato-flujo.md` y el tablero `web/docs/roadmap.md`.
+   Resumen de bloques:
+   1. Tipos y borrador del nuevo contrato (sin activar).
+   2. Consentimiento de tratamiento de datos (registro + inicio del wizard).
+   3. Anotaciones especiales del expediente (no se imprimen).
+   4. Selector de tipo de contrato (urbano activo; rural / habitación / etc. “próximamente”).
+   5. Cláusulas especiales con aviso de costo adicional.
+   6. Estudio de crédito (aliado o “próximamente”).
+   7. Firma electrónica reforzada (OTP por email, evidencia ampliada, snapshot inmutable, certificado).
+   8. Anexo de evidencia (paquete de descargas por expediente).
+   9. Autenticación notarial opcional (manual ahora; aliado digital después).
+   10. Módulo de novedades y solicitudes con notificación por email y trazabilidad.
+   11. Activación oficial de `AS-LEASE-2026.2`.
+2. **Validación legal con abogado** de plantilla y cláusulas particulares (servicio adicional con cobro).
+3. **PWA instalable** (manifest + service worker + íconos AS morados). Ver `arriendoseguro-mobile-pwa.mdc`.
+4. **Reputación y calificaciones** tras cierre del arriendo (no antes).
+5. **Cobros reales**: pasarela y entitlements estrictos en servidor (`access_entitlements`).
+6. **Marketplace ligero** opcional cuando la confianza esté validada.
 
 ## Reglas de fase (no negociables)
 
