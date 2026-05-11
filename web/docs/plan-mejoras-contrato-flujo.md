@@ -278,7 +278,82 @@ con `npm run build` y validado en Vercel, antes de pasar al siguiente.
 
 ---
 
-## 7. Más adelante (post-bloques 1–11)
+## 7. Procedimiento Git por bloque (entorno Windows + OneDrive + Turbopack)
+
+> Procedimiento probado el 2026-05-11. Evita los bloqueos típicos cuando
+> `npm run dev` y OneDrive mantienen archivos abiertos en `web/src/`.
+
+Por cada bloque entregado:
+
+1. **Trabajar en una rama de feature** durante la entrega.
+
+   ```powershell
+   git checkout -b feat/contrato-2026-2-bloque-XX-descripcion
+   ```
+
+2. **Hacer commits parciales** mientras se avanza el bloque.
+
+   ```powershell
+   git add <archivos>
+   git commit -m "feat(area): descripcion corta"
+   ```
+
+3. **Push de la rama de feature** para que Vercel arme un preview:
+
+   ```powershell
+   git push -u origin HEAD
+   ```
+
+4. **Probar el preview de Vercel** (escritorio + móvil).
+
+5. **Mergear a `main` sin tocar el working tree**:
+
+   ```powershell
+   git push origin HEAD:main
+   ```
+
+   Esto hace fast-forward de `main` en remoto y dispara el deploy a
+   producción. No requiere `git checkout main`, así que no pelea con
+   archivos bloqueados por Turbopack o por OneDrive.
+
+6. **Sincronizar `main` local**. Cuando ya no haya bloqueos (idealmente
+   cerrando o pausando `npm run dev`):
+
+   ```powershell
+   git fetch origin
+   git checkout main
+   git pull --ff-only
+   ```
+
+7. **Borrar la rama de feature** local y remota:
+
+   ```powershell
+   git branch -d feat/contrato-2026-2-bloque-XX-descripcion
+   git push origin --delete feat/contrato-2026-2-bloque-XX-descripcion
+   ```
+
+### Si `git checkout main` falla con bloqueo de directorio
+
+Si Windows responde *“Deletion of directory ... failed. Should I try
+again? (y/n)”*:
+
+1. Escribir `n` y Enter para liberar el lock.
+2. Detener `npm run dev` con `Ctrl + C`.
+3. Si OneDrive sigue sincronizando, pausarlo por un momento.
+4. Volver a ejecutar `git checkout main`.
+
+### Si quedan archivos marcados como `D` después de un checkout fallido
+
+```powershell
+git checkout HEAD -- .
+```
+
+Esto restaura los archivos del commit actual sin perder cambios
+confirmados.
+
+---
+
+## 8. Más adelante (post-bloques 1–11)
 
 - Pasarela **Wompi sandbox** + entitlements reales.
 - Marketplace ligero y reputación pública (Fase 3 y 4 del roadmap).
@@ -287,6 +362,7 @@ con `npm run build` y validado en Vercel, antes de pasar al siguiente.
 
 ---
 
-**Próximo paso recomendado:** ejecutar Bloque 1 (tipos + borrador del
-contrato), porque no toca UI, no toca el flujo activo y deja la base
-para todo lo demás.
+**Bloque 1 entregado** el 2026-05-11 (commit `5222d0e`).
+
+**Próximo paso recomendado:** ejecutar Bloque 2 (consentimiento de
+datos en registro y en inicio del wizard).
