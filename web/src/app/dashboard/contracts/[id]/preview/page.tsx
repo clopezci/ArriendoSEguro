@@ -1,6 +1,7 @@
 "use client";
 
 import { useDraftGuard } from "@/components/contracts/draft-tools";
+import { ExpedienteNotesCard } from "@/components/contracts/expediente-notes-card";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { appendAudit, toContractInput, updateDraft } from "@/features/contracts/wizard-state";
 import { auditEvent } from "@/features/contracts/audit";
@@ -299,6 +300,13 @@ export default function PreviewStepPage() {
         Esta es una vista previa. El contrato solo quedará listo para firma cuando ambas partes
         revisen y acepten la versión final.
       </p>
+      <div className="mb-4">
+        <ExpedienteNotesCard
+          draftId={id}
+          initialNotes={activeDraft.expedienteNotes ?? ""}
+          variant="banner"
+        />
+      </div>
       <div className="mb-4 flex flex-wrap gap-3">
         <button
           type="button"

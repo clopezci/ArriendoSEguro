@@ -1,6 +1,7 @@
 "use client";
 
 import { useDraftGuard } from "@/components/contracts/draft-tools";
+import { ExpedienteNotesCard } from "@/components/contracts/expediente-notes-card";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { appendAudit, updateDraft } from "@/features/contracts/wizard-state";
 import Link from "next/link";
@@ -54,6 +55,13 @@ export default function ReviewStepPage() {
           <p>Responsable: {draft.utilities.responsibleParty}</p>
           <p>{draft.utilities.details}</p>
         </Card>
+      </div>
+
+      <div className="mt-4">
+        <ExpedienteNotesCard
+          draftId={id}
+          initialNotes={draft.expedienteNotes ?? ""}
+        />
       </div>
 
       <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-4 text-sm text-slate-300">

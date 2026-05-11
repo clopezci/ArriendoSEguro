@@ -85,7 +85,7 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 
 - [x] Bloque 1 — Tipos y borrador del nuevo contrato (`AS-LEASE-2026.2`, sin activar).
 - [x] Bloque 2 — Consentimiento de datos en registro y en inicio del wizard.
-- [ ] Bloque 3 — Anotaciones especiales del expediente (visibles en UI, no imprimibles).
+- [x] Bloque 3 — Anotaciones especiales del expediente (visibles en UI, no imprimibles).
 - [ ] Bloque 4 — Selector de tipo de contrato (urbano activo; otros “próximamente”).
 - [ ] Bloque 5 — Cláusulas especiales (mascotas, etc.) + aviso de costo adicional.
 - [ ] Bloque 6 — Estudio de crédito (link/aliado o “próximamente”).

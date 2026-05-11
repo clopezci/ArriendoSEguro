@@ -37,6 +37,13 @@ export type AuditEventName =
   | "utilities_saved"
   | "contract_preview_generated"
   | "contract_draft_saved"
+  /**
+   * Las partes guardaron anotaciones internas del expediente. Estas anotaciones
+   * se conservan únicamente en el draft local; nunca se inyectan en el HTML
+   * del contrato ni se envían al renderizador (`toContractInput` no las
+   * propaga). Sirven como bitácora visible solo en la app.
+   */
+  | "expediente_notes_updated"
   /** Recorrido /demo (localStorage); no implica expediente real. */
   | "demo_viewed"
   | "demo_step_opened"
@@ -73,9 +80,21 @@ export interface ContractDraft {
   };
   lease: Partial<ResidentialLeaseContractInput["lease"]>;
   utilities: Partial<ResidentialLeaseContractInput["utilities"]>;
+  /**
+   * Anotaciones internas del expediente (texto libre). Visibles solo dentro de
+   * la app para que arrendador y arrendatario dejen recordatorios operativos
+   * (fechas de corte de servicios, observaciones de entrega, etc.). NO se
+   * imprimen en el contrato: `toContractInput()` no las propaga al renderer.
+   * Campo opcional para compatibilidad con borradores creados antes del
+   * Bloque 3 del plan de mejoras.
+   */
+  expedienteNotes?: string;
   lastUpdatedAt: string;
   auditTrail: AuditEvent[];
 }
+
+/** Límite defensivo del editor de anotaciones del expediente (UI). */
+export const EXPEDIENTE_NOTES_MAX_LENGTH = 2000;
 
 const DRAFTS_KEY = "arriendoseguro.contract.drafts.v1";
 const ACCESS_KEY = "arriendoseguro.contract.access.v1";
@@ -265,10 +284,30 @@ export function createContractDraft(input: {
     property: {},
     lease: { latePaymentMonthsThreshold: 2, paymentMethod: "transferencia bancaria" },
     utilities: {},
+    expedienteNotes: "",
     lastUpdatedAt: now,
     auditTrail: [{ event: "contract_flow_started", at: now }],
   };
   return saveDraft(draft);
+}
+
+/**
+ * Guarda las anotaciones especiales del expediente (texto libre). Recorta
+ * según `EXPEDIENTE_NOTES_MAX_LENGTH` y agrega un evento de auditoría con la
+ * longitud del texto (sin filtrar el contenido en el audit por privacidad).
+ */
+export function setExpedienteNotes(
+  draftId: string,
+  notes: string,
+): ContractDraft | null {
+  const trimmed = (notes ?? "").slice(0, EXPEDIENTE_NOTES_MAX_LENGTH);
+  return updateDraft(draftId, (draft) =>
+    appendAudit(
+      { ...draft, expedienteNotes: trimmed },
+      "expediente_notes_updated",
+      { length: trimmed.length },
+    ),
+  );
 }
 
 export function updateDraft(
