@@ -10,27 +10,52 @@ import {
 import { appendAudit, codebtorSchema, updateDraft } from "@/features/contracts/wizard-state";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+
+/**
+ * Estado local de la decisión sobre el codeudor solidario:
+ * - `pending`: el usuario aún no ha elegido en esta sesión y tampoco hay
+ *   evento previo en el audit trail (paso por primera vez).
+ * - `yes`: optó por incluir codeudor → se muestra el formulario completo.
+ * - `no`: optó por continuar sin codeudor → se muestra el atajo para
+ *   continuar al inmueble.
+ *
+ * Necesitamos este estado local explícito porque:
+ * 1. El flag `draft.hasSolidaryCoDebtor` arranca en `false` por defecto, por
+ *    lo que no distingue "todavía no eligió" de "eligió No".
+ * 2. `useDraftGuard` solo lee el draft de `localStorage` en su `useEffect`
+ *    inicial; tras `updateDraft` el componente no se vuelve a re-renderizar
+ *    con el nuevo valor del flag, así que el formulario nunca aparecía al
+ *    cambiar la elección de "No" a "Sí" durante la misma visita al paso.
+ */
+type CodebtorDecision = "pending" | "yes" | "no";
+
+function deriveInitialDecision(
+  hasSolidaryCoDebtor: boolean,
+  auditTrail: { event: string }[],
+): CodebtorDecision {
+  const previouslySelected = auditTrail.some(
+    (event) => event.event === "codebtor_option_selected",
+  );
+  if (!previouslySelected) return "pending";
+  return hasSolidaryCoDebtor ? "yes" : "no";
+}
 
 export default function CodebtorStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
   const router = useRouter();
   const [error, setError] = useState("");
+  const [decision, setDecision] = useState<CodebtorDecision>("pending");
 
-  // Derivamos si el usuario ya respondió la pregunta de codeudor. El valor
-  // por defecto de `hasSolidaryCoDebtor` es false, así que no podemos
-  // distinguir "todavía no eligió" de "eligió No" solo con ese flag.
-  // Nos apoyamos en el evento `codebtor_option_selected` del audit trail.
-  const hasMadeChoice = useMemo(
-    () =>
-      Boolean(
-        draft?.auditTrail?.some((event) => event.event === "codebtor_option_selected"),
-      ),
-    [draft?.auditTrail],
-  );
+  useEffect(() => {
+    if (!draft) return;
+    setDecision(deriveInitialDecision(draft.hasSolidaryCoDebtor, draft.auditTrail));
+  }, [draft]);
 
-  if (state !== "ready" || !draft) return <p className="text-sm text-slate-300">Cargando…</p>;
+  if (state !== "ready" || !draft) {
+    return <p className="text-sm text-slate-300">Cargando…</p>;
+  }
 
   function onToggle(has: boolean) {
     updateDraft(id, (d) =>
@@ -38,11 +63,15 @@ export default function CodebtorStepPage() {
         hasCodebtor: has,
       }),
     );
-    if (!has) router.push(`/dashboard/contracts/${id}/property`);
+    setDecision(has ? "yes" : "no");
+    setError("");
+    if (!has) {
+      router.push(`/dashboard/contracts/${id}/property`);
+    }
   }
 
   function onSubmit(formData: FormData) {
-    if (!draft?.hasSolidaryCoDebtor) return;
+    if (decision !== "yes") return;
 
     const addrParsed = parseNotificationAddressFromForm(formData);
     if (!addrParsed.success) {
@@ -95,6 +124,19 @@ export default function CodebtorStepPage() {
     router.push(`/dashboard/contracts/${id}/property`);
   }
 
+  // Estilos comunes para los botones Sí/No. Cuando la decisión está en
+  // `pending` ninguno se pinta como "seleccionado": ambos comparten un
+  // mismo borde violeta suave para que se vea con claridad que son dos
+  // opciones a elegir y no que una está deshabilitada.
+  function choiceButtonClass(active: boolean): string {
+    const base =
+      "flex-1 rounded-lg px-4 py-3 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-violet-400 sm:flex-initial";
+    if (active) {
+      return `${base} bg-violet-600 text-white shadow-[0_0_18px_rgba(139,92,246,0.45)]`;
+    }
+    return `${base} border-2 border-violet-500/45 bg-slate-900/60 text-slate-100 hover:border-violet-300 hover:bg-slate-800`;
+  }
+
   return (
     <WizardShell title="Codeudor solidario" currentStep={4} contractId={id}>
       <div className="space-y-4">
@@ -106,33 +148,33 @@ export default function CodebtorStepPage() {
           arrendatario dentro del contrato. Si eliges esta opción, esa persona deberá ingresar sus
           datos, aceptar el tratamiento de datos y firmar electrónicamente el contrato.
         </p>
-        <div className="flex gap-3">
+        <div
+          className="flex flex-col gap-3 sm:flex-row"
+          role="radiogroup"
+          aria-label="Decisión sobre codeudor solidario"
+        >
           <button
             type="button"
+            role="radio"
+            aria-checked={decision === "yes"}
             onClick={() => onToggle(true)}
-            className={`rounded-lg px-4 py-2 text-sm ${
-              draft.hasSolidaryCoDebtor
-                ? "bg-violet-600 text-white"
-                : "border border-slate-700 text-slate-200"
-            }`}
+            className={choiceButtonClass(decision === "yes")}
           >
             Sí, incluir codeudor solidario
           </button>
           <button
             type="button"
+            role="radio"
+            aria-checked={decision === "no"}
             onClick={() => onToggle(false)}
-            className={`rounded-lg px-4 py-2 text-sm ${
-              !draft.hasSolidaryCoDebtor
-                ? "bg-violet-600 text-white"
-                : "border border-slate-700 text-slate-200"
-            }`}
+            className={choiceButtonClass(decision === "no")}
           >
             No, continuar sin codeudor
           </button>
         </div>
       </div>
 
-      {draft.hasSolidaryCoDebtor && (
+      {decision === "yes" && (
         <form
           id="wizard-form"
           className="mt-5 grid gap-3 sm:grid-cols-2"
@@ -161,13 +203,10 @@ export default function CodebtorStepPage() {
       )}
 
       {/*
-        Barra de navegación contextual del paso Codeudor. Antes se usaba el
-        componente compartido `StepNav`, pero su botón `Guardar y continuar`
-        es un submit que solo funciona si el formulario del codeudor está
-        montado (es decir, si el usuario eligió "Sí"). Como ese formulario
-        es condicional, al iniciar el paso el botón quedaba inerte y daba
-        la impresión de estar deshabilitado. Ahora la barra refleja el
-        estado real de la decisión.
+        Barra de navegación contextual del paso Codeudor.
+        - Decisión pendiente: solo "Anterior" y mensaje guía.
+        - Decisión "No": atajo directo al inmueble.
+        - Decisión "Sí": submit del formulario de datos del codeudor.
       */}
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <Link
@@ -177,13 +216,13 @@ export default function CodebtorStepPage() {
           Anterior
         </Link>
 
-        {!hasMadeChoice && (
+        {decision === "pending" && (
           <p className="text-sm text-amber-100/90">
             Elegí si vas a incluir un codeudor solidario para continuar.
           </p>
         )}
 
-        {hasMadeChoice && !draft.hasSolidaryCoDebtor && (
+        {decision === "no" && (
           <Link
             href={`/dashboard/contracts/${id}/property`}
             className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)]"
@@ -192,7 +231,7 @@ export default function CodebtorStepPage() {
           </Link>
         )}
 
-        {hasMadeChoice && draft.hasSolidaryCoDebtor && (
+        {decision === "yes" && (
           <button
             form="wizard-form"
             type="submit"
