@@ -128,6 +128,26 @@ export default function PreviewStepPage() {
 
   const activeDraft = draft;
 
+  // Genera automáticamente la vista previa la primera vez que el usuario llega
+  // al paso 10 del wizard. Antes el flujo requería que la persona tocara
+  // "Generar vista previa" para que se llenara `previewHtml`; mientras tanto el
+  // botón "Guardar versión" parecía habilitado visualmente (no tenía estilo
+  // disabled), lo cual era confuso: al hacer click no pasaba nada porque
+  // realmente estaba bloqueado por `disabled={!previewHtml}`. Auto-generar al
+  // montar mantiene el control manual del botón "Generar vista previa" para
+  // refrescar si el usuario edita y vuelve, y evita el clic extra inicial.
+  useEffect(() => {
+    if (!activeDraft) return;
+    if (previewHtml) return;
+    if (loadingPreview) return;
+    if (renderErrors.length > 0) return;
+    void requestPreview();
+    // requestPreview no es estable porque depende de activeDraft; lo dejamos
+    // fuera del array de deps para evitar bucle, controlando re-ejecución con
+    // las guardas anteriores.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDraft?.id]);
+
   async function requestPreview() {
     if (!activeDraft) return;
     setLoadingPreview(true);
@@ -366,15 +386,24 @@ export default function PreviewStepPage() {
           variant="banner"
         />
       </div>
-      <div className="mb-4 flex flex-wrap gap-3">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={requestPreview}
           disabled={loadingPreview}
-          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white"
+          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loadingPreview ? "Generando vista previa…" : "Generar vista previa"}
+          {loadingPreview
+            ? "Generando vista previa…"
+            : previewHtml
+              ? "Regenerar vista previa"
+              : "Generar vista previa"}
         </button>
+        {!previewHtml && !loadingPreview && renderErrors.length === 0 && (
+          <span className="text-xs text-slate-400">
+            Estamos generando la primera vista previa automáticamente.
+          </span>
+        )}
       </div>
       {renderErrors.length > 0 && (
         <div
@@ -411,10 +440,21 @@ export default function PreviewStepPage() {
         <button
           type="button"
           onClick={saveDraftVersion}
-          disabled={savingVersion || !previewHtml}
-          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white"
+          disabled={savingVersion || !previewHtml || Boolean(savedVersion)}
+          title={
+            !previewHtml
+              ? "Espera a que termine de generarse la vista previa."
+              : savedVersion
+                ? "Versión ya guardada. Continúa con generar el PDF o iniciar firma."
+                : undefined
+          }
+          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {savingVersion ? "Guardando versión…" : "Guardar versión"}
+          {savingVersion
+            ? "Guardando versión…"
+            : savedVersion
+              ? "Versión guardada ✓"
+              : "Guardar versión"}
         </button>
         <button
           type="button"
