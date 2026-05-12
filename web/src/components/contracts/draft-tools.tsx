@@ -32,7 +32,7 @@ export function useDraftGuard(id: string) {
     const run = async () => {
       if (loading) return;
       if (!user) {
-        router.replace(`/ingresar?redirect=/dashboard/contracts/${id}/landlord`);
+        router.replace(`/ingresar?redirect=/dashboard/contracts/${id}/contract-type`);
         return;
       }
       try {

@@ -59,7 +59,7 @@ export default function LandlordStepPage() {
   }
 
   return (
-    <WizardShell title="Datos del arrendador" currentStep={2} contractId={id}>
+    <WizardShell title="Datos del arrendador" currentStep={3} contractId={id}>
       <form
         id="wizard-form"
         className="grid gap-3 sm:grid-cols-2"
@@ -89,7 +89,7 @@ export default function LandlordStepPage() {
         )}
       </form>
       <StepNav
-        backHref="/dashboard/leases"
+        backHref={`/dashboard/contracts/${id}/contract-type`}
         backLabel="Anterior"
         nextHref={`/dashboard/contracts/${id}/tenant`}
       />

@@ -494,6 +494,11 @@ confirmados.
 entregados el 2026-05-11 (commit `53cd37f`).
 **Fix valor comercial desconocido + juramento + soporte codeudor**
 entregado el 2026-05-11 (commit `8e5c7f2`).
+**Bloque 4 entregado** el 2026-05-11: selector de tipo de contrato como
+nuevo paso 2 del wizard. Solo `VIVIENDA_URBANA` activa; las demás
+modalidades muestran aviso "próximamente disponible" sin romper el
+flujo. Audit events `contract_type_selected` y
+`contract_type_unavailable_attempted`.
 
 **Próximo paso confirmado por el usuario (2026-05-11):** seguimos en el
 orden de bloques. El usuario está validando `8e5c7f2`. Apenas dé visto

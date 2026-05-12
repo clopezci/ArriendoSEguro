@@ -59,7 +59,7 @@ export default function TenantStepPage() {
   }
 
   return (
-    <WizardShell title="Datos del arrendatario" currentStep={3} contractId={id}>
+    <WizardShell title="Datos del arrendatario" currentStep={4} contractId={id}>
       <form
         id="wizard-form"
         className="grid gap-3 sm:grid-cols-2"

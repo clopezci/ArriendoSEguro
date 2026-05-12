@@ -53,7 +53,7 @@ export default function TermsStepPage() {
   }
 
   return (
-    <WizardShell title="Términos del arriendo" currentStep={6} contractId={id}>
+    <WizardShell title="Términos del arriendo" currentStep={7} contractId={id}>
       <form
         id="wizard-form"
         className="grid gap-3 sm:grid-cols-2"

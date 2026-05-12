@@ -38,7 +38,7 @@ export default function InventoryHomePage() {
   if (state !== "ready") return <p className="text-sm text-slate-300">Cargando...</p>;
 
   return (
-    <WizardShell title="Inventario y entrega" currentStep={8} contractId={id}>
+    <WizardShell title="Inventario y entrega" currentStep={10} contractId={id}>
       {error && <p className="mb-3 text-sm text-rose-300">{error}</p>}
       <div className="rounded-lg border border-slate-700 bg-slate-900/70 p-4 text-sm text-slate-300">
         <p>Estado del inventario inicial: <strong>{inventoryState === "none" ? "Sin inventario" : inventoryState === "draft" ? "Inventario en borrador" : "Inventario completado"}</strong></p>

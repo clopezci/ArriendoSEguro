@@ -83,7 +83,7 @@ export default function NewPaymentPage() {
   }
 
   return (
-    <WizardShell title="Registrar pago" currentStep={9} contractId={id}>
+    <WizardShell title="Registrar pago" currentStep={10} contractId={id}>
       {error && <p className="mb-3 text-sm text-rose-300">{error}</p>}
       <div className="grid gap-3 md:grid-cols-2">
         <Input label="Periodo pagado" value={periodLabel} onChange={setPeriodLabel} placeholder="Mayo 2026" />

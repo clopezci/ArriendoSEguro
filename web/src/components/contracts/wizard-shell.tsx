@@ -5,6 +5,7 @@ import { useMemo, type ReactNode } from "react";
 
 const steps = [
   "Acceso",
+  "Tipo de contrato",
   "Arrendador",
   "Arrendatario",
   "Codeudor",
@@ -53,7 +54,7 @@ export function WizardShell({
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-1 text-[11px] text-slate-400 sm:grid-cols-9">
+          <div className="mt-3 grid grid-cols-3 gap-1 text-[11px] text-slate-400 sm:grid-cols-5 lg:grid-cols-10">
             {steps.map((s, idx) => (
               <span
                 key={s}

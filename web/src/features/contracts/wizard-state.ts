@@ -3,7 +3,10 @@
 import type { User } from "firebase/auth";
 import { z } from "zod";
 import type { ColombianNotificationAddressParts } from "@/domain/colombia/structured-address";
-import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
+import type {
+  ContractType,
+  ResidentialLeaseContractInput,
+} from "@/domain/contracts/types";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
 export type { PartyDraft } from "@/features/contracts/draft-types";
@@ -50,6 +53,18 @@ export type AuditEventName =
    * propaga). Sirven como bitácora visible solo en la app.
    */
   | "expediente_notes_updated"
+  /**
+   * El usuario seleccionó (o confirmó) el tipo de contrato a generar.
+   * En la fase actual solo se acepta `VIVIENDA_URBANA`; los demás tipos
+   * quedan registrados como intento informativo en
+   * `contract_type_unavailable_attempted` sin mover el draft.
+   */
+  | "contract_type_selected"
+  /**
+   * El usuario hizo clic en una opción de tipo de contrato que aún no
+   * está habilitada. Sirve para medir interés sin afectar el draft.
+   */
+  | "contract_type_unavailable_attempted"
   /** Recorrido /demo (localStorage); no implica expediente real. */
   | "demo_viewed"
   | "demo_step_opened"
@@ -74,6 +89,14 @@ export interface ContractDraft {
   accessStatusSnapshot: AccessStatus;
   hasSolidaryCoDebtor: boolean;
   contractVersion: string;
+  /**
+   * Tipo de contrato que el usuario seleccionó al iniciar el wizard.
+   * En esta fase solo `VIVIENDA_URBANA` está habilitado; los demás se
+   * muestran en la UI con etiqueta "próximamente disponible". Campo
+   * opcional para compatibilidad con drafts creados antes del Bloque 4.
+   * El valor por defecto al crear nuevos drafts es `"VIVIENDA_URBANA"`.
+   */
+  contractType?: ContractType;
   generatedAt: string;
   status: ContractFlowStatus;
   landlord: PartyDraft;
@@ -363,6 +386,7 @@ export function createContractDraft(input: {
     isDemo: input.isDemo,
     hasSolidaryCoDebtor: false,
     contractVersion: "AS-LEASE-MVP-2026.1",
+    contractType: "VIVIENDA_URBANA",
     generatedAt: now,
     status: "draft",
     landlord: {},
@@ -381,6 +405,34 @@ export function createContractDraft(input: {
     auditTrail: [{ event: "contract_flow_started", at: now }],
   };
   return saveDraft(draft);
+}
+
+/**
+ * Marca el tipo de contrato seleccionado en el draft. Solo se acepta
+ * `VIVIENDA_URBANA` en esta fase (Bloque 4 del plan); cualquier otro valor
+ * queda únicamente como evento de auditoría informativo y NO modifica el
+ * draft, para evitar generar contratos con plantillas que aún no existen.
+ */
+export function setContractType(
+  draftId: string,
+  type: ContractType,
+): ContractDraft | null {
+  if (type !== "VIVIENDA_URBANA") {
+    const current = getDraft(draftId);
+    if (!current) return null;
+    return saveDraft(
+      appendAudit(current, "contract_type_unavailable_attempted", {
+        attemptedType: type,
+      }),
+    );
+  }
+  return updateDraft(draftId, (draft) =>
+    appendAudit(
+      { ...draft, contractType: type },
+      "contract_type_selected",
+      { type },
+    ),
+  );
 }
 
 /**
@@ -454,6 +506,7 @@ export function toContractInput(draft: ContractDraft): ResidentialLeaseContractI
     },
     hasSolidaryCoDebtor: draft.hasSolidaryCoDebtor,
     contractVersion: draft.contractVersion,
+    contractType: draft.contractType ?? "VIVIENDA_URBANA",
     generatedAt: draft.generatedAt,
   };
 }

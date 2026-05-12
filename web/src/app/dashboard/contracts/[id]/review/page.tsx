@@ -3,9 +3,18 @@
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { ExpedienteNotesCard } from "@/components/contracts/expediente-notes-card";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import type { ContractType } from "@/domain/contracts/types";
 import { appendAudit, updateDraft } from "@/features/contracts/wizard-state";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+
+const CONTRACT_TYPE_LABEL: Record<ContractType, string> = {
+  VIVIENDA_URBANA: "Vivienda urbana (Ley 820 de 2003)",
+  VIVIENDA_RURAL: "Vivienda rural",
+  HABITACION: "Arrendamiento de habitación",
+  COMERCIAL: "Local comercial",
+  RURAL_PRODUCTIVO: "Predio rural productivo",
+};
 
 export default function ReviewStepPage() {
   const id = String(useParams<{ id: string }>().id);
@@ -22,9 +31,20 @@ export default function ReviewStepPage() {
   // comercial, la verificación queda bajo su responsabilidad.
   const capExceeded = !valueUnknown && cap > 0 && rent > cap;
 
+  const contractType = draft.contractType ?? "VIVIENDA_URBANA";
+  const contractTypeLabel =
+    CONTRACT_TYPE_LABEL[contractType] ?? CONTRACT_TYPE_LABEL.VIVIENDA_URBANA;
+
   return (
-    <WizardShell title="Resumen previo" currentStep={8} contractId={id}>
+    <WizardShell title="Resumen previo" currentStep={9} contractId={id}>
       <div className="grid gap-4 md:grid-cols-2">
+        <Card title="Tipo de contrato">
+          <p className="text-violet-200">{contractTypeLabel}</p>
+          <p className="text-xs text-slate-400">
+            Si necesitas otra modalidad, deberás crear un nuevo expediente
+            cuando esté disponible.
+          </p>
+        </Card>
         <Card title="Arrendador">
           <p>{draft.landlord.fullName}</p>
           <p>{draft.landlord.documentType} {draft.landlord.documentNumber}</p>

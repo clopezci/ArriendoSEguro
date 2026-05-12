@@ -125,7 +125,7 @@ export default function PropertyStepPage() {
   const estimatedCap = valueUnknown ? 0 : Number((commercialValuePreview * 0.01).toFixed(0));
 
   return (
-    <WizardShell title="Inmueble a arrendar" currentStep={5} contractId={id}>
+    <WizardShell title="Inmueble a arrendar" currentStep={6} contractId={id}>
       <form
         id="wizard-form"
         className="grid gap-3 sm:grid-cols-2"

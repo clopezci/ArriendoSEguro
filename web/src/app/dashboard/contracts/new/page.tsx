@@ -66,7 +66,7 @@ export default function NewContractPage() {
           accessStatus: "paid",
           isDemo: false,
         });
-        router.replace(`/dashboard/contracts/${realDraft.id}/landlord`);
+        router.replace(`/dashboard/contracts/${realDraft.id}/contract-type`);
         return;
       }
 
@@ -76,7 +76,7 @@ export default function NewContractPage() {
           accessStatus: "demo",
           isDemo: true,
         });
-        router.replace(`/dashboard/contracts/${demoDraft.id}/landlord`);
+        router.replace(`/dashboard/contracts/${demoDraft.id}/contract-type`);
         return;
       }
       router.replace("/dashboard/contracts/access-blocked");
