@@ -245,6 +245,48 @@ con `npm run build` y validado en Vercel, antes de pasar al siguiente.
       versión 2026.2 final.
     - `AS-LEASE-MVP-2026.1` queda en modo lectura para expedientes
       antiguos.
+12. **Bloque 12 — Carga segura de soportes del codeudor (Firebase Storage)**  
+    - Habilitar Firebase Storage en el proyecto y crear el bucket por
+      defecto si aún no existe (consola Firebase → Storage → *Get
+      started*).
+    - Estructura de rutas: `gs://{bucket}/contracts/{contractId}/codebtor-supports/{supportType}/{timestamp}-{filename}`.
+    - **Tipos permitidos:** `application/pdf`, `image/jpeg`, `image/png`.
+    - **Tamaño máximo:** 10 MB por archivo, hasta 5 archivos por tipo
+      de soporte (carta laboral, colilla, certificado de libertad y
+      tradición, extracto, declaración de renta, otro).
+    - **Reglas de seguridad** (`storage.rules`): solo el creador del
+      expediente (uid del arrendador) puede subir; arrendador,
+      arrendatario y codeudor del expediente pueden listar/leer; nadie
+      puede sobrescribir un archivo existente; lectura pública prohibida.
+    - Endpoint server: `POST /api/codebtor-supports/upload-url` que
+      devuelve URL firmada de subida (Admin SDK). El cliente sube
+      directo a Storage; al terminar llama a `POST
+      /api/codebtor-supports/confirm` que persiste el metadato en el
+      draft (`solidaryCoDebtor.economicSupport.uploads[]` con
+      `storagePath`, `mimeType`, `sizeBytes`, `uploadedAt`,
+      `uploadedBy`).
+    - UI: dentro del bloque “Respaldo económico del codeudor” permitir
+      arrastrar/seleccionar archivos por tipo. Mostrar lista de los ya
+      cargados con badge del tipo y botón “Eliminar” (que invalida
+      metadato y dispara borrado en Storage vía API).
+    - Descarga: `GET /api/codebtor-supports/download-url?path=...`
+      verifica permisos del solicitante y devuelve URL firmada con TTL
+      15 minutos.
+    - Auditoría: `audit_logs` para `codebtor_support_uploaded`,
+      `codebtor_support_deleted`, `codebtor_support_downloaded`.
+    - Anexo de evidencia (Bloque 8) debe incluir los soportes
+      cargados.
+    - **Pendiente con el usuario antes de arrancar:** confirmar que
+      Firebase Storage está habilitado y obtener el nombre exacto del
+      bucket (variable `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`). Si aún no
+      existe, primer commit del bloque incluye la guía paso a paso para
+      activarlo en consola.
+
+> **Origen del Bloque 12:** solicitud del 2026-05-11. Mientras no esté
+> implementado, la sección de “Respaldo económico del codeudor” en el
+> wizard funciona como registro informativo (sin archivos), igual que en
+> la práctica del mercado informal: el arrendador anota qué documentos
+> recibió.
 
 ---
 
@@ -363,6 +405,13 @@ confirmados.
 ---
 
 **Bloque 1 entregado** el 2026-05-11 (commit `5222d0e`).
+**Bloques 2 y 3 entregados** el 2026-05-11 (commits `6c996cb`, `ea47792`).
+**Ajustes UX en pasos 5 y 6 + sanitización + errores en español**
+entregados el 2026-05-11 (commit `53cd37f`).
+**Fix valor comercial desconocido + juramento + soporte codeudor**
+entregado el 2026-05-11 (commit `8e5c7f2`).
 
-**Próximo paso recomendado:** ejecutar Bloque 2 (consentimiento de
-datos en registro y en inicio del wizard).
+**Próximo paso recomendado:** confirmar con el usuario si arrancamos
+**Bloque 12 (Firebase Storage para soportes del codeudor)** ahora o
+primero el **Bloque 4 (selector de tipo de contrato)**. El usuario
+prefiere dejar la carga de archivos lista de una vez.

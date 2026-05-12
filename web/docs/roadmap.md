@@ -94,6 +94,7 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 - [ ] Bloque 9 — Autenticación notarial opcional (descarga + carga de PDF autenticado).
 - [ ] Bloque 10 — Módulo de novedades y solicitudes con notificación por email y trazabilidad.
 - [ ] Bloque 11 — Activación oficial de `AS-LEASE-2026.2` para nuevos expedientes.
+- [ ] Bloque 12 — Carga segura de soportes del codeudor (Firebase Storage + URLs firmadas + reglas de seguridad). Requiere habilitar Storage en el proyecto Firebase.
 
 ### PWA instalable *(prio 2)*
 - [ ] `web/public/manifest.webmanifest` (`display: standalone`, theme/background `#0b0f1a`).
