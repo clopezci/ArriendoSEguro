@@ -523,6 +523,14 @@ nuevo paso 2 del wizard. Solo `VIVIENDA_URBANA` activa; las demás
 modalidades muestran aviso "próximamente disponible" sin romper el
 flujo. Audit events `contract_type_selected` y
 `contract_type_unavailable_attempted`.
+**Bloque 5 entregado** el 2026-05-11: cláusulas especiales como nuevo
+paso 9 del wizard (entre Servicios y Resumen). Catálogo común
+(mascotas, fumadores, parqueadero, teletrabajo, mobiliario, zonas
+verdes, seguridad) más opción «Otra» con texto libre. Aviso fijo de
+costo adicional. Las selecciones quedan en `ContractDraft.specialClauses`
+y se ven en el resumen previo; aún no se imprimen en el contrato
+(eso lo activa la plantilla `AS-LEASE-2026.2` en el Bloque 11). Audit
+event `special_clauses_updated`.
 
 **Próximo paso confirmado por el usuario (2026-05-11):** seguimos en el
 orden de bloques. El usuario está validando `8e5c7f2`. Apenas dé visto

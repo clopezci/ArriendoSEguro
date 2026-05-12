@@ -6,6 +6,7 @@ import type { ColombianNotificationAddressParts } from "@/domain/colombia/struct
 import type {
   ContractType,
   ResidentialLeaseContractInput,
+  SpecialClausesSelection,
 } from "@/domain/contracts/types";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
@@ -65,6 +66,14 @@ export type AuditEventName =
    * está habilitada. Sirve para medir interés sin afectar el draft.
    */
   | "contract_type_unavailable_attempted"
+  /**
+   * Las partes guardaron su selección de cláusulas especiales (mascotas,
+   * fumadores, parqueadero, teletrabajo, mobiliario, zonas verdes,
+   * seguridad u «Otra»). Quedan como datos estructurados; la impresión
+   * en el contrato se activa con la plantilla `AS-LEASE-2026.2`
+   * (Bloque 11 del plan).
+   */
+  | "special_clauses_updated"
   /** Recorrido /demo (localStorage); no implica expediente real. */
   | "demo_viewed"
   | "demo_step_opened"
@@ -124,6 +133,18 @@ export interface ContractDraft {
   };
   lease: Partial<ResidentialLeaseContractInput["lease"]>;
   utilities: Partial<ResidentialLeaseContractInput["utilities"]>;
+  /**
+   * Cláusulas especiales seleccionadas por las partes (mascotas,
+   * fumadores, parqueadero, etc.) en el paso 9 del wizard. Si la
+   * persona marcó la opción "Otra" usa `freeText` para describirla.
+   * `costNotified` deja constancia de que el usuario vio el aviso de
+   * costo adicional antes de continuar. Campo opcional para
+   * compatibilidad con borradores creados antes del Bloque 5.
+   * Su contenido se imprime únicamente en la plantilla
+   * `AS-LEASE-2026.2` (cláusula condicional), por eso hoy no se
+   * propaga al contrato `AS-LEASE-MVP-2026.1` activo.
+   */
+  specialClauses?: SpecialClausesSelection;
   /**
    * Anotaciones internas del expediente (texto libre). Visibles solo dentro de
    * la app para que arrendador y arrendatario dejen recordatorios operativos
@@ -436,6 +457,48 @@ export function setContractType(
 }
 
 /**
+ * Guarda la selección de cláusulas especiales del wizard (Bloque 5).
+ * Aunque hoy las cláusulas no se imprimen en `AS-LEASE-MVP-2026.1`,
+ * dejarlas en el draft permite:
+ * - Mostrarlas en el resumen para confirmación.
+ * - Activarlas automáticamente cuando se prenda `AS-LEASE-2026.2`.
+ * - Cobrarlas como servicio adicional con la trazabilidad correcta.
+ *
+ * `selected` se normaliza a un array sin duplicados. Si `enabled` es
+ * falso, se vacían `selected` y `freeText` para evitar arrastre.
+ */
+export function setSpecialClauses(
+  draftId: string,
+  selection: SpecialClausesSelection,
+): ContractDraft | null {
+  const cleaned: SpecialClausesSelection = selection.enabled
+    ? {
+        enabled: true,
+        selected: Array.from(new Set(selection.selected ?? [])),
+        freeText: selection.freeText?.trim() || undefined,
+        costNotified: Boolean(selection.costNotified),
+      }
+    : {
+        enabled: false,
+        selected: [],
+        freeText: undefined,
+        costNotified: Boolean(selection.costNotified),
+      };
+  return updateDraft(draftId, (draft) =>
+    appendAudit(
+      { ...draft, specialClauses: cleaned },
+      "special_clauses_updated",
+      {
+        enabled: cleaned.enabled,
+        count: cleaned.selected.length,
+        hasFreeText: Boolean(cleaned.freeText),
+        costNotified: cleaned.costNotified,
+      },
+    ),
+  );
+}
+
+/**
  * Guarda las anotaciones especiales del expediente (texto libre). Recorta
  * según `EXPEDIENTE_NOTES_MAX_LENGTH` y agrega un evento de auditoría con la
  * longitud del texto (sin filtrar el contenido en el audit por privacidad).
@@ -507,6 +570,10 @@ export function toContractInput(draft: ContractDraft): ResidentialLeaseContractI
     hasSolidaryCoDebtor: draft.hasSolidaryCoDebtor,
     contractVersion: draft.contractVersion,
     contractType: draft.contractType ?? "VIVIENDA_URBANA",
+    // Las cláusulas especiales se propagan solo si el usuario las habilitó.
+    // En la plantilla activa `AS-LEASE-MVP-2026.1` el renderer las ignora;
+    // las usará la plantilla `AS-LEASE-2026.2` cuando se active (Bloque 11).
+    specialClauses: draft.specialClauses,
     generatedAt: draft.generatedAt,
   };
 }

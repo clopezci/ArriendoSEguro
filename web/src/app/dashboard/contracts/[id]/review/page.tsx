@@ -4,6 +4,10 @@ import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { ExpedienteNotesCard } from "@/components/contracts/expediente-notes-card";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import type { ContractType } from "@/domain/contracts/types";
+import {
+  getSpecialClauseLabel,
+  SPECIAL_CLAUSE_OTHER_ID,
+} from "@/features/contracts/special-clauses";
 import { appendAudit, updateDraft } from "@/features/contracts/wizard-state";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -36,7 +40,7 @@ export default function ReviewStepPage() {
     CONTRACT_TYPE_LABEL[contractType] ?? CONTRACT_TYPE_LABEL.VIVIENDA_URBANA;
 
   return (
-    <WizardShell title="Resumen previo" currentStep={9} contractId={id}>
+    <WizardShell title="Resumen previo" currentStep={10} contractId={id}>
       <div className="grid gap-4 md:grid-cols-2">
         <Card title="Tipo de contrato">
           <p className="text-violet-200">{contractTypeLabel}</p>
@@ -85,6 +89,35 @@ export default function ReviewStepPage() {
         <Card title="Servicios">
           <p>Responsable: {draft.utilities.responsibleParty}</p>
           <p>{draft.utilities.details}</p>
+        </Card>
+        <Card title="Cláusulas especiales">
+          {draft.specialClauses?.enabled &&
+          draft.specialClauses.selected.length > 0 ? (
+            <>
+              <ul className="list-disc space-y-1 pl-4">
+                {draft.specialClauses.selected.map((clauseId) => (
+                  <li key={clauseId}>{getSpecialClauseLabel(clauseId)}</li>
+                ))}
+              </ul>
+              {draft.specialClauses.selected.includes(
+                SPECIAL_CLAUSE_OTHER_ID,
+              ) &&
+                draft.specialClauses.freeText && (
+                  <p className="mt-2 rounded border border-slate-700 bg-slate-950/40 p-2 text-xs text-slate-300">
+                    <span className="font-semibold text-violet-200">
+                      Otra:
+                    </span>{" "}
+                    {draft.specialClauses.freeText}
+                  </p>
+                )}
+              <p className="mt-2 text-xs text-amber-200">
+                Estas cláusulas pueden tener un costo adicional que te será
+                notificado antes de generar el contrato definitivo.
+              </p>
+            </>
+          ) : (
+            <p>Sin cláusulas especiales.</p>
+          )}
         </Card>
       </div>
 

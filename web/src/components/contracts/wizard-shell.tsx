@@ -12,6 +12,7 @@ const steps = [
   "Inmueble a arrendar",
   "Términos",
   "Servicios",
+  "Cláusulas especiales",
   "Resumen",
   "Vista previa",
 ] as const;
@@ -54,7 +55,7 @@ export function WizardShell({
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-1 text-[11px] text-slate-400 sm:grid-cols-5 lg:grid-cols-10">
+          <div className="mt-3 grid grid-cols-3 gap-1 text-[11px] text-slate-400 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11">
             {steps.map((s, idx) => (
               <span
                 key={s}

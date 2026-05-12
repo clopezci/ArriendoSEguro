@@ -374,7 +374,7 @@ export default function PreviewStepPage() {
   if (state !== "ready" || !activeDraft) return <p className="text-sm text-slate-300">Cargando…</p>;
 
   return (
-    <WizardShell title="Vista previa del contrato" currentStep={10} contractId={id}>
+    <WizardShell title="Vista previa del contrato" currentStep={11} contractId={id}>
       <p className="mb-4 rounded-lg border border-slate-700 bg-slate-900/70 p-3 text-sm text-slate-300">
         Esta es una vista previa. El contrato solo quedará listo para firma cuando ambas partes
         revisen y acepten la versión final.

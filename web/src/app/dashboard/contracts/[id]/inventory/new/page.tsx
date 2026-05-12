@@ -279,7 +279,7 @@ export default function InventoryNewPage() {
   if (state !== "ready" || !draft) return <p className="text-sm text-slate-300">Cargando...</p>;
 
   return (
-    <WizardShell title="Crea el inventario inicial del inmueble" currentStep={10} contractId={id}>
+    <WizardShell title="Crea el inventario inicial del inmueble" currentStep={11} contractId={id}>
       {error && <p className="mb-3 text-sm text-rose-300">{error}</p>}
       {ok && <p className="mb-3 text-sm text-emerald-300">{ok}</p>}
       <p className="text-sm text-slate-300">

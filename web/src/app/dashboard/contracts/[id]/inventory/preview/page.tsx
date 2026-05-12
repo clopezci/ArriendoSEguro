@@ -34,7 +34,7 @@ export default function InventoryPreviewPage() {
 
   if (state !== "ready") return <p className="text-sm text-slate-300">Cargando...</p>;
   return (
-    <WizardShell title="Reporte de inventario inicial del inmueble" currentStep={10} contractId={id}>
+    <WizardShell title="Reporte de inventario inicial del inmueble" currentStep={11} contractId={id}>
       {error && <p className="mb-3 text-sm text-rose-300">{error}</p>}
       {!html ? (
         <p className="text-sm text-slate-300">El inventario aún no está completado.</p>

@@ -41,7 +41,7 @@ export default function UtilitiesStepPage() {
         "utilities_saved",
       ),
     );
-    router.push(`/dashboard/contracts/${id}/review`);
+    router.push(`/dashboard/contracts/${id}/special-clauses`);
   }
 
   return (
@@ -109,7 +109,7 @@ export default function UtilitiesStepPage() {
       <StepNav
         backHref={`/dashboard/contracts/${id}/terms`}
         backLabel="Anterior"
-        nextHref={`/dashboard/contracts/${id}/review`}
+        nextHref={`/dashboard/contracts/${id}/special-clauses`}
       />
     </WizardShell>
   );
