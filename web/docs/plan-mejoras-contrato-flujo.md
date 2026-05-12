@@ -196,8 +196,50 @@
 
 ### F. Consentimientos y avisos legales (refuerzo)
 
-- F1. Página `/legal/aviso-privacidad` ya existe → actualizar para
-  cubrir tratamiento extendido (firma, evidencia, comunicaciones).
+- F1. Página `/legal/aviso-privacidad` ya existe → actualizar a
+  **versión completa** (`AVISO-PRIV-2026.2`) que cubra:
+  - Identificación del responsable (razón social ArriendoSeguro,
+    NIT, dirección, correo de contacto, teléfono).
+  - Finalidades del tratamiento por categoría: cuenta, contrato,
+    firma, comunicaciones, evidencia digital, soporte y mejora del
+    servicio.
+  - Encargados actuales:
+    - **Firebase / Google Cloud** (Auth, Firestore, Storage):
+      hospedaje, autenticación, datos del expediente y archivos de
+      soporte. Servidores en EE. UU.
+    - **Vercel** (frontend y serverless): infraestructura sobre AWS
+      en EE. UU. (us-east principalmente).
+    - **Resend** (correos transaccionales): envío de correos sobre
+      AWS en EE. UU.
+    - **Cloudflare Turnstile** (anti-bot en formularios públicos):
+      verificación humana, sin almacenamiento de PII.
+    - *Reservado / a confirmar:* **Supabase** (Postgres / Storage /
+      realtime) en caso de migración o doble proveedor — declarar
+      sólo cuando se firme el acuerdo correspondiente.
+  - **Transferencia internacional de datos** (Decreto 1377/2013,
+    Circular SIC 02/2015): los proveedores anteriores procesan
+    datos en EE. UU. ArriendoSeguro garantiza nivel de protección
+    equivalente al de Colombia mediante cláusulas contractuales
+    estándar y/o certificaciones del proveedor (Google Cloud:
+    GDPR/ISO 27001/SOC 2; AWS: GDPR/ISO/SOC). El usuario otorga
+    autorización expresa para esta transferencia al aceptar el
+    consentimiento.
+  - **Derechos Habeas Data** (Ley 1581/2012, art. 8): acceso,
+    actualización, rectificación, supresión, revocatoria, conocer
+    el uso, presentar quejas ante la SIC.
+  - **Canales de ejercicio de derechos**:
+    - Correo: `privacidad@arriendoseguro.com.co` (a configurar).
+    - Formulario en la app: `/legal/solicitudes-habeas-data`.
+    - Plazos: 10 días hábiles para consultas, 15 para reclamos
+      (prorrogables 8 días según Ley 1581).
+  - **Contacto para eliminación de cuenta**: instrucciones
+    explícitas más enlace al formulario y/o botón en
+    `/dashboard/cuenta/eliminar` (cuando se implemente Bloque 13).
+  - **Conservación**: indicar plazos por tipo de dato (cuenta,
+    contratos firmados, evidencia de firma, comunicaciones de
+    cobranza). Justificación legal y comercial.
+  - **Versión y vigencia**: identificador `AVISO-PRIV-2026.2`,
+    fecha de publicación y bitácora de versiones anteriores.
 - F2. Banner cookies/preferencias mínimo (opcional, baja prioridad).
 - F3. En cada paso del wizard que recolecta datos sensibles
   (arrendatario, codeudor, estudio de crédito): mensaje breve con
@@ -287,6 +329,48 @@ con `npm run build` y validado en Vercel, antes de pasar al siguiente.
 > wizard funciona como registro informativo (sin archivos), igual que en
 > la práctica del mercado informal: el arrendador anota qué documentos
 > recibió.
+
+13. **Bloque 13 — Aviso de privacidad completo y derechos Habeas Data (`AVISO-PRIV-2026.2`)**  
+    - Reescribir `/legal/aviso-privacidad` con la estructura de F1
+      (responsable, finalidades, encargados, transferencia
+      internacional, derechos, canales, conservación, versión).
+    - Listar los encargados activos:
+      - Firebase / Google Cloud (datos del expediente, soportes,
+        autenticación). Servidores en EE. UU.
+      - Vercel (infraestructura sobre AWS) en EE. UU.
+      - Resend (correos sobre AWS) en EE. UU.
+      - Cloudflare Turnstile (anti-bot, sin almacenamiento de PII).
+      - **Reservado** para Supabase si se confirma su uso futuro
+        (Postgres / Storage / realtime).
+    - Sección **Transferencia internacional** con base legal
+      (Decreto 1377/2013 art. 25, Circular SIC 02/2015) y
+      autorización expresa del titular al aceptar el consentimiento.
+    - Sección **Derechos del titular** con los 6 derechos del art.
+      8 de la Ley 1581/2012 y procedimiento de la SIC.
+    - Sección **Cómo eliminar tu cuenta**:
+      1. Botón en `/dashboard/cuenta/eliminar` (a implementar) con
+         confirmación de doble paso, descarga previa de expedientes y
+         baja en cascada (auth + entitlements + drafts no firmados).
+      2. Si no se puede eliminar por contratos firmados activos,
+         explicar plazo legal de retención (mínimo el de la
+         vigencia + obligaciones derivadas) y permitir solicitar
+         anonimización.
+      3. Canal alterno por correo `privacidad@arriendoseguro.com.co`.
+    - Endpoint `POST /api/cuenta/eliminar` con verificación de
+      contraseña/proveedor + cola de borrado verificable.
+    - Versionado del aviso: registrar `AVISO-PRIV-2026.2` en una
+      tabla similar a `consentVersions.ts`. Capturar reaceptación si
+      cambia la versión vigente.
+    - Auditoría: `audit_logs` con `account_deletion_requested`,
+      `account_deletion_completed`, `privacy_policy_version_accepted`.
+    - **Recomendación:** ejecutar **antes** del Bloque 11 (activación
+      oficial de `AS-LEASE-2026.2`) para que producción salga con la
+      política completa.
+
+> **Origen del Bloque 13:** solicitud del 2026-05-11. Pendiente con el
+> usuario: confirmar la razón social, NIT, dirección de notificación y
+> correo oficial de privacidad de ArriendoSeguro; confirmar si Supabase
+> entrará efectivamente al stack (para listarlo o dejarlo como reserva).
 
 ---
 
@@ -395,7 +479,7 @@ confirmados.
 
 ---
 
-## 8. Más adelante (post-bloques 1–11)
+## 8. Más adelante (post-bloques 1–13)
 
 - Pasarela **Wompi sandbox** + entitlements reales.
 - Marketplace ligero y reputación pública (Fase 3 y 4 del roadmap).
@@ -411,7 +495,16 @@ entregados el 2026-05-11 (commit `53cd37f`).
 **Fix valor comercial desconocido + juramento + soporte codeudor**
 entregado el 2026-05-11 (commit `8e5c7f2`).
 
-**Próximo paso recomendado:** confirmar con el usuario si arrancamos
-**Bloque 12 (Firebase Storage para soportes del codeudor)** ahora o
-primero el **Bloque 4 (selector de tipo de contrato)**. El usuario
-prefiere dejar la carga de archivos lista de una vez.
+**Próximo paso confirmado por el usuario (2026-05-11):** seguimos en el
+orden de bloques. El usuario está validando `8e5c7f2`. Apenas dé visto
+bueno arrancamos **Bloque 4 (selector de tipo de contrato)**.
+
+**Notas adicionales del usuario para no olvidar (2026-05-11):**
+
+- Bloque 12 sigue pendiente: dejar lista la carga de archivos físicos de
+  soporte del codeudor con Firebase Storage y sus reglas de seguridad.
+- Bloque 13 sigue pendiente: aviso de privacidad completo (`AVISO-PRIV-2026.2`)
+  con encargados (Firebase, Vercel/AWS, Resend, eventualmente Supabase),
+  transferencia internacional, derechos Habeas Data y canal para
+  eliminación de cuenta. Recomendación: ejecutarlo antes del Bloque 11
+  para que la activación oficial salga con la política completa.

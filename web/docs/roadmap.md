@@ -95,6 +95,7 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 - [ ] Bloque 10 — Módulo de novedades y solicitudes con notificación por email y trazabilidad.
 - [ ] Bloque 11 — Activación oficial de `AS-LEASE-2026.2` para nuevos expedientes.
 - [ ] Bloque 12 — Carga segura de soportes del codeudor (Firebase Storage + URLs firmadas + reglas de seguridad). Requiere habilitar Storage en el proyecto Firebase.
+- [ ] Bloque 13 — Aviso de privacidad completo `AVISO-PRIV-2026.2` (Firebase, Vercel/AWS, Resend, Supabase reservado, transferencia internacional, derechos Habeas Data Ley 1581, canal y endpoint para eliminación de cuenta). Recomendado **antes** del Bloque 11.
 
 ### PWA instalable *(prio 2)*
 - [ ] `web/public/manifest.webmanifest` (`display: standalone`, theme/background `#0b0f1a`).

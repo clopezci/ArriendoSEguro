@@ -36,6 +36,7 @@ Tablero visual sincronizado: `web/docs/roadmap.md` (mantener actualizado al cerr
    10. Módulo de novedades y solicitudes con notificación por email y trazabilidad.
    11. Activación oficial de `AS-LEASE-2026.2`.
    12. Carga segura de soportes del codeudor en Firebase Storage (URLs firmadas + reglas + integración con anexo de evidencia). Habilitar Storage en el proyecto Firebase es prerrequisito.
+   13. Aviso de privacidad completo `AVISO-PRIV-2026.2`: encargados (Firebase, Vercel/AWS, Resend, Supabase reservado), transferencia internacional con base legal (Decreto 1377/2013, Circular SIC 02/2015), derechos Habeas Data (Ley 1581/2012 art. 8), canal `privacidad@arriendoseguro.com.co` y endpoint para eliminación de cuenta. Recomendado **antes** del Bloque 11 para que la activación oficial salga con la política completa.
 2. **Validación legal con abogado** de plantilla y cláusulas particulares (servicio adicional con cobro).
 3. **PWA instalable** (manifest + service worker + íconos AS morados). Ver `arriendoseguro-mobile-pwa.mdc`.
 4. **Reputación y calificaciones** tras cierre del arriendo (no antes).
