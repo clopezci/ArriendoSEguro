@@ -59,9 +59,14 @@ export function DashboardNav() {
           </nav>
         )}
         {user?.email && (
-          <span className="max-w-[220px] truncate text-xs text-slate-400" title={user.email}>
+          <Link
+            href="/dashboard/account"
+            className="max-w-[220px] truncate rounded-md border border-transparent px-2 py-1 text-xs text-slate-300 transition-colors hover:border-violet-500/60 hover:bg-slate-800 hover:text-violet-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-violet-400"
+            title={`Ir a mi cuenta — ${user.email}`}
+            aria-label={`Ir a mi cuenta de ${user.email}`}
+          >
             {user.email}
-          </span>
+          </Link>
         )}
       </div>
     </div>

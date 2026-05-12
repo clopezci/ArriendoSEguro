@@ -330,7 +330,31 @@ con `npm run build` y validado en Vercel, antes de pasar al siguiente.
 > la práctica del mercado informal: el arrendador anota qué documentos
 > recibió.
 
-13. **Bloque 13 — Aviso de privacidad completo y derechos Habeas Data (`AVISO-PRIV-2026.2`)**  
+13. **Bloque 13 — Aviso de privacidad completo y página de perfil del usuario**  
+    Cubre dos frentes que se refuerzan:
+    a) Versión completa del aviso de privacidad
+    (`AVISO-PRIV-2026.2`) en `/legal/aviso-privacidad`.
+    b) **Página de perfil del usuario** (`/dashboard/account` ya
+    existe y se amplía):
+      - Acceso directo desde el **header del dashboard**: el correo
+        del usuario hoy es texto plano (`<span>` en
+        `dashboard-nav.tsx`); se convierte en `Link` a
+        `/dashboard/account`.
+      - Sección **Datos de cuenta** (ya existente): correo, UID,
+        plan, fecha de registro, último acceso, correo verificado.
+      - Sección **Mis expedientes**: total de drafts + total de
+        contratos firmados + acceso rápido a "Mis arriendos".
+      - Sección **Derechos Habeas Data** (Ley 1581/2012): listado
+        de los 6 derechos (acceso, rectificación, actualización,
+        supresión, revocatoria, conocer el uso), canal por correo
+        (`privacidad@arriendoseguro.com.co`), enlace al aviso
+        completo y plazos de respuesta (10 días hábiles consultas,
+        15 reclamos).
+      - Botón **Cerrar sesión** dentro de la página (además del
+        que ya existe en la barra de navegación).
+      - Botón **Eliminar mi cuenta** que abre `/dashboard/cuenta/eliminar`
+        con doble confirmación, descarga previa y manejo de
+        retención cuando hay contratos firmados activos.
     - Reescribir `/legal/aviso-privacidad` con la estructura de F1
       (responsable, finalidades, encargados, transferencia
       internacional, derechos, canales, conservación, versión).
