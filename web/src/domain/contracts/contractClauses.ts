@@ -188,6 +188,9 @@ export const CONTRACT_TEMPLATE = `
     entidad financiera, abogado ni garante del cumplimiento.
   </p>
 
+  [CLAUSULA_ACUERDOS_ESPECIALES_CONDICIONAL]
+  [OBSERVACIONES_COMPLEMENTARIAS_CONDICIONAL]
+
   <h2>VIGÉSIMA PRIMERA. ACEPTACIÓN</h2>
   <p>
     Leído el presente contrato por las partes, y aceptado su contenido, se firma electrónicamente en la fecha

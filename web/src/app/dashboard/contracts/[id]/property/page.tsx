@@ -27,6 +27,7 @@ const PROPERTY_FIELD_LABELS: Record<string, string> = {
   legalRentCap: "Tope legal del canon",
   monthlyRentProposed: "Canon propuesto",
   noCapAcknowledgement: "Aceptación de responsabilidad",
+  propertyOwnershipOath: "Declaración bajo juramento (inmueble)",
 };
 
 /** Formato de pesos colombianos para mostrar el tope estimado. */
@@ -46,6 +47,7 @@ export default function PropertyStepPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [valueUnknown, setValueUnknown] = useState<boolean>(false);
   const [commercialValuePreview, setCommercialValuePreview] = useState<number>(0);
+  const [ownershipOath, setOwnershipOath] = useState<boolean>(false);
 
   // Sincroniza el estado local con el draft cuando se carga por primera
   // vez (o cuando se navega de vuelta al paso con datos persistidos).
@@ -53,6 +55,7 @@ export default function PropertyStepPage() {
     if (!draft) return;
     setValueUnknown(Boolean(draft.property.commercialValueUnknown));
     setCommercialValuePreview(Number(draft.property.commercialValue ?? 0));
+    setOwnershipOath(Boolean(draft.property.propertyOwnershipOath));
   }, [draft]);
 
   if (state !== "ready" || !draft) {
@@ -86,6 +89,7 @@ export default function PropertyStepPage() {
       monthlyRentProposed,
       commercialValueUnknown: valueUnknown,
       noCapAcknowledgement,
+      propertyOwnershipOath: ownershipOath,
     });
     if (!parsed.success) {
       const list = humanizeZodIssues(parsed.error.issues, PROPERTY_FIELD_LABELS);
@@ -96,6 +100,7 @@ export default function PropertyStepPage() {
       return;
     }
 
+    const acceptedAt = new Date().toISOString();
     updateDraft(id, (d) =>
       appendAudit(
         {
@@ -103,11 +108,17 @@ export default function PropertyStepPage() {
           property: {
             ...parsed.data,
             addressParts: addrParsed.data,
+            propertyOwnershipOathAt: acceptedAt,
           },
           lease: { ...d.lease, monthlyRent: parsed.data.monthlyRentProposed },
         },
         "property_data_saved",
       ),
+    );
+    updateDraft(id, (d) =>
+      appendAudit(d, "property_ownership_oath_accepted", {
+        registryNumber: parsed.data.registryNumber,
+      }),
     );
     if (parsed.data.commercialValueUnknown) {
       updateDraft(id, (d) =>
@@ -235,6 +246,50 @@ export default function PropertyStepPage() {
           )}
           hint="Valor mensual del arriendo en pesos colombianos."
         />
+
+        <div className="sm:col-span-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100">
+          <h3 className="text-sm font-semibold text-amber-100">
+            Declaración bajo juramento sobre el inmueble
+          </h3>
+          <p className="mt-1 text-xs leading-relaxed text-amber-50/90">
+            Esta declaración es obligatoria para evitar disputas posteriores y
+            para que el contrato tenga validez frente a terceros. Por favor
+            revisa con cuidado antes de aceptar.
+          </p>
+          <label className="mt-3 flex cursor-pointer items-start gap-2">
+            <input
+              type="checkbox"
+              name="propertyOwnershipOath"
+              checked={ownershipOath}
+              onChange={(e) => setOwnershipOath(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-amber-300"
+            />
+            <span className="text-amber-50">
+              Bajo la gravedad de juramento declaro que (i) los datos del
+              inmueble registrados, incluida la matrícula inmobiliaria, son
+              <strong> reales y verdaderos</strong>, y (ii) soy el
+              <strong> propietario del inmueble</strong> o cuento con
+              <strong> poder vigente y suficiente</strong> para arrendarlo a
+              nombre de su propietario. Asumo la responsabilidad legal y
+              económica por la veracidad de esta declaración.
+            </span>
+          </label>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled
+              title="Próximamente: la carga de soportes requiere Firebase Storage (Bloque 12)."
+              aria-disabled="true"
+              className="inline-flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs font-medium text-amber-100/80 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span aria-hidden="true">📎</span>
+              Cargar documento de propiedad o poder
+            </button>
+            <span className="text-[11px] text-amber-100/80">
+              Próximamente — escritura, certificado de libertad o poder.
+            </span>
+          </div>
+        </div>
 
         {errors.length > 0 && (
           <div

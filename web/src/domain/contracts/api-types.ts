@@ -11,6 +11,31 @@ const personSchema = z.object({
   notificationAddress: z.string(),
 });
 
+// Campos opcionales agregados en la iteración de "ajustes adicionales del
+// contrato y flujo". Se mantienen opcionales para no romper expedientes
+// existentes (AS-LEASE-MVP-2026.1) y permitir que el servidor reciba
+// `commercialValueUnknown`, declaración bajo juramento del inmueble,
+// cláusulas especiales y observaciones del expediente sin ser strippeados
+// por Zod (lo cual rompía la validación condicional del 1%).
+const specialClausesSchema = z.object({
+  enabled: z.boolean(),
+  selected: z.array(z.string()).default([]),
+  freeText: z.string().optional(),
+  costNotified: z.boolean(),
+});
+
+const notarizationSchema = z.object({
+  wantsNotarization: z.boolean(),
+  uploadedDocumentRef: z.string().optional(),
+  uploadedAt: z.string().optional(),
+});
+
+const creditCheckSchema = z.object({
+  wantsCreditCheck: z.boolean(),
+  scope: z.array(z.enum(["TENANT", "CODEBTOR"])).optional(),
+  partnerSlug: z.string().optional(),
+});
+
 const payloadSchema = z.object({
   landlord: personSchema,
   tenant: personSchema,
@@ -23,6 +48,15 @@ const payloadSchema = z.object({
     registryNumber: z.string(),
     commercialValue: z.number(),
     legalRentCap: z.number(),
+    commercialValueUnknown: z.boolean().optional(),
+    noCapAcknowledgement: z.boolean().optional(),
+    ownershipDeclaration: z
+      .object({
+        truthfulInfoOath: z.boolean(),
+        ownerOrAuthorized: z.boolean(),
+        acceptedAt: z.string().optional(),
+      })
+      .optional(),
   }),
   lease: z.object({
     monthlyRent: z.number(),
@@ -42,6 +76,13 @@ const payloadSchema = z.object({
   hasSolidaryCoDebtor: z.boolean(),
   contractVersion: z.string(),
   generatedAt: z.string(),
+  contractType: z
+    .enum(["VIVIENDA_URBANA", "VIVIENDA_RURAL", "HABITACION", "COMERCIAL", "RURAL_PRODUCTIVO"])
+    .optional(),
+  specialClauses: specialClausesSchema.optional(),
+  notarization: notarizationSchema.optional(),
+  creditCheck: creditCheckSchema.optional(),
+  expedienteNotes: z.string().optional(),
 });
 
 export const contractPreviewRequestSchema = z.object({

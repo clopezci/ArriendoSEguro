@@ -110,10 +110,19 @@ export default function ReviewStepPage() {
                     {draft.specialClauses.freeText}
                   </p>
                 )}
-              <p className="mt-2 text-xs text-amber-200">
-                Estas cláusulas pueden tener un costo adicional que te será
-                notificado antes de generar el contrato definitivo.
-              </p>
+              {draft.specialClauses.selected.includes(
+                SPECIAL_CLAUSE_OTHER_ID,
+              ) ? (
+                <p className="mt-2 text-xs text-amber-200">
+                  La cláusula libre («Otra») puede tener un costo adicional;
+                  las del catálogo se incluyen sin costo.
+                </p>
+              ) : (
+                <p className="mt-2 text-xs text-emerald-200">
+                  Las cláusulas del catálogo se incluyen automáticamente en el
+                  contrato sin costo adicional.
+                </p>
+              )}
             </>
           ) : (
             <p>Sin cláusulas especiales.</p>

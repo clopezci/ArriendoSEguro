@@ -84,11 +84,28 @@ export function getSpecialClauseLabel(id: string): string {
   return found ? found.label : id;
 }
 
-/** Texto fijo del aviso de costo adicional que ven las partes. */
+/**
+ * Aviso fijo de costo adicional. Solo se muestra cuando el usuario marca
+ * «Otra» y escribe una cláusula libre: la lista predefinida del catálogo
+ * (mascotas, fumadores, parqueadero, teletrabajo, mobiliario, zonas
+ * verdes, seguridad) se incluye automáticamente en el contrato sin costo,
+ * porque su redacción ya está curada por el equipo legal.
+ */
 export const SPECIAL_CLAUSES_COST_NOTICE =
-  "Tener en cuenta que estas cláusulas pueden tener un costo adicional, " +
-  "el cual te será notificado antes de generar el contrato definitivo. " +
-  "El equipo de ArriendoSeguro las revisará para confirmar que se ajusten a la ley colombiana.";
+  "La opción «Otra» implica redacción personalizada por parte del equipo " +
+  "de ArriendoSeguro y revisión para que se ajuste a la normatividad " +
+  "colombiana. Por eso puede tener un costo adicional, el cual te será " +
+  "notificado antes de generar el contrato definitivo.";
+
+/**
+ * Aviso informativo (sin costo) que se muestra cuando hay cláusulas
+ * predefinidas seleccionadas. Aclara al usuario que esas se incluyen
+ * sin cargo y con redacción legal validada.
+ */
+export const SPECIAL_CLAUSES_FREE_NOTICE =
+  "Las cláusulas del catálogo se incluyen automáticamente en el contrato " +
+  "sin costo adicional: su redacción legal ya está revisada para que se " +
+  "ajuste a la ley colombiana (Ley 820 de 2003 y normas concordantes).";
 
 /** Longitud máxima del texto libre cuando se elige «Otra». */
 export const SPECIAL_CLAUSE_FREE_TEXT_MAX_LENGTH = 1500;

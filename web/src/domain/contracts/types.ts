@@ -104,6 +104,23 @@ export interface PropertyData {
    * Solo es relevante cuando `commercialValueUnknown` es `true`.
    */
   noCapAcknowledgement?: boolean;
+  /**
+   * Declaración bajo juramento del arrendador sobre el inmueble. Cubre
+   * dos puntos críticos para evitar problemas legales:
+   * - `truthfulInfoOath`: los datos del inmueble (matrícula, dirección,
+   *   tipo) son reales y verdaderos.
+   * - `ownerOrAuthorized`: el arrendador es propietario o cuenta con
+   *   poder vigente para arrendarlo.
+   *
+   * Estos campos son opcionales en el tipo para mantener compatibilidad
+   * con expedientes previos al ajuste; en el wizard la casilla es
+   * obligatoria antes de avanzar.
+   */
+  ownershipDeclaration?: {
+    truthfulInfoOath: boolean;
+    ownerOrAuthorized: boolean;
+    acceptedAt?: string;
+  };
 }
 
 export interface LeaseTerms {
@@ -154,9 +171,11 @@ export interface ResidentialLeaseContractInput {
   notarization?: NotarizationSelection;
   creditCheck?: CreditCheckSelection;
   /**
-   * Anotaciones especiales del expediente que se visualizan en la app pero
-   * **no** se imprimen en el PDF/HTML del contrato. Se conservan únicamente
-   * como referencia operativa para las partes y el equipo de soporte.
+   * Anotaciones especiales del expediente (texto libre acordado por las
+   * partes). Se imprimen al final del contrato como sección
+   * "Observaciones y acuerdos complementarios" con disclaimer legal
+   * explícito: reflejan la voluntad de las partes y no sustituyen las
+   * cláusulas anteriores ni la normatividad imperativa aplicable.
    */
   expedienteNotes?: string;
 }

@@ -8,15 +8,130 @@ import {
 } from "./contractClauses";
 import { buildContractVariables, injectVariables } from "./contractVariables";
 import { getContractVersionDescription, withDocumentHash } from "./contractVersioning";
-import type { RenderedContract, ResidentialLeaseContractInput } from "./types";
+import {
+  getSelectedClauseBodies,
+  SPECIAL_CLAUSE_OTHER_ID,
+} from "./specialClauseBodies";
+import type {
+  RenderedContract,
+  ResidentialLeaseContractInput,
+  SpecialClausesSelection,
+} from "./types";
 import { validateContractData } from "./validateContractData";
 
-function withConditionalBlocks(template: string, hasCodebtor: boolean): string {
+function escapeHtmlForContract(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+/**
+ * Convierte texto libre a HTML preservando saltos de línea como párrafos
+ * separados. Aplica `escapeHtmlForContract` para evitar inyección.
+ */
+function freeTextToParagraphs(text: string): string {
+  return text
+    .split(/\r?\n+/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => `<p>${escapeHtmlForContract(line)}</p>`)
+    .join("\n");
+}
+
+/**
+ * Construye el HTML de la cláusula condicional "Cláusulas especiales
+ * acordadas por las partes". Si no hay cláusulas habilitadas, retorna
+ * cadena vacía (el placeholder simplemente desaparece del documento).
+ *
+ * Las cláusulas predefinidas se renderizan con su redacción curada
+ * (`SPECIAL_CLAUSE_BODIES`). La opción "Otra" se imprime como texto
+ * libre con disclaimer explícito de que su validez está sujeta a la
+ * normatividad aplicable.
+ */
+function buildSpecialClausesBlock(
+  selection: SpecialClausesSelection | undefined,
+): string {
+  if (!selection || !selection.enabled) return "";
+  const bodies = getSelectedClauseBodies(selection.selected);
+  const hasOther =
+    selection.selected.includes(SPECIAL_CLAUSE_OTHER_ID) &&
+    Boolean(selection.freeText && selection.freeText.trim().length > 0);
+
+  if (bodies.length === 0 && !hasOther) return "";
+
+  const items = bodies
+    .map(
+      (b) =>
+        `<li><strong>${escapeHtmlForContract(b.title)}.</strong> ${escapeHtmlForContract(b.body)}</li>`,
+    )
+    .join("\n");
+
+  const otherBlock = hasOther
+    ? `
+  <p><strong>Otra cláusula acordada entre las partes.</strong></p>
+  ${freeTextToParagraphs(selection.freeText ?? "")}
+  <p style="font-size:11px;color:#475569;">
+    La presente cláusula adicional refleja un acuerdo voluntario entre las partes y su validez se encuentra sujeta a la
+    normatividad colombiana aplicable. En caso de contradicción con la ley imperativa, primarán las normas legales.
+  </p>`
+    : "";
+
+  return `
+  <section>
+    <h2>CLÁUSULAS ESPECIALES ACORDADAS POR LAS PARTES</h2>
+    <p>
+      Adicionalmente a las cláusulas anteriores y sin perjuicio del régimen general del contrato, las partes acuerdan
+      expresamente las siguientes condiciones especiales relacionadas con el inmueble o su uso. Estas cláusulas se sujetan
+      a la normatividad colombiana aplicable; en lo no previsto aquí primará la Ley 820 de 2003 y demás normas
+      concordantes.
+    </p>
+    ${items ? `<ol>${items}</ol>` : ""}
+    ${otherBlock}
+  </section>`;
+}
+
+/**
+ * Construye la sección de "Observaciones y acuerdos complementarios"
+ * a partir del texto libre que las partes registran como anotaciones del
+ * expediente. Lleva disclaimer legal explícito para que el texto libre no
+ * se interprete como cláusula sustitutiva.
+ */
+function buildExpedienteNotesBlock(notes: string | undefined): string {
+  const text = (notes ?? "").trim();
+  if (text.length === 0) return "";
+  return `
+  <section>
+    <h2>OBSERVACIONES Y ACUERDOS COMPLEMENTARIOS</h2>
+    <p>
+      Las partes dejan constancia de las siguientes observaciones operativas y acuerdos complementarios, que reflejan
+      su voluntad y se entienden complementarios a las cláusulas anteriores. En caso de conflicto con las cláusulas
+      legales del presente contrato o con la normatividad imperativa, primarán estas últimas.
+    </p>
+    ${freeTextToParagraphs(text)}
+  </section>`;
+}
+
+function withConditionalBlocks(
+  template: string,
+  input: ResidentialLeaseContractInput,
+): string {
+  const hasCodebtor = input.hasSolidaryCoDebtor;
   return template
     .replaceAll("[COMPARECENCIA_CODEUDOR_CONDICIONAL]", hasCodebtor ? COMPARECENCIA_CODEUDOR : "")
     .replaceAll("[CLAUSULA_CODEUDOR_CONDICIONAL]", hasCodebtor ? CLAUSULA_CODEUDOR : "")
     .replaceAll("[NOTIFICACION_CODEUDOR_CONDICIONAL]", hasCodebtor ? NOTIFICACION_CODEUDOR : "")
-    .replaceAll("[FIRMA_CODEUDOR_CONDICIONAL]", hasCodebtor ? FIRMA_CODEUDOR : "");
+    .replaceAll("[FIRMA_CODEUDOR_CONDICIONAL]", hasCodebtor ? FIRMA_CODEUDOR : "")
+    .replaceAll(
+      "[CLAUSULA_ACUERDOS_ESPECIALES_CONDICIONAL]",
+      buildSpecialClausesBlock(input.specialClauses),
+    )
+    .replaceAll(
+      "[OBSERVACIONES_COMPLEMENTARIAS_CONDICIONAL]",
+      buildExpedienteNotesBlock(input.expedienteNotes),
+    );
 }
 
 /**
@@ -33,7 +148,7 @@ export function renderResidentialLeaseContract(
     throw new Error(`No se pudo generar contrato: ${summary}`);
   }
 
-  const templated = withConditionalBlocks(CONTRACT_TEMPLATE, input.hasSolidaryCoDebtor);
+  const templated = withConditionalBlocks(CONTRACT_TEMPLATE, input);
   const vars = buildContractVariables(input);
   const body = injectVariables(templated, vars);
   const title = `Contrato ${input.contractVersion} - Arriendo Seguro`;

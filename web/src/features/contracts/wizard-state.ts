@@ -43,15 +43,24 @@ export type AuditEventName =
    * Queda registrado en el expediente como evidencia.
    */
   | "property_cap_unknown_acknowledged"
+  /**
+   * El arrendador aceptó bajo juramento que los datos del inmueble son
+   * verdaderos y que es propietario o cuenta con poder vigente para
+   * arrendarlo. Queda como evidencia mínima hasta que el Bloque 12 habilite
+   * la carga del documento de soporte (escritura, certificado de libertad,
+   * poder) en Firebase Storage.
+   */
+  | "property_ownership_oath_accepted"
   | "lease_terms_saved"
   | "utilities_saved"
   | "contract_preview_generated"
   | "contract_draft_saved"
   /**
-   * Las partes guardaron anotaciones internas del expediente. Estas anotaciones
-   * se conservan únicamente en el draft local; nunca se inyectan en el HTML
-   * del contrato ni se envían al renderizador (`toContractInput` no las
-   * propaga). Sirven como bitácora visible solo en la app.
+   * Las partes guardaron anotaciones complementarias del expediente. Estas
+   * anotaciones se imprimen al final del contrato como sección
+   * "Observaciones y acuerdos complementarios" con disclaimer legal
+   * explícito, y quedan auditadas por longitud (sin volcar el contenido al
+   * audit log por privacidad).
    */
   | "expediente_notes_updated"
   /**
@@ -130,6 +139,21 @@ export interface ContractDraft {
      * exime a ArriendoSeguro de responsabilidad sobre ese tope.
      */
     noCapAcknowledgement?: boolean;
+    /**
+     * Declaración bajo juramento del arrendador. Es obligatoria para
+     * avanzar: cubre (i) veracidad de la matrícula y datos del inmueble y
+     * (ii) calidad de propietario o apoderado con facultad para arrendar.
+     * Se conserva como evidencia en el expediente. Opcional en el tipo
+     * para compatibilidad con drafts pre-existentes (el wizard volverá a
+     * pedir la aceptación si está sin marcar).
+     */
+    propertyOwnershipOath?: boolean;
+    /**
+     * Marca de tiempo (ISO) en la que el arrendador aceptó
+     * `propertyOwnershipOath`. Sirve como evidencia mínima hasta tener
+     * captura completa de IP/UA en el Bloque 7 (firma reforzada).
+     */
+    propertyOwnershipOathAt?: string;
   };
   lease: Partial<ResidentialLeaseContractInput["lease"]>;
   utilities: Partial<ResidentialLeaseContractInput["utilities"]>;
@@ -146,10 +170,10 @@ export interface ContractDraft {
    */
   specialClauses?: SpecialClausesSelection;
   /**
-   * Anotaciones internas del expediente (texto libre). Visibles solo dentro de
-   * la app para que arrendador y arrendatario dejen recordatorios operativos
-   * (fechas de corte de servicios, observaciones de entrega, etc.). NO se
-   * imprimen en el contrato: `toContractInput()` no las propaga al renderer.
+   * Anotaciones complementarias del expediente (texto libre). Visibles en
+   * la app y, además, se imprimen al final del contrato como sección
+   * "Observaciones y acuerdos complementarios" con disclaimer legal
+   * explícito (no sustituyen las cláusulas ni la normatividad aplicable).
    * Campo opcional para compatibilidad con borradores creados antes del
    * Bloque 3 del plan de mejoras.
    */
@@ -204,6 +228,16 @@ export const propertySchema = z
       .positive("Indica el canon mensual propuesto."),
     commercialValueUnknown: z.boolean().optional().default(false),
     noCapAcknowledgement: z.boolean().optional().default(false),
+    // Declaración bajo juramento del arrendador sobre el inmueble. Es
+    // obligatoria para avanzar: cubre (i) veracidad de los datos del
+    // inmueble (incluida la matrícula) y (ii) calidad de propietario o
+    // apoderado con facultad para arrendar. La carga del documento de
+    // soporte (escritura, certificado de libertad, poder) se hará en el
+    // Bloque 12 con Firebase Storage.
+    propertyOwnershipOath: z.literal(true, {
+      message:
+        "Debes aceptar la declaración bajo juramento: que los datos del inmueble son correctos y que eres propietario o cuentas con poder vigente para arrendarlo.",
+    }),
   })
   .superRefine((data, ctx) => {
     if (data.commercialValueUnknown) {
@@ -551,6 +585,17 @@ export function toContractInput(draft: ContractDraft): ResidentialLeaseContractI
       // sepa que debe insertar el aviso correspondiente.
       commercialValueUnknown: Boolean(draft.property.commercialValueUnknown),
       noCapAcknowledgement: Boolean(draft.property.noCapAcknowledgement),
+      // Declaración bajo juramento del arrendador (datos del inmueble
+      // correctos + propietario o apoderado). Una sola casilla en la UI
+      // cubre las dos verificaciones; aquí se expande al objeto
+      // estructurado que el backend persiste como evidencia.
+      ownershipDeclaration: draft.property.propertyOwnershipOath
+        ? {
+            truthfulInfoOath: true,
+            ownerOrAuthorized: true,
+            acceptedAt: draft.property.propertyOwnershipOathAt,
+          }
+        : undefined,
     },
     lease: {
       monthlyRent: Number(draft.lease.monthlyRent ?? 0),
@@ -570,10 +615,17 @@ export function toContractInput(draft: ContractDraft): ResidentialLeaseContractI
     hasSolidaryCoDebtor: draft.hasSolidaryCoDebtor,
     contractVersion: draft.contractVersion,
     contractType: draft.contractType ?? "VIVIENDA_URBANA",
-    // Las cláusulas especiales se propagan solo si el usuario las habilitó.
-    // En la plantilla activa `AS-LEASE-MVP-2026.1` el renderer las ignora;
-    // las usará la plantilla `AS-LEASE-2026.2` cuando se active (Bloque 11).
+    // Las cláusulas especiales se propagan al render para que las
+    // predefinidas (mascotas, fumadores, parqueadero, etc.) salgan
+    // automáticamente en el HTML del contrato sin costo adicional. La
+    // opción «Otra» también se imprime con disclaimer y se tarifa aparte.
     specialClauses: draft.specialClauses,
+    // Las anotaciones especiales del expediente sí se imprimen en el
+    // contrato como sección complementaria con disclaimer legal explícito,
+    // por solicitud del usuario para que queden visibles en el documento
+    // junto al resto de observaciones (responsabilidad de las partes
+    // sobre el contenido).
+    expedienteNotes: draft.expedienteNotes,
     generatedAt: draft.generatedAt,
   };
 }

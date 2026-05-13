@@ -2,10 +2,11 @@
 
 /**
  * Editor de "anotaciones especiales del expediente". Estas notas se guardan
- * únicamente en el draft local del wizard y se muestran a las partes dentro
- * de la app (resumen, vista previa). **No se imprimen** en el contrato: el
- * helper `toContractInput()` no las propaga al renderer y la plantilla no
- * tiene placeholder asociado.
+ * en el draft, se muestran a las partes dentro de la app y **sí se imprimen**
+ * al final del contrato como sección "Observaciones y acuerdos
+ * complementarios", con disclaimer legal explícito de que su validez está
+ * sujeta a la normatividad colombiana aplicable y no sustituyen las
+ * cláusulas anteriores.
  *
  * El componente está pensado para que cualquier paso del wizard pueda
  * editarlas. Por eso recibe el `draftId` y se sincroniza con el state global
@@ -34,10 +35,10 @@ interface Props {
 }
 
 const EXAMPLE_PLACEHOLDER = [
-  "Ejemplos útiles que puedes registrar aquí (no salen impresos en el contrato):",
+  "Ejemplos útiles que puedes registrar aquí (estas anotaciones se imprimen en el contrato como acuerdos complementarios):",
   "• Fechas de corte de servicios públicos y forma de liquidar la primera factura.",
-  "• Acuerdos verbales sobre revisión del inmueble después de la entrega.",
-  "• Recordatorios internos para arrendador, arrendatario o codeudor.",
+  "• Acuerdos puntuales sobre revisión del inmueble después de la entrega.",
+  "• Otras condiciones especiales que las partes quieran dejar formalizadas.",
 ].join("\n");
 
 export function ExpedienteNotesCard({
@@ -104,19 +105,20 @@ export function ExpedienteNotesCard({
                 : "mt-1 text-xs text-slate-400"
             }
           >
-            Estas anotaciones son visibles únicamente dentro de la app, para
-            ambas partes y el equipo de soporte. <strong>No se imprimen</strong>{" "}
-            en el contrato ni se incluyen en el PDF firmado.
+            Estas anotaciones <strong>sí se imprimen</strong> al final del
+            contrato como sección «Observaciones y acuerdos complementarios»
+            con disclaimer legal: reflejan la voluntad de las partes y no
+            sustituyen las cláusulas ni la normatividad aplicable.
           </p>
         </div>
         <span
           className={
             variant === "banner"
-              ? "rounded-full bg-amber-200/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-200"
-              : "rounded-full bg-violet-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-violet-200"
+              ? "rounded-full bg-emerald-200/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-200"
+              : "rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-200"
           }
         >
-          No se imprime
+          Sale en el contrato
         </span>
       </header>
 

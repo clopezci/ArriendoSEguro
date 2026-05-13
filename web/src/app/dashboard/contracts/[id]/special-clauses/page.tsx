@@ -5,6 +5,7 @@ import { WizardShell } from "@/components/contracts/wizard-shell";
 import { setSpecialClauses } from "@/features/contracts/wizard-state";
 import {
   SPECIAL_CLAUSES_COST_NOTICE,
+  SPECIAL_CLAUSES_FREE_NOTICE,
   SPECIAL_CLAUSE_FREE_TEXT_MAX_LENGTH,
   SPECIAL_CLAUSE_OPTIONS,
   SPECIAL_CLAUSE_OTHER_ID,
@@ -155,11 +156,23 @@ export default function SpecialClausesStepPage() {
           <>
             <div
               role="note"
-              className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100"
+              className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm text-emerald-100"
             >
-              <p className="font-semibold">Aviso de costo adicional</p>
-              <p className="mt-1">{SPECIAL_CLAUSES_COST_NOTICE}</p>
+              <p className="font-semibold">Cláusulas del catálogo — sin costo</p>
+              <p className="mt-1">{SPECIAL_CLAUSES_FREE_NOTICE}</p>
             </div>
+
+            {otherSelected && (
+              <div
+                role="note"
+                className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100"
+              >
+                <p className="font-semibold">
+                  Aviso de costo adicional para la cláusula libre
+                </p>
+                <p className="mt-1">{SPECIAL_CLAUSES_COST_NOTICE}</p>
+              </div>
+            )}
 
             <fieldset className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
               <legend className="px-1 text-sm font-medium text-slate-200">
