@@ -133,7 +133,7 @@ export default function AdminPage() {
 
   if (loading || !user) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center bg-slate-950 text-slate-400">
+      <div className="flex min-h-[50vh] items-center justify-center bg-slate-100 text-slate-600">
         <p className="text-sm">Cargando sesión…</p>
       </div>
     );
@@ -143,14 +143,14 @@ export default function AdminPage() {
   const hintMismatch = mounted && hintSet.size > 0 && !hintSet.has(emailLc);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-200">
+    <div className="min-h-screen bg-slate-50 text-slate-800">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <header className="mb-6 flex flex-wrap items-start justify-between gap-3 border-b border-slate-800 pb-4">
+        <header className="mb-6 flex flex-wrap items-start justify-between gap-3 border-b border-slate-300 pb-4">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Herramienta interna</p>
-            <h1 className="text-2xl font-bold text-white">Panel administrativo</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Panel administrativo</h1>
             <p className="mt-1 text-xs text-slate-500">
-              Acceso validado en el servidor con <code className="text-slate-400">ADMIN_INTERNAL_EMAILS</code>. No
+              Acceso validado en el servidor con <code className="text-slate-600">ADMIN_INTERNAL_EMAILS</code>. No
               confíes solo en el navegador.
             </p>
           </div>
@@ -158,34 +158,34 @@ export default function AdminPage() {
             <button
               type="button"
               onClick={() => void load()}
-              className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-200 hover:border-slate-500"
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-800 hover:border-slate-500"
             >
               Actualizar
             </button>
-            <Link href="/dashboard" className="rounded-lg border border-slate-600 px-3 py-1.5 text-xs text-slate-200">
+            <Link href="/dashboard" className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-800">
               Ir al dashboard
             </Link>
           </div>
         </header>
 
         {hintMismatch && (
-          <p className="mb-4 rounded-lg border border-amber-700/40 bg-amber-950/30 p-2 text-xs text-amber-100">
+          <p className="mb-4 rounded-lg border border-amber-400/40 bg-amber-50 p-2 text-xs text-amber-800">
             Aviso: tu correo no coincide con <code>NEXT_PUBLIC_ADMIN_INTERNAL_EMAILS</code> (solo referencia UI). La
             autorización real la define el servidor.
           </p>
         )}
 
         {loadError && (
-          <div className="mb-4 rounded-lg border border-rose-800/60 bg-rose-950/40 p-3 text-sm text-rose-100">
+          <div className="mb-4 rounded-lg border border-rose-800/60 bg-rose-50 p-3 text-sm text-rose-800">
             {loadError}
           </div>
         )}
 
         {data?.features?.manualGrantPlus && (
-          <section className="mb-6 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-            <h2 className="text-sm font-semibold text-white">Habilitar Plan Plus manual</h2>
+          <section className="mb-6 rounded-xl border border-slate-300 bg-white/95 p-4">
+            <h2 className="text-sm font-semibold text-slate-900">Habilitar Plan Plus manual</h2>
             <p className="mt-1 text-xs text-slate-500">
-              Requiere <code className="text-slate-400">ADMIN_INTERNAL_ENABLED=true</code> en servidor (o entorno
+              Requiere <code className="text-slate-600">ADMIN_INTERNAL_ENABLED=true</code> en servidor (o entorno
               desarrollo). El usuario debe existir en Firebase Auth.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -193,7 +193,7 @@ export default function AdminPage() {
                 value={grantEmail}
                 onChange={(e) => setGrantEmail(e.target.value)}
                 placeholder="correo@usuario.com"
-                className="min-w-[200px] flex-1 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+                className="min-w-[200px] flex-1 rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm"
               />
               <button
                 type="button"
@@ -226,7 +226,7 @@ export default function AdminPage() {
               type="button"
               onClick={() => setTab(id)}
               className={`rounded-full border px-3 py-1.5 text-xs ${
-                tab === id ? "border-violet-500 bg-violet-950/50 text-violet-100" : "border-slate-700 text-slate-400"
+                tab === id ? "border-violet-500 bg-violet-100/50 text-violet-800" : "border-slate-300 text-slate-600"
               }`}
             >
               {label}
@@ -272,21 +272,21 @@ function Resumen({ s }: { s?: DashboardPayload["summary"] }) {
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map(([label, val]) => (
-          <div key={label} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+          <div key={label} className="rounded-xl border border-slate-300 bg-white/95 p-4">
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
-            <p className="mt-1 text-2xl font-semibold text-white">{val ?? "—"}</p>
+            <p className="mt-1 text-2xl font-semibold text-slate-900">{val ?? "—"}</p>
           </div>
         ))}
       </div>
-      <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-        <p className="text-sm font-semibold text-white">Errores recientes (heurística sobre auditoría)</p>
+      <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
+        <p className="text-sm font-semibold text-slate-900">Errores recientes (heurística sobre auditoría)</p>
         {s.recentErrors.length === 0 ? (
           <p className="mt-2 text-xs text-slate-500">Sin coincidencias en los últimos eventos cargados.</p>
         ) : (
-          <ul className="mt-2 space-y-1 text-xs text-slate-400">
+          <ul className="mt-2 space-y-1 text-xs text-slate-600">
             {s.recentErrors.map((e, i) => (
               <li key={i}>
-                <span className="text-slate-300">{e.eventName}</span> · {e.createdAt}{" "}
+                <span className="text-slate-700">{e.eventName}</span> · {e.createdAt}{" "}
                 {e.metadataSummary ? `· ${e.metadataSummary}` : ""}
               </li>
             ))}
@@ -303,7 +303,7 @@ function Encuestas({ rows, onExport }: { rows: Record<string, unknown>[]; onExpo
       <button
         type="button"
         onClick={onExport}
-        className="rounded-lg border border-violet-600/50 bg-violet-950/40 px-3 py-1.5 text-xs font-medium text-violet-200 hover:bg-violet-950/60"
+        className="rounded-lg border border-violet-600/50 bg-violet-100/50 px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-100/60"
       >
         Exportar CSV
       </button>
@@ -325,13 +325,13 @@ function TablaGenerica({
   const keys = Object.keys(rows[0] ?? {});
   const isSurveys = tableStyle === "surveys";
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-800">
+    <div className="overflow-x-auto rounded-xl border border-slate-300">
       <table
         className={`w-full border-collapse text-left text-xs ${isSurveys ? "min-w-[1100px]" : "min-w-[640px]"}`}
       >
         <thead
-          className={`border-b border-slate-800 bg-slate-950/80 text-[10px] font-medium ${
-            isSurveys ? "normal-case leading-tight text-slate-400" : "uppercase text-slate-500"
+          className={`border-b border-slate-300 bg-slate-100/80 text-[10px] font-medium ${
+            isSurveys ? "normal-case leading-tight text-slate-600" : "uppercase text-slate-500"
           }`}
         >
           <tr>
@@ -344,11 +344,11 @@ function TablaGenerica({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className="border-b border-slate-800/80 odd:bg-slate-900/40">
+            <tr key={i} className="border-b border-slate-300 odd:bg-white/90">
               {keys.map((k) => (
                 <td
                   key={k}
-                  className={`px-2 py-1.5 align-top text-slate-300 ${
+                  className={`px-2 py-1.5 align-top text-slate-700 ${
                     isSurveys ? "max-w-[14rem] break-words whitespace-normal" : "max-w-[220px] truncate"
                   }`}
                   title={String(row[k] ?? "")}

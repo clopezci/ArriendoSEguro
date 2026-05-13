@@ -20,7 +20,7 @@ export function PanelHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="border-b border-slate-800 bg-slate-950/95 shadow-[0_8px_28px_rgba(139,92,246,0.2)]">
+    <header className="border-b border-slate-300 bg-slate-100/95 shadow-[0_8px_28px_rgba(139,92,246,0.2)]">
       <div className="mx-auto flex max-w-4xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center justify-between gap-3">
           <Link
@@ -29,7 +29,7 @@ export function PanelHeader() {
           >
             <BrandLockup />
           </Link>
-          <span className="max-w-[12rem] truncate text-xs text-slate-400 sm:hidden" title={user?.email ?? ""}>
+          <span className="max-w-[12rem] truncate text-xs text-slate-600 sm:hidden" title={user?.email ?? ""}>
             {user?.email}
           </span>
         </div>
@@ -45,8 +45,8 @@ export function PanelHeader() {
                 href={href}
                 className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition ${
                   active
-                    ? "bg-sky-900/60 text-sky-100 ring-1 ring-violet-400/60 shadow-[0_0_14px_rgba(139,92,246,0.28)]"
-                    : "text-slate-300 shadow-[0_0_0_1px_rgba(139,92,246,0.22)] hover:bg-slate-800 hover:text-violet-300"
+                    ? "bg-sky-900/60 text-sky-800 ring-1 ring-violet-400/60 shadow-[0_0_14px_rgba(139,92,246,0.28)]"
+                    : "text-slate-700 shadow-[0_0_0_1px_rgba(139,92,246,0.22)] hover:bg-slate-200 hover:text-violet-700"
                 }`}
               >
                 {label}
@@ -54,9 +54,9 @@ export function PanelHeader() {
             );
           })}
         </nav>
-        <div className="flex items-center justify-end gap-3 border-t border-slate-800 pt-2 sm:border-0 sm:pt-0">
+        <div className="flex items-center justify-end gap-3 border-t border-slate-300 pt-2 sm:border-0 sm:pt-0">
           <span
-            className="hidden max-w-xs truncate text-xs text-slate-400 sm:inline"
+            className="hidden max-w-xs truncate text-xs text-slate-600 sm:inline"
             title={user?.email ?? ""}
           >
             {user?.email}
@@ -64,7 +64,7 @@ export function PanelHeader() {
           <button
             type="button"
             onClick={() => signOut()}
-            className="rounded-md border border-slate-700 px-2.5 py-1 text-sm font-medium text-slate-300 shadow-[0_0_0_1px_rgba(139,92,246,0.26)] hover:border-violet-400 hover:text-violet-300"
+            className="rounded-md border border-slate-300 px-2.5 py-1 text-sm font-medium text-slate-700 shadow-[0_0_0_1px_rgba(139,92,246,0.26)] hover:border-violet-500 hover:text-violet-700"
           >
             Salir
           </button>

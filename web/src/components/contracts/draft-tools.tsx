@@ -92,7 +92,7 @@ export function StepNav({
       {backHref && (
         <Link
           href={backHref}
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-violet-400"
+          className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:border-violet-500"
         >
           {backLabel}
         </Link>

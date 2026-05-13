@@ -11,6 +11,6 @@ export default function ContractRootRedirect() {
     router.replace(`/dashboard/contracts/${id}/landlord`);
   }, [id, router]);
 
-  return <p className="text-sm text-slate-300">Redirigiendo…</p>;
+  return <p className="text-sm text-slate-700">Redirigiendo…</p>;
 }
 

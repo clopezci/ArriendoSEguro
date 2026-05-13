@@ -1,7 +1,7 @@
 # Roadmap visual — ArriendoSeguro
 
 > Tablero rápido del producto. Mantener sincronizado con la regla
-> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-05-11**.
+> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-05-13**.
 >
 > Convenciones:
 > - **[x]** = listo en producción o en `main`.
@@ -151,6 +151,8 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 - [x] Convenciones documentadas en `arriendoseguro-mobile-pwa.mdc`.
 - [~] Aplicar checklist mobile-first a pantallas existentes (encuesta lista, faltan formularios del wizard).
 - [ ] Auditoría AA de contraste y foco visible.
+- [x] Tema visual claro forzado (`globals.css` → `color-scheme: light`, fondo `slate-50`, botones violet-600 con `text-white`).
+- [x] Tono colombiano en toda la copia visible al usuario (sin voseo argentino/chileno; se usan formas como “tienes”, “puedes”, “necesitas”).
 
 ### Observabilidad
 - [x] Auditoría persistente (`audit_logs`) en eventos críticos.

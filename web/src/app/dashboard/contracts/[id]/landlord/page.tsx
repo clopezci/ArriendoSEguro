@@ -20,7 +20,7 @@ export default function LandlordStepPage() {
   const [errors, setErrors] = useState<string[]>([]);
 
   if (state !== "ready" || !draft) {
-    return <p className="text-sm text-slate-300">Cargando…</p>;
+    return <p className="text-sm text-slate-700">Cargando…</p>;
   }
 
   function onSubmit(formData: FormData) {
@@ -77,7 +77,7 @@ export default function LandlordStepPage() {
         {errors.length > 0 && (
           <div
             role="alert"
-            className="sm:col-span-2 rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100"
+            className="sm:col-span-2 rounded-lg border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
           >
             <p className="font-semibold">Revisa estos campos antes de continuar:</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">

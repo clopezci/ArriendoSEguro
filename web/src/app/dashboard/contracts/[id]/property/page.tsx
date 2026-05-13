@@ -59,7 +59,7 @@ export default function PropertyStepPage() {
   }, [draft]);
 
   if (state !== "ready" || !draft) {
-    return <p className="text-sm text-slate-300">Cargando…</p>;
+    return <p className="text-sm text-slate-700">Cargando…</p>;
   }
 
   function onSubmit(formData: FormData) {
@@ -164,13 +164,13 @@ export default function PropertyStepPage() {
           defaultValue={draft.property.registryNumber}
         />
 
-        <div className="sm:col-span-2 rounded-xl border border-violet-500/30 bg-violet-500/5 p-4">
-          <h3 className="text-sm font-semibold text-violet-100">
+        <div className="sm:col-span-2 rounded-xl border border-violet-300 bg-violet-50 p-4">
+          <h3 className="text-sm font-semibold text-violet-800">
             Valor comercial del inmueble
           </h3>
-          <p className="mt-1 text-xs text-slate-300">
+          <p className="mt-1 text-xs text-slate-700">
             Pedimos este dato para verificar que el canon mensual no supere el{" "}
-            <strong className="text-violet-100">1% del valor comercial</strong>, que es
+            <strong className="text-violet-800">1% del valor comercial</strong>, que es
             el límite máximo permitido por la <strong>Ley 820 de 2003</strong> para
             contratos de arrendamiento de vivienda urbana en Colombia.
           </p>
@@ -185,19 +185,19 @@ export default function PropertyStepPage() {
                 onValueChange={(v) => setCommercialValuePreview(Number(v || 0))}
                 hint="Avalúo comercial estimado del inmueble."
               />
-              <div className="rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2 text-xs text-slate-300">
-                <p className="text-slate-400">Tope legal estimado (1%):</p>
-                <p className="mt-1 text-base font-semibold text-violet-100">
+              <div className="rounded-lg border border-slate-300 bg-white/95 px-3 py-2 text-xs text-slate-700">
+                <p className="text-slate-600">Tope legal estimado (1%):</p>
+                <p className="mt-1 text-base font-semibold text-violet-800">
                   {formatCOP(estimatedCap)}
                 </p>
-                <p className="mt-1 text-[11px] text-slate-400">
+                <p className="mt-1 text-[11px] text-slate-600">
                   El canon mensual no puede superar este valor.
                 </p>
               </div>
             </div>
           )}
 
-          <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-slate-700 bg-slate-900/50 px-3 py-2 text-xs text-slate-200">
+          <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-slate-300 bg-white/90 px-3 py-2 text-xs text-slate-800">
             <input
               type="checkbox"
               name="commercialValueUnknown"
@@ -211,7 +211,7 @@ export default function PropertyStepPage() {
           </label>
 
           {valueUnknown && (
-            <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-100">
+            <div className="mt-3 rounded-lg border border-amber-300 bg-amber-100/60 p-3 text-xs leading-relaxed text-amber-800">
               <p className="font-semibold">Declaración del arrendador</p>
               <p className="mt-1">
                 Como arrendador, declaro bajo mi responsabilidad que el canon mensual
@@ -229,7 +229,7 @@ export default function PropertyStepPage() {
                   defaultChecked={Boolean(draft.property.noCapAcknowledgement)}
                   className="mt-0.5 h-4 w-4 accent-amber-300"
                 />
-                <span className="text-amber-50">
+                <span className="text-amber-800">
                   Acepto expresamente esta responsabilidad y eximo a ArriendoSeguro.
                 </span>
               </label>
@@ -247,11 +247,11 @@ export default function PropertyStepPage() {
           hint="Valor mensual del arriendo en pesos colombianos."
         />
 
-        <div className="sm:col-span-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100">
-          <h3 className="text-sm font-semibold text-amber-100">
+        <div className="sm:col-span-2 rounded-xl border border-amber-300 bg-amber-100/60 p-4 text-sm text-amber-800">
+          <h3 className="text-sm font-semibold text-amber-800">
             Declaración bajo juramento sobre el inmueble
           </h3>
-          <p className="mt-1 text-xs leading-relaxed text-amber-50/90">
+          <p className="mt-1 text-xs leading-relaxed text-amber-800">
             Esta declaración es obligatoria para evitar disputas posteriores y
             para que el contrato tenga validez frente a terceros. Por favor
             revisa con cuidado antes de aceptar.
@@ -264,7 +264,7 @@ export default function PropertyStepPage() {
               onChange={(e) => setOwnershipOath(e.target.checked)}
               className="mt-0.5 h-4 w-4 accent-amber-300"
             />
-            <span className="text-amber-50">
+            <span className="text-amber-800">
               Bajo la gravedad de juramento declaro que (i) los datos del
               inmueble registrados, incluida la matrícula inmobiliaria, son
               <strong> reales y verdaderos</strong>, y (ii) soy el
@@ -280,12 +280,12 @@ export default function PropertyStepPage() {
               disabled
               title="Próximamente: la carga de soportes requiere Firebase Storage (Bloque 12)."
               aria-disabled="true"
-              className="inline-flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-xs font-medium text-amber-100/80 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span aria-hidden="true">📎</span>
               Cargar documento de propiedad o poder
             </button>
-            <span className="text-[11px] text-amber-100/80">
+            <span className="text-[11px] text-amber-700">
               Próximamente — escritura, certificado de libertad o poder.
             </span>
           </div>
@@ -294,7 +294,7 @@ export default function PropertyStepPage() {
         {errors.length > 0 && (
           <div
             role="alert"
-            className="sm:col-span-2 rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100"
+            className="sm:col-span-2 rounded-lg border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
           >
             <p className="font-semibold">Revisa estos campos antes de continuar:</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
@@ -335,16 +335,16 @@ function Input({
 }) {
   return (
     <label className="text-sm">
-      <span className="mb-1 block text-slate-300">{label}</span>
+      <span className="mb-1 block text-slate-700">{label}</span>
       <input
         name={name}
         defaultValue={defaultValue ?? ""}
         type={type}
         inputMode={type === "number" ? "numeric" : undefined}
         onChange={onValueChange ? (e) => onValueChange(e.target.value) : undefined}
-        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+        className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
       />
-      {hint && <span className="mt-1 block text-xs text-slate-400">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-slate-600">{hint}</span>}
     </label>
   );
 }

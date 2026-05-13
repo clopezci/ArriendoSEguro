@@ -276,13 +276,13 @@ export default function InventoryNewPage() {
     });
   }, [activeZone, currentStep, inventoryId]);
 
-  if (state !== "ready" || !draft) return <p className="text-sm text-slate-300">Cargando...</p>;
+  if (state !== "ready" || !draft) return <p className="text-sm text-slate-700">Cargando...</p>;
 
   return (
     <WizardShell title="Crea el inventario inicial del inmueble" currentStep={11} contractId={id}>
-      {error && <p className="mb-3 text-sm text-rose-300">{error}</p>}
-      {ok && <p className="mb-3 text-sm text-emerald-300">{ok}</p>}
-      <p className="text-sm text-slate-300">
+      {error && <p className="mb-3 text-sm text-rose-700">{error}</p>}
+      {ok && <p className="mb-3 text-sm text-emerald-700">{ok}</p>}
+      <p className="text-sm text-slate-700">
         Selecciona las zonas que quieres inventariar. Luego te guiaremos paso a paso para registrar
         fotos, estado y observaciones de cada espacio.
       </p>
@@ -291,7 +291,7 @@ export default function InventoryNewPage() {
         <>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             {GUIDED_ZONE_OPTIONS.map((zone) => (
-              <label key={zone} className="flex items-center gap-2 rounded border border-slate-700 p-2 text-sm">
+              <label key={zone} className="flex items-center gap-2 rounded border border-slate-300 p-2 text-sm">
                 <input
                   type="checkbox"
                   checked={selectedZones.includes(zone)}
@@ -307,14 +307,14 @@ export default function InventoryNewPage() {
           </div>
           <div className="mt-3 flex gap-2">
             <input
-              className="flex-1 rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+              className="flex-1 rounded border border-slate-300 bg-white p-2 text-sm"
               placeholder="Agregar zona personalizada"
               value={customZone}
               onChange={(e) => setCustomZone(e.target.value)}
             />
             <button
               type="button"
-              className="rounded border border-violet-500 px-3 py-2 text-sm text-violet-200"
+              className="rounded border border-violet-500 px-3 py-2 text-sm text-violet-700"
               onClick={() => {
                 const v = customZone.trim();
                 if (!v) return;
@@ -337,16 +337,16 @@ export default function InventoryNewPage() {
       ) : (
         <>
           {activeZone && (
-            <div className="mt-3 rounded border border-slate-700 p-3">
-              <p className="text-sm text-violet-300">Paso {progress}: {activeZone.zoneName}</p>
-              <p className="mt-1 text-xs text-slate-400">
+            <div className="mt-3 rounded border border-slate-300 p-3">
+              <p className="text-sm text-violet-700">Paso {progress}: {activeZone.zoneName}</p>
+              <p className="mt-1 text-xs text-slate-600">
                 Ahora registra la {activeZone.zoneName.toLowerCase()}. Puedes guardar avance y volver después.
               </p>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
-                <label className="text-xs text-slate-300">
+                <label className="text-xs text-slate-700">
                   Estado general
                   <select
-                    className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm"
                     value={zoneDetails[activeZone.id]?.generalCondition ?? "Bueno"}
                     onChange={(e) =>
                       setZoneDetails((prev) => ({
@@ -374,10 +374,10 @@ export default function InventoryNewPage() {
                     <option>Excelente</option><option>Bueno</option><option>Aceptable</option><option>Regular</option><option>Malo</option><option>No aplica</option>
                   </select>
                 </label>
-                <label className="text-xs text-slate-300">
+                <label className="text-xs text-slate-700">
                   Limpieza
                   <select
-                    className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+                    className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm"
                     value={zoneDetails[activeZone.id]?.cleanlinessStatus ?? "Limpio"}
                     onChange={(e) =>
                       setZoneDetails((prev) => ({
@@ -406,10 +406,10 @@ export default function InventoryNewPage() {
                   </select>
                 </label>
               </div>
-              <label className="mt-2 block text-xs text-slate-300">
+              <label className="mt-2 block text-xs text-slate-700">
                 Observaciones
                 <textarea
-                  className="mt-1 min-h-20 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+                  className="mt-1 min-h-20 w-full rounded border border-slate-300 bg-white p-2 text-sm"
                   value={zoneDetails[activeZone.id]?.observations ?? ""}
                   onChange={(e) =>
                     setZoneDetails((prev) => ({
@@ -435,10 +435,10 @@ export default function InventoryNewPage() {
                   }
                 />
               </label>
-              <label className="mt-2 block text-xs text-slate-300">
+              <label className="mt-2 block text-xs text-slate-700">
                 Daños visibles
                 <textarea
-                  className="mt-1 min-h-20 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+                  className="mt-1 min-h-20 w-full rounded border border-slate-300 bg-white p-2 text-sm"
                   value={zoneDetails[activeZone.id]?.damageDescription ?? ""}
                   onChange={(e) =>
                     setZoneDetails((prev) => ({
@@ -464,10 +464,10 @@ export default function InventoryNewPage() {
                   }
                 />
               </label>
-              <label className="mt-2 block text-xs text-slate-300">
+              <label className="mt-2 block text-xs text-slate-700">
                 Recomendaciones
                 <textarea
-                  className="mt-1 min-h-20 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+                  className="mt-1 min-h-20 w-full rounded border border-slate-300 bg-white p-2 text-sm"
                   value={zoneDetails[activeZone.id]?.recommendations ?? ""}
                   onChange={(e) =>
                     setZoneDetails((prev) => ({
@@ -493,10 +493,10 @@ export default function InventoryNewPage() {
                   }
                 />
               </label>
-              <label className="mt-2 block text-xs text-slate-300">
+              <label className="mt-2 block text-xs text-slate-700">
                 URLs de fotos (separadas por coma) - placeholder mientras se conecta storage
                 <input
-                  className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm"
+                  className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm"
                   value={(zoneDetails[activeZone.id]?.photoUrls ?? []).join(", ")}
                   onChange={(e) =>
                     setZoneDetails((prev) => ({
@@ -526,8 +526,8 @@ export default function InventoryNewPage() {
                 />
               </label>
 
-              <h4 className="mt-4 text-sm font-semibold text-slate-100">Elementos relevantes</h4>
-              <p className="text-xs text-slate-400">
+              <h4 className="mt-4 text-sm font-semibold text-slate-900">Elementos relevantes</h4>
+              <p className="text-xs text-slate-600">
                 Puedes agregar y editar elementos de esta zona. Sugeridos para {activeZone.zoneName}.
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -535,7 +535,7 @@ export default function InventoryNewPage() {
                   <button
                     key={it}
                     type="button"
-                    className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-300"
+                    className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-700"
                     onClick={() => {
                       setZoneItems((prev) => ({
                         ...prev,
@@ -562,9 +562,9 @@ export default function InventoryNewPage() {
               </div>
               <div className="mt-2 space-y-2">
                 {(zoneItems[activeZone.id] ?? []).map((item, idx) => (
-                  <div key={`${item.itemName}-${idx}`} className="grid gap-2 rounded border border-slate-700 p-2 md:grid-cols-4">
+                  <div key={`${item.itemName}-${idx}`} className="grid gap-2 rounded border border-slate-300 p-2 md:grid-cols-4">
                     <input
-                      className="rounded border border-slate-700 bg-slate-900 p-1 text-xs"
+                      className="rounded border border-slate-300 bg-white p-1 text-xs"
                       value={item.itemName}
                       onChange={(e) =>
                         setZoneItems((prev) => ({
@@ -576,7 +576,7 @@ export default function InventoryNewPage() {
                       }
                     />
                     <select
-                      className="rounded border border-slate-700 bg-slate-900 p-1 text-xs"
+                      className="rounded border border-slate-300 bg-white p-1 text-xs"
                       value={item.conditionStatus}
                       onChange={(e) =>
                         setZoneItems((prev) => ({
@@ -600,7 +600,7 @@ export default function InventoryNewPage() {
                       <option value="not_applicable">No aplica</option>
                     </select>
                     <input
-                      className="rounded border border-slate-700 bg-slate-900 p-1 text-xs"
+                      className="rounded border border-slate-300 bg-white p-1 text-xs"
                       placeholder="Notas"
                       value={item.notes}
                       onChange={(e) =>
@@ -614,7 +614,7 @@ export default function InventoryNewPage() {
                     />
                     <button
                       type="button"
-                      className="rounded border border-rose-700 px-2 py-1 text-xs text-rose-200"
+                      className="rounded border border-rose-700 px-2 py-1 text-xs text-rose-700"
                       onClick={() =>
                         setZoneItems((prev) => ({
                           ...prev,
@@ -629,10 +629,10 @@ export default function InventoryNewPage() {
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <button type="button" onClick={() => void saveCurrentZone("prev")} className="rounded border border-slate-700 px-3 py-2 text-xs text-slate-200">Anterior</button>
-                <button type="button" onClick={() => void saveCurrentZone("stay")} className="rounded border border-violet-500 px-3 py-2 text-xs text-violet-200">Guardar avance</button>
-                <button type="button" onClick={() => void saveCurrentZone("next")} className="rounded border border-sky-600 px-3 py-2 text-xs text-sky-200">Siguiente zona</button>
-                <button type="button" onClick={() => void skipCurrentZone()} className="rounded border border-amber-600 px-3 py-2 text-xs text-amber-200">Saltar esta zona</button>
+                <button type="button" onClick={() => void saveCurrentZone("prev")} className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-800">Anterior</button>
+                <button type="button" onClick={() => void saveCurrentZone("stay")} className="rounded border border-violet-500 px-3 py-2 text-xs text-violet-700">Guardar avance</button>
+                <button type="button" onClick={() => void saveCurrentZone("next")} className="rounded border border-sky-500 px-3 py-2 text-xs text-sky-800">Siguiente zona</button>
+                <button type="button" onClick={() => void skipCurrentZone()} className="rounded border border-amber-600 px-3 py-2 text-xs text-amber-800">Saltar esta zona</button>
                 <button type="button" onClick={() => void completeInventory()} className="rounded bg-violet-600 px-3 py-2 text-xs text-white">Finalizar inventario</button>
               </div>
             </div>
@@ -641,25 +641,25 @@ export default function InventoryNewPage() {
       )}
 
       {inventoryReportHtml && (
-        <div className="mt-5 rounded border border-slate-700 p-3">
-          <h3 className="text-sm font-semibold text-slate-100">Resumen del inventario</h3>
-          <p className="text-xs text-slate-400">
+        <div className="mt-5 rounded border border-slate-300 p-3">
+          <h3 className="text-sm font-semibold text-slate-900">Resumen del inventario</h3>
+          <p className="text-xs text-slate-600">
             Zonas seleccionadas: {selectedZoneRows.length} | completadas:{" "}
             {selectedZoneRows.filter((z) => z.status === "completed").length} | omitidas:{" "}
             {selectedZoneRows.filter((z) => z.status === "skipped").length}
           </p>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-600">
             Fotos:{" "}
             {Object.values(zoneDetails).reduce((a, d) => a + (d.photoUrls?.length ?? 0), 0) +
               Object.values(zoneItems).flat().reduce((a, i) => a + (i.photoUrls?.length ?? 0), 0)}
           </p>
-          <p className="text-xs text-slate-400">Hash: {inventoryReportHash}</p>
+          <p className="text-xs text-slate-600">Hash: {inventoryReportHash}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => void generatePdf()}
               disabled={saving}
-              className="rounded border border-emerald-600 px-3 py-2 text-xs text-emerald-200"
+              className="rounded border border-emerald-500 px-3 py-2 text-xs text-emerald-700"
             >
               Descargar PDF
             </button>
@@ -668,14 +668,14 @@ export default function InventoryNewPage() {
               onClick={() =>
                 router.push(`/dashboard/contracts/${id}/inventory/preview?inventoryId=${encodeURIComponent(inventoryId)}`)
               }
-              className="rounded border border-slate-700 px-3 py-2 text-xs text-slate-200"
+              className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-800"
             >
               Generar reporte / ver reporte
             </button>
             <button
               type="button"
               onClick={() => router.push(`/dashboard/contracts/${id}/preview`)}
-              className="rounded border border-violet-500 px-3 py-2 text-xs text-violet-200"
+              className="rounded border border-violet-500 px-3 py-2 text-xs text-violet-700"
             >
               Asociar al contrato
             </button>
@@ -684,7 +684,7 @@ export default function InventoryNewPage() {
                 href={inventoryPdfUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded border border-emerald-500 px-3 py-2 text-xs text-emerald-200"
+                className="rounded border border-emerald-500 px-3 py-2 text-xs text-emerald-700"
               >
                 Abrir PDF generado
               </a>
@@ -694,37 +694,37 @@ export default function InventoryNewPage() {
       )}
 
       {inventoryId && (
-        <div className="mt-5 rounded border border-slate-700 p-3">
-          <h3 className="text-sm font-semibold text-slate-100">Medidores registrados</h3>
-          <button type="button" onClick={() => setMeters((prev) => [...prev, { meterType: "water", meterNumber: "", readingValue: "" }])} className="mt-2 rounded border border-sky-600 px-3 py-2 text-xs text-sky-200">Agregar medidor</button>
+        <div className="mt-5 rounded border border-slate-300 p-3">
+          <h3 className="text-sm font-semibold text-slate-900">Medidores registrados</h3>
+          <button type="button" onClick={() => setMeters((prev) => [...prev, { meterType: "water", meterNumber: "", readingValue: "" }])} className="mt-2 rounded border border-sky-500 px-3 py-2 text-xs text-sky-800">Agregar medidor</button>
           <div className="mt-2 space-y-2">
             {meters.map((m, idx) => (
-              <div key={idx} className="grid gap-2 rounded border border-slate-700 p-2 md:grid-cols-4">
-                <select className="rounded border border-slate-700 bg-slate-900 p-1 text-xs" value={m.meterType} onChange={(e) => setMeters((prev) => prev.map((x, j) => (j === idx ? { ...x, meterType: e.target.value as UIMeter["meterType"] } : x)))}>
+              <div key={idx} className="grid gap-2 rounded border border-slate-300 p-2 md:grid-cols-4">
+                <select className="rounded border border-slate-300 bg-white p-1 text-xs" value={m.meterType} onChange={(e) => setMeters((prev) => prev.map((x, j) => (j === idx ? { ...x, meterType: e.target.value as UIMeter["meterType"] } : x)))}>
                   <option value="water">Agua</option><option value="electricity">Energía</option><option value="gas">Gas</option><option value="other">Otro</option>
                 </select>
-                <input className="rounded border border-slate-700 bg-slate-900 p-1 text-xs" placeholder="Número de medidor" value={m.meterNumber} onChange={(e) => setMeters((prev) => prev.map((x, j) => (j === idx ? { ...x, meterNumber: e.target.value } : x)))} />
-                <input className="rounded border border-slate-700 bg-slate-900 p-1 text-xs" placeholder="Lectura inicial" value={m.readingValue} onChange={(e) => setMeters((prev) => prev.map((x, j) => (j === idx ? { ...x, readingValue: e.target.value } : x)))} />
-                <button type="button" onClick={() => setMeters((prev) => prev.filter((_, j) => j !== idx))} className="rounded border border-rose-700 px-2 py-1 text-xs text-rose-200">Eliminar</button>
+                <input className="rounded border border-slate-300 bg-white p-1 text-xs" placeholder="Número de medidor" value={m.meterNumber} onChange={(e) => setMeters((prev) => prev.map((x, j) => (j === idx ? { ...x, meterNumber: e.target.value } : x)))} />
+                <input className="rounded border border-slate-300 bg-white p-1 text-xs" placeholder="Lectura inicial" value={m.readingValue} onChange={(e) => setMeters((prev) => prev.map((x, j) => (j === idx ? { ...x, readingValue: e.target.value } : x)))} />
+                <button type="button" onClick={() => setMeters((prev) => prev.filter((_, j) => j !== idx))} className="rounded border border-rose-700 px-2 py-1 text-xs text-rose-700">Eliminar</button>
               </div>
             ))}
           </div>
-          <h3 className="mt-4 text-sm font-semibold text-slate-100">Llaves y controles</h3>
-          <button type="button" onClick={() => setKeys((prev) => [...prev, { keyType: "llave puerta principal", quantity: 1, notes: "" }])} className="mt-2 rounded border border-sky-600 px-3 py-2 text-xs text-sky-200">Agregar llave/control</button>
+          <h3 className="mt-4 text-sm font-semibold text-slate-900">Llaves y controles</h3>
+          <button type="button" onClick={() => setKeys((prev) => [...prev, { keyType: "llave puerta principal", quantity: 1, notes: "" }])} className="mt-2 rounded border border-sky-500 px-3 py-2 text-xs text-sky-800">Agregar llave/control</button>
           <div className="mt-2 space-y-2">
             {keys.map((k, idx) => (
-              <div key={idx} className="grid gap-2 rounded border border-slate-700 p-2 md:grid-cols-4">
-                <input className="rounded border border-slate-700 bg-slate-900 p-1 text-xs" value={k.keyType} onChange={(e) => setKeys((prev) => prev.map((x, j) => (j === idx ? { ...x, keyType: e.target.value } : x)))} />
-                <input type="number" className="rounded border border-slate-700 bg-slate-900 p-1 text-xs" value={k.quantity} onChange={(e) => setKeys((prev) => prev.map((x, j) => (j === idx ? { ...x, quantity: Number(e.target.value || 1) } : x)))} />
-                <input className="rounded border border-slate-700 bg-slate-900 p-1 text-xs" placeholder="Observaciones" value={k.notes} onChange={(e) => setKeys((prev) => prev.map((x, j) => (j === idx ? { ...x, notes: e.target.value } : x)))} />
-                <button type="button" onClick={() => setKeys((prev) => prev.filter((_, j) => j !== idx))} className="rounded border border-rose-700 px-2 py-1 text-xs text-rose-200">Eliminar</button>
+              <div key={idx} className="grid gap-2 rounded border border-slate-300 p-2 md:grid-cols-4">
+                <input className="rounded border border-slate-300 bg-white p-1 text-xs" value={k.keyType} onChange={(e) => setKeys((prev) => prev.map((x, j) => (j === idx ? { ...x, keyType: e.target.value } : x)))} />
+                <input type="number" className="rounded border border-slate-300 bg-white p-1 text-xs" value={k.quantity} onChange={(e) => setKeys((prev) => prev.map((x, j) => (j === idx ? { ...x, quantity: Number(e.target.value || 1) } : x)))} />
+                <input className="rounded border border-slate-300 bg-white p-1 text-xs" placeholder="Observaciones" value={k.notes} onChange={(e) => setKeys((prev) => prev.map((x, j) => (j === idx ? { ...x, notes: e.target.value } : x)))} />
+                <button type="button" onClick={() => setKeys((prev) => prev.filter((_, j) => j !== idx))} className="rounded border border-rose-700 px-2 py-1 text-xs text-rose-700">Eliminar</button>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <p className="mt-4 text-xs text-slate-400">
+      <p className="mt-4 text-xs text-slate-600">
         TODO: inventario final se implementará en el módulo de cierre del contrato.
       </p>
     </WizardShell>

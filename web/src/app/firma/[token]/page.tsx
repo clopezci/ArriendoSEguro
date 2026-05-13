@@ -88,15 +88,15 @@ export default function SignatureTokenPage() {
     }
   }
 
-  if (loading) return <main className="mx-auto max-w-3xl p-6 text-slate-200">Cargando enlace de firma...</main>;
+  if (loading) return <main className="mx-auto max-w-3xl p-6 text-slate-800">Cargando enlace de firma...</main>;
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 p-6 text-slate-100">
+    <main className="mx-auto max-w-3xl space-y-4 p-6 text-slate-900">
       <h1 className="text-2xl font-bold">Firma electrónica del contrato</h1>
-      {error && <p className="rounded border border-rose-700 bg-rose-950/40 p-3 text-sm text-rose-200">{error}</p>}
-      {okMsg && <p className="rounded border border-emerald-700 bg-emerald-950/40 p-3 text-sm text-emerald-200">{okMsg}</p>}
+      {error && <p className="rounded border border-rose-700 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
+      {okMsg && <p className="rounded border border-emerald-500 bg-emerald-50 p-3 text-sm text-emerald-700">{okMsg}</p>}
       {info && (
-        <section className="space-y-3 rounded-xl border border-slate-700 bg-slate-900/70 p-4">
+        <section className="space-y-3 rounded-xl border border-slate-300 bg-white/95 p-4">
           <p><strong>Firmante:</strong> {info.signerName}</p>
           <p><strong>Correo:</strong> {info.signerEmail}</p>
           <p><strong>Rol:</strong> {info.partyType}</p>
@@ -110,7 +110,7 @@ export default function SignatureTokenPage() {
                 href={info.pdfUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg border border-violet-500 px-3 py-2 text-sm text-violet-200"
+                className="rounded-lg border border-violet-500 px-3 py-2 text-sm text-violet-700"
               >
                 Ver o descargar PDF
               </a>

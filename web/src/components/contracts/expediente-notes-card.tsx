@@ -82,13 +82,13 @@ export function ExpedienteNotesCard({
 
   const wrapperClass =
     variant === "banner"
-      ? "rounded-xl border border-amber-500/50 bg-amber-950/30 p-4"
-      : "rounded-xl border border-slate-700 bg-slate-900/70 p-4 sm:p-5";
+      ? "rounded-xl border border-amber-300 bg-amber-50 p-4"
+      : "rounded-xl border border-slate-300 bg-white/95 p-4 sm:p-5";
 
   const titleClass =
     variant === "banner"
-      ? "text-sm font-semibold text-amber-200"
-      : "text-sm font-semibold text-violet-300 sm:text-base";
+      ? "text-sm font-semibold text-amber-800"
+      : "text-sm font-semibold text-violet-700 sm:text-base";
 
   return (
     <section className={wrapperClass} aria-labelledby={`${helpId}-title`}>
@@ -101,8 +101,8 @@ export function ExpedienteNotesCard({
             id={helpId}
             className={
               variant === "banner"
-                ? "mt-1 text-xs text-amber-100/90"
-                : "mt-1 text-xs text-slate-400"
+                ? "mt-1 text-xs text-amber-800"
+                : "mt-1 text-xs text-slate-600"
             }
           >
             Estas anotaciones <strong>sí se imprimen</strong> al final del
@@ -114,8 +114,8 @@ export function ExpedienteNotesCard({
         <span
           className={
             variant === "banner"
-              ? "rounded-full bg-emerald-200/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-200"
-              : "rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-200"
+              ? "rounded-full bg-emerald-100/60 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700"
+              : "rounded-full bg-emerald-100/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700"
           }
         >
           Sale en el contrato
@@ -125,7 +125,7 @@ export function ExpedienteNotesCard({
       <textarea
         id={textareaId}
         aria-describedby={helpId}
-        className="mt-3 min-h-[140px] w-full rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-violet-400 focus:outline-none focus:ring-1 focus:ring-violet-400"
+        className="mt-3 min-h-[140px] w-full rounded-lg border border-slate-300 bg-slate-100/80 p-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-400"
         value={notes}
         maxLength={EXPEDIENTE_NOTES_MAX_LENGTH}
         placeholder={EXAMPLE_PLACEHOLDER}
@@ -136,21 +136,21 @@ export function ExpedienteNotesCard({
         rows={variant === "banner" ? 4 : 6}
       />
 
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
         <span>
           {notes.length}/{EXPEDIENTE_NOTES_MAX_LENGTH} caracteres
           {remaining < 100 ? (
-            <span className="ml-2 text-amber-300">
+            <span className="ml-2 text-amber-700">
               Te quedan {remaining} caracteres.
             </span>
           ) : null}
         </span>
         <div className="flex flex-wrap items-center gap-2">
           {status === "saved" && (
-            <span className="text-emerald-300">Anotaciones guardadas.</span>
+            <span className="text-emerald-700">Anotaciones guardadas.</span>
           )}
           {status === "error" && errorMsg && (
-            <span className="text-rose-300">{errorMsg}</span>
+            <span className="text-rose-700">{errorMsg}</span>
           )}
           <button
             type="button"

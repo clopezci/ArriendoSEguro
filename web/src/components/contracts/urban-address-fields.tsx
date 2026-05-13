@@ -60,23 +60,23 @@ export function UrbanAddressFields({
   const c = COPY[variant];
 
   return (
-    <div className="sm:col-span-2 space-y-3 rounded-xl border border-slate-700/80 bg-slate-950/40 p-3">
-      <p className="text-sm font-medium text-slate-200">{c.title}</p>
+    <div className="sm:col-span-2 space-y-3 rounded-xl border border-slate-300 bg-slate-100/60 p-3">
+      <p className="text-sm font-medium text-slate-800">{c.title}</p>
       <p className="text-[11px] leading-snug text-slate-500">{c.intro}</p>
       {legacyFreeTextAddress && (
-        <p className="rounded-lg border border-amber-700/40 bg-amber-950/30 p-2 text-[11px] text-amber-100">
+        <p className="rounded-lg border border-amber-400/40 bg-amber-50 p-2 text-[11px] text-amber-800">
           {c.legacyHint}
         </p>
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-sm sm:col-span-2">
-          <span className="mb-1 block text-slate-300">Tipo de vía principal</span>
+          <span className="mb-1 block text-slate-700">Tipo de vía principal</span>
           <select
             name={`${prefix}ViaTipo`}
             value={viaTipo}
             onChange={(e) => setViaTipo(e.target.value as ViaTipoColombia)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
           >
             {VIA_TIPO_VALUES.map((v) => (
               <option key={v} value={v}>
@@ -87,7 +87,7 @@ export function UrbanAddressFields({
         </label>
 
         <label className={`text-sm sm:col-span-2 ${!isOtro ? "opacity-50" : ""}`}>
-          <span className="mb-1 block text-slate-300">
+          <span className="mb-1 block text-slate-700">
             Nombre de la vía (solo si elegiste «Otro (especificar)»)
           </span>
           <input
@@ -95,8 +95,8 @@ export function UrbanAddressFields({
             name={`${prefix}ViaTipoOtro`}
             disabled={!isOtro}
             defaultValue={parts?.viaTipo === "OTRO" ? (parts.viaTipoOtro ?? "") : ""}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100 disabled:cursor-not-allowed disabled:bg-slate-900/80"
-            placeholder={isOtro ? "Ej. Autopista Norte, Transversal del peatonal…" : "No aplica: elegí un tipo de vía de la lista."}
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900 disabled:cursor-not-allowed disabled:bg-white/95"
+            placeholder={isOtro ? "Ej. Autopista Norte, Transversal del peatonal…" : "No aplica: elige un tipo de vía de la lista."}
             autoComplete="off"
           />
           <span className="mt-1 block text-[10px] text-slate-500">
@@ -105,7 +105,7 @@ export function UrbanAddressFields({
         </label>
 
         <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Número de la vía</span>
+          <span className="mb-1 block text-slate-700">Número de la vía</span>
           <input
             name={`${prefix}ViaNumero`}
             required
@@ -113,21 +113,21 @@ export function UrbanAddressFields({
             inputMode="numeric"
             pattern="[0-9]{1,3}"
             title="Solo números, 1 a 3 dígitos"
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
             placeholder="Ej. 72"
           />
           <span className="mt-1 block text-[10px] text-slate-500">Solo dígitos (sin letras). Ejemplo: 72</span>
         </label>
 
         <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Letra de la vía (opcional)</span>
+          <span className="mb-1 block text-slate-700">Letra de la vía (opcional)</span>
           <input
             name={`${prefix}ViaLetra`}
             maxLength={2}
             defaultValue={parts?.viaLetra ?? ""}
             pattern="[A-Za-z]{0,2}"
             title="Solo letras, máximo 2"
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
             placeholder="A, B…"
           />
           <span className="mt-1 block text-[10px] text-slate-500">
@@ -136,7 +136,7 @@ export function UrbanAddressFields({
         </label>
 
         <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Número de cruce (después de #)</span>
+          <span className="mb-1 block text-slate-700">Número de cruce (después de #)</span>
           <input
             name={`${prefix}CruceNumero`}
             required
@@ -144,19 +144,19 @@ export function UrbanAddressFields({
             inputMode="numeric"
             pattern="[0-9]{1,3}"
             title="Solo números"
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
             placeholder="Ej. 10"
           />
           <span className="mt-1 block text-[10px] text-slate-500">Solo dígitos. Es el primer número del par cruce-placa.</span>
         </label>
 
         <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Placa / número local</span>
+          <span className="mb-1 block text-slate-700">Placa / número local</span>
           <input
             name={`${prefix}Placa`}
             required
             defaultValue={parts?.placa ?? ""}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
             placeholder="Ej. 34 o 34B"
           />
           <span className="mt-1 block text-[10px] text-slate-500">
@@ -165,28 +165,28 @@ export function UrbanAddressFields({
         </label>
 
         <label className="text-sm sm:col-span-2">
-          <span className="mb-1 block text-slate-300">Complemento (opcional)</span>
+          <span className="mb-1 block text-slate-700">Complemento (opcional)</span>
           <input
             name={`${prefix}Complemento`}
             defaultValue={parts?.complemento ?? ""}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
             placeholder="Apto, interior, conjunto…"
           />
         </label>
 
         <label className="text-sm sm:col-span-2">
-          <span className="mb-1 block text-slate-300">Barrio o localidad del predio</span>
+          <span className="mb-1 block text-slate-700">Barrio o localidad del predio</span>
           <input
             name={`${prefix}Barrio`}
             required
             minLength={2}
             maxLength={80}
             defaultValue={parts?.barrio ?? ""}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
             placeholder="Nombre del barrio"
           />
           <span className="mt-1 block text-[10px] text-slate-500">
-            No confundir con ciudad: la ciudad la cargás en el campo correspondiente del formulario.
+            No confundir con ciudad: la ciudad la cargas en el campo correspondiente del formulario.
           </span>
         </label>
       </div>

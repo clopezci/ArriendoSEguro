@@ -16,7 +16,7 @@ const pasos = [
   },
   {
     t: "Guardar y firmar (cuando esté listo el borrador)",
-    d: "Acá luego vamos a colgar un borrador, revisiones, y firma con registro, para que quede rastro y tranquilidad, sin reemplazar asesoría legal cuando toque abogado.",
+    d: "Aquí luego vamos a publicar un borrador, revisiones y firma con registro, para que quede rastro y tranquilidad, sin reemplazar la asesoría legal cuando se necesite un abogado.",
   },
 ] as const;
 
@@ -24,9 +24,9 @@ export default function ExpedientePage() {
   return (
     <div className="max-w-2xl space-y-8">
       <div>
-        <p className="text-sm font-medium text-sky-700 dark:text-sky-300">Módulo 1 · en construcción</p>
+        <p className="text-sm font-medium text-sky-700 dark:text-sky-700">Módulo 1 · en construcción</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Expediente del arriendo</h1>
-        <p className="mt-2 text-slate-600 dark:text-slate-300">
+        <p className="mt-2 text-slate-600 dark:text-slate-700">
           Núcleo de {appConfig.name} en esta etapa. La idea es que tú y la otra parte queden
           enganchados al <strong>mismo expediente</strong>, con datos ordenados, antes de
           devanarte en papeles sueltos o chats de celular.
@@ -37,24 +37,24 @@ export default function ExpedientePage() {
         {pasos.map((p, i) => (
           <li
             key={p.t}
-            className="rounded-xl border border-slate-200/90 bg-white p-4 dark:border-slate-700/90 dark:bg-slate-900/40"
+            className="rounded-xl border border-slate-200/90 bg-white p-4 dark:border-slate-300/90 dark:bg-white/90"
           >
             <span className="text-xs font-medium uppercase text-slate-500">Paso {i + 1}</span>
-            <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">{p.t}</h2>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{p.d}</p>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-900">{p.t}</h2>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-700">{p.d}</p>
           </li>
         ))}
       </ol>
 
-      <p className="rounded-lg border border-slate-200 bg-slate-50/90 p-4 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900/30 dark:text-slate-300">
+      <p className="rounded-lg border border-slate-200 bg-slate-50/90 p-4 text-sm text-slate-600 dark:border-slate-300 dark:bg-white/80 dark:text-slate-700">
         <strong>Siguiente paso técnico (visión):</strong> conectar con Firestore un expediente por
-        usuario o por invitación, validaciones, y registro de consentimientos. Si querés, en el
+        usuario o por invitación, validaciones y registro de consentimientos. Si quieres, en el
         próximo tramo bajamos esto a formularios reales.
       </p>
 
       <Link
         href="/panel"
-        className="inline-block text-sm font-medium text-sky-600 hover:underline dark:text-sky-400"
+        className="inline-block text-sm font-medium text-sky-600 hover:underline dark:text-sky-700"
       >
         ← Volver al panel
       </Link>

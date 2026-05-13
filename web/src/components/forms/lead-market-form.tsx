@@ -287,12 +287,12 @@ export function LeadMarketForm({
     <form
       onSubmit={onSubmit}
       noValidate
-      className="mt-4 space-y-6 rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm dark:border-slate-700/80 dark:bg-slate-900/50 sm:p-6"
+      className="mt-4 space-y-6 rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm dark:border-slate-300 dark:bg-white/90 sm:p-6"
     >
-      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-900">
         Validación de interés
       </h3>
-      <p className="text-sm text-slate-600 dark:text-slate-300">
+      <p className="text-sm text-slate-600 dark:text-slate-700">
         Estamos validando Arriendo Seguro, una plataforma para formalizar arriendos ya acordados
         entre personas particulares. Tus respuestas nos ayudarán a construir una solución útil,
         clara y de bajo costo.
@@ -531,7 +531,7 @@ export function LeadMarketForm({
           )}
 
           <div>
-            <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">
+            <label className="block text-sm font-medium text-slate-800 dark:text-slate-800">
               Correo electrónico para recibir acceso temprano (opcional)
             </label>
             <input
@@ -544,7 +544,7 @@ export function LeadMarketForm({
             />
           </div>
 
-          <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+          <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-700">
             <input
               type="checkbox"
               className="mt-1 h-4 w-4 rounded border-slate-300"
@@ -572,7 +572,7 @@ export function LeadMarketForm({
             setStatus("idle");
             setMessage("");
           }}
-          className="min-h-11 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800 sm:w-auto"
+          className="min-h-11 w-full rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 dark:border-slate-300 dark:text-slate-800 dark:hover:bg-slate-200 sm:w-auto"
         >
           Limpiar
         </button>
@@ -582,7 +582,7 @@ export function LeadMarketForm({
         <p
           role="status"
           aria-live="polite"
-          className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-100"
+          className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-100/50 dark:text-emerald-800"
         >
           {message}
         </p>
@@ -591,7 +591,7 @@ export function LeadMarketForm({
         <p
           role="alert"
           aria-live="assertive"
-          className="rounded-lg bg-rose-50 p-3 text-sm text-rose-900 dark:bg-rose-950/50 dark:text-rose-100"
+          className="rounded-lg bg-rose-50 p-3 text-sm text-rose-900 dark:bg-rose-950/50 dark:text-rose-800"
         >
           {message}
         </p>
@@ -616,15 +616,15 @@ function Field({
       <p
         className={
           invalid
-            ? "text-sm font-medium text-rose-700 dark:text-rose-300"
-            : "text-sm font-medium text-slate-800 dark:text-slate-200"
+            ? "text-sm font-medium text-rose-700 dark:text-rose-700"
+            : "text-sm font-medium text-slate-800 dark:text-slate-800"
         }
       >
         {label}
       </p>
       <div className="mt-1">{children}</div>
       {invalid && errorMessage && (
-        <p className="mt-1 text-xs font-medium text-rose-700 dark:text-rose-300">{errorMessage}</p>
+        <p className="mt-1 text-xs font-medium text-rose-700 dark:text-rose-700">{errorMessage}</p>
       )}
     </div>
   );

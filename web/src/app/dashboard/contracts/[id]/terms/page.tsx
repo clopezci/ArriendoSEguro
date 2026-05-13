@@ -27,7 +27,7 @@ export default function TermsStepPage() {
   const [errors, setErrors] = useState<string[]>([]);
 
   if (state !== "ready" || !draft) {
-    return <p className="text-sm text-slate-300">Cargando…</p>;
+    return <p className="text-sm text-slate-700">Cargando…</p>;
   }
 
   function onSubmit(formData: FormData) {
@@ -83,17 +83,17 @@ export default function TermsStepPage() {
           hint="Día del mes en que se debe pagar el canon."
         />
         <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Método de pago</span>
+          <span className="mb-1 block text-slate-700">Método de pago</span>
           <select
             name="paymentMethod"
             defaultValue={draft.lease.paymentMethod ?? "transferencia bancaria"}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
           >
             <option value="transferencia bancaria">Transferencia bancaria</option>
             <option value="efectivo con constancia">Efectivo con constancia</option>
             <option value="otro medio acordado">Otro medio acordado</option>
           </select>
-          <span className="mt-1 block text-xs text-slate-400">
+          <span className="mt-1 block text-xs text-slate-600">
             Cómo se transferirá el dinero del canon cada mes.
           </span>
         </label>
@@ -129,7 +129,7 @@ export default function TermsStepPage() {
         {errors.length > 0 && (
           <div
             role="alert"
-            className="sm:col-span-2 rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100"
+            className="sm:col-span-2 rounded-lg border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
           >
             <p className="font-semibold">Revisa estos campos antes de continuar:</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
@@ -164,15 +164,15 @@ function Input({
 }) {
   return (
     <label className="text-sm">
-      <span className="mb-1 block text-slate-300">{label}</span>
+      <span className="mb-1 block text-slate-700">{label}</span>
       <input
         name={name}
         defaultValue={defaultValue ?? ""}
         type={type}
         inputMode={type === "number" ? "numeric" : undefined}
-        className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+        className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
       />
-      {hint && <span className="mt-1 block text-xs text-slate-400">{hint}</span>}
+      {hint && <span className="mt-1 block text-xs text-slate-600">{hint}</span>}
     </label>
   );
 }

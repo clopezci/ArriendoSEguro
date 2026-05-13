@@ -82,7 +82,7 @@ export default function PaymentsPage() {
     };
   }, [payments, scheduledPayments]);
 
-  if (state !== "ready") return <p className="text-sm text-slate-300">Cargando...</p>;
+  if (state !== "ready") return <p className="text-sm text-slate-700">Cargando...</p>;
 
   async function generateAnnex() {
     setError("");
@@ -106,9 +106,9 @@ export default function PaymentsPage() {
 
   return (
     <WizardShell title="Registro de pagos" currentStep={11} contractId={id}>
-      <p className="rounded border border-slate-700 bg-slate-900/70 p-3 text-xs text-slate-300">{PAYMENT_REMINDER_TEXT.noCollection}</p>
-      <p className="mt-2 rounded border border-slate-700 bg-slate-900/70 p-3 text-xs text-slate-300">{PAYMENT_REMINDER_TEXT.supportHint}</p>
-      {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
+      <p className="rounded border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">{PAYMENT_REMINDER_TEXT.noCollection}</p>
+      <p className="mt-2 rounded border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">{PAYMENT_REMINDER_TEXT.supportHint}</p>
+      {error && <p className="mt-3 text-sm text-rose-700">{error}</p>}
 
       <section className="mt-4 grid gap-3 md:grid-cols-3">
         <Card label="Canon mensual" value={`$${canon.toLocaleString("es-CO")}`} />
@@ -124,12 +124,12 @@ export default function PaymentsPage() {
       </section>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link href={`/dashboard/contracts/${id}/payment-schedule`} className="rounded border border-sky-500 px-3 py-2 text-sm text-sky-200">Calendario</Link>
-        <button type="button" className="rounded border border-slate-600 px-3 py-2 text-sm text-slate-200">Pagos registrados</button>
-        <button type="button" className="rounded border border-slate-600 px-3 py-2 text-sm text-slate-200">Soportes</button>
-        <button type="button" className="rounded border border-slate-600 px-3 py-2 text-sm text-slate-200">Recordatorios</button>
+        <Link href={`/dashboard/contracts/${id}/payment-schedule`} className="rounded border border-sky-500 px-3 py-2 text-sm text-sky-800">Calendario</Link>
+        <button type="button" className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-800">Pagos registrados</button>
+        <button type="button" className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-800">Soportes</button>
+        <button type="button" className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-800">Recordatorios</button>
         <Link href={`/dashboard/contracts/${id}/payments/new?contractVersionId=${encodeURIComponent(contractVersionId)}`} className="rounded bg-violet-600 px-3 py-2 text-sm text-white">Registrar pago</Link>
-        <button type="button" onClick={generateAnnex} className="rounded border border-emerald-500 px-3 py-2 text-sm text-emerald-200">Generar anexo de pagos</button>
+        <button type="button" onClick={generateAnnex} className="rounded border border-emerald-500 px-3 py-2 text-sm text-emerald-700">Generar anexo de pagos</button>
       </div>
       <section className="mt-3 grid gap-3 md:grid-cols-3">
         <Card label="Próximo vencimiento" value={summary.nextDue} />
@@ -137,10 +137,10 @@ export default function PaymentsPage() {
         <Card label="Estado calendario" value={`${summary.calendarState} / Vencidos: ${summary.overdueSchedule}`} />
       </section>
 
-      <div className="mt-4 overflow-auto rounded border border-slate-700">
-        <table className="min-w-full text-xs text-slate-300">
+      <div className="mt-4 overflow-auto rounded border border-slate-300">
+        <table className="min-w-full text-xs text-slate-700">
           <thead>
-            <tr className="border-b border-slate-700">
+            <tr className="border-b border-slate-300">
               <th className="px-2 py-1 text-left">Periodo</th>
               <th className="px-2 py-1 text-left">Vencimiento</th>
               <th className="px-2 py-1 text-left">Pagado</th>
@@ -153,7 +153,7 @@ export default function PaymentsPage() {
           </thead>
           <tbody>
             {payments.map((p) => (
-              <tr key={p.id} className="border-b border-slate-800">
+              <tr key={p.id} className="border-b border-slate-300">
                 <td className="px-2 py-1">{p.periodLabel}</td>
                 <td className="px-2 py-1">{p.dueDate}</td>
                 <td className="px-2 py-1">{p.paidDate ?? "-"}</td>
@@ -162,13 +162,13 @@ export default function PaymentsPage() {
                 <td className="px-2 py-1">{humanStatus(p.paymentStatus)}</td>
                 <td className="px-2 py-1">{visualPaymentState(p)}</td>
                 <td className="px-2 py-1">
-                  <Link href={`/dashboard/contracts/${id}/payments/${p.id}`} className="text-violet-300">Ver/Editar</Link>
+                  <Link href={`/dashboard/contracts/${id}/payments/${p.id}`} className="text-violet-700">Ver/Editar</Link>
                 </td>
               </tr>
             ))}
             {payments.length === 0 && (
               <tr>
-                <td className="px-2 py-3 text-slate-400" colSpan={8}>Sin pagos registrados.</td>
+                <td className="px-2 py-3 text-slate-600" colSpan={8}>Sin pagos registrados.</td>
               </tr>
             )}
           </tbody>
@@ -191,9 +191,9 @@ function humanStatus(status: Payment["paymentStatus"]): string {
 
 function Card({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded border border-slate-700 bg-slate-900/70 p-3">
-      <p className="text-[11px] text-slate-400">{label}</p>
-      <p className="text-sm font-medium text-slate-100">{value}</p>
+    <div className="rounded border border-slate-300 bg-white/95 p-3">
+      <p className="text-[11px] text-slate-600">{label}</p>
+      <p className="text-sm font-medium text-slate-900">{value}</p>
     </div>
   );
 }

@@ -76,7 +76,7 @@ export default function PaymentSchedulePage() {
     return { late, upcoming };
   }, [schedule]);
 
-  if (state !== "ready") return <p className="text-sm text-slate-300">Cargando...</p>;
+  if (state !== "ready") return <p className="text-sm text-slate-700">Cargando...</p>;
 
   async function generate() {
     setSaving(true);
@@ -138,7 +138,7 @@ export default function PaymentSchedulePage() {
 
   return (
     <WizardShell title="Calendario de pagos" currentStep={11} contractId={id}>
-      {error && <p className="mb-3 text-sm text-rose-300">{error}</p>}
+      {error && <p className="mb-3 text-sm text-rose-700">{error}</p>}
       <div className="grid gap-3 md:grid-cols-5">
         <Info label="Canon mensual" value={`$${leaseData.monthlyRent.toLocaleString("es-CO")}`} />
         <Info label="Duración (meses)" value={`${leaseData.termMonths}`} />
@@ -157,44 +157,44 @@ export default function PaymentSchedulePage() {
         </button>
         <button type="button" onClick={async () => {
           await fetch("/api/payments/reminders/send-due", { method: "POST" });
-        }} className="rounded border border-sky-500 px-3 py-2 text-sm text-sky-200">
+        }} className="rounded border border-sky-500 px-3 py-2 text-sm text-sky-800">
           Enviar recordatorios pendientes (manual)
         </button>
       </div>
 
-      <section className="mt-4 rounded border border-slate-700 p-3">
+      <section className="mt-4 rounded border border-slate-300 p-3">
         <h3 className="text-sm font-semibold">Configuración de recordatorios</h3>
         <div className="mt-2 grid gap-3 md:grid-cols-2">
-          <label className="text-xs text-slate-300">Activo
-            <select className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm" value={settings.enabled ? "si" : "no"} onChange={(e) => setSettings((p) => ({ ...p, enabled: e.target.value === "si" }))}>
+          <label className="text-xs text-slate-700">Activo
+            <select className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.enabled ? "si" : "no"} onChange={(e) => setSettings((p) => ({ ...p, enabled: e.target.value === "si" }))}>
               <option value="si">Sí</option><option value="no">No</option>
             </select>
           </label>
-          <label className="text-xs text-slate-300">Días antes
-            <input type="number" className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm" value={settings.defaultDaysBefore} onChange={(e) => setSettings((p) => ({ ...p, defaultDaysBefore: Number(e.target.value || 1) }))} />
+          <label className="text-xs text-slate-700">Días antes
+            <input type="number" className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.defaultDaysBefore} onChange={(e) => setSettings((p) => ({ ...p, defaultDaysBefore: Number(e.target.value || 1) }))} />
           </label>
-          <label className="text-xs text-slate-300">Correo arrendatario
-            <input className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm" value={settings.tenantEmail} onChange={(e) => setSettings((p) => ({ ...p, tenantEmail: e.target.value }))} />
+          <label className="text-xs text-slate-700">Correo arrendatario
+            <input className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.tenantEmail} onChange={(e) => setSettings((p) => ({ ...p, tenantEmail: e.target.value }))} />
           </label>
-          <label className="text-xs text-slate-300">Copiar arrendador
-            <select className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm" value={settings.landlordCopyEnabled ? "si" : "no"} onChange={(e) => setSettings((p) => ({ ...p, landlordCopyEnabled: e.target.value === "si" }))}>
+          <label className="text-xs text-slate-700">Copiar arrendador
+            <select className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.landlordCopyEnabled ? "si" : "no"} onChange={(e) => setSettings((p) => ({ ...p, landlordCopyEnabled: e.target.value === "si" }))}>
               <option value="no">No</option><option value="si">Sí</option>
             </select>
           </label>
-          <label className="text-xs text-slate-300">Correo arrendador
-            <input className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm" value={settings.landlordEmail} onChange={(e) => setSettings((p) => ({ ...p, landlordEmail: e.target.value }))} />
+          <label className="text-xs text-slate-700">Correo arrendador
+            <input className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.landlordEmail} onChange={(e) => setSettings((p) => ({ ...p, landlordEmail: e.target.value }))} />
           </label>
-          <label className="text-xs text-slate-300">Mensaje personalizado
-            <input className="mt-1 w-full rounded border border-slate-700 bg-slate-900 p-2 text-sm" value={settings.customMessage} onChange={(e) => setSettings((p) => ({ ...p, customMessage: e.target.value }))} />
+          <label className="text-xs text-slate-700">Mensaje personalizado
+            <input className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.customMessage} onChange={(e) => setSettings((p) => ({ ...p, customMessage: e.target.value }))} />
           </label>
         </div>
-        <button type="button" onClick={saveSettings} className="mt-3 rounded border border-emerald-500 px-3 py-2 text-sm text-emerald-200">Guardar configuración</button>
+        <button type="button" onClick={saveSettings} className="mt-3 rounded border border-emerald-500 px-3 py-2 text-sm text-emerald-700">Guardar configuración</button>
       </section>
 
-      <div className="mt-4 overflow-auto rounded border border-slate-700">
-        <table className="min-w-full text-xs text-slate-300">
+      <div className="mt-4 overflow-auto rounded border border-slate-300">
+        <table className="min-w-full text-xs text-slate-700">
           <thead>
-            <tr className="border-b border-slate-700">
+            <tr className="border-b border-slate-300">
               <th className="px-2 py-1 text-left">Periodo</th>
               <th className="px-2 py-1 text-left">Vence</th>
               <th className="px-2 py-1 text-left">Esperado</th>
@@ -205,25 +205,25 @@ export default function PaymentSchedulePage() {
           </thead>
           <tbody>
             {schedule.map((s) => (
-              <tr key={s.id} className="border-b border-slate-800">
+              <tr key={s.id} className="border-b border-slate-300">
                 <td className="px-2 py-1">{s.periodLabel}</td>
                 <td className="px-2 py-1">{s.dueDate}</td>
                 <td className="px-2 py-1">${s.expectedAmount.toLocaleString("es-CO")}</td>
                 <td className="px-2 py-1">{s.status}</td>
                 <td className="px-2 py-1">{s.reminderEnabled ? `${s.reminderDaysBefore} día(s)` : "Desactivado"}</td>
                 <td className="px-2 py-1">
-                  <Link href={`/dashboard/contracts/${id}/payments/new?contractVersionId=${encodeURIComponent(contractVersionId)}&scheduledPaymentId=${encodeURIComponent(s.id)}`} className="text-violet-300">Registrar pago</Link>
+                  <Link href={`/dashboard/contracts/${id}/payments/new?contractVersionId=${encodeURIComponent(contractVersionId)}&scheduledPaymentId=${encodeURIComponent(s.id)}`} className="text-violet-700">Registrar pago</Link>
                   {s.paymentLogId ? (
-                    <Link href={`/dashboard/contracts/${id}/payments/${s.paymentLogId}`} className="ml-2 text-sky-300">
+                    <Link href={`/dashboard/contracts/${id}/payments/${s.paymentLogId}`} className="ml-2 text-sky-700">
                       Ver soporte
                     </Link>
                   ) : null}
-                  <button type="button" onClick={() => void updateOne(s, { status: "disputed" })} className="ml-2 text-amber-300">Marcar disputado</button>
-                  <button type="button" onClick={() => void updateOne(s, { status: "cancelled" })} className="ml-2 text-rose-300">Cancelar</button>
+                  <button type="button" onClick={() => void updateOne(s, { status: "disputed" })} className="ml-2 text-amber-700">Marcar disputado</button>
+                  <button type="button" onClick={() => void updateOne(s, { status: "cancelled" })} className="ml-2 text-rose-700">Cancelar</button>
                 </td>
               </tr>
             ))}
-            {schedule.length === 0 && <tr><td className="px-2 py-3 text-slate-400" colSpan={6}>Sin calendario programado.</td></tr>}
+            {schedule.length === 0 && <tr><td className="px-2 py-3 text-slate-600" colSpan={6}>Sin calendario programado.</td></tr>}
           </tbody>
         </table>
       </div>
@@ -233,9 +233,9 @@ export default function PaymentSchedulePage() {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded border border-slate-700 bg-slate-900/70 p-3">
-      <p className="text-[11px] text-slate-400">{label}</p>
-      <p className="text-sm font-medium text-slate-100">{value}</p>
+    <div className="rounded border border-slate-300 bg-white/95 p-3">
+      <p className="text-[11px] text-slate-600">{label}</p>
+      <p className="text-sm font-medium text-slate-900">{value}</p>
     </div>
   );
 }

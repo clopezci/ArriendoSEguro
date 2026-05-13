@@ -100,7 +100,7 @@ export const colombianNotificationAddressPartsSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["viaTipoOtro"],
-          message: "Escribí cómo se llama la vía cuando elegís «Otro».",
+          message: "Escribe cómo se llama la vía cuando eliges «Otro».",
         });
       }
     }

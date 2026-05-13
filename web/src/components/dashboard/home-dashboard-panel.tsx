@@ -34,27 +34,27 @@ function StepShell({
 }) {
   const ring =
     status === "done"
-      ? "border-emerald-600/50"
+      ? "border-emerald-400"
       : status === "available"
-        ? "border-violet-500/45"
+        ? "border-violet-500"
         : status === "soon"
-          ? "border-slate-600/60"
-          : "border-slate-700/80";
+          ? "border-slate-300"
+          : "border-slate-300";
 
   return (
     <li
-      className={`rounded-2xl border ${ring} bg-slate-900/50 p-4 shadow-[0_8px_22px_rgba(0,0,0,0.25)]`}
+      className={`rounded-2xl border ${ring} bg-white/90 p-4 shadow-[0_8px_22px_rgba(0,0,0,0.25)]`}
     >
       <div className="flex flex-wrap items-start gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-semibold text-violet-200">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-violet-700">
           {step}
         </span>
         <div className="min-w-0 flex-1 space-y-2">
           <div>
-            <h3 className="font-semibold text-slate-100">{title}</h3>
-            <p className="mt-1 text-sm text-slate-400">{description}</p>
+            <h3 className="font-semibold text-slate-900">{title}</h3>
+            <p className="mt-1 text-sm text-slate-600">{description}</p>
             {beneficioIlustrativo && (
-              <p className="mt-2 rounded-lg border border-slate-700/60 bg-slate-950/40 p-2 text-xs text-slate-400">
+              <p className="mt-2 rounded-lg border border-slate-300 bg-slate-100/60 p-2 text-xs text-slate-600">
                 {beneficioIlustrativo}
               </p>
             )}
@@ -67,13 +67,13 @@ function StepShell({
 }
 
 const BENEFICIOS: Record<number, string> = {
-  1: "Reunís en un solo lugar a arrendador, arrendatario e inmueble, sin perder datos en chats sueltos.",
-  2: "Obtenés un contrato ordenado según tu caso, con o sin codeudor, listo para revisar con calma.",
+  1: "Reúnes en un solo lugar a arrendador, arrendatario e inmueble, sin perder datos en chats sueltos.",
+  2: "Obtienes un contrato ordenado según tu caso, con o sin codeudor, listo para revisar con calma.",
   3: "Ambas partes firman de forma simple, con registro para no quedar en lo informal.",
-  4: "Dejás registro fotográfico y claro del estado del inmueble al inicio.",
-  5: "Sincronizás fechas de pago y recordatorios sin depender solo de memoria.",
-  6: "Llevás constancia de lo que efectivamente se pagó, con soporte adjunto.",
-  7: "Al cierre, documentás la entrega final y una evaluación estructurada.",
+  4: "Dejas registro fotográfico y claro del estado del inmueble al inicio.",
+  5: "Sincronizas fechas de pago y recordatorios sin depender solo de memoria.",
+  6: "Llevas constancia de lo que efectivamente se pagó, con soporte adjunto.",
+  7: "Al cierre, documentas la entrega final y una evaluación estructurada.",
 };
 
 export function HomeDashboardPanel() {
@@ -131,45 +131,45 @@ export function HomeDashboardPanel() {
   return (
     <div className="space-y-8">
       <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-300/90">
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">
           Panel principal de ArriendoSeguro
         </p>
-        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           Tu arriendo, paso a paso
         </h1>
-        <p className="max-w-3xl text-slate-300">
+        <p className="max-w-3xl text-slate-700">
           Formaliza un arriendo entre particulares con contrato, firma, inventario, pagos y soportes,
           en un flujo guiado.
         </p>
       </header>
 
-      <section className="rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900/90 to-slate-950 p-6 shadow-[0_14px_36px_rgba(139,92,246,0.18)]">
-        <h2 className="text-lg font-semibold text-white">Tu acceso</h2>
+      <section className="rounded-2xl border border-slate-300 bg-white p-6 shadow-[0_14px_36px_rgba(139,92,246,0.18)]">
+        <h2 className="text-lg font-semibold text-slate-900">Tu acceso</h2>
         {loadingEnt ? (
-          <p className="mt-2 text-sm text-slate-400">Cargando estado de tu plan…</p>
+          <p className="mt-2 text-sm text-slate-600">Cargando estado de tu plan…</p>
         ) : plusActive ? (
           <div className="mt-3 space-y-1">
-            <p className="font-medium text-emerald-200">Plan Plus activo</p>
-            <p className="text-sm text-slate-300">
-              Podés crear un expediente real de arriendo con todas las herramientas habilitadas.
+            <p className="font-medium text-emerald-700">Plan Plus activo</p>
+            <p className="text-sm text-slate-700">
+              Puedes crear un expediente real de arriendo con todas las herramientas habilitadas.
             </p>
           </div>
         ) : demoActive ? (
           <div className="mt-3 space-y-1">
-            <p className="font-medium text-amber-100">Estás en modo demo</p>
-            <p className="text-sm text-slate-300">
-              Podés explorar cómo funciona la plataforma con datos de ejemplo. El demo no genera
+            <p className="font-medium text-amber-800">Estás en modo demo</p>
+            <p className="text-sm text-slate-700">
+              Puedes explorar cómo funciona la plataforma con datos de ejemplo. El demo no genera
               contratos reales ni documentos válidos.
             </p>
           </div>
         ) : (
           <div className="mt-3 space-y-3">
-            <p className="font-medium text-slate-100">
-              Para crear un contrato real debés activar el Plan Plus.
+            <p className="font-medium text-slate-900">
+              Para crear un contrato real debes activar el Plan Plus.
             </p>
-            <p className="text-sm text-slate-400">
-              Igual podés ver abajo cómo es el recorrido completo y por qué cada paso te ahorra
-              tiempo y malos entendidos.
+            <p className="text-sm text-slate-600">
+              De todos modos puedes ver abajo cómo es el recorrido completo y por qué cada paso te
+              ahorra tiempo y malos entendidos.
             </p>
             <Link
               href="/dashboard/plans"
@@ -182,7 +182,7 @@ export function HomeDashboardPanel() {
       </section>
 
       {!interactive && !loadingEnt && (
-        <div className="flex flex-wrap gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+        <div className="flex flex-wrap gap-3 rounded-xl border border-slate-300 bg-slate-100/60 p-4">
           <Link
             href="/dashboard/plans"
             className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500"
@@ -191,7 +191,7 @@ export function HomeDashboardPanel() {
           </Link>
           <Link
             href="/demo"
-            className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:border-violet-400"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:border-violet-500"
           >
             Ver demo guiado
           </Link>
@@ -206,12 +206,12 @@ export function HomeDashboardPanel() {
           <StepShell
             step={1}
             title="Crear expediente de arriendo"
-            description="Registrá los datos básicos del arriendo y de las partes."
+            description="Registra los datos básicos del arriendo y de las partes."
             beneficioIlustrativo={!interactive ? BENEFICIOS[1] : undefined}
             status={!interactive ? "locked" : id ? "available" : "available"}
           >
             {!interactive ? (
-              <p className="text-xs text-slate-500">Activá Plus o demo para crear un expediente.</p>
+              <p className="text-xs text-slate-500">Activa Plus o demo para crear un expediente.</p>
             ) : !id ? (
               <Link
                 href="/dashboard/contracts/new"
@@ -244,18 +244,18 @@ export function HomeDashboardPanel() {
           <StepShell
             step={2}
             title="Crear contrato"
-            description="Generá el contrato de arrendamiento con o sin codeudor."
+            description="Genera el contrato de arrendamiento con o sin codeudor."
             beneficioIlustrativo={!interactive ? BENEFICIOS[2] : undefined}
             status={!interactive ? "locked" : id ? "available" : "locked"}
           >
             {!interactive ? (
               <p className="text-xs text-slate-500">Incluido cuando tengas expediente activo.</p>
             ) : !id ? (
-              <p className="text-sm text-slate-500">Bloqueado: primero creá el expediente.</p>
+              <p className="text-sm text-slate-500">Bloqueado: primero crea el expediente.</p>
             ) : (
               <Link
                 href={completo ? `/dashboard/contracts/${id}/preview` : `/dashboard/contracts/${id}/landlord`}
-                className="inline-flex rounded-lg border border-violet-500/60 bg-violet-950/40 px-3 py-2 text-sm font-medium text-violet-100 hover:border-violet-400"
+                className="inline-flex rounded-lg border border-violet-500 bg-violet-100/50 px-3 py-2 text-sm font-medium text-violet-800 hover:border-violet-500"
               >
                 Crear o revisar contrato
               </Link>
@@ -265,7 +265,7 @@ export function HomeDashboardPanel() {
           <StepShell
             step={3}
             title="Firmar contrato"
-            description="Enviá el contrato para firma electrónica simple."
+            description="Envía el contrato para firma electrónica simple."
             beneficioIlustrativo={!interactive ? BENEFICIOS[3] : undefined}
             status={
               !interactive ? "locked" : hasVersion ? "available" : id ? "locked" : "locked"
@@ -274,15 +274,15 @@ export function HomeDashboardPanel() {
             {!interactive ? (
               <p className="text-xs text-slate-500">Recibirás enlaces para firmar cuando corresponda.</p>
             ) : !id ? (
-              <p className="text-sm text-slate-500">Bloqueado: necesitás contrato guardado.</p>
+              <p className="text-sm text-slate-500">Bloqueado: necesitas contrato guardado.</p>
             ) : !hasVersion ? (
               <p className="text-sm text-slate-500">
-                Bloqueado: primero generá y guardá una versión del contrato en la vista previa.
+                Bloqueado: primero genera y guarda una versión del contrato en la vista previa.
               </p>
             ) : (
               <Link
                 href={`/dashboard/contracts/${id}/preview`}
-                className="inline-flex rounded-lg border border-violet-500/60 px-3 py-2 text-sm text-violet-100 hover:border-violet-400"
+                className="inline-flex rounded-lg border border-violet-500 px-3 py-2 text-sm text-violet-800 hover:border-violet-500"
               >
                 Ir a firma
               </Link>
@@ -292,18 +292,18 @@ export function HomeDashboardPanel() {
           <StepShell
             step={4}
             title="Inventario y acta de entrega"
-            description="Registrá fotos, estado del inmueble, medidores, llaves y generá acta de entrega."
+            description="Registra fotos, estado del inmueble, medidores, llaves y genera el acta de entrega."
             beneficioIlustrativo={!interactive ? BENEFICIOS[4] : undefined}
             status={!interactive ? "locked" : id ? "available" : "locked"}
           >
             {!interactive ? (
-              <p className="text-xs text-slate-500">Podés documentar cada detalle con fotos.</p>
+              <p className="text-xs text-slate-500">Puedes documentar cada detalle con fotos.</p>
             ) : !id ? (
-              <p className="text-sm text-slate-500">Creá primero un expediente.</p>
+              <p className="text-sm text-slate-500">Crea primero un expediente.</p>
             ) : (
               <Link
                 href={`/dashboard/contracts/${id}/inventory`}
-                className="inline-flex rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-100 hover:border-violet-400"
+                className="inline-flex rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 hover:border-violet-500"
               >
                 Crear inventario
               </Link>
@@ -313,12 +313,12 @@ export function HomeDashboardPanel() {
           <StepShell
             step={5}
             title="Pagos y recordatorios"
-            description="Programá los pagos del contrato y configurá avisos por correo."
+            description="Programa los pagos del contrato y configura avisos por correo."
             beneficioIlustrativo={!interactive ? BENEFICIOS[5] : undefined}
             status={!interactive ? "locked" : id && termsOk ? "available" : "locked"}
           >
             {!interactive ? (
-              <p className="text-xs text-slate-500">Organizás canon y recordatorios sin olvidos.</p>
+              <p className="text-xs text-slate-500">Organizas canon y recordatorios sin olvidos.</p>
             ) : !id || !termsOk ? (
               <p className="text-sm text-slate-500">
                 Bloqueado hasta tener los términos del contrato cargados en el expediente.
@@ -326,7 +326,7 @@ export function HomeDashboardPanel() {
             ) : (
               <Link
                 href={`/dashboard/contracts/${id}/payment-schedule`}
-                className="inline-flex rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-100 hover:border-violet-400"
+                className="inline-flex rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 hover:border-violet-500"
               >
                 Programar pagos
               </Link>
@@ -336,7 +336,7 @@ export function HomeDashboardPanel() {
           <StepShell
             step={6}
             title="Registro de pagos"
-            description="Registrá pagos realizados por fuera de la plataforma y adjuntá soporte."
+            description="Registra pagos realizados por fuera de la plataforma y adjunta el soporte."
             beneficioIlustrativo={!interactive ? BENEFICIOS[6] : undefined}
             status={!interactive ? "locked" : id && termsOk ? "available" : "locked"}
           >
@@ -349,7 +349,7 @@ export function HomeDashboardPanel() {
             ) : (
               <Link
                 href={`/dashboard/contracts/${id}/payments`}
-                className="inline-flex rounded-lg border border-slate-600 px-3 py-2 text-sm text-slate-100 hover:border-violet-400"
+                className="inline-flex rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 hover:border-violet-500"
               >
                 Registrar pago
               </Link>
@@ -359,14 +359,14 @@ export function HomeDashboardPanel() {
           <StepShell
             step={7}
             title="Cierre y evaluación"
-            description="Al finalizar, generá acta de cierre y registrá evaluación estructurada."
+            description="Al finalizar, genera el acta de cierre y registra la evaluación estructurada."
             beneficioIlustrativo={!interactive ? BENEFICIOS[7] : undefined}
             status="soon"
           >
             <button
               type="button"
               disabled
-              className="cursor-not-allowed rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-500"
+              className="cursor-not-allowed rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-500"
             >
               Ver cierre — próximamente
             </button>
@@ -375,8 +375,8 @@ export function HomeDashboardPanel() {
       </section>
 
       <p className="text-center text-xs text-slate-500">
-        ¿Necesitás ver todos tus expedientes?{" "}
-        <Link href="/dashboard/leases" className="text-violet-300 underline-offset-4 hover:underline">
+        ¿Necesitas ver todos tus expedientes?{" "}
+        <Link href="/dashboard/leases" className="text-violet-700 underline-offset-4 hover:underline">
           Ir a Mis arriendos
         </Link>
       </p>

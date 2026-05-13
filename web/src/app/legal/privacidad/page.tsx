@@ -10,10 +10,10 @@ export const metadata: Metadata = {
 
 export default function PrivacidadPage() {
   return (
-    <article className="space-y-8 text-sm leading-relaxed text-slate-300">
-      <header className="space-y-2 border-b border-slate-800 pb-6">
+    <article className="space-y-8 text-sm leading-relaxed text-slate-700">
+      <header className="space-y-2 border-b border-slate-300 pb-6">
         <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Información legal</p>
-        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           Política de tratamiento de la información personal (datos personales)
         </h1>
         <p className="text-xs text-slate-500">
@@ -25,7 +25,7 @@ export default function PrivacidadPage() {
       </header>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">1. Responsable del tratamiento</h2>
+        <h2 className="text-lg font-semibold text-slate-900">1. Responsable del tratamiento</h2>
         <p>
           El responsable del tratamiento de los datos personales tratados a través de la plataforma {appConfig.name} es
           quien se identifique como titular del servicio en los avisos de registro y en la sección de contacto (en
@@ -35,9 +35,9 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">2. Datos recolectados</h2>
+        <h2 className="text-lg font-semibold text-slate-900">2. Datos recolectados</h2>
         <p>Según las funciones que use, podemos tratar, entre otros:</p>
-        <ul className="list-inside list-disc space-y-1 text-slate-400">
+        <ul className="list-inside list-disc space-y-1 text-slate-600">
           <li>Datos de identificación y contacto (nombre, documento, correo, teléfono, ciudad).</li>
           <li>Direcciones y datos del inmueble objeto del expediente.</li>
           <li>Contenido que usted carga (contratos, inventarios, fotografías, anexos).</li>
@@ -48,9 +48,9 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">3. Finalidades</h2>
+        <h2 className="text-lg font-semibold text-slate-900">3. Finalidades</h2>
         <p>Tratamos datos para:</p>
-        <ul className="list-inside list-disc space-y-1 text-slate-400">
+        <ul className="list-inside list-disc space-y-1 text-slate-600">
           <li>Prestar el servicio de software (creación de expediente, plantillas, almacenamiento, notificaciones).</li>
           <li>Gestionar la cuenta, autenticación, seguridad, control de acceso y prevención de fraude.</li>
           <li>Gestionar la evaluación estructurada de experiencia arrendaticia mediante preguntas cerradas y trazabilidad.</li>
@@ -65,7 +65,7 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">4. Tratamiento de datos de arrendador, arrendatario y codeudor</h2>
+        <h2 className="text-lg font-semibold text-slate-900">4. Tratamiento de datos de arrendador, arrendatario y codeudor</h2>
         <p>
           Quien crea el expediente es responsable de contar con la base legal (por ejemplo, consentimiento, relación
           contractual o habilitación legal) para cargar datos de otras personas. El codeudor y el arrendatario deben ser
@@ -75,7 +75,7 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">5. Tratamiento de documentos</h2>
+        <h2 className="text-lg font-semibold text-slate-900">5. Tratamiento de documentos</h2>
         <p>
           Los documentos (borradores de contrato, anexos, inventarios) se alojan en infraestructura controlada por el
           responsable o sus encargados. Se aplican medidas razonables de seguridad. El contenido jurídico es
@@ -84,7 +84,7 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">6. Tratamiento de firmas electrónicas</h2>
+        <h2 className="text-lg font-semibold text-slate-900">6. Tratamiento de firmas electrónicas</h2>
         <p>
           Cuando use la firma electrónica ofrecida por la plataforma, se conservan datos de evidencia (fecha, hora, IP,
           user agent, identificador de versión y hash del documento) según lo descrito en la{" "}
@@ -96,7 +96,7 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">7. Tratamiento de soportes de pago del canon</h2>
+        <h2 className="text-lg font-semibold text-slate-900">7. Tratamiento de soportes de pago del canon</h2>
         <p>
           Si la funcionalidad permite registrar soportes del pago del arriendo, dichos archivos y metadatos se tratan
           solo con fines informativos entre las partes y de trazabilidad del expediente, sin que {appConfig.name}{" "}
@@ -105,7 +105,7 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">8. Tratamiento de evaluaciones estructuradas</h2>
+        <h2 className="text-lg font-semibold text-slate-900">8. Tratamiento de evaluaciones estructuradas</h2>
         <p>
           Las respuestas a cuestionarios cerrados sobre la experiencia de arriendo se tratan según la{" "}
           <Link href="/legal/evaluacion" className="text-violet-400 hover:underline">
@@ -116,9 +116,9 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">9. Derechos del titular</h2>
+        <h2 className="text-lg font-semibold text-slate-900">9. Derechos del titular</h2>
         <p>Usted puede ejercer, entre otros, los derechos a:</p>
-        <ul className="list-inside list-disc space-y-1 text-slate-400">
+        <ul className="list-inside list-disc space-y-1 text-slate-600">
           <li>Conocer, actualizar y rectificar sus datos.</li>
           <li>Solicitar prueba de la autorización cuando sea del caso.</li>
           <li>Revocar el consentimiento cuando no exista deber legal o contractual que impida suprimir.</li>
@@ -128,7 +128,7 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">10. Canales de consulta y reclamo</h2>
+        <h2 className="text-lg font-semibold text-slate-900">10. Canales de consulta y reclamo</h2>
         <p>
           Solicitudes de ejercicio de derechos y reclamos: use el correo o formulario publicado en la aplicación como
           canal principal. Podrá solicitar información sobre el tratamiento y, si aplica, corrección o supresión cuando
@@ -137,7 +137,7 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">11. Conservación</h2>
+        <h2 className="text-lg font-semibold text-slate-900">11. Conservación</h2>
         <p>
           Los datos se conservan mientras exista relación contractual o legal con usted, y después durante los plazos
           necesarios para defensa de derechos, auditoría o cumplimiento de obligaciones legales (por ejemplo,
@@ -146,7 +146,7 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">12. Seguridad</h2>
+        <h2 className="text-lg font-semibold text-slate-900">12. Seguridad</h2>
         <p>
           Aplicamos medidas técnicas y organizativas razonables (cifrado en tránsito cuando proceda, control de accesos,
           copias de seguridad). Ningún sistema es invulnerable; le recomendamos usar contraseñas robustas y no compartir
@@ -155,7 +155,7 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">13. Transferencia y transmisión a proveedores y aliados estratégicos</h2>
+        <h2 className="text-lg font-semibold text-slate-900">13. Transferencia y transmisión a proveedores y aliados estratégicos</h2>
         <p>
           Podemos encargar el tratamiento a proveedores de nube, autenticación, correo electrónico, pasarela de pagos,
           soporte o seguridad, con contratos de encargo y deberes de confidencialidad conforme a la ley.
@@ -173,7 +173,7 @@ export default function PrivacidadPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-white">14. Contacto</h2>
+        <h2 className="text-lg font-semibold text-slate-900">14. Contacto</h2>
         <p>
           Para ejercicio de derechos y preguntas sobre privacidad: utilice los canales oficiales publicados en la
           aplicación. Consulte también el{" "}

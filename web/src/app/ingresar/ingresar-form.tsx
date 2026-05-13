@@ -75,16 +75,16 @@ export function IngresarForm() {
     setError(null);
     setNotice(null);
     if (submitBlocked) {
-      setError(`Demasiados intentos. Esperá ${cooldownSeconds} segundos e intentá de nuevo.`);
+      setError(`Demasiados intentos. Espera ${cooldownSeconds} segundos e inténtalo de nuevo.`);
       return;
     }
     if (botField.trim().length > 0) {
-      setError("No se pudo validar el formulario. Recargá e intentá de nuevo.");
+      setError("No se pudo validar el formulario. Recarga e inténtalo de nuevo.");
       return;
     }
     if (turnstileStrict && !turnstileToken) {
       setError(
-        "Completá primero el recuadro de Cloudflare Turnstile (debajo de la suma). Si no aparece, revisá dominios permitidos en Cloudflare o desactivá el modo estricto quitando NEXT_PUBLIC_TURNSTILE_REQUIRED.",
+        "Completa primero el recuadro de Cloudflare Turnstile (debajo de la suma). Si no aparece, revisa los dominios permitidos en Cloudflare o desactiva el modo estricto quitando NEXT_PUBLIC_TURNSTILE_REQUIRED.",
       );
       return;
     }
@@ -95,12 +95,12 @@ export function IngresarForm() {
         body: JSON.stringify({ token: turnstileToken, action: "auth_form" }),
       });
       if (!sec.ok) {
-        setError("No se pudo validar Turnstile en el servidor. Recargá la página e intentá de nuevo.");
+        setError("No se pudo validar Turnstile en el servidor. Recarga la página e inténtalo de nuevo.");
         return;
       }
     }
     if (humanExpected == null || Number(humanCheck) !== humanExpected) {
-      setError("Control de seguridad incorrecto. Revisá la suma y probá de nuevo.");
+      setError("Control de seguridad incorrecto. Revisa la suma e inténtalo de nuevo.");
       regenerateHumanChallenge();
       return;
     }
@@ -175,7 +175,7 @@ export function IngresarForm() {
 
   if (configError) {
     return (
-      <p className="text-center text-sm text-amber-800 dark:text-amber-200/90">
+      <p className="text-center text-sm text-amber-800 dark:text-amber-800">
         Falta configurar las variables de Firebase. El desarrollador debe añadir{" "}
         <code className="rounded bg-amber-100 px-1 dark:bg-amber-900/50">NEXT_PUBLIC_FIREBASE_*</code>{" "}
         en <code className="rounded bg-amber-100 px-1 dark:bg-amber-900/50">.env.local</code>.
@@ -185,14 +185,14 @@ export function IngresarForm() {
 
   return (
     <form onSubmit={onSubmit} className="mt-6 space-y-4">
-      <div className="flex rounded-lg border border-slate-200 p-0.5 text-sm dark:border-slate-600">
+      <div className="flex rounded-lg border border-slate-200 p-0.5 text-sm dark:border-slate-300">
         <button
           type="button"
           onClick={() => setMode("iniciar")}
           className={`flex-1 rounded-md py-2 font-medium ${
             mode === "iniciar"
               ? "bg-sky-600 text-white"
-              : "text-slate-600 dark:text-slate-300"
+              : "text-slate-600 dark:text-slate-700"
           }`}
         >
           Iniciar sesión
@@ -203,14 +203,14 @@ export function IngresarForm() {
           className={`flex-1 rounded-md py-2 font-medium ${
             mode === "crear"
               ? "bg-sky-600 text-white"
-              : "text-slate-600 dark:text-slate-300"
+              : "text-slate-600 dark:text-slate-700"
           }`}
         >
           Crear cuenta
         </button>
       </div>
       <div>
-        <label htmlFor="email" className="mb-1 block text-sm text-slate-600 dark:text-slate-300">
+        <label htmlFor="email" className="mb-1 block text-sm text-slate-600 dark:text-slate-700">
           Correo electrónico
         </label>
         <input
@@ -221,11 +221,11 @@ export function IngresarForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-300 dark:bg-slate-200 dark:text-slate-900"
         />
       </div>
       <div>
-        <label htmlFor="password" className="mb-1 block text-sm text-slate-600 dark:text-slate-300">
+        <label htmlFor="password" className="mb-1 block text-sm text-slate-600 dark:text-slate-700">
           Contraseña
         </label>
         <input
@@ -237,11 +237,11 @@ export function IngresarForm() {
           minLength={6}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-300 dark:bg-slate-200 dark:text-slate-900"
         />
       </div>
       <div>
-        <label htmlFor="humanCheck" className="mb-1 block text-sm text-slate-600 dark:text-slate-300">
+        <label htmlFor="humanCheck" className="mb-1 block text-sm text-slate-600 dark:text-slate-700">
           Control de seguridad: {humanA ?? "?"} + {humanB ?? "?"}
         </label>
         <input
@@ -251,7 +251,7 @@ export function IngresarForm() {
           required
           value={humanCheck}
           onChange={(e) => setHumanCheck(e.target.value.replace(/\D/g, ""))}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-300 dark:bg-slate-200 dark:text-slate-900"
           placeholder="Resultado de la suma"
         />
         <p className="mt-1 text-[11px] text-slate-500">
@@ -280,12 +280,12 @@ export function IngresarForm() {
         />
       )}
       {notice && (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-100">
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-50 dark:text-emerald-800">
           {notice}
         </p>
       )}
       {error && (
-        <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-800/60 dark:bg-rose-950/40 dark:text-rose-100">
+        <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900 dark:border-rose-800/60 dark:bg-rose-50 dark:text-rose-800">
           {error}
         </p>
       )}
@@ -293,7 +293,7 @@ export function IngresarForm() {
         <button
           type="button"
           onClick={() => void onForgotPassword()}
-          className="text-sm text-sky-600 underline-offset-4 hover:underline dark:text-sky-400"
+          className="text-sm text-sky-600 underline-offset-4 hover:underline dark:text-sky-700"
         >
           Olvidé mi contraseña
         </button>
@@ -312,7 +312,7 @@ export function IngresarForm() {
               : "Crear y entrar"}
       </button>
       <p className="text-center text-sm text-slate-500">
-        <Link href="/" className="text-sky-600 hover:underline dark:text-sky-400">
+        <Link href="/" className="text-sky-600 hover:underline dark:text-sky-700">
           Volver a {appConfig.name}
         </Link>
       </p>

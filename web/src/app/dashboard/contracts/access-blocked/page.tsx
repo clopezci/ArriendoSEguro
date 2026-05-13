@@ -27,11 +27,11 @@ export default function AccessBlockedNoPlusPage() {
   }
 
   return (
-    <section className="mx-auto max-w-2xl rounded-2xl border border-amber-500/50 bg-amber-900/20 p-6 text-center shadow-[0_10px_24px_rgba(245,158,11,0.2)]">
-      <h1 className="text-xl font-semibold text-amber-200">
+    <section className="mx-auto max-w-2xl rounded-2xl border border-amber-300 bg-amber-900/20 p-6 text-center shadow-[0_10px_24px_rgba(245,158,11,0.2)]">
+      <h1 className="text-xl font-semibold text-amber-800">
         Para crear un contrato real debes activar el Plan Plus.
       </h1>
-      <p className="mt-2 text-amber-100/90">
+      <p className="mt-2 text-amber-800">
         El plan demo es gratuito para explorar la plataforma, pero no habilita contratos reales.
       </p>
       <div className="mt-4 flex flex-wrap justify-center gap-3">
@@ -44,13 +44,13 @@ export default function AccessBlockedNoPlusPage() {
         <button
           type="button"
           onClick={startDemo}
-          className="rounded-lg border border-violet-400 px-4 py-2 text-sm font-medium text-violet-200"
+          className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700"
         >
           Probar demo
         </button>
       </div>
-      {msg && <p className="mt-3 text-sm text-emerald-200">{msg}</p>}
-      {error && <p className="mt-3 text-sm text-rose-200">{error}</p>}
+      {msg && <p className="mt-3 text-sm text-emerald-700">{msg}</p>}
+      {error && <p className="mt-3 text-sm text-rose-700">{error}</p>}
     </section>
   );
 }

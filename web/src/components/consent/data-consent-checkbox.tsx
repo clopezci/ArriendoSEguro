@@ -31,16 +31,16 @@ export function DataConsentCheckbox({
 
   const isDark = variant === "dark";
   const containerCls = isDark
-    ? "rounded-lg border border-slate-700 bg-slate-900/40 p-3 text-sm text-slate-200"
-    : "rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 dark:border-slate-600 dark:bg-slate-800/40 dark:text-slate-200";
+    ? "rounded-lg border border-slate-300 bg-white/90 p-3 text-sm text-slate-800"
+    : "rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 dark:border-slate-300 dark:bg-slate-200/60 dark:text-slate-800";
   const invalidCls = invalid
     ? isDark
       ? "border-rose-500 ring-1 ring-rose-500"
       : "border-rose-500 ring-1 ring-rose-500"
     : "";
   const linkCls = isDark
-    ? "text-violet-300 underline-offset-4 hover:underline"
-    : "text-sky-600 underline-offset-4 hover:underline dark:text-sky-400";
+    ? "text-violet-700 underline-offset-4 hover:underline"
+    : "text-sky-600 underline-offset-4 hover:underline dark:text-sky-700";
 
   return (
     <div className={`${containerCls} ${invalidCls}`}>
@@ -70,7 +70,7 @@ export function DataConsentCheckbox({
       </label>
       <p
         className={`mt-1.5 pl-8 text-[11px] ${
-          isDark ? "text-slate-400" : "text-slate-500"
+          isDark ? "text-slate-600" : "text-slate-500"
         }`}
       >
         Versión {text.version} · Publicado {text.publishedAt}

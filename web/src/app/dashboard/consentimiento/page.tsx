@@ -72,7 +72,7 @@ export default function ConsentimientoPage() {
   }, [accepted, user, router, redirectTo]);
 
   if (loading) {
-    return <p className="text-sm text-slate-300">Cargando…</p>;
+    return <p className="text-sm text-slate-700">Cargando…</p>;
   }
   if (!user) {
     return null;
@@ -81,20 +81,20 @@ export default function ConsentimientoPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-5 p-4 sm:p-6">
       <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-300">
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">
           Tratamiento de datos personales
         </p>
-        <h1 className="text-xl font-bold text-slate-100 sm:text-2xl">
+        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
           Antes de crear tu contrato
         </h1>
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-slate-700">
           Necesitamos tu autorización expresa para tratar tus datos personales conforme a la{" "}
           <strong>Ley 1581 de 2012</strong> y al{" "}
           <Link
             href="/legal/aviso-privacidad"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-violet-300 underline-offset-4 hover:underline"
+            className="text-violet-700 underline-offset-4 hover:underline"
           >
             Aviso de privacidad
           </Link>
@@ -102,11 +102,11 @@ export default function ConsentimientoPage() {
         </p>
       </header>
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 text-sm leading-relaxed text-slate-200 shadow-[0_10px_24px_rgba(139,92,246,0.18)] sm:p-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-violet-300">
+      <section className="rounded-2xl border border-slate-300 bg-white/95 p-4 text-sm leading-relaxed text-slate-800 shadow-[0_10px_24px_rgba(139,92,246,0.18)] sm:p-5">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-violet-700">
           Versión {text.version}
         </h2>
-        <p className="mt-1 text-xs text-slate-400">Publicado {text.publishedAt}</p>
+        <p className="mt-1 text-xs text-slate-600">Publicado {text.publishedAt}</p>
         <div className="mt-4 space-y-3 whitespace-pre-line">
           {text.fullText}
         </div>
@@ -125,7 +125,7 @@ export default function ConsentimientoPage() {
 
       {error && (
         <p
-          className="rounded-lg border border-rose-500/50 bg-rose-900/30 px-3 py-2 text-sm text-rose-200"
+          className="rounded-lg border border-rose-500/50 bg-rose-900/30 px-3 py-2 text-sm text-rose-700"
           role="alert"
         >
           {error}
@@ -135,7 +135,7 @@ export default function ConsentimientoPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <Link
           href="/dashboard"
-          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:border-slate-500"
+          className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-800 hover:border-slate-500"
         >
           No deseo aceptar
         </Link>

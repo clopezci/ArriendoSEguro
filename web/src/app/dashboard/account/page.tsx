@@ -65,13 +65,13 @@ export default function AccountPage() {
   return (
     <section className="space-y-6">
       <header className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-300">Área personal</p>
-        <h1 className="text-2xl font-bold text-white">Mi cuenta y seguridad</h1>
-        <p className="text-sm text-slate-400">Aquí puedes revisar tu plan y gestionar opciones de acceso.</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Área personal</p>
+        <h1 className="text-2xl font-bold text-slate-900">Mi cuenta y seguridad</h1>
+        <p className="text-sm text-slate-600">Aquí puedes revisar tu plan y gestionar opciones de acceso.</p>
       </header>
 
-      <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-        <h2 className="text-lg font-semibold text-white">Datos de cuenta</h2>
+      <article className="rounded-2xl border border-slate-300 bg-white/95 p-5">
+        <h2 className="text-lg font-semibold text-slate-900">Datos de cuenta</h2>
         <dl className="mt-3 grid gap-3 sm:grid-cols-2">
           <Item label="Correo">{user?.email ?? "—"}</Item>
           <Item label="UID">{user?.uid ?? "—"}</Item>
@@ -82,26 +82,26 @@ export default function AccountPage() {
         </dl>
       </article>
 
-      <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-        <h2 className="text-lg font-semibold text-white">Seguridad</h2>
-        <div className="mt-3 space-y-3 text-sm text-slate-300">
+      <article className="rounded-2xl border border-slate-300 bg-white/95 p-5">
+        <h2 className="text-lg font-semibold text-slate-900">Seguridad</h2>
+        <div className="mt-3 space-y-3 text-sm text-slate-700">
           <p>
-            Contraseña actual: <strong className="text-slate-100">oculta por seguridad</strong>
+            Contraseña actual: <strong className="text-slate-900">oculta por seguridad</strong>
           </p>
           <button
             type="button"
             onClick={() => void onSendReset()}
             disabled={sending || !user?.email}
-            className="rounded-lg border border-slate-600 px-3 py-2 text-sm hover:border-violet-400 disabled:opacity-50"
+            className="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:border-violet-500 disabled:opacity-50"
           >
             {sending ? "Enviando…" : "Cambiar contraseña (enlace por correo)"}
           </button>
-          {msg && <p className="text-emerald-300">{msg}</p>}
-          {err && <p className="text-rose-300">{err}</p>}
-          <div className="rounded-lg border border-slate-700 bg-slate-950/40 p-3">
-            <p className="font-medium text-slate-100">Verificación en dos pasos (MFA)</p>
-            <p className="mt-1 text-slate-400">
-              Factores inscritos actualmente: <strong className="text-slate-200">{factors.length}</strong>
+          {msg && <p className="text-emerald-700">{msg}</p>}
+          {err && <p className="text-rose-700">{err}</p>}
+          <div className="rounded-lg border border-slate-300 bg-slate-100/60 p-3">
+            <p className="font-medium text-slate-900">Verificación en dos pasos (MFA)</p>
+            <p className="mt-1 text-slate-600">
+              Factores inscritos actualmente: <strong className="text-slate-800">{factors.length}</strong>
             </p>
             <p className="mt-1 text-xs text-slate-500">
               Si tu proyecto Firebase habilita MFA, aquí verás factores activos. Para habilitación operativa completa
@@ -111,9 +111,9 @@ export default function AccountPage() {
         </div>
       </article>
 
-      <article className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-        <h2 className="text-lg font-semibold text-white">Estado de acceso</h2>
-        <div className="mt-3 text-sm text-slate-300">
+      <article className="rounded-2xl border border-slate-300 bg-white/95 p-5">
+        <h2 className="text-lg font-semibold text-slate-900">Estado de acceso</h2>
+        <div className="mt-3 text-sm text-slate-700">
           {!ent ? (
             <p>Cargando…</p>
           ) : (
@@ -129,7 +129,7 @@ export default function AccountPage() {
             </ul>
           )}
         </div>
-        <Link href="/dashboard/plans" className="mt-3 inline-block text-sm text-violet-300 hover:underline">
+        <Link href="/dashboard/plans" className="mt-3 inline-block text-sm text-violet-700 hover:underline">
           Ver o cambiar plan
         </Link>
       </article>
@@ -139,9 +139,9 @@ export default function AccountPage() {
 
 function Item({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+    <div className="rounded-lg border border-slate-300 bg-slate-100/60 p-3">
       <dt className="text-[11px] uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className="mt-1 break-all text-sm text-slate-100">{children}</dd>
+      <dd className="mt-1 break-all text-sm text-slate-900">{children}</dd>
     </div>
   );
 }

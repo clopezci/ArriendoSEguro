@@ -36,7 +36,7 @@ export default function SpecialClausesStepPage() {
   );
 
   if (state !== "ready" || !draft) {
-    return <p className="text-sm text-slate-300">Cargando…</p>;
+    return <p className="text-sm text-slate-700">Cargando…</p>;
   }
 
   function toggleClause(clauseId: string) {
@@ -103,7 +103,7 @@ export default function SpecialClausesStepPage() {
       currentStep={9}
       contractId={id}
     >
-      <p className="text-sm text-slate-300">
+      <p className="text-sm text-slate-700">
         Aquí puedes incluir <strong>cláusulas especiales</strong> para que
         queden expresamente acordadas (mascotas, parqueadero, fumadores,
         etc.). Si no necesitas ninguna, deja la opción en «No» y continúa.
@@ -111,10 +111,10 @@ export default function SpecialClausesStepPage() {
 
       <form id="wizard-form" className="mt-4 space-y-4" onSubmit={onSubmit}>
         <fieldset
-          className="rounded-xl border border-slate-700 bg-slate-900/60 p-4"
+          className="rounded-xl border border-slate-300 bg-white/95 p-4"
           aria-describedby="special-clauses-help"
         >
-          <legend className="px-1 text-sm font-medium text-slate-200">
+          <legend className="px-1 text-sm font-medium text-slate-800">
             ¿Quieres incluir cláusulas especiales en el contrato?
           </legend>
           <div className="mt-2 flex flex-wrap gap-3" role="radiogroup">
@@ -126,8 +126,8 @@ export default function SpecialClausesStepPage() {
               className={[
                 "rounded-lg border px-4 py-2 text-sm font-medium transition",
                 !enabled
-                  ? "border-violet-400 bg-violet-500/15 text-violet-100"
-                  : "border-slate-700 text-slate-200 hover:border-violet-400",
+                  ? "border-violet-500 bg-violet-100/70 text-violet-800"
+                  : "border-slate-300 text-slate-800 hover:border-violet-500",
               ].join(" ")}
             >
               No, sin cláusulas especiales
@@ -140,14 +140,14 @@ export default function SpecialClausesStepPage() {
               className={[
                 "rounded-lg border px-4 py-2 text-sm font-medium transition",
                 enabled
-                  ? "border-violet-400 bg-violet-500/15 text-violet-100"
-                  : "border-slate-700 text-slate-200 hover:border-violet-400",
+                  ? "border-violet-500 bg-violet-100/70 text-violet-800"
+                  : "border-slate-300 text-slate-800 hover:border-violet-500",
               ].join(" ")}
             >
               Sí, quiero incluir cláusulas especiales
             </button>
           </div>
-          <p id="special-clauses-help" className="mt-2 text-xs text-slate-400">
+          <p id="special-clauses-help" className="mt-2 text-xs text-slate-600">
             Si eliges «No», pasamos directamente al resumen del contrato.
           </p>
         </fieldset>
@@ -156,7 +156,7 @@ export default function SpecialClausesStepPage() {
           <>
             <div
               role="note"
-              className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-4 text-sm text-emerald-100"
+              className="rounded-lg border border-emerald-300 bg-emerald-100/60 p-4 text-sm text-emerald-800"
             >
               <p className="font-semibold">Cláusulas del catálogo — sin costo</p>
               <p className="mt-1">{SPECIAL_CLAUSES_FREE_NOTICE}</p>
@@ -165,7 +165,7 @@ export default function SpecialClausesStepPage() {
             {otherSelected && (
               <div
                 role="note"
-                className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100"
+                className="rounded-lg border border-amber-300 bg-amber-100/60 p-4 text-sm text-amber-800"
               >
                 <p className="font-semibold">
                   Aviso de costo adicional para la cláusula libre
@@ -174,8 +174,8 @@ export default function SpecialClausesStepPage() {
               </div>
             )}
 
-            <fieldset className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
-              <legend className="px-1 text-sm font-medium text-slate-200">
+            <fieldset className="rounded-xl border border-slate-300 bg-white/95 p-4">
+              <legend className="px-1 text-sm font-medium text-slate-800">
                 Selecciona las cláusulas que aplican
               </legend>
               <ul className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -187,8 +187,8 @@ export default function SpecialClausesStepPage() {
                         className={[
                           "flex h-full cursor-pointer items-start gap-2 rounded-lg border p-3 text-sm transition",
                           checked
-                            ? "border-violet-400 bg-violet-500/10 text-violet-100"
-                            : "border-slate-700 bg-slate-950/40 text-slate-200 hover:border-violet-400",
+                            ? "border-violet-500 bg-violet-100/60 text-violet-800"
+                            : "border-slate-300 bg-slate-100/60 text-slate-800 hover:border-violet-500",
                         ].join(" ")}
                       >
                         <input
@@ -199,7 +199,7 @@ export default function SpecialClausesStepPage() {
                         />
                         <span>
                           <span className="font-medium">{option.label}</span>
-                          <span className="mt-0.5 block text-xs text-slate-300">
+                          <span className="mt-0.5 block text-xs text-slate-700">
                             {option.description}
                           </span>
                         </span>
@@ -212,7 +212,7 @@ export default function SpecialClausesStepPage() {
 
             {otherSelected && (
               <label className="block">
-                <span className="mb-1 block text-sm text-slate-200">
+                <span className="mb-1 block text-sm text-slate-800">
                   Describe la cláusula adicional
                 </span>
                 <textarea
@@ -221,9 +221,9 @@ export default function SpecialClausesStepPage() {
                   rows={5}
                   maxLength={SPECIAL_CLAUSE_FREE_TEXT_MAX_LENGTH}
                   placeholder="Ejemplo: el arrendatario se compromete a no realizar fiestas con música amplificada después de las 10:00 p. m. en respeto al reglamento de la propiedad horizontal."
-                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500/80"
+                  className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
                 />
-                <span className="mt-1 flex justify-between text-xs text-slate-400">
+                <span className="mt-1 flex justify-between text-xs text-slate-600">
                   <span>
                     Redacta con claridad lo que las partes quieren que quede en
                     el contrato. Evita expresiones agresivas o discriminatorias.
@@ -240,7 +240,7 @@ export default function SpecialClausesStepPage() {
         {errors.length > 0 && (
           <div
             role="alert"
-            className="rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100"
+            className="rounded-lg border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
           >
             <p className="font-semibold">Revisa lo siguiente:</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">

@@ -10,7 +10,7 @@ export default function PanelLayout({
 }>) {
   return (
     <RequireAuth>
-      <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-100 dark:text-slate-900">
         <PanelHeader />
         <div className="mx-auto max-w-4xl px-4 py-8">{children}</div>
       </div>

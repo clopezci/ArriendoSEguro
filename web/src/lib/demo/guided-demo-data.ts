@@ -48,9 +48,9 @@ export function buildDemoContractSnippet(withCodebtor: boolean): string {
     ? `<p><strong>Comparece</strong> ${demoCodebtor.fullName}, como codeudor solidario… (texto resumido de ejemplo).</p>`
     : `<p><em>Este ejemplo no incluye codeudor solidario.</em></p>`;
   return `
-<div class="guided-demo-contract-inner text-left text-[13px] leading-relaxed text-slate-200">
-  <h3 class="mb-2 text-center text-base font-semibold text-white">CONTRATO DE ARRENDAMIENTO (VISTA DEMO)</h3>
-  <p class="mb-2 text-slate-400">Entre ${demoLandlord.fullName} (EL ARRENDADOR) y ${demoTenant.fullName} (EL ARRENDATARIO)…</p>
+<div class="guided-demo-contract-inner text-left text-[13px] leading-relaxed text-slate-800">
+  <h3 class="mb-2 text-center text-base font-semibold text-slate-900">CONTRATO DE ARRENDAMIENTO (VISTA DEMO)</h3>
+  <p class="mb-2 text-slate-600">Entre ${demoLandlord.fullName} (EL ARRENDADOR) y ${demoTenant.fullName} (EL ARRENDATARIO)…</p>
   ${codebtorBlock}
   <p class="mt-2"><strong>PRIMERA. OBJETO.</strong> Inmueble urbano ubicado en ${demoProperty.address}, ${demoProperty.city}.</p>
   <p class="mt-2"><strong>TERCERA. CANON.</strong> Canon mensual de ejemplo ${demoProperty.rent}, sujeto a revisión en Plan Plus.</p>

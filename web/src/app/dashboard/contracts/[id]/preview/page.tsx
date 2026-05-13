@@ -371,11 +371,11 @@ export default function PreviewStepPage() {
     void load();
   }, [savedVersion]);
 
-  if (state !== "ready" || !activeDraft) return <p className="text-sm text-slate-300">Cargando…</p>;
+  if (state !== "ready" || !activeDraft) return <p className="text-sm text-slate-700">Cargando…</p>;
 
   return (
     <WizardShell title="Vista previa del contrato" currentStep={11} contractId={id}>
-      <p className="mb-4 rounded-lg border border-slate-700 bg-slate-900/70 p-3 text-sm text-slate-300">
+      <p className="mb-4 rounded-lg border border-slate-300 bg-white/95 p-3 text-sm text-slate-700">
         Esta es una vista previa. El contrato solo quedará listo para firma cuando ambas partes
         revisen y acepten la versión final.
       </p>
@@ -400,7 +400,7 @@ export default function PreviewStepPage() {
               : "Generar vista previa"}
         </button>
         {!previewHtml && !loadingPreview && renderErrors.length === 0 && (
-          <span className="text-xs text-slate-400">
+          <span className="text-xs text-slate-600">
             Estamos generando la primera vista previa automáticamente.
           </span>
         )}
@@ -408,7 +408,7 @@ export default function PreviewStepPage() {
       {renderErrors.length > 0 && (
         <div
           role="alert"
-          className="mb-3 rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100"
+          className="mb-3 rounded-lg border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
         >
           <p className="font-semibold">Revisa estos puntos antes de continuar:</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5">
@@ -419,12 +419,12 @@ export default function PreviewStepPage() {
         </div>
       )}
       {previewHtml && (
-        <div className="max-h-[70vh] overflow-auto rounded-lg border border-slate-700 bg-white p-4 text-slate-900">
+        <div className="max-h-[70vh] overflow-auto rounded-lg border border-slate-300 bg-white p-4 text-slate-900">
           <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
         </div>
       )}
       {versionInfo && (
-        <div className="mt-3 rounded-lg border border-slate-700 bg-slate-900/70 p-3 text-xs text-slate-300">
+        <div className="mt-3 rounded-lg border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">
           <p>Hash: {versionInfo.documentHash}</p>
           <p>Versión draft: {versionInfo.versionNumber}</p>
           <p>Generado: {new Date(versionInfo.generatedAt).toLocaleString("es-CO")}</p>
@@ -433,7 +433,7 @@ export default function PreviewStepPage() {
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
           href={`/dashboard/contracts/${id}/review`}
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-violet-400"
+          className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:border-violet-500"
         >
           Volver a editar
         </Link>
@@ -460,7 +460,7 @@ export default function PreviewStepPage() {
           type="button"
           onClick={generatePdf}
           disabled={generatingPdf || !savedVersion}
-          className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-200 disabled:opacity-60"
+          className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700 disabled:opacity-60"
         >
           {generatingPdf ? "Generando PDF…" : "Generar PDF"}
         </button>
@@ -469,7 +469,7 @@ export default function PreviewStepPage() {
             href={pdfInfo.pdfUrl}
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-200"
+            className="rounded-lg border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-700"
           >
             Descargar PDF
           </a>
@@ -478,46 +478,46 @@ export default function PreviewStepPage() {
           type="button"
           onClick={startSignatureRound}
           disabled={startingSignatures || !savedVersion}
-          className="rounded-lg border border-sky-500 px-4 py-2 text-sm font-medium text-sky-200 disabled:opacity-60"
+          className="rounded-lg border border-sky-500 px-4 py-2 text-sm font-medium text-sky-800 disabled:opacity-60"
         >
           {startingSignatures ? "Iniciando firma…" : "Iniciar firma"}
         </button>
         <button
           type="button"
           disabled
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-400"
+          className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600"
           title="Próximamente"
         >
           Continuar a firma (Próximamente)
         </button>
       </div>
-      {saveMessage && <p className="mt-3 text-sm text-emerald-300">{saveMessage}</p>}
-      {contractStatus && <p className="text-xs text-slate-400">Estado contractual: {contractStatus}</p>}
+      {saveMessage && <p className="mt-3 text-sm text-emerald-700">{saveMessage}</p>}
+      {contractStatus && <p className="text-xs text-slate-600">Estado contractual: {contractStatus}</p>}
       {savedVersion && (
-        <section className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-4">
-          <h3 className="text-sm font-semibold text-slate-100">Inventario y entrega</h3>
+        <section className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4">
+          <h3 className="text-sm font-semibold text-slate-900">Inventario y entrega</h3>
           <div className="mt-2 flex flex-wrap gap-2">
             <Link
               href={`/dashboard/contracts/${id}/inventory`}
-              className="rounded border border-slate-700 px-3 py-2 text-xs text-slate-200"
+              className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-800"
             >
               Crear inventario inicial
             </Link>
             <Link
               href={`/dashboard/contracts/${id}/inventory/new?contractVersionId=${encodeURIComponent(savedVersion.contractVersionId)}`}
-              className="rounded border border-violet-500 px-3 py-2 text-xs text-violet-200"
+              className="rounded border border-violet-500 px-3 py-2 text-xs text-violet-700"
             >
               Continuar inventario
             </Link>
             <Link
               href={`/dashboard/contracts/${id}/delivery-act?contractVersionId=${encodeURIComponent(savedVersion.contractVersionId)}`}
-              className="rounded border border-sky-600 px-3 py-2 text-xs text-sky-200"
+              className="rounded border border-sky-500 px-3 py-2 text-xs text-sky-800"
             >
               Generar acta de entrega
             </Link>
             <Link
               href={`/dashboard/contracts/${id}/payments`}
-              className="rounded border border-emerald-600 px-3 py-2 text-xs text-emerald-200"
+              className="rounded border border-emerald-500 px-3 py-2 text-xs text-emerald-700"
             >
               Registro de pagos
             </Link>
@@ -525,12 +525,12 @@ export default function PreviewStepPage() {
         </section>
       )}
       {signatureRows.length > 0 && (
-        <section className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-4">
-          <h3 className="text-sm font-semibold text-slate-100">Firmas</h3>
+        <section className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4">
+          <h3 className="text-sm font-semibold text-slate-900">Firmas</h3>
           <div className="mt-2 overflow-auto">
-            <table className="min-w-full text-xs text-slate-300">
+            <table className="min-w-full text-xs text-slate-700">
               <thead>
-                <tr className="border-b border-slate-700">
+                <tr className="border-b border-slate-300">
                   <th className="px-2 py-1 text-left">Parte</th>
                   <th className="px-2 py-1 text-left">Nombre</th>
                   <th className="px-2 py-1 text-left">Email</th>
@@ -541,7 +541,7 @@ export default function PreviewStepPage() {
               </thead>
               <tbody>
                 {signatureRows.map((s, idx) => (
-                  <tr key={`${s.partyType}-${idx}`} className="border-b border-slate-800">
+                  <tr key={`${s.partyType}-${idx}`} className="border-b border-slate-300">
                     <td className="px-2 py-1">{s.partyType}</td>
                     <td className="px-2 py-1">{s.signerName ?? "-"}</td>
                     <td className="px-2 py-1">{s.signerEmail}</td>
@@ -553,22 +553,22 @@ export default function PreviewStepPage() {
               </tbody>
             </table>
           </div>
-          <p className="mt-2 text-xs text-slate-400">Reenviar enlace: TODO (siguiente iteración).</p>
+          <p className="mt-2 text-xs text-slate-600">Reenviar enlace: TODO (siguiente iteración).</p>
         </section>
       )}
       {pdfInfo && (
-        <div className="mt-3 rounded-lg border border-slate-700 bg-slate-900/70 p-3 text-xs text-slate-300">
+        <div className="mt-3 rounded-lg border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">
           <p>PDF generado: {new Date(pdfInfo.pdfGeneratedAt).toLocaleString("es-CO")}</p>
           <p>Versión: {pdfInfo.versionNumber}</p>
           <p>Hash: {pdfInfo.documentHash}</p>
         </div>
       )}
       {hasAllSigned && (
-        <section className="mt-4 rounded-lg border border-emerald-700 bg-emerald-950/30 p-4 text-sm text-emerald-200">
+        <section className="mt-4 rounded-lg border border-emerald-500 bg-emerald-50 p-4 text-sm text-emerald-700">
           <p className="font-semibold">Contrato firmado</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {evidenceAnnex?.htmlContent && (
-              <details className="rounded border border-emerald-600 px-3 py-2 text-xs">
+              <details className="rounded border border-emerald-500 px-3 py-2 text-xs">
                 <summary>Ver evidencia de firma</summary>
                 <div
                   className="mt-2 max-h-64 overflow-auto rounded bg-white p-3 text-slate-900"
@@ -600,12 +600,12 @@ export default function PreviewStepPage() {
         </section>
       )}
       {savedVersion && (
-        <section className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-4">
-          <h3 className="text-sm font-semibold text-slate-100">Anexos del contrato</h3>
+        <section className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4">
+          <h3 className="text-sm font-semibold text-slate-900">Anexos del contrato</h3>
           <div className="mt-2 overflow-auto">
-            <table className="min-w-full text-xs text-slate-300">
+            <table className="min-w-full text-xs text-slate-700">
               <thead>
-                <tr className="border-b border-slate-700">
+                <tr className="border-b border-slate-300">
                   <th className="px-2 py-1 text-left">Anexo</th>
                   <th className="px-2 py-1 text-left">Estado</th>
                   <th className="px-2 py-1 text-left">Generación</th>
@@ -632,21 +632,21 @@ export default function PreviewStepPage() {
                   };
                   const status = row?.status ?? "pendiente";
                   return (
-                    <tr key={type} className="border-b border-slate-800">
+                    <tr key={type} className="border-b border-slate-300">
                       <td className="px-2 py-1">{labelMap[type] ?? type}</td>
                       <td className="px-2 py-1">{status}</td>
                       <td className="px-2 py-1">{row?.generatedAt ? new Date(row.generatedAt).toLocaleString("es-CO") : "-"}</td>
                       <td className="px-2 py-1">
                         {row?.htmlContent ? (
                           <details>
-                            <summary className="cursor-pointer text-violet-300">Ver</summary>
+                            <summary className="cursor-pointer text-violet-700">Ver</summary>
                             <div className="mt-2 max-h-48 overflow-auto rounded bg-white p-2 text-slate-900" dangerouslySetInnerHTML={{ __html: row.htmlContent }} />
                           </details>
                         ) : (
                           <span className="text-slate-500">No aplica</span>
                         )}
                         {row?.pdfUrl && (
-                          <a href={row.pdfUrl} target="_blank" rel="noreferrer" className="ml-2 text-emerald-300">
+                          <a href={row.pdfUrl} target="_blank" rel="noreferrer" className="ml-2 text-emerald-700">
                             Descargar PDF
                           </a>
                         )}
@@ -659,7 +659,7 @@ export default function PreviewStepPage() {
           </div>
         </section>
       )}
-      <p className="mt-3 text-xs text-slate-400">
+      <p className="mt-3 text-xs text-slate-600">
         TODO: validar sesión y accessStatus en backend para ambos endpoints antes de producción.
       </p>
     </WizardShell>

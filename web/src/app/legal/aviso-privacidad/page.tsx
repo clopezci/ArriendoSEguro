@@ -11,10 +11,10 @@ export const metadata: Metadata = {
 export default function AvisoPrivacidadPage() {
   const consent = getCurrentConsentText();
   return (
-    <article className="space-y-6 text-sm leading-relaxed text-slate-300">
-      <header className="space-y-2 border-b border-slate-800 pb-6">
+    <article className="space-y-6 text-sm leading-relaxed text-slate-700">
+      <header className="space-y-2 border-b border-slate-300 pb-6">
         <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Información legal</p>
-        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">Aviso de privacidad</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Aviso de privacidad</h1>
         <p className="text-xs text-slate-500">
           Versión {consent.version} · Publicado {consent.publishedAt}
         </p>

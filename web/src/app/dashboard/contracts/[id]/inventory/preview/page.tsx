@@ -32,24 +32,24 @@ export default function InventoryPreviewPage() {
     void run();
   }, [inventoryId]);
 
-  if (state !== "ready") return <p className="text-sm text-slate-300">Cargando...</p>;
+  if (state !== "ready") return <p className="text-sm text-slate-700">Cargando...</p>;
   return (
     <WizardShell title="Reporte de inventario inicial del inmueble" currentStep={11} contractId={id}>
-      {error && <p className="mb-3 text-sm text-rose-300">{error}</p>}
+      {error && <p className="mb-3 text-sm text-rose-700">{error}</p>}
       {!html ? (
-        <p className="text-sm text-slate-300">El inventario aún no está completado.</p>
+        <p className="text-sm text-slate-700">El inventario aún no está completado.</p>
       ) : (
         <>
-          <div className="max-h-[70vh] overflow-auto rounded-lg border border-slate-700 bg-white p-4 text-slate-900">
+          <div className="max-h-[70vh] overflow-auto rounded-lg border border-slate-300 bg-white p-4 text-slate-900">
             <div dangerouslySetInnerHTML={{ __html: html }} />
           </div>
-          <p className="mt-2 text-xs text-slate-400">Hash inventario: {hash}</p>
+          <p className="mt-2 text-xs text-slate-600">Hash inventario: {hash}</p>
         </>
       )}
       <div className="mt-4 flex gap-3">
-        <Link href={`/dashboard/contracts/${id}/inventory`} className="rounded border border-slate-700 px-3 py-2 text-sm text-slate-200">Volver</Link>
+        <Link href={`/dashboard/contracts/${id}/inventory`} className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-800">Volver</Link>
         {pdfUrl && (
-          <a href={pdfUrl} target="_blank" rel="noreferrer" className="rounded border border-emerald-600 px-3 py-2 text-sm text-emerald-200">
+          <a href={pdfUrl} target="_blank" rel="noreferrer" className="rounded border border-emerald-500 px-3 py-2 text-sm text-emerald-700">
             Descargar PDF
           </a>
         )}

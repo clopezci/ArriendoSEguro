@@ -35,12 +35,12 @@ export default function InventoryHomePage() {
     void run();
   }, [id]);
 
-  if (state !== "ready") return <p className="text-sm text-slate-300">Cargando...</p>;
+  if (state !== "ready") return <p className="text-sm text-slate-700">Cargando...</p>;
 
   return (
     <WizardShell title="Inventario y entrega" currentStep={11} contractId={id}>
-      {error && <p className="mb-3 text-sm text-rose-300">{error}</p>}
-      <div className="rounded-lg border border-slate-700 bg-slate-900/70 p-4 text-sm text-slate-300">
+      {error && <p className="mb-3 text-sm text-rose-700">{error}</p>}
+      <div className="rounded-lg border border-slate-300 bg-white/95 p-4 text-sm text-slate-700">
         <p>Estado del inventario inicial: <strong>{inventoryState === "none" ? "Sin inventario" : inventoryState === "draft" ? "Inventario en borrador" : "Inventario completado"}</strong></p>
         <p className="mt-1">Estado del acta de entrega: <strong>{deliveryActGenerated ? "Acta generada" : inventoryState === "completed" ? "Lista para generar" : "Pendiente"}</strong></p>
       </div>
@@ -63,19 +63,19 @@ export default function InventoryHomePage() {
           <>
             <Link
               href={`/dashboard/contracts/${id}/inventory/new?inventoryId=${encodeURIComponent(inventoryId)}&contractVersionId=${encodeURIComponent(contractVersionId)}`}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200"
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800"
             >
               Continuar inventario
             </Link>
             <Link
               href={`/dashboard/contracts/${id}/inventory/preview?inventoryId=${encodeURIComponent(inventoryId)}`}
-              className="rounded-lg border border-emerald-600 px-4 py-2 text-sm text-emerald-200"
+              className="rounded-lg border border-emerald-500 px-4 py-2 text-sm text-emerald-700"
             >
               Ver inventario
             </Link>
             <Link
               href={`/dashboard/contracts/${id}/delivery-act?inventoryId=${encodeURIComponent(inventoryId)}&contractVersionId=${encodeURIComponent(contractVersionId)}`}
-              className="rounded-lg border border-sky-600 px-4 py-2 text-sm text-sky-200"
+              className="rounded-lg border border-sky-500 px-4 py-2 text-sm text-sky-800"
             >
               Generar acta de entrega
             </Link>

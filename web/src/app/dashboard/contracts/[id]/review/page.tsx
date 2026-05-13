@@ -25,7 +25,7 @@ export default function ReviewStepPage() {
   const { draft, state } = useDraftGuard(id);
   const router = useRouter();
 
-  if (state !== "ready" || !draft) return <p className="text-sm text-slate-300">Cargando…</p>;
+  if (state !== "ready" || !draft) return <p className="text-sm text-slate-700">Cargando…</p>;
 
   const cap = Number(draft.property.legalRentCap ?? 0);
   const rent = Number(draft.lease.monthlyRent ?? draft.property.monthlyRentProposed ?? 0);
@@ -43,8 +43,8 @@ export default function ReviewStepPage() {
     <WizardShell title="Resumen previo" currentStep={10} contractId={id}>
       <div className="grid gap-4 md:grid-cols-2">
         <Card title="Tipo de contrato">
-          <p className="text-violet-200">{contractTypeLabel}</p>
-          <p className="text-xs text-slate-400">
+          <p className="text-violet-700">{contractTypeLabel}</p>
+          <p className="text-xs text-slate-600">
             Si necesitas otra modalidad, deberás crear un nuevo expediente
             cuando esté disponible.
           </p>
@@ -73,7 +73,7 @@ export default function ReviewStepPage() {
           <p>{draft.property.address}</p>
           <p>Canon propuesto: ${rent.toLocaleString("es-CO")}</p>
           {valueUnknown ? (
-            <p className="text-amber-200">
+            <p className="text-amber-800">
               Valor comercial no informado — el arrendador asumió la
               responsabilidad expresa de no superar el 1% legal.
             </p>
@@ -103,8 +103,8 @@ export default function ReviewStepPage() {
                 SPECIAL_CLAUSE_OTHER_ID,
               ) &&
                 draft.specialClauses.freeText && (
-                  <p className="mt-2 rounded border border-slate-700 bg-slate-950/40 p-2 text-xs text-slate-300">
-                    <span className="font-semibold text-violet-200">
+                  <p className="mt-2 rounded border border-slate-300 bg-slate-100/60 p-2 text-xs text-slate-700">
+                    <span className="font-semibold text-violet-700">
                       Otra:
                     </span>{" "}
                     {draft.specialClauses.freeText}
@@ -113,12 +113,12 @@ export default function ReviewStepPage() {
               {draft.specialClauses.selected.includes(
                 SPECIAL_CLAUSE_OTHER_ID,
               ) ? (
-                <p className="mt-2 text-xs text-amber-200">
+                <p className="mt-2 text-xs text-amber-800">
                   La cláusula libre («Otra») puede tener un costo adicional;
                   las del catálogo se incluyen sin costo.
                 </p>
               ) : (
-                <p className="mt-2 text-xs text-emerald-200">
+                <p className="mt-2 text-xs text-emerald-700">
                   Las cláusulas del catálogo se incluyen automáticamente en el
                   contrato sin costo adicional.
                 </p>
@@ -137,23 +137,23 @@ export default function ReviewStepPage() {
         />
       </div>
 
-      <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/70 p-4 text-sm text-slate-300">
-        <p className="font-medium text-violet-300">Alertas legales</p>
+      <div className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4 text-sm text-slate-700">
+        <p className="font-medium text-violet-700">Alertas legales</p>
         <ul className="mt-2 list-disc space-y-1 pl-5">
           <li>No se permite depósito en dinero en este flujo de vivienda urbana.</li>
           <li>Arriendo Seguro no recauda dinero ni garantiza pagos.</li>
           {valueUnknown ? (
-            <li className="text-amber-200">
+            <li className="text-amber-800">
               El arrendador declaró desconocer el valor comercial del inmueble y aceptó
               expresamente la responsabilidad de no superar el 1% del valor real
               (Ley 820 de 2003). ArriendoSeguro no calcula el tope en este caso.
             </li>
           ) : capExceeded ? (
-            <li className="text-rose-300">
+            <li className="text-rose-700">
               El canon propuesto supera el máximo estimado. Debes editar inmueble/términos.
             </li>
           ) : (
-            <li className="text-emerald-300">Canon dentro del límite legal estimado.</li>
+            <li className="text-emerald-700">Canon dentro del límite legal estimado.</li>
           )}
         </ul>
       </div>
@@ -161,7 +161,7 @@ export default function ReviewStepPage() {
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
           href={`/dashboard/contracts/${id}/landlord`}
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-violet-400"
+          className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:border-violet-500"
         >
           Editar datos
         </Link>
@@ -181,7 +181,7 @@ export default function ReviewStepPage() {
             updateDraft(id, (d) => appendAudit(d, "contract_draft_saved"));
             alert("Borrador guardado.");
           }}
-          className="rounded-lg border border-violet-400 px-4 py-2 text-sm font-medium text-violet-200"
+          className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700"
         >
           Guardar borrador
         </button>
@@ -192,9 +192,9 @@ export default function ReviewStepPage() {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-      <h3 className="mb-2 text-sm font-semibold text-violet-300">{title}</h3>
-      <div className="space-y-1 text-sm text-slate-300">{children}</div>
+    <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
+      <h3 className="mb-2 text-sm font-semibold text-violet-700">{title}</h3>
+      <div className="space-y-1 text-sm text-slate-700">{children}</div>
     </div>
   );
 }

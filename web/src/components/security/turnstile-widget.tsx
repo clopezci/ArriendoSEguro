@@ -59,7 +59,7 @@ export function TurnstileWidget({
           window.setTimeout(tryRender, 50);
         } else {
           setLoadError(
-            "No se pudo cargar Cloudflare Turnstile (comprobá bloqueadores de scripts o la red). Igual podés iniciar sesión usando solo la suma de seguridad, salvo que tengas activado el modo estricto de Turnstile.",
+            "No se pudo cargar Cloudflare Turnstile (revisa bloqueadores de scripts o la red). De todos modos puedes iniciar sesión usando solo la suma de seguridad, salvo que tengas activado el modo estricto de Turnstile.",
           );
         }
         return;
@@ -79,7 +79,7 @@ export function TurnstileWidget({
           "expired-callback": () => onTokenRef.current(""),
           "error-callback": () => {
             setLoadError(
-              "Turnstile reportó un error (revisá que el dominio esté permitido en el panel de Cloudflare: localhost en desarrollo y tu dominio en producción).",
+              "Turnstile reportó un error (revisa que el dominio esté permitido en el panel de Cloudflare: localhost en desarrollo y tu dominio en producción).",
             );
             onTokenRef.current("");
           },
@@ -116,13 +116,13 @@ export function TurnstileWidget({
       />
       <div ref={hostRef} className="min-h-[65px]" />
       {loadError && (
-        <p className="text-[11px] text-amber-700 dark:text-amber-200/90">{loadError}</p>
+        <p className="text-[11px] text-amber-700 dark:text-amber-800">{loadError}</p>
       )}
       <p className="text-[11px] text-slate-500">
         Verificación opcional con Cloudflare Turnstile.
         {requiredForSubmit
           ? " Es obligatoria para entrar con la configuración actual."
-          : " Si aparece el recuadro y lo completás, sumamos una capa extra contra bots; si no cargó, igual podés usar la suma de arriba."}
+          : " Si aparece el recuadro y lo completas, sumamos una capa extra contra bots; si no cargó, de todos modos puedes usar la suma de arriba."}
       </p>
     </div>
   );

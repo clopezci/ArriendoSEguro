@@ -1,8 +1,18 @@
 @import "tailwindcss";
 
+/*
+ * Tema claro global de ArriendoSeguro.
+ *
+ * Decisión de producto: la aplicación se ve en modo claro independientemente
+ * de la preferencia del sistema operativo (color-scheme: light forzado).
+ * Mantenemos los tokens `--background` y `--foreground` por compatibilidad
+ * con componentes que los consumen vía Tailwind v4 (`bg-background`,
+ * `text-foreground`).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
 }
 
 @theme inline {
@@ -10,13 +20,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
@@ -29,17 +32,10 @@ body {
   width: 100%;
   max-width: 32rem;
   border-radius: 0.5rem;
-  border: 1px solid rgb(51 65 85 / 0.3);
+  border: 1px solid rgb(203 213 225); /* slate-300 */
   background: rgb(255 255 255);
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   line-height: 1.4;
-  color: rgb(15 23 42);
-}
-@media (prefers-color-scheme: dark) {
-  .input {
-    border-color: rgb(148 163 184 / 0.4);
-    background: rgb(15 23 42);
-    color: rgb(241 245 249);
-  }
+  color: rgb(15 23 42); /* slate-900 */
 }

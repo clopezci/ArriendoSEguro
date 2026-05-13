@@ -129,28 +129,28 @@ export default function MisArriendosPage() {
   return (
     <div className="space-y-8">
       <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Mis arriendos</h1>
-        <p className="max-w-3xl text-sm text-slate-400">
-          Expedientes de contrato asociados a tu cuenta. Continuá donde lo dejaste o revisá cada
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Mis arriendos</h1>
+        <p className="max-w-3xl text-sm text-slate-600">
+          Expedientes de contrato asociados a tu cuenta. Continúa donde lo dejaste o revisa cada
           parte del proceso.
         </p>
       </header>
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-[0_12px_30px_rgba(139,92,246,0.2)]">
+      <section className="rounded-2xl border border-slate-300 bg-white/95 p-6 shadow-[0_12px_30px_rgba(139,92,246,0.2)]">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-600">
               Estado de tu acceso:{" "}
-              <strong className="text-slate-200">{statusLabel(access)}</strong>
+              <strong className="text-slate-800">{statusLabel(access)}</strong>
             </p>
             {showBlocked && (
-              <p className="mt-2 text-sm text-amber-100/90">
-                Para crear expedientes necesitás Plan Plus activo o modo demo desde Planes.
+              <p className="mt-2 text-sm text-amber-800">
+                Para crear expedientes necesitas Plan Plus activo o modo demo desde Planes.
               </p>
             )}
             {access.errored && (
-              <p className="mt-2 text-sm text-rose-200">
-                No pudimos verificar tu acceso. Refrescá esta página o intentá de nuevo en unos
+              <p className="mt-2 text-sm text-rose-700">
+                No pudimos verificar tu acceso. Refresca esta página o inténtalo de nuevo en unos
                 minutos.
               </p>
             )}
@@ -159,7 +159,7 @@ export default function MisArriendosPage() {
             <button
               type="button"
               onClick={() => router.push("/dashboard/plans")}
-              className="rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-100 hover:border-violet-400"
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-900 hover:border-violet-500"
             >
               Ver planes
             </button>
@@ -175,24 +175,24 @@ export default function MisArriendosPage() {
         </div>
 
         {internal && (
-          <div className="mt-4 rounded-lg border border-amber-700/50 bg-amber-950/25 p-3 text-xs text-amber-50">
-            <p className="font-medium text-amber-100">Herramientas internas</p>
-            <p className="mt-1 text-amber-50/80">
-              Si modificás el estado del acceso desde otra pestaña (por ejemplo, activando un
-              Plan Plus de prueba en <em>Planes</em> o desde el módulo admin), refrescá acá para
+          <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-800">
+            <p className="font-medium text-amber-800">Herramientas internas</p>
+            <p className="mt-1 text-amber-700">
+              Si modificas el estado del acceso desde otra pestaña (por ejemplo, activando un
+              Plan Plus de prueba en <em>Planes</em> o desde el módulo admin), refresca aquí para
               que esta vista lo reconozca.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => refresh()}
-                className="rounded border border-amber-500/60 px-2 py-1"
+                className="rounded border border-amber-400 px-2 py-1"
               >
                 Refrescar estado de acceso
               </button>
               <Link
                 href="/dashboard/plans"
-                className="rounded border border-amber-500/60 px-2 py-1"
+                className="rounded border border-amber-400 px-2 py-1"
               >
                 Ir a Planes (Plus de prueba)
               </Link>
@@ -205,11 +205,11 @@ export default function MisArriendosPage() {
 
       <section className="space-y-4">
         {drafts.length === 0 ? (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center">
-            <p className="text-slate-300">Todavía no tenés expedientes.</p>
+          <div className="rounded-2xl border border-slate-300 bg-white/95 p-8 text-center">
+            <p className="text-slate-700">Todavía no tienes expedientes.</p>
             <p className="mt-2 text-sm text-slate-500">
-              Cuando actives Plus o demo, podés crear el primero desde el panel principal o desde
-              acá.
+              Cuando actives Plus o demo, puedes crear el primero desde el panel principal o desde
+              aquí.
             </p>
           </div>
         ) : (
@@ -224,18 +224,18 @@ export default function MisArriendosPage() {
               return (
                 <li
                   key={d.id}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/65 p-4 shadow-[0_10px_26px_rgba(0,0,0,0.25)]"
+                  className="rounded-2xl border border-slate-300 bg-white/65 p-4 shadow-[0_10px_26px_rgba(0,0,0,0.25)]"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:justify-between">
                     <div className="min-w-0 space-y-2">
-                      <p className="truncate font-medium text-slate-100">
+                      <p className="truncate font-medium text-slate-900">
                         Expediente ·{" "}
-                        <span className="font-mono text-xs text-slate-400">{d.id}</span>
+                        <span className="font-mono text-xs text-slate-600">{d.id}</span>
                       </p>
-                      <dl className="grid gap-x-6 gap-y-1 text-xs text-slate-400 sm:grid-cols-2 lg:grid-cols-3">
+                      <dl className="grid gap-x-6 gap-y-1 text-xs text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
                         <div>
                           <dt className="text-slate-500">Estado</dt>
-                          <dd className="text-slate-300">{estadoExpedienteResumen(d)}</dd>
+                          <dd className="text-slate-700">{estadoExpedienteResumen(d)}</dd>
                         </div>
                         <div>
                           <dt className="text-slate-500">Modalidad</dt>
@@ -280,19 +280,19 @@ export default function MisArriendosPage() {
                       </Link>
                       <Link
                         href={`/dashboard/contracts/${d.id}/preview`}
-                        className="inline-flex justify-center rounded-lg border border-slate-600 px-3 py-2 text-center text-sm text-slate-100 hover:border-violet-400"
+                        className="inline-flex justify-center rounded-lg border border-slate-300 px-3 py-2 text-center text-sm text-slate-900 hover:border-violet-500"
                       >
                         Ver contrato
                       </Link>
                       <Link
                         href={`/dashboard/contracts/${d.id}/inventory`}
-                        className="inline-flex justify-center rounded-lg border border-slate-600 px-3 py-2 text-center text-sm text-slate-100 hover:border-violet-400"
+                        className="inline-flex justify-center rounded-lg border border-slate-300 px-3 py-2 text-center text-sm text-slate-900 hover:border-violet-500"
                       >
                         Ver inventario
                       </Link>
                       <Link
                         href={`/dashboard/contracts/${d.id}/payments`}
-                        className="inline-flex justify-center rounded-lg border border-slate-600 px-3 py-2 text-center text-sm text-slate-100 hover:border-violet-400"
+                        className="inline-flex justify-center rounded-lg border border-slate-300 px-3 py-2 text-center text-sm text-slate-900 hover:border-violet-500"
                       >
                         Ver pagos
                       </Link>

@@ -21,21 +21,21 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (configError) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center dark:bg-slate-950">
-        <p className="max-w-md text-slate-700 dark:text-slate-200">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 text-center dark:bg-slate-100">
+        <p className="max-w-md text-slate-700 dark:text-slate-800">
           Falta la configuración de Firebase en el cliente. Añadí en{" "}
-          <code className="rounded bg-slate-200 px-1.5 py-0.5 text-sm dark:bg-slate-800">
+          <code className="rounded bg-slate-200 px-1.5 py-0.5 text-sm dark:bg-slate-200">
             web/.env.local
           </code>{" "}
           las variables{" "}
-          <code className="rounded bg-slate-200 px-1.5 py-0.5 text-sm dark:bg-slate-800">
+          <code className="rounded bg-slate-200 px-1.5 py-0.5 text-sm dark:bg-slate-200">
             NEXT_PUBLIC_FIREBASE_*
           </code>{" "}
           del proyecto (Consola de Firebase &gt; Configuración del proyecto &gt; Tus apps &gt; Web).
         </p>
         <Link
           href="/"
-          className="mt-6 text-sm font-medium text-sky-600 hover:underline dark:text-sky-400"
+          className="mt-6 text-sm font-medium text-sky-600 hover:underline dark:text-sky-700"
         >
           Volver al inicio
         </Link>
@@ -45,7 +45,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600 dark:bg-slate-950 dark:text-slate-300">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600 dark:bg-slate-100 dark:text-slate-700">
         <p className="text-sm">Cargando tu sesión…</p>
       </div>
     );

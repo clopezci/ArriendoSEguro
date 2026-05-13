@@ -84,6 +84,6 @@ export default function NewContractPage() {
     void run();
   }, [user, router]);
 
-  return <p className="text-sm text-slate-300">Creando expediente…</p>;
+  return <p className="text-sm text-slate-700">Creando expediente…</p>;
 }
 

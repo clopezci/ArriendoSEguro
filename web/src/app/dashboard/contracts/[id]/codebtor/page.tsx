@@ -60,7 +60,7 @@ export default function CodebtorStepPage() {
   }, [draft]);
 
   if (state !== "ready" || !draft) {
-    return <p className="text-sm text-slate-300">Cargando…</p>;
+    return <p className="text-sm text-slate-700">Cargando…</p>;
   }
 
   function onToggle(has: boolean) {
@@ -137,16 +137,16 @@ export default function CodebtorStepPage() {
     if (active) {
       return `${base} bg-violet-600 text-white shadow-[0_0_18px_rgba(139,92,246,0.45)]`;
     }
-    return `${base} border-2 border-violet-500/45 bg-slate-900/60 text-slate-100 hover:border-violet-300 hover:bg-slate-800`;
+    return `${base} border-2 border-violet-500 bg-white/95 text-slate-900 hover:border-violet-300 hover:bg-slate-200`;
   }
 
   return (
     <WizardShell title="Codeudor solidario" currentStep={5} contractId={id}>
       <div className="space-y-4">
-        <p className="text-sm text-slate-300">
+        <p className="text-sm text-slate-700">
           ¿El contrato tendrá codeudor solidario?
         </p>
-        <p className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 text-sm text-slate-300">
+        <p className="rounded-lg border border-slate-300 bg-white/95 p-3 text-sm text-slate-700">
           Un codeudor solidario es una persona que acepta respaldar las obligaciones del
           arrendatario dentro del contrato. Si eliges esta opción, esa persona deberá ingresar sus
           datos, aceptar el tratamiento de datos y firmar electrónicamente el contrato.
@@ -209,7 +209,7 @@ export default function CodebtorStepPage() {
           {errors.length > 0 && (
             <div
               role="alert"
-              className="sm:col-span-2 rounded-lg border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100"
+              className="sm:col-span-2 rounded-lg border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
             >
               <p className="font-semibold">Revisa estos campos antes de continuar:</p>
               <ul className="mt-1 list-disc space-y-0.5 pl-5">
@@ -231,13 +231,13 @@ export default function CodebtorStepPage() {
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <Link
           href={`/dashboard/contracts/${id}/tenant`}
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-violet-400"
+          className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:border-violet-500"
         >
           Anterior
         </Link>
 
         {decision === "pending" && (
-          <p className="text-sm text-amber-100/90">
+          <p className="text-sm text-amber-800">
             Elegí si vas a incluir un codeudor solidario para continuar.
           </p>
         )}
@@ -267,7 +267,7 @@ export default function CodebtorStepPage() {
 
 function Check({ name, label }: { name: string; label: string }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-slate-300">
+    <label className="flex items-center gap-2 text-sm text-slate-700">
       <input type="checkbox" name={name} className="h-4 w-4 rounded border-slate-500" />
       {label}
     </label>
@@ -312,11 +312,11 @@ function CodebtorEconomicSupportSection({
   const initialDocs = new Set(initial?.documentsProvided ?? []);
 
   return (
-    <div className="sm:col-span-2 rounded-xl border border-violet-500/30 bg-violet-500/5 p-4">
-      <h4 className="text-sm font-semibold text-violet-100">
+    <div className="sm:col-span-2 rounded-xl border border-violet-300 bg-violet-50 p-4">
+      <h4 className="text-sm font-semibold text-violet-800">
         Respaldo económico del codeudor (opcional)
       </h4>
-      <p className="mt-1 text-xs text-slate-300">
+      <p className="mt-1 text-xs text-slate-700">
         En Colombia es habitual pedirle al codeudor carta laboral, colilla
         de pago, certificado de libertad y tradición de un inmueble u otros
         soportes de capacidad de pago. Estos datos son <strong>informativos</strong>{" "}
@@ -326,25 +326,25 @@ function CodebtorEconomicSupportSection({
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Empresa donde labora</span>
+          <span className="mb-1 block text-slate-700">Empresa donde labora</span>
           <input
             name="supportEmployerName"
             defaultValue={initial?.employerName ?? ""}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
             placeholder="Ej. ACME S.A.S."
           />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Cargo</span>
+          <span className="mb-1 block text-slate-700">Cargo</span>
           <input
             name="supportPosition"
             defaultValue={initial?.position ?? ""}
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
             placeholder="Ej. Coordinador de operaciones"
           />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block text-slate-300">Ingreso mensual aprox. (COP)</span>
+          <span className="mb-1 block text-slate-700">Ingreso mensual aprox. (COP)</span>
           <input
             name="supportMonthlyIncome"
             type="number"
@@ -352,19 +352,19 @@ function CodebtorEconomicSupportSection({
             defaultValue={
               initial?.monthlyIncome ? String(initial.monthlyIncome) : ""
             }
-            className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
             placeholder="Ej. 4500000"
           />
         </label>
       </div>
 
       <fieldset className="mt-3">
-        <legend className="mb-1 block text-xs font-medium text-slate-300">
+        <legend className="mb-1 block text-xs font-medium text-slate-700">
           Soportes que entregó al arrendador
         </legend>
         <div className="grid gap-1 sm:grid-cols-2">
           {docOptions.map((opt) => (
-            <label key={opt.value} className="flex items-start gap-2 text-xs text-slate-200">
+            <label key={opt.value} className="flex items-start gap-2 text-xs text-slate-800">
               <input
                 type="checkbox"
                 name={`supportDoc_${opt.value}`}
@@ -378,17 +378,17 @@ function CodebtorEconomicSupportSection({
       </fieldset>
 
       <label className="mt-3 block text-sm">
-        <span className="mb-1 block text-slate-300">Notas del arrendador (opcional)</span>
+        <span className="mb-1 block text-slate-700">Notas del arrendador (opcional)</span>
         <textarea
           name="supportNotes"
           rows={2}
           defaultValue={initial?.notes ?? ""}
           placeholder="Ej. Carta laboral expedida el 12/04/2026; colilla de marzo recibida en físico."
-          className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+          className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
         />
       </label>
 
-      <label className="mt-2 flex cursor-pointer items-start gap-2 text-xs text-slate-200">
+      <label className="mt-2 flex cursor-pointer items-start gap-2 text-xs text-slate-800">
         <input
           type="checkbox"
           name="supportLandlordVerified"

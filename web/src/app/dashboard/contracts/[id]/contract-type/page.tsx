@@ -87,7 +87,7 @@ export default function ContractTypeStepPage() {
   }, [draft?.contractType]);
 
   if (state !== "ready" || !draft) {
-    return <p className="text-sm text-slate-300">Cargando…</p>;
+    return <p className="text-sm text-slate-700">Cargando…</p>;
   }
 
   function handleSelectAvailable(option: ContractTypeOption) {
@@ -118,9 +118,9 @@ export default function ContractTypeStepPage() {
       currentStep={2}
       contractId={id}
     >
-      <p className="text-sm text-slate-300">
+      <p className="text-sm text-slate-700">
         Hoy ArriendoSeguro genera el contrato de{" "}
-        <strong className="text-violet-200">vivienda urbana</strong>, que es el
+        <strong className="text-violet-700">vivienda urbana</strong>, que es el
         más común en Colombia y está cubierto por la Ley 820 de 2003. Las demás
         modalidades vienen pronto y las puedes ver acá para que sepas con qué
         más vamos a apoyarte.
@@ -148,9 +148,9 @@ export default function ContractTypeStepPage() {
                   "flex h-full w-full flex-col gap-2 rounded-xl border p-4 text-left transition",
                   option.available
                     ? isSelected
-                      ? "border-violet-400 bg-violet-500/10 text-violet-100 shadow-[0_0_18px_rgba(139,92,246,0.35)]"
-                      : "border-slate-700 bg-slate-900/60 text-slate-200 hover:border-violet-400 hover:text-violet-100"
-                    : "cursor-not-allowed border-slate-800 bg-slate-900/30 text-slate-400",
+                      ? "border-violet-500 bg-violet-100/60 text-violet-800 shadow-[0_0_18px_rgba(139,92,246,0.35)]"
+                      : "border-slate-300 bg-white/95 text-slate-800 hover:border-violet-500 hover:text-violet-800"
+                    : "cursor-not-allowed border-slate-300 bg-white/80 text-slate-600",
                 ].join(" ")}
               >
                 <span className="flex items-center justify-between">
@@ -162,14 +162,14 @@ export default function ContractTypeStepPage() {
                     className={[
                       "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
                       option.available
-                        ? "bg-emerald-500/20 text-emerald-200"
-                        : "bg-slate-700/40 text-slate-300",
+                        ? "bg-emerald-500/20 text-emerald-700"
+                        : "bg-slate-200/70 text-slate-700",
                     ].join(" ")}
                   >
                     {option.available ? "Disponible" : "Próximamente"}
                   </span>
                 </span>
-                <span className="text-xs leading-snug text-slate-300">
+                <span className="text-xs leading-snug text-slate-700">
                   {option.description}
                 </span>
               </button>
@@ -181,20 +181,20 @@ export default function ContractTypeStepPage() {
       {unavailableNotice && (
         <div
           role="alert"
-          className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100"
+          className="mt-4 rounded-lg border border-amber-300 bg-amber-100/60 p-4 text-sm text-amber-800"
         >
           <p className="font-semibold">
             {unavailableNotice.label}: próximamente disponible
           </p>
-          <p className="mt-1 text-amber-100/90">{unavailableNotice.reason}</p>
-          <p className="mt-1 text-amber-100/80">
+          <p className="mt-1 text-amber-800">{unavailableNotice.reason}</p>
+          <p className="mt-1 text-amber-700">
             Mientras tanto puedes continuar con{" "}
             <strong>vivienda urbana</strong> o salir y volver luego.
           </p>
           <button
             type="button"
             onClick={() => setUnavailableNotice(null)}
-            className="mt-2 rounded border border-amber-400/60 px-3 py-1 text-xs font-medium text-amber-100 hover:bg-amber-500/20"
+            className="mt-2 rounded border border-amber-400/60 px-3 py-1 text-xs font-medium text-amber-800 hover:bg-amber-500/20"
           >
             Entendido
           </button>
@@ -204,7 +204,7 @@ export default function ContractTypeStepPage() {
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
           href="/dashboard/leases"
-          className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-violet-400"
+          className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:border-violet-500"
         >
           Anterior
         </Link>
@@ -217,7 +217,7 @@ export default function ContractTypeStepPage() {
         </button>
       </div>
 
-      <p className="mt-3 text-xs text-slate-400">
+      <p className="mt-3 text-xs text-slate-600">
         El tipo de contrato queda registrado en el expediente con su fecha de
         selección. Si más adelante habilitamos otra modalidad y quieres usarla,
         crearás un nuevo expediente con la nueva plantilla.

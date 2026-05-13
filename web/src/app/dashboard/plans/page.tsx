@@ -142,19 +142,19 @@ export default function PlansPage() {
   return (
     <section className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Planes</h1>
-        <p className="max-w-3xl text-sm text-slate-400">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Planes</h1>
+        <p className="max-w-3xl text-sm text-slate-600">
           El cobro es solo por uso de la plataforma; no procesamos ni depositamos tu canon de arriendo.
         </p>
       </header>
 
       {internal && (
-        <div className="flex flex-wrap gap-2 rounded-lg border border-amber-700/45 bg-amber-950/30 p-3 text-xs text-amber-50">
-          <span className="font-medium text-amber-100">Interno:</span>
+        <div className="flex flex-wrap gap-2 rounded-lg border border-amber-400/45 bg-amber-50 p-3 text-xs text-amber-800">
+          <span className="font-medium text-amber-800">Interno:</span>
           <button
             type="button"
             onClick={() => void loadAccess()}
-            className="rounded border border-amber-600/50 px-2 py-1 hover:bg-amber-950/40"
+            className="rounded border border-amber-600/50 px-2 py-1 hover:bg-amber-50"
           >
             Actualizar estado
           </button>
@@ -162,7 +162,7 @@ export default function PlansPage() {
             type="button"
             onClick={() => void activateManualPlusForCurrentUser()}
             disabled={loading || !user?.email}
-            className="rounded border border-amber-600/50 px-2 py-1 hover:bg-amber-950/40"
+            className="rounded border border-amber-600/50 px-2 py-1 hover:bg-amber-50"
           >
             Activar Plan Plus de prueba
           </button>
@@ -170,18 +170,18 @@ export default function PlansPage() {
       )}
 
       {msg && (
-        <p className="rounded border border-emerald-600/40 bg-emerald-900/20 p-2 text-sm text-emerald-200">{msg}</p>
+        <p className="rounded border border-emerald-500/40 bg-emerald-900/20 p-2 text-sm text-emerald-700">{msg}</p>
       )}
       {error && (
-        <p className="rounded border border-rose-600/40 bg-rose-900/20 p-2 text-sm text-rose-200">{error}</p>
+        <p className="rounded border border-rose-600/40 bg-rose-900/20 p-2 text-sm text-rose-700">{error}</p>
       )}
 
       <div className="grid gap-6 md:grid-cols-2">
-        <article className="rounded-2xl border border-slate-800 bg-slate-900/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
-          <h2 className="text-xl font-semibold text-white">Plan Plus</h2>
-          <p className="mt-2 text-lg font-medium text-violet-300">$39.900 COP</p>
-          <p className="mt-1 text-sm text-slate-400">Pago único por expediente. Sin mensualidades.</p>
-          <ul className="mt-4 space-y-2 text-sm text-slate-300">
+        <article className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
+          <h2 className="text-xl font-semibold text-slate-900">Plan Plus</h2>
+          <p className="mt-2 text-lg font-medium text-violet-700">$39.900 COP</p>
+          <p className="mt-1 text-sm text-slate-600">Pago único por expediente. Sin mensualidades.</p>
+          <ul className="mt-4 space-y-2 text-sm text-slate-700">
             <li>Contrato de arrendamiento</li>
             <li>Opción con o sin codeudor</li>
             <li>Firma electrónica simple</li>
@@ -205,7 +205,7 @@ export default function PlansPage() {
               href={checkoutUrl}
               target="_blank"
               rel="noreferrer"
-              className="mt-3 block text-center text-sm text-sky-300 underline"
+              className="mt-3 block text-center text-sm text-sky-700 underline"
             >
               Ir al checkout seguro (externo)
             </a>
@@ -216,14 +216,14 @@ export default function PlansPage() {
                 type="button"
                 onClick={() => void mockApproveOrder()}
                 disabled={loading}
-                className="rounded border border-emerald-500 px-2 py-1 text-xs text-emerald-200"
+                className="rounded border border-emerald-500 px-2 py-1 text-xs text-emerald-700"
               >
                 Mock approve
               </button>
               <button
                 type="button"
                 onClick={() => void checkOrderStatus()}
-                className="rounded border border-slate-700 px-2 py-1 text-xs text-slate-200"
+                className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-800"
               >
                 Consultar orden
               </button>
@@ -231,24 +231,24 @@ export default function PlansPage() {
           )}
         </article>
 
-        <article className="rounded-2xl border border-slate-800 bg-slate-900/65 p-6 opacity-95 shadow-[0_10px_24px_rgba(0,0,0,0.2)]">
-          <h2 className="text-xl font-semibold text-white">Premium</h2>
+        <article className="rounded-2xl border border-slate-300 bg-white/65 p-6 opacity-95 shadow-[0_10px_24px_rgba(0,0,0,0.2)]">
+          <h2 className="text-xl font-semibold text-slate-900">Premium</h2>
           <p className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-500">Próximamente</p>
-          <p className="mt-4 text-sm text-slate-400">
+          <p className="mt-4 text-sm text-slate-600">
             Futuros aliados para seguros, garantías, cobranza, asesoría jurídica y validaciones avanzadas.
           </p>
           <button
             type="button"
             disabled
-            className="mt-8 w-full cursor-not-allowed rounded-lg border border-slate-700 px-4 py-3 text-sm text-slate-500"
+            className="mt-8 w-full cursor-not-allowed rounded-lg border border-slate-300 px-4 py-3 text-sm text-slate-500"
           >
             Próximamente
           </button>
         </article>
       </div>
 
-      <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-400">
-        <p className="font-medium text-slate-300">Tu estado actual</p>
+      <div className="rounded-xl border border-slate-300 bg-slate-100/60 p-4 text-sm text-slate-600">
+        <p className="font-medium text-slate-700">Tu estado actual</p>
         <p className="mt-1">Plan Plus activo: {entitlements?.plusActive ? "Sí" : "No"}</p>
         <p>Modo demo activo: {entitlements?.demoActive ? "Sí" : "No"}</p>
         {entitlements?.plusEntitlement && (
