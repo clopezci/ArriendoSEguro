@@ -53,11 +53,28 @@ export function ExpedienteNotesCard({
   const textareaId = useId();
   const helpId = useId();
 
+  // Re-sincronizar SOLO cuando `initialNotes` cambia "desde afuera". Si el
+  // padre vuelve a re-renderizar con el mismo valor que acabamos de guardar
+  // (caso típico: tras `handleSave` el draft global se reescribe y el padre
+  // pasa el nuevo `initialNotes`), no debemos pisar el `status="saved"` que
+  // muestra el mensaje "Anotaciones guardadas." al usuario.
   useEffect(() => {
+    if ((initialNotes ?? "") === notes) return;
     setNotes(initialNotes ?? "");
     setStatus("idle");
     setErrorMsg("");
+    // `notes` se lee del closure deliberadamente; no la incluimos en deps
+    // para evitar bucle al editar el textarea.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialNotes]);
+
+  // Ocultar el mensaje "Anotaciones guardadas." a los 3 s para que la UI
+  // no quede con un texto residual cuando el usuario sigue navegando.
+  useEffect(() => {
+    if (status !== "saved") return;
+    const t = window.setTimeout(() => setStatus("idle"), 3000);
+    return () => window.clearTimeout(t);
+  }, [status]);
 
   const remaining = useMemo(
     () => EXPEDIENTE_NOTES_MAX_LENGTH - notes.length,

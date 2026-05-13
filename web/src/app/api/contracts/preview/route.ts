@@ -6,6 +6,7 @@ import {
 import { renderResidentialLeaseContract } from "@/domain/contracts/renderResidentialLeaseContract";
 import { applyDemoWatermark } from "@/domain/contracts/demoWatermark";
 import { validateContractData } from "@/domain/contracts/validateContractData";
+import { generateDocumentHash } from "@/domain/contracts/hash";
 
 export const runtime = "nodejs";
 const MAX_JSON_BYTES = 128_000;
@@ -75,6 +76,15 @@ export async function POST(request: Request) {
 
     const rendered = renderResidentialLeaseContract(payload);
     const html = parsedReq.data.isDemo ? applyDemoWatermark(rendered.html) : rendered.html;
+    // Importante: el hash debe calcularse sobre el HTML que se envía al
+    // cliente, no sobre el HTML "limpio" pre-watermark. De lo contrario,
+    // cuando el cliente vuelva a enviar el HTML al endpoint de
+    // `save-draft-version`, el rehash del servidor no coincidirá con el
+    // hash devuelto en este preview y el guardado de la versión fallará
+    // con "Hash no coincide con el HTML recibido" en modo demo
+    // (regresión vista en producción al añadir la marca de agua).
+    const documentHash =
+      parsedReq.data.isDemo ? generateDocumentHash(html) : rendered.documentHash;
     return NextResponse.json<ContractPreviewResponse>({
       success: true,
       html,
@@ -82,7 +92,7 @@ export async function POST(request: Request) {
       contractVersionDraft: {
         versionNumber: 1,
         generatedAt: rendered.generatedAt,
-        documentHash: rendered.documentHash,
+        documentHash,
         hasSolidaryCoDebtor: payload.hasSolidaryCoDebtor,
       },
     });
