@@ -1,6 +1,7 @@
 "use client";
 
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
+import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import {
@@ -192,13 +193,27 @@ export default function CodebtorStepPage() {
               !!draft.solidaryCoDebtor.notificationAddress &&
               !draft.solidaryCoDebtor.notificationAddressParts
             }
+            oathId="codebtor_truthfulness_oath"
+            contractDraftId={id}
           />
-          <Check name="dataProcessingConsent" label="Acepto tratamiento de datos." />
-          <Check name="electronicSignatureConsent" label="Acepto firma electrónica." />
+          <CodebtorCheckWithEvidence
+            name="dataProcessingConsent"
+            label="Acepto tratamiento de datos."
+            oathId="codebtor_data_processing_consent"
+            contractDraftId={id}
+          />
+          <CodebtorCheckWithEvidence
+            name="electronicSignatureConsent"
+            label="Acepto firma electrónica."
+            oathId="codebtor_electronic_signature_consent"
+            contractDraftId={id}
+          />
           <div className="sm:col-span-2">
-            <Check
+            <CodebtorCheckWithEvidence
               name="solidaryObligationAcceptance"
               label="Acepto la obligación solidaria dentro del contrato."
+              oathId="codebtor_solidary_obligation_acceptance"
+              contractDraftId={id}
             />
           </div>
 
@@ -265,12 +280,42 @@ export default function CodebtorStepPage() {
   );
 }
 
-function Check({ name, label }: { name: string; label: string }) {
+/**
+ * Wrapper de check de aceptación del codeudor que muestra evidencia (IP,
+ * UA, fecha/hora, ubicación aproximada) debajo del control apenas el
+ * codeudor marca la casilla. Conservamos el atributo `name=` para que
+ * `wizard-state` siga leyendo el valor desde `FormData` como `on/off`.
+ */
+function CodebtorCheckWithEvidence({
+  name,
+  label,
+  oathId,
+  contractDraftId,
+}: {
+  name: string;
+  label: string;
+  oathId: string;
+  contractDraftId: string;
+}) {
+  const [checked, setChecked] = useState(false);
   return (
-    <label className="flex items-center gap-2 text-sm text-slate-700">
-      <input type="checkbox" name={name} className="h-4 w-4 rounded border-slate-500" />
-      {label}
-    </label>
+    <div>
+      <label className="flex items-center gap-2 text-sm text-slate-700">
+        <input
+          type="checkbox"
+          name={name}
+          checked={checked}
+          onChange={(e) => setChecked(e.target.checked)}
+          className="h-4 w-4 rounded border-slate-500"
+        />
+        {label}
+      </label>
+      <OathEvidenceBadge
+        active={checked}
+        oathId={oathId}
+        contractDraftId={contractDraftId}
+      />
+    </div>
   );
 }
 

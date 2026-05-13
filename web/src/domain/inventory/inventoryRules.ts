@@ -54,7 +54,43 @@ export const GUIDED_ZONE_OPTIONS = [
   "Otros",
 ] as const;
 
+/*
+ * Sugerencias de elementos a inventariar por zona. La clave debe coincidir
+ * exactamente con un valor de `GUIDED_ZONE_OPTIONS` para que el wizard pinte
+ * los chips de "agregar elemento". Si una zona no tiene una clave propia, en
+ * el wizard caemos a `FALLBACK_GUIDED_ITEMS` para que el usuario siempre vea
+ * sugerencias útiles, sin importar qué zonas marque.
+ */
 export const GUIDED_ITEMS_BY_ZONE: Record<string, string[]> = {
+  "Fachada o entrada": [
+    "Puerta principal",
+    "Cerradura",
+    "Citófono o intercomunicador",
+    "Timbre",
+    "Pintura de fachada",
+    "Buzón de correspondencia",
+    "Iluminación exterior",
+  ],
+  Sala: [
+    "Piso",
+    "Paredes",
+    "Techo",
+    "Ventanas",
+    "Puertas",
+    "Tomas eléctricas",
+    "Interruptores",
+    "Iluminación",
+    "Cortinas o persianas",
+  ],
+  Comedor: [
+    "Piso",
+    "Paredes",
+    "Techo",
+    "Ventanas",
+    "Tomas eléctricas",
+    "Iluminación",
+    "Cortinas o persianas",
+  ],
   Cocina: [
     "Mesón",
     "Lavaplatos",
@@ -71,6 +107,68 @@ export const GUIDED_ITEMS_BY_ZONE: Record<string, string[]> = {
     "Iluminación",
     "Puerta",
     "Ventana",
+  ],
+  "Habitación principal": [
+    "Puerta",
+    "Ventana",
+    "Clóset",
+    "Piso",
+    "Paredes",
+    "Techo",
+    "Tomas eléctricas",
+    "Interruptores",
+    "Iluminación",
+    "Cortinas o persianas",
+  ],
+  "Habitación secundaria": [
+    "Puerta",
+    "Ventana",
+    "Clóset",
+    "Piso",
+    "Paredes",
+    "Techo",
+    "Tomas eléctricas",
+    "Interruptores",
+    "Iluminación",
+  ],
+  "Habitación adicional": [
+    "Puerta",
+    "Ventana",
+    "Clóset",
+    "Piso",
+    "Paredes",
+    "Techo",
+    "Tomas eléctricas",
+    "Interruptores",
+    "Iluminación",
+  ],
+  "Baño principal": [
+    "Sanitario",
+    "Lavamanos",
+    "Ducha",
+    "Grifería",
+    "Espejo",
+    "Mueble",
+    "Divisiones",
+    "Piso",
+    "Paredes",
+    "Techo",
+    "Puerta",
+    "Ventana",
+    "Desagües",
+    "Iluminación",
+  ],
+  "Baño auxiliar": [
+    "Sanitario",
+    "Lavamanos",
+    "Ducha",
+    "Grifería",
+    "Espejo",
+    "Piso",
+    "Paredes",
+    "Puerta",
+    "Iluminación",
+    "Desagües",
   ],
   Baño: [
     "Sanitario",
@@ -120,6 +218,29 @@ export const GUIDED_ITEMS_BY_ZONE: Record<string, string[]> = {
     "Ventilación",
     "Medidor o calentador si aplica",
   ],
+  Patio: [
+    "Piso",
+    "Paredes",
+    "Puntos de agua",
+    "Iluminación",
+    "Drenaje",
+    "Plantas o jardín si aplica",
+  ],
+  "Balcón": [
+    "Piso",
+    "Baranda",
+    "Iluminación",
+    "Puerta o ventana de acceso",
+    "Drenaje",
+  ],
+  Terraza: [
+    "Piso",
+    "Baranda o muro",
+    "Iluminación",
+    "Punto de agua",
+    "Drenaje",
+    "Cubierta si aplica",
+  ],
   "Garaje o parqueadero": [
     "Piso",
     "Paredes",
@@ -128,5 +249,49 @@ export const GUIDED_ITEMS_BY_ZONE: Record<string, string[]> = {
     "Señalización",
     "Estado general",
   ],
+  "Cuarto útil": ["Puerta", "Cerradura", "Piso", "Paredes", "Iluminación", "Estanterías"],
+  Depósito: ["Puerta", "Cerradura", "Piso", "Paredes", "Iluminación", "Ventilación"],
+  Escaleras: ["Pasamanos", "Peldaños", "Iluminación", "Antideslizantes"],
+  Pasillos: ["Piso", "Paredes", "Techo", "Iluminación"],
+  "Zonas comunes entregadas con el inmueble": [
+    "Acceso principal del edificio",
+    "Ascensor o escaleras",
+    "Salón social",
+    "Piscina",
+    "Gimnasio",
+    "Zona BBQ",
+    "Zona de juegos",
+    "Lobby o recepción",
+  ],
+  Medidores: [
+    "Medidor de agua",
+    "Medidor de energía",
+    "Medidor de gas",
+  ],
+  "Llaves y controles": [
+    "Llave puerta principal",
+    "Llave puerta secundaria",
+    "Llave de buzón",
+    "Llave de depósito",
+    "Control de portón",
+    "Tarjeta o llavín del edificio",
+  ],
+  Otros: ["Elemento adicional"],
 };
+
+/**
+ * Lista de respaldo: si la zona no tiene una entrada explícita en
+ * `GUIDED_ITEMS_BY_ZONE`, el wizard usa estos chips para que el usuario
+ * pueda agregar elementos comunes sin quedarse sin sugerencias.
+ */
+export const FALLBACK_GUIDED_ITEMS = [
+  "Piso",
+  "Paredes",
+  "Techo",
+  "Puertas",
+  "Ventanas",
+  "Tomas eléctricas",
+  "Interruptores",
+  "Iluminación",
+];
 

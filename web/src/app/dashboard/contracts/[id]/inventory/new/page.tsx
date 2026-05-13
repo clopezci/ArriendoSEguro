@@ -4,7 +4,11 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
-import { GUIDED_ITEMS_BY_ZONE, GUIDED_ZONE_OPTIONS } from "@/domain/inventory/inventoryRules";
+import {
+  FALLBACK_GUIDED_ITEMS,
+  GUIDED_ITEMS_BY_ZONE,
+  GUIDED_ZONE_OPTIONS,
+} from "@/domain/inventory/inventoryRules";
 import type { InventorySelectedZone, InventoryZoneDetail, InventoryZoneItem } from "@/domain/inventory/types";
 import { auditEvent } from "@/features/contracts/audit";
 
@@ -156,13 +160,22 @@ export default function InventoryNewPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data?.errors?.[0]?.message ?? "No se pudo guardar zona.");
+      // Filtramos los elementos vacíos (los que el usuario agregó pero no
+      // alcanzó a nombrar). Así el guardado funciona aunque el usuario haya
+      // dejado todo en blanco: los elementos no son obligatorios.
+      const itemsToPersist = (zoneItems[zone.id] ?? [])
+        .map((item) => ({
+          ...item,
+          itemName: (item.itemName ?? "").trim(),
+        }))
+        .filter((item) => item.itemName.length > 0);
       const itemRes = await fetch("/api/inventory/save-zone-items", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           inventoryId,
           selectedZoneId: zone.id,
-          items: zoneItems[zone.id] ?? [],
+          items: itemsToPersist,
         }),
       });
       const itemData = await itemRes.json();
@@ -526,40 +539,72 @@ export default function InventoryNewPage() {
                 />
               </label>
 
-              <h4 className="mt-4 text-sm font-semibold text-slate-900">Elementos relevantes</h4>
+              <h4 className="mt-4 text-sm font-semibold text-slate-900">Elementos relevantes (opcional)</h4>
               <p className="text-xs text-slate-600">
-                Puedes agregar y editar elementos de esta zona. Sugeridos para {activeZone.zoneName}.
+                Si quieres dejar mayor detalle, agrega elementos puntuales de esta zona. Es opcional:
+                puedes guardar la zona sin elementos y avanzar.
               </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {(GUIDED_ITEMS_BY_ZONE[activeZone.zoneName] ?? []).map((it) => (
-                  <button
-                    key={it}
-                    type="button"
-                    className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-700"
-                    onClick={() => {
-                      setZoneItems((prev) => ({
-                        ...prev,
-                        [activeZone.id]: [
-                          ...(prev[activeZone.id] ?? []),
-                          {
-                            id: "",
-                            inventoryId,
-                            selectedZoneId: activeZone.id,
-                            itemName: it,
-                            conditionStatus: "good",
-                            notes: "",
-                            photoUrls: [],
-                            createdAt: "",
-                            updatedAt: "",
-                          },
-                        ],
-                      }));
-                    }}
-                  >
-                    + {it}
-                  </button>
-                ))}
-              </div>
+              {(() => {
+                const suggested =
+                  GUIDED_ITEMS_BY_ZONE[activeZone.zoneName] ?? FALLBACK_GUIDED_ITEMS;
+                return (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {suggested.map((it) => (
+                      <button
+                        key={it}
+                        type="button"
+                        className="rounded border border-slate-300 px-2 py-1 text-xs text-slate-700"
+                        onClick={() => {
+                          setZoneItems((prev) => ({
+                            ...prev,
+                            [activeZone.id]: [
+                              ...(prev[activeZone.id] ?? []),
+                              {
+                                id: "",
+                                inventoryId,
+                                selectedZoneId: activeZone.id,
+                                itemName: it,
+                                conditionStatus: "good",
+                                notes: "",
+                                photoUrls: [],
+                                createdAt: "",
+                                updatedAt: "",
+                              },
+                            ],
+                          }));
+                        }}
+                      >
+                        + {it}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className="rounded border border-violet-500 px-2 py-1 text-xs text-violet-700"
+                      onClick={() => {
+                        setZoneItems((prev) => ({
+                          ...prev,
+                          [activeZone.id]: [
+                            ...(prev[activeZone.id] ?? []),
+                            {
+                              id: "",
+                              inventoryId,
+                              selectedZoneId: activeZone.id,
+                              itemName: "",
+                              conditionStatus: "good",
+                              notes: "",
+                              photoUrls: [],
+                              createdAt: "",
+                              updatedAt: "",
+                            },
+                          ],
+                        }));
+                      }}
+                    >
+                      + Elemento personalizado
+                    </button>
+                  </div>
+                );
+              })()}
               <div className="mt-2 space-y-2">
                 {(zoneItems[activeZone.id] ?? []).map((item, idx) => (
                   <div key={`${item.itemName}-${idx}`} className="grid gap-2 rounded border border-slate-300 p-2 md:grid-cols-4">
@@ -629,37 +674,140 @@ export default function InventoryNewPage() {
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2">
-                <button type="button" onClick={() => void saveCurrentZone("prev")} className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-800">Anterior</button>
-                <button type="button" onClick={() => void saveCurrentZone("stay")} className="rounded border border-violet-500 px-3 py-2 text-xs text-violet-700">Guardar avance</button>
-                <button type="button" onClick={() => void saveCurrentZone("next")} className="rounded border border-sky-500 px-3 py-2 text-xs text-sky-800">Siguiente zona</button>
-                <button type="button" onClick={() => void skipCurrentZone()} className="rounded border border-amber-600 px-3 py-2 text-xs text-amber-800">Saltar esta zona</button>
-                <button type="button" onClick={() => void completeInventory()} className="rounded bg-violet-600 px-3 py-2 text-xs text-white">Finalizar inventario</button>
+                <button
+                  type="button"
+                  onClick={() => void saveCurrentZone("prev")}
+                  disabled={saving || currentStep === 0}
+                  className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  ← Zona anterior
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void saveCurrentZone("stay")}
+                  disabled={saving}
+                  className="rounded border border-violet-500 px-3 py-2 text-xs text-violet-700 disabled:opacity-50"
+                >
+                  Guardar avance
+                </button>
+                {currentStep < selectedZoneRows.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => void saveCurrentZone("next")}
+                    disabled={saving}
+                    className="rounded border border-sky-500 bg-sky-50 px-3 py-2 text-xs font-medium text-sky-800 disabled:opacity-50"
+                  >
+                    Guardar y continuar a la siguiente zona →
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void completeInventory()}
+                    disabled={saving}
+                    className="rounded bg-violet-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+                  >
+                    Guardar y finalizar inventario
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void skipCurrentZone()}
+                  disabled={saving}
+                  className="rounded border border-amber-600 px-3 py-2 text-xs text-amber-800 disabled:opacity-50"
+                >
+                  Saltar esta zona
+                </button>
+                {currentStep < selectedZoneRows.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={() => void completeInventory()}
+                    disabled={saving}
+                    className="rounded border border-violet-500 px-3 py-2 text-xs text-violet-700 disabled:opacity-50"
+                  >
+                    Finalizar ahora (las pendientes quedan abiertas)
+                  </button>
+                )}
               </div>
+            </div>
+          )}
+
+          {selectedZoneRows.length > 0 && (
+            <div className="mt-4 rounded border border-slate-300 bg-white/70 p-3">
+              <p className="text-xs font-semibold text-slate-700">
+                Zonas seleccionadas ({selectedZoneRows.length})
+              </p>
+              <ul className="mt-1 grid gap-1 text-xs text-slate-700 md:grid-cols-2">
+                {selectedZoneRows.map((zone, idx) => {
+                  const isActive = idx === currentStep;
+                  const status = zone.status;
+                  const dot =
+                    status === "completed"
+                      ? "bg-emerald-500"
+                      : status === "skipped"
+                        ? "bg-amber-500"
+                        : isActive
+                          ? "bg-violet-500"
+                          : "bg-slate-300";
+                  return (
+                    <li
+                      key={zone.id}
+                      className={`flex items-center gap-2 rounded px-2 py-1 ${isActive ? "bg-violet-50" : ""}`}
+                    >
+                      <span className={`inline-block h-2 w-2 rounded-full ${dot}`} />
+                      <button
+                        type="button"
+                        onClick={() => setCurrentStep(idx)}
+                        className="text-left hover:underline"
+                      >
+                        {idx + 1}. {zone.zoneName}
+                        {status === "completed" && (
+                          <span className="ml-1 text-[10px] text-emerald-700">(completada)</span>
+                        )}
+                        {status === "skipped" && (
+                          <span className="ml-1 text-[10px] text-amber-700">(omitida)</span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="mt-2 text-[10px] text-slate-500">
+                Puedes hacer clic en una zona para volver a editarla.
+              </p>
             </div>
           )}
         </>
       )}
 
       {inventoryReportHtml && (
-        <div className="mt-5 rounded border border-slate-300 p-3">
-          <h3 className="text-sm font-semibold text-slate-900">Resumen del inventario</h3>
-          <p className="text-xs text-slate-600">
+        <div className="mt-5 rounded-lg border border-emerald-400 bg-emerald-50 p-4">
+          <h3 className="text-sm font-semibold text-emerald-900">
+            Inventario inicial generado correctamente
+          </h3>
+          <p className="mt-1 text-xs text-emerald-800">
             Zonas seleccionadas: {selectedZoneRows.length} | completadas:{" "}
             {selectedZoneRows.filter((z) => z.status === "completed").length} | omitidas:{" "}
             {selectedZoneRows.filter((z) => z.status === "skipped").length}
           </p>
-          <p className="text-xs text-slate-600">
+          <p className="text-xs text-emerald-800">
             Fotos:{" "}
             {Object.values(zoneDetails).reduce((a, d) => a + (d.photoUrls?.length ?? 0), 0) +
               Object.values(zoneItems).flat().reduce((a, i) => a + (i.photoUrls?.length ?? 0), 0)}
           </p>
-          <p className="text-xs text-slate-600">Hash: {inventoryReportHash}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <p className="text-[10px] text-emerald-800/70">Hash: {inventoryReportHash}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => router.push(`/dashboard/contracts/${id}/preview`)}
+              className="rounded-lg bg-violet-600 px-4 py-2 text-xs font-medium text-white"
+            >
+              Volver al expediente del contrato
+            </button>
             <button
               type="button"
               onClick={() => void generatePdf()}
               disabled={saving}
-              className="rounded border border-emerald-500 px-3 py-2 text-xs text-emerald-700"
+              className="rounded border border-emerald-700 px-3 py-2 text-xs text-emerald-800 disabled:opacity-50"
             >
               Descargar PDF
             </button>
@@ -670,21 +818,14 @@ export default function InventoryNewPage() {
               }
               className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-800"
             >
-              Generar reporte / ver reporte
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push(`/dashboard/contracts/${id}/preview`)}
-              className="rounded border border-violet-500 px-3 py-2 text-xs text-violet-700"
-            >
-              Asociar al contrato
+              Ver reporte
             </button>
             {inventoryPdfUrl && (
               <a
                 href={inventoryPdfUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded border border-emerald-500 px-3 py-2 text-xs text-emerald-700"
+                className="rounded border border-emerald-700 px-3 py-2 text-xs text-emerald-800"
               >
                 Abrir PDF generado
               </a>
@@ -692,6 +833,22 @@ export default function InventoryNewPage() {
           </div>
         </div>
       )}
+
+      {/*
+        Botón persistente para regresar al expediente del contrato sin
+        importar en qué momento del inventario se encuentre el usuario.
+        Antes el usuario reportaba que no veía un botón claro para salir
+        del paso 2 del inventario; con esto siempre tiene cómo volver.
+      */}
+      <div className="mt-6 border-t border-slate-200 pt-3">
+        <button
+          type="button"
+          onClick={() => router.push(`/dashboard/contracts/${id}/preview`)}
+          className="rounded-lg border border-slate-300 px-4 py-2 text-xs text-slate-800 hover:border-violet-500"
+        >
+          ← Volver al expediente del contrato
+        </button>
+      </div>
 
       {inventoryId && (
         <div className="mt-5 rounded border border-slate-300 p-3">

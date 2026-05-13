@@ -73,6 +73,8 @@ export default function LandlordStepPage() {
           legacyFreeTextAddressMessage={
             !!draft.landlord.notificationAddress && !draft.landlord.notificationAddressParts
           }
+          oathId="landlord_truthfulness_oath"
+          contractDraftId={id}
         />
         {errors.length > 0 && (
           <div

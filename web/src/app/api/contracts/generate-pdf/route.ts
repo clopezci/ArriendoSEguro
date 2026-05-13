@@ -171,13 +171,16 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     auditEvent("contract_pdf_generation_failed");
-    if (process.env.NODE_ENV !== "production") {
-      console.error("contracts/generate-pdf error", error);
-    }
+    console.error("contracts/generate-pdf error", error);
+    const detail = error instanceof Error ? error.message : "";
+    const exposeDetail = process.env.NODE_ENV !== "production" && detail.length > 0;
+    const userMessage = exposeDetail
+      ? `No se pudo generar el PDF del contrato (${detail}).`
+      : "No se pudo generar el PDF del contrato. Inténtalo nuevamente; si persiste, escríbenos.";
     return NextResponse.json<GenerateContractPdfResponse>(
       {
         success: false,
-        errors: [{ field: "server", message: "No se pudo generar el PDF del contrato." }],
+        errors: [{ field: "server", message: userMessage }],
       },
       { status: 500 },
     );

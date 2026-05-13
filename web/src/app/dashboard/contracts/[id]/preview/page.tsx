@@ -96,6 +96,11 @@ export default function PreviewStepPage() {
   } | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [startingSignatures, setStartingSignatures] = useState(false);
+  const [signatureRoundMessage, setSignatureRoundMessage] = useState<{
+    tone: "info" | "warning";
+    title: string;
+    details: string[];
+  } | null>(null);
   const [signatureRows, setSignatureRows] = useState<
     Array<{
       id?: string;
@@ -106,6 +111,7 @@ export default function PreviewStepPage() {
       tokenExpiresAt?: string;
       sentAt?: string | null;
       signedAt?: string | null;
+      emailMode?: "real" | "mock" | "failed" | "skipped";
     }>
   >([]);
   const [contractStatus, setContractStatus] = useState<string>("");
@@ -290,6 +296,7 @@ export default function PreviewStepPage() {
     }
     setStartingSignatures(true);
     setRenderErrors([]);
+    setSignatureRoundMessage(null);
     try {
       const res = await fetch("/api/signatures/start", {
         method: "POST",
@@ -309,6 +316,40 @@ export default function PreviewStepPage() {
       }
       setSignatureRows(data.signatures);
       setContractStatus("signature_in_progress");
+
+      // Mostramos un mensaje claro al usuario indicando a quién se envió la
+      // invitación y en qué modo. Si el proveedor de correo aún no está
+      // configurado (modo `mock`), avisamos sin asustar para que se sepa
+      // que en producción esto sí saldrá del servidor.
+      const partyLabel: Record<string, string> = {
+        landlord: "Arrendador",
+        tenant: "Arrendatario",
+        solidaryCoDebtor: "Codeudor",
+      };
+      const details = data.signatures.map((s) => {
+        const label = partyLabel[s.partyType] ?? s.partyType;
+        const mode = s.emailMode ?? "mock";
+        const modeLabel =
+          mode === "real"
+            ? "correo enviado"
+            : mode === "mock"
+              ? "modo demo (correo no enviado todavía)"
+              : mode === "failed"
+                ? "envío de correo falló"
+                : "correo omitido";
+        return `${label} (${s.signerEmail}): ${modeLabel}.`;
+      });
+      const anyReal = data.signatures.some((s) => s.emailMode === "real");
+      const anyFailed = data.signatures.some(
+        (s) => s.emailMode === "failed" || s.emailMode === "skipped",
+      );
+      setSignatureRoundMessage({
+        tone: anyFailed || !anyReal ? "warning" : "info",
+        title: anyReal
+          ? "Iniciamos la ronda de firmas y enviamos los correos a las partes."
+          : "Iniciamos la ronda de firmas en modo demo. Cuando configures el proveedor de correo, las invitaciones se enviarán automáticamente.",
+        details,
+      });
     } catch {
       setRenderErrors([
         "No pudimos conectar con el servidor para iniciar la firma. Inténtalo nuevamente.",
@@ -523,6 +564,31 @@ export default function PreviewStepPage() {
             </Link>
           </div>
         </section>
+      )}
+      {signatureRoundMessage && (
+        <div
+          role="status"
+          className={`mt-3 rounded-lg border p-3 text-xs ${
+            signatureRoundMessage.tone === "info"
+              ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+              : "border-amber-300 bg-amber-50 text-amber-800"
+          }`}
+        >
+          <p className="font-semibold">{signatureRoundMessage.title}</p>
+          {signatureRoundMessage.details.length > 0 && (
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              {signatureRoundMessage.details.map((d, i) => (
+                <li key={i}>{d}</li>
+              ))}
+            </ul>
+          )}
+          {signatureRoundMessage.tone === "warning" && (
+            <p className="mt-2">
+              Aún no hemos configurado el proveedor de correo (Resend). Las firmas quedan registradas
+              en el expediente; pronto activaremos el envío real cuando el dominio esté listo.
+            </p>
+          )}
+        </div>
       )}
       {signatureRows.length > 0 && (
         <section className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4">

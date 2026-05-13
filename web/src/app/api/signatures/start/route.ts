@@ -122,6 +122,7 @@ export async function POST(request: Request) {
       signatureStatus: "sent";
       tokenExpiresAt: string;
       sentAt: string;
+      emailMode: "real" | "mock" | "failed" | "skipped";
     }> = [];
     const now = new Date();
 
@@ -182,6 +183,7 @@ export async function POST(request: Request) {
         signatureStatus: "sent",
         tokenExpiresAt,
         sentAt,
+        emailMode: emailResult.mode,
       });
     }
 

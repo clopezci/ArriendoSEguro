@@ -9,17 +9,35 @@ import { DOCUMENT_TYPE_OPTIONS } from "@/domain/colombia/document-validation";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 import { useMemo, useState } from "react";
 import { UrbanAddressFields } from "@/components/contracts/urban-address-fields";
+import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 
 export function PartyDataFields({
   party,
   legacyFreeTextAddressMessage,
+  oathId,
+  contractDraftId,
 }: {
   party: PartyDraft;
   /** Si hay texto viejo sin partes, invitamos a reemplazar usando el formato nuevo. */
   legacyFreeTextAddressMessage?: boolean;
+  /**
+   * Identificador del juramento para correlacionar la evidencia en
+   * auditoría. Ej: "landlord_truthfulness_oath",
+   * "tenant_truthfulness_oath", "codebtor_truthfulness_oath".
+   */
+  oathId?: string;
+  contractDraftId?: string;
 }) {
   const [docType, setDocType] = useState(
     party.documentType === "TI" ? "CC" : String(party.documentType ?? "CC"),
+  );
+
+  // Estado local del check de juramento para activar la evidencia
+  // dinámica. El valor se sigue enviando vía `name="truthfulnessOath"`
+  // para conservar la integración con `wizard-state` sin tocar el
+  // contrato existente.
+  const [oathChecked, setOathChecked] = useState<boolean>(
+    Boolean(party.truthfulnessOathAccepted),
   );
 
   const hint = useMemo(() => {
@@ -121,7 +139,8 @@ export function PartyDataFields({
             type="checkbox"
             name="truthfulnessOath"
             required
-            defaultChecked={Boolean(party.truthfulnessOathAccepted)}
+            checked={oathChecked}
+            onChange={(e) => setOathChecked(e.target.checked)}
             className="mt-0.5 h-4 w-4 accent-amber-300"
           />
           <span>
@@ -135,6 +154,11 @@ export function PartyDataFields({
             verificarla por los medios legales disponibles.
           </span>
         </label>
+        <OathEvidenceBadge
+          active={oathChecked}
+          oathId={oathId ?? "party_truthfulness_oath"}
+          contractDraftId={contractDraftId}
+        />
       </div>
     </>
   );

@@ -73,6 +73,8 @@ export default function TenantStepPage() {
           legacyFreeTextAddressMessage={
             !!draft.tenant.notificationAddress && !draft.tenant.notificationAddressParts
           }
+          oathId="tenant_truthfulness_oath"
+          contractDraftId={id}
         />
         {errors.length > 0 && (
           <div

@@ -3,6 +3,7 @@
 import { UrbanAddressFields } from "@/components/contracts/urban-address-fields";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import {
   formatColombianNotificationAddress,
   parseUrbanAddressFromForm,
@@ -48,6 +49,7 @@ export default function PropertyStepPage() {
   const [valueUnknown, setValueUnknown] = useState<boolean>(false);
   const [commercialValuePreview, setCommercialValuePreview] = useState<number>(0);
   const [ownershipOath, setOwnershipOath] = useState<boolean>(false);
+  const [noCapAccepted, setNoCapAccepted] = useState<boolean>(false);
 
   // Sincroniza el estado local con el draft cuando se carga por primera
   // vez (o cuando se navega de vuelta al paso con datos persistidos).
@@ -56,6 +58,7 @@ export default function PropertyStepPage() {
     setValueUnknown(Boolean(draft.property.commercialValueUnknown));
     setCommercialValuePreview(Number(draft.property.commercialValue ?? 0));
     setOwnershipOath(Boolean(draft.property.propertyOwnershipOath));
+    setNoCapAccepted(Boolean(draft.property.noCapAcknowledgement));
   }, [draft]);
 
   if (state !== "ready" || !draft) {
@@ -226,13 +229,19 @@ export default function PropertyStepPage() {
                 <input
                   type="checkbox"
                   name="noCapAcknowledgement"
-                  defaultChecked={Boolean(draft.property.noCapAcknowledgement)}
+                  checked={noCapAccepted}
+                  onChange={(e) => setNoCapAccepted(e.target.checked)}
                   className="mt-0.5 h-4 w-4 accent-amber-300"
                 />
                 <span className="text-amber-800">
                   Acepto expresamente esta responsabilidad y eximo a ArriendoSeguro.
                 </span>
               </label>
+              <OathEvidenceBadge
+                active={noCapAccepted}
+                oathId="property_no_cap_acknowledgement"
+                contractDraftId={id}
+              />
             </div>
           )}
         </div>
@@ -274,6 +283,11 @@ export default function PropertyStepPage() {
               económica por la veracidad de esta declaración.
             </span>
           </label>
+          <OathEvidenceBadge
+            active={ownershipOath}
+            oathId="property_ownership_oath"
+            contractDraftId={id}
+          />
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <button
               type="button"

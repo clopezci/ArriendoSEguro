@@ -1,5 +1,69 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
+/**
+ * Tabla de transliteración para caracteres que NO están en `WinAnsiEncoding`
+ * (la codificación que usan las fuentes estándar Helvetica/Times de PDF).
+ *
+ * Si dejamos pasar uno solo de estos caracteres al `page.drawText`, pdf-lib
+ * lanza un error tipo `WinAnsi cannot encode "…"` y el endpoint de
+ * generación de PDF responde con un genérico "No se pudo generar el PDF".
+ *
+ * Estos chars aparecen en la plantilla de contrato (puntos suspensivos
+ * tipográficos, comillas españolas, guion largo, etc.). Aquí los mapeamos
+ * a sus equivalentes ASCII más cercanos para que el PDF se pueda generar
+ * siempre. La copia en pantalla del contrato sigue mostrando el carácter
+ * original; el reemplazo solo aplica para el texto plano que se imprime
+ * en el PDF a través de Helvetica estándar.
+ */
+const WINANSI_REPLACEMENTS: Record<string, string> = {
+  "\u2026": "...", // …
+  "\u2014": "-", // —
+  "\u2013": "-", // –
+  "\u2212": "-", // − (signo menos)
+  "\u00AB": '"', // «
+  "\u00BB": '"', // »
+  "\u201C": '"', // “
+  "\u201D": '"', // ”
+  "\u201E": '"', // „
+  "\u2018": "'", // ‘
+  "\u2019": "'", // ’
+  "\u201A": "'", // ‚
+  "\u2022": "-", // • (viñeta)
+  "\u00B7": ".", // ·
+  "\u00A0": " ", // espacio no separable
+  "\u202F": " ", // espacio fino
+  "\u200B": "", // zero-width space
+  "\u00B4": "'", // ´
+  "\u02CB": "'", // ˋ
+  "\u2192": "->",
+  "\u2190": "<-",
+};
+
+function sanitizeForWinAnsi(input: string): string {
+  let out = "";
+  for (const ch of input) {
+    const replacement = WINANSI_REPLACEMENTS[ch];
+    if (replacement !== undefined) {
+      out += replacement;
+      continue;
+    }
+    const code = ch.codePointAt(0) ?? 0;
+    // WinAnsi cubre 0x20..0x7E (ASCII imprimible) + 0xA0..0xFF (Latin-1).
+    // Cualquier otro punto Unicode no es codificable. Lo reemplazamos por
+    // "?" para no romper el render del PDF.
+    if (code === 0x09 || code === 0x0A || code === 0x0D) {
+      out += ch;
+    } else if (code >= 0x20 && code <= 0x7e) {
+      out += ch;
+    } else if (code >= 0xa0 && code <= 0xff) {
+      out += ch;
+    } else {
+      out += "?";
+    }
+  }
+  return out;
+}
+
 function htmlToText(html: string): string {
   return html
     .replaceAll(/<style[\s\S]*?<\/style>/gi, " ")
@@ -11,6 +75,15 @@ function htmlToText(html: string): string {
     .replaceAll(/&amp;/g, "&")
     .replaceAll(/&lt;/g, "<")
     .replaceAll(/&gt;/g, ">")
+    .replaceAll(/&laquo;/g, '"')
+    .replaceAll(/&raquo;/g, '"')
+    .replaceAll(/&ldquo;/g, '"')
+    .replaceAll(/&rdquo;/g, '"')
+    .replaceAll(/&lsquo;/g, "'")
+    .replaceAll(/&rsquo;/g, "'")
+    .replaceAll(/&hellip;/g, "...")
+    .replaceAll(/&mdash;/g, "-")
+    .replaceAll(/&ndash;/g, "-")
     .replaceAll(/\s+\n/g, "\n")
     .replaceAll(/\n{3,}/g, "\n\n")
     .trim();
@@ -57,7 +130,7 @@ export async function renderContractPdfFromHtml(params: {
   const margin = 42;
   const lineHeight = 14;
 
-  const normalizedText = htmlToText(params.html);
+  const normalizedText = sanitizeForWinAnsi(htmlToText(params.html));
   const headerLines = [
     "Arriendo Seguro - Contrato de arrendamiento",
     `Contrato: ${params.contractId}`,
@@ -66,8 +139,8 @@ export async function renderContractPdfFromHtml(params: {
     `Hash documental: ${params.documentHash}`,
     `Fecha de generacion PDF: ${params.generatedAt}`,
     "",
-  ];
-  const bodyLines = wrapText(normalizedText);
+  ].map((entry) => sanitizeForWinAnsi(entry));
+  const bodyLines = wrapText(normalizedText).map((entry) => sanitizeForWinAnsi(entry));
   const lines = [...headerLines, ...bodyLines];
 
   let page = pdf.addPage([pageWidth, pageHeight]);
@@ -80,14 +153,32 @@ export async function renderContractPdfFromHtml(params: {
       y = pageHeight - margin;
     }
     const isHeader = i < headerLines.length - 1;
-    page.drawText(line, {
-      x: margin,
-      y,
-      size: isHeader ? 10 : 9,
-      font: isHeader ? fontBold : font,
-      color: rgb(0.08, 0.11, 0.15),
-      maxWidth: pageWidth - margin * 2,
-    });
+    try {
+      page.drawText(line, {
+        x: margin,
+        y,
+        size: isHeader ? 10 : 9,
+        font: isHeader ? fontBold : font,
+        color: rgb(0.08, 0.11, 0.15),
+        maxWidth: pageWidth - margin * 2,
+      });
+    } catch (drawError) {
+      // Defensa adicional: si pdf-lib aún no logra codificar la línea
+      // (p. ej. por un Unicode que escapó al sanitizador), forzamos un
+      // fallback ASCII puro para no abortar todo el PDF.
+      const ascii = line.replace(/[^\x20-\x7E]/g, "?");
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("renderContractPdfFromHtml: line fell back to ASCII", drawError);
+      }
+      page.drawText(ascii, {
+        x: margin,
+        y,
+        size: isHeader ? 10 : 9,
+        font: isHeader ? fontBold : font,
+        color: rgb(0.08, 0.11, 0.15),
+        maxWidth: pageWidth - margin * 2,
+      });
+    }
     y -= lineHeight;
   }
 
