@@ -62,16 +62,16 @@ export default function Home() {
         <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:items-start">
           <div className="flex min-h-0 flex-col gap-3 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto lg:pr-1">
             <section className="space-y-3">
-              <h1 className="text-balance text-center text-2xl font-extrabold leading-tight tracking-tight text-slate-50 sm:text-3xl lg:text-left">
+              <h1 className="text-balance text-center text-2xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-3xl lg:text-left">
                 <span className="block">¿Vas a arrendar?</span>
                 <span className="mt-0.5 block">¿Necesitas hacer tu contrato de arrendamiento?</span>
               </h1>
-              <p className="rounded-xl border border-violet-500/35 bg-violet-100/50 px-4 py-3 text-center text-base font-semibold leading-snug text-violet-800 shadow-[0_0_28px_rgba(139,92,246,0.22)] sm:text-lg sm:leading-snug lg:text-left lg:text-[1.05rem]">
+              <p className="rounded-xl border border-violet-400 bg-violet-100 px-4 py-3 text-center text-base font-semibold leading-snug text-violet-800 shadow-[0_6px_24px_rgba(139,92,246,0.18)] sm:text-lg sm:leading-snug lg:text-left lg:text-[1.05rem]">
                 Si prefieres evitar los costos de una agencia y te preocupa hacer un arriendo
                 directo sin suficiente respaldo… llegaste al lugar adecuado.
               </p>
-              <div className="space-y-2 text-center text-sm leading-snug text-slate-600 sm:text-[0.95rem] lg:text-left">
-                <p className="text-slate-700">
+              <div className="space-y-2 text-center text-sm leading-snug text-slate-700 sm:text-[0.95rem] lg:text-left">
+                <p>
                   ArriendoSeguro es una plataforma digital para arriendos en Colombia que ayuda a
                   formalizar un arrendamiento entre particulares.
                 </p>
@@ -104,16 +104,16 @@ export default function Home() {
               </span>
             </p>
 
-            <section className="space-y-2 rounded-lg border border-slate-200 bg-white/25 p-3 sm:p-3.5">
+            <section className="space-y-2 rounded-lg border border-slate-300 bg-white p-3 shadow-[0_4px_18px_rgba(15,23,42,0.06)] sm:p-3.5">
               <h2 className="text-center text-sm font-semibold text-slate-900 lg:text-left sm:text-base">
                 Ayúdanos a construir una solución útil para arrendar mejor
               </h2>
-              <p className="text-center text-[11px] leading-relaxed text-slate-500 sm:text-xs lg:text-left">
+              <p className="text-center text-[11px] leading-relaxed text-slate-600 sm:text-xs lg:text-left">
                 Estamos validando ArriendoSeguro con propietarios y arrendatarios reales. Responde
                 esta encuesta corta y ayúdanos a saber si esta solución te serviría, qué debería
                 incluir y cuánto estarías dispuesto a pagar.
               </p>
-              <p className="flex flex-wrap items-center justify-center gap-2 rounded-lg border border-violet-300 bg-violet-100/60 px-3 py-2 text-[11px] leading-snug text-violet-800 sm:text-xs lg:justify-start">
+              <p className="flex flex-wrap items-center justify-center gap-2 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-[11px] leading-snug text-violet-800 sm:text-xs lg:justify-start">
                 <span className="inline-flex items-center rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm shadow-violet-500/40">
                   ¡Cupos limitados!
                 </span>
