@@ -198,6 +198,8 @@ export async function POST(request: Request) {
       versionRef.set(
         {
           status: "ready_for_signature",
+          signingRoundStartedAt: new Date().toISOString(),
+          signingSnapshotDocumentHash: version.documentHash,
           updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true },

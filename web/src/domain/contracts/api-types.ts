@@ -188,6 +188,19 @@ export const completeSignatureRequestSchema = z.object({
   electronicSignatureAccepted: z.literal(true),
 });
 
+export const signatureRequestOtpSchema = z.object({
+  token: z.string().min(20),
+});
+
+export const signatureVerifyOtpSchema = z.object({
+  token: z.string().min(20),
+  code: z.string().regex(/^\d{6}$/, "El código debe ser de 6 dígitos."),
+});
+
+export type SignatureOtpResponse =
+  | { success: true; message?: string }
+  | { success: false; errors: { field: string; message: string }[] };
+
 export type CompleteSignatureResponse =
   | { success: true; signatureStatus: "signed"; contractStatus: string }
   | { success: false; errors: { field: string; message: string }[] };

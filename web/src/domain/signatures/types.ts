@@ -25,6 +25,15 @@ export interface SignatureRecord {
   signatureMethod: SignatureMethod;
   tokenHash: string;
   tokenExpiresAt: string;
+  /** OTP por correo (Bloque 7): hash del código vigente; se borra al validar. */
+  signatureOtpHash?: string | null;
+  signatureOtpExpiresAt?: string | null;
+  signatureOtpVerifyAttempts?: number;
+  signatureOtpLastSentAt?: string | null;
+  /** Cuando el firmante validó el OTP correctamente. */
+  otpVerifiedAt?: string | null;
+  /** Correo en el que se validó el OTP (trazabilidad). */
+  otpEmailAtVerification?: string | null;
   consentAccepted: boolean;
   consentAcceptedAt?: string;
   signedAt?: string;

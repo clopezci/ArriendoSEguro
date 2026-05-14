@@ -33,6 +33,7 @@ export async function GET(request: Request) {
       signerEmail: string;
       partyType: string;
       documentHash: string;
+      otpVerifiedAt?: string | null;
     };
     if (signature.tokenHash !== parsed.tokenHash) {
       return NextResponse.json({ success: false, errors: [{ field: "token", message: "Token inválido." }] }, { status: 422 });
@@ -69,6 +70,7 @@ export async function GET(request: Request) {
       pdfUrl: version?.pdfUrl ?? null,
       signatureStatus: nextStatus,
       tokenExpiresAt: signature.tokenExpiresAt,
+      otpVerified: Boolean(signature.otpVerifiedAt),
     });
   } catch {
     return NextResponse.json({ success: false, errors: [{ field: "server", message: "No se pudo cargar el enlace de firma." }] }, { status: 500 });

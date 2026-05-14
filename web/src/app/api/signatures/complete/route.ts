@@ -8,6 +8,7 @@ import {
 import { parseSignatureToken, isTokenExpired } from "@/domain/signatures/validateSignatureToken";
 import { canBeSigned } from "@/domain/signatures/signatureStatus";
 import { buildSignatureEvidence } from "@/domain/signatures/signatureEvidence";
+import { SIGNING_CONSENT_TEXTS, hashConsentBlock } from "@/domain/signatures/signingConsents";
 import { allRequiredSignaturesCompleted } from "@/domain/signatures/signatureRules";
 import type { SignatureRecord } from "@/domain/signatures/types";
 import { auditEvent } from "@/features/contracts/audit";
@@ -81,6 +82,22 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!signature.otpVerifiedAt) {
+      return NextResponse.json<CompleteSignatureResponse>(
+        {
+          success: false,
+          errors: [
+            {
+              field: "otp",
+              message:
+                "Primero verifica el código de seguridad de 6 dígitos que enviamos a tu correo (botón «Solicitar código» en la misma página).",
+            },
+          ],
+        },
+        { status: 422 },
+      );
+    }
+
     const signedAt = new Date().toISOString();
     const ipAddress = getClientIp(request);
     const userAgent = request.headers.get("user-agent") ?? "unknown";
@@ -90,12 +107,10 @@ export async function POST(request: Request) {
       userAgent,
       signedAt,
       method: "email_link",
-      consentTexts: {
-        contractReadingAcceptance:
-          "Declaro que he leído el contrato, entiendo su contenido y acepto firmarlo electrónicamente.",
-        electronicSignatureAcceptance:
-          "Acepto el uso de firma electrónica simple para este contrato.",
-      },
+      consentTexts: SIGNING_CONSENT_TEXTS,
+      otpVerifiedAt: signature.otpVerifiedAt,
+      otpEmail: signature.otpEmailAtVerification ?? signature.signerEmail,
+      consentBlockHash: hashConsentBlock(),
     });
 
     await signatureRef.set(

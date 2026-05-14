@@ -1,7 +1,7 @@
 # Roadmap visual — ArriendoSeguro
 
 > Tablero rápido del producto. Mantener sincronizado con la regla
-> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-05-14**.
+> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-05-14** (Bloque 7 avanzado: OTP firma).
 >
 > Convenciones:
 > - **[x]** = listo en producción o en `main`.
@@ -92,7 +92,7 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 - [x] Bloque 4 — Selector de tipo de contrato (urbano activo; otros “próximamente”).
 - [x] Bloque 5 — Cláusulas especiales (mascotas, etc.) + aviso de costo adicional.
 - [x] Bloque 6 — Estudio de crédito (link/aliado o “próximamente”).
-- [ ] Bloque 7 — Firma electrónica reforzada (OTP + evidencia ampliada + snapshot inmutable + certificado PDF).
+- [~] Bloque 7 — Firma reforzada: OTP por correo (envío + verificación), evidencia ampliada (`otpVerifiedAt`, `otpEmail`, `consentBlockHash`), UI en `/firma/[token]`, anexo HTML con Ley 527 y columnas OTP, bloqueo de ronda en `contract_versions`. Pendiente: PDF “certificado” dedicado (si aplica) y `audit_logs` persistentes para OTP.
 - [ ] Bloque 8 — Anexo de evidencia (paquete de descargas por expediente).
 - [ ] Bloque 9 — Autenticación notarial opcional (descarga + carga de PDF autenticado).
 - [ ] Bloque 10 — Módulo de novedades y solicitudes con notificación por email y trazabilidad.

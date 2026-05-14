@@ -48,8 +48,13 @@ export function renderElectronicSignatureEvidenceAnnex(input: {
 }): ContractAnnex {
   const now = new Date().toISOString();
   const rows = input.signatures
-    .map(
-      (s) => `
+    .map((s) => {
+      const ev = (s.evidenceJson ?? {}) as {
+        otpVerifiedAt?: string;
+        otpEmail?: string;
+        consentBlockHash?: string;
+      };
+      return `
       <tr>
         <td>${s.partyType}</td>
         <td>${s.signerName}</td>
@@ -57,10 +62,13 @@ export function renderElectronicSignatureEvidenceAnnex(input: {
         <td>${s.signerEmail}</td>
         <td>${s.signedAt ?? "-"}</td>
         <td>${s.signatureMethod}</td>
+        <td>${ev.otpVerifiedAt ?? "-"}</td>
+        <td>${ev.otpEmail ?? "-"}</td>
+        <td style="word-break:break-all;font-size:10px;">${ev.consentBlockHash ?? "-"}</td>
         <td>${s.ipAddress ?? "-"}</td>
         <td>${s.userAgent ?? "-"}</td>
-      </tr>`,
-    )
+      </tr>`;
+    })
     .join("");
 
   const htmlContent = `
@@ -71,6 +79,7 @@ export function renderElectronicSignatureEvidenceAnnex(input: {
       <p>Hash documental: ${input.contractVersion.documentHash}</p>
       <p>Fecha de generación del anexo: ${now}</p>
       <p>Estado final del contrato: ${input.contract.status ?? "signed"}</p>
+      <p><strong>Marco legal (orientación general):</strong> la firma electrónica y los datos de evidencia se relacionan con la Ley 527 de 1999 y normas concordantes. Este documento es generado por la plataforma ArriendoSeguro como constancia técnica; no sustituye asesoría legal ni actuación notarial.</p>
       <h2>Firmantes</h2>
       <table border="1" cellpadding="6" cellspacing="0">
         <thead>
@@ -81,17 +90,21 @@ export function renderElectronicSignatureEvidenceAnnex(input: {
             <th>Correo</th>
             <th>Fecha firma</th>
             <th>Método</th>
+            <th>OTP verificado (UTC)</th>
+            <th>Correo verif. OTP</th>
+            <th>Hash bloque consentimientos</th>
             <th>IP</th>
             <th>User-Agent</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
-      <p>Texto de aceptación:</p>
+      <p>Texto de aceptación mostrado en pantalla:</p>
       <ul>
         <li>Declaro que he leído el contrato, entiendo su contenido y acepto firmarlo electrónicamente.</li>
         <li>Acepto el uso de firma electrónica simple para este contrato.</li>
       </ul>
+      <p>Reforzamiento: verificación por código de un solo uso (OTP) enviado al correo del firmante antes de registrar la firma.</p>
     </article>
   `;
 

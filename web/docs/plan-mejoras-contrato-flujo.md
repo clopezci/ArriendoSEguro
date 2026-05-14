@@ -512,6 +512,8 @@ confirmados.
 
 ---
 
+**Bloque 7 — avance 2026-05-14:** OTP por correo (rutas `request-otp` / `verify-otp`), verificación obligatoria antes de `complete`, evidencia con hash de consentimientos y datos OTP, anexo HTML ampliado (Ley 527), `signingRoundStartedAt` en versión contractual. Pendiente: PDF certificado separado del anexo HTML si el abogado lo exige; escribir `audit_logs` en Firestore para eventos OTP (hoy `auditEvent` es consola en dev).
+
 **Bloque 1 entregado** el 2026-05-11 (commit `5222d0e`).
 **Bloques 2 y 3 entregados** el 2026-05-11 (commits `6c996cb`, `ea47792`).
 **Ajustes UX en pasos 5 y 6 + sanitización + errores en español**
@@ -532,9 +534,7 @@ y se ven en el resumen previo; aún no se imprimen en el contrato
 (eso lo activa la plantilla `AS-LEASE-2026.2` en el Bloque 11). Audit
 event `special_clauses_updated`.
 
-**Próximo paso confirmado por el usuario (2026-05-11):** seguimos en el
-orden de bloques. El usuario está validando `8e5c7f2`. Apenas dé visto
-bueno arrancamos **Bloque 4 (selector de tipo de contrato)**.
+**Próximo paso (2026-05-14):** cerrar pendientes del **Bloque 7** (PDF certificado opcional, `audit_logs` persistentes) y continuar con **Bloque 8** (anexo de evidencia / paquete de descargas).
 
 **Notas adicionales del usuario para no olvidar (2026-05-11):**
 
