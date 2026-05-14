@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { ColombianNotificationAddressParts } from "@/domain/colombia/structured-address";
 import type {
   ContractType,
+  CreditCheckSelection,
   ResidentialLeaseContractInput,
   SpecialClausesSelection,
 } from "@/domain/contracts/types";
@@ -178,6 +179,15 @@ export interface ContractDraft {
    * Bloque 3 del plan de mejoras.
    */
   expedienteNotes?: string;
+  /**
+   * Interés del arrendador en solicitar estudio de crédito para el
+   * arrendatario y/o el codeudor (Bloque 6). Opcional en borradores
+   * anteriores. Se traduce a `creditCheck` en `toContractInput`.
+   */
+  creditCheckInterest?: {
+    tenant?: boolean;
+    codebtor?: boolean;
+  };
   lastUpdatedAt: string;
   auditTrail: AuditEvent[];
 }
@@ -551,6 +561,29 @@ export function setExpedienteNotes(
   );
 }
 
+/**
+ * Construye el objeto `creditCheck` del contrato a partir del borrador.
+ * Solo incluye `CODEBTOR` en el alcance si hay codeudor solidario.
+ */
+export function deriveCreditCheckFromDraft(
+  draft: ContractDraft,
+): CreditCheckSelection | undefined {
+  const tenantInterested = Boolean(draft.creditCheckInterest?.tenant);
+  const codebtorInterested = Boolean(
+    draft.hasSolidaryCoDebtor && draft.creditCheckInterest?.codebtor,
+  );
+  if (!tenantInterested && !codebtorInterested) return undefined;
+  const scope: Array<"TENANT" | "CODEBTOR"> = [];
+  if (tenantInterested) scope.push("TENANT");
+  if (codebtorInterested) scope.push("CODEBTOR");
+  const slug = (process.env.NEXT_PUBLIC_CREDIT_STUDY_PARTNER_SLUG ?? "").trim();
+  return {
+    wantsCreditCheck: true,
+    scope,
+    partnerSlug: slug || undefined,
+  };
+}
+
 export function updateDraft(
   draftId: string,
   updater: (draft: ContractDraft) => ContractDraft,
@@ -626,6 +659,7 @@ export function toContractInput(draft: ContractDraft): ResidentialLeaseContractI
     // junto al resto de observaciones (responsabilidad de las partes
     // sobre el contenido).
     expedienteNotes: draft.expedienteNotes,
+    creditCheck: deriveCreditCheckFromDraft(draft),
     generatedAt: draft.generatedAt,
   };
 }

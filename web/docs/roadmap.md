@@ -88,7 +88,7 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 - [x] Bloque 3 — Anotaciones especiales del expediente (visibles en UI, no imprimibles).
 - [x] Bloque 4 — Selector de tipo de contrato (urbano activo; otros “próximamente”).
 - [x] Bloque 5 — Cláusulas especiales (mascotas, etc.) + aviso de costo adicional.
-- [ ] Bloque 6 — Estudio de crédito (link/aliado o “próximamente”).
+- [x] Bloque 6 — Estudio de crédito (link/aliado o “próximamente”).
 - [ ] Bloque 7 — Firma electrónica reforzada (OTP + evidencia ampliada + snapshot inmutable + certificado PDF).
 - [ ] Bloque 8 — Anexo de evidencia (paquete de descargas por expediente).
 - [ ] Bloque 9 — Autenticación notarial opcional (descarga + carga de PDF autenticado).

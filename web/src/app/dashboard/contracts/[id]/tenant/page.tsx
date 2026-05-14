@@ -1,5 +1,6 @@
 "use client";
 
+import { CreditStudyOfferBlock } from "@/components/contracts/credit-study-offer-block";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
@@ -40,6 +41,7 @@ export default function TenantStepPage() {
     }
 
     const { truthfulnessOath, ...tenantData } = parsed.data;
+    const creditStudyTenant = formData.get("creditStudyTenant") === "on";
     updateDraft(id, (d) =>
       appendAudit(
         {
@@ -49,10 +51,17 @@ export default function TenantStepPage() {
             notificationAddressParts: addrParsed.data,
             truthfulnessOathAccepted: Boolean(truthfulnessOath),
           },
+          creditCheckInterest: {
+            ...d.creditCheckInterest,
+            tenant: creditStudyTenant,
+          },
           status: "data_in_progress",
         },
         "tenant_data_saved",
-        { truthfulnessOathAccepted: Boolean(truthfulnessOath) },
+        {
+          truthfulnessOathAccepted: Boolean(truthfulnessOath),
+          creditStudyTenant,
+        },
       ),
     );
     router.push(`/dashboard/contracts/${id}/codebtor`);
@@ -75,6 +84,11 @@ export default function TenantStepPage() {
           }
           oathId="tenant_truthfulness_oath"
           contractDraftId={id}
+        />
+        <CreditStudyOfferBlock
+          formCheckboxName="creditStudyTenant"
+          defaultChecked={draft.creditCheckInterest?.tenant}
+          subjectLabel="el arrendatario"
         />
         {errors.length > 0 && (
           <div

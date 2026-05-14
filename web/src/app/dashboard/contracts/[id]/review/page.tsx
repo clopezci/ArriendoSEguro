@@ -128,6 +128,44 @@ export default function ReviewStepPage() {
             <p>Sin cláusulas especiales.</p>
           )}
         </Card>
+        <Card title="Estudio de crédito">
+          {(() => {
+            const tenantOn = Boolean(draft.creditCheckInterest?.tenant);
+            const codeOn = Boolean(
+              draft.hasSolidaryCoDebtor && draft.creditCheckInterest?.codebtor,
+            );
+            if (!tenantOn && !codeOn) {
+              return (
+                <p>
+                  No marcaste interés en estudio de crédito. Puedes volver a los pasos de
+                  arrendatario o codeudor si quieres registrarlo antes de la vista previa.
+                </p>
+              );
+            }
+            return (
+              <>
+                <ul className="list-disc space-y-1 pl-4">
+                  {tenantOn && (
+                    <li>
+                      <strong>Arrendatario:</strong> quedó registrado que deseas complementar con
+                      estudio de crédito (lo gestionas con un aliado externo).
+                    </li>
+                  )}
+                  {codeOn && (
+                    <li>
+                      <strong>Codeudor solidario:</strong> mismo registro; el proveedor define costos
+                      y tiempos.
+                    </li>
+                  )}
+                </ul>
+                <p className="mt-2 text-xs text-slate-600">
+                  Esto no bloquea la generación del contrato ni sustituye la debida diligencia que
+                  definas con tu contraparte.
+                </p>
+              </>
+            );
+          })()}
+        </Card>
       </div>
 
       <div className="mt-4">

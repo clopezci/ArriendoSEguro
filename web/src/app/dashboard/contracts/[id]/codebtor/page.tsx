@@ -1,5 +1,6 @@
 "use client";
 
+import { CreditStudyOfferBlock } from "@/components/contracts/credit-study-offer-block";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
@@ -66,9 +67,19 @@ export default function CodebtorStepPage() {
 
   function onToggle(has: boolean) {
     updateDraft(id, (d) =>
-      appendAudit({ ...d, hasSolidaryCoDebtor: has }, "codebtor_option_selected", {
-        hasCodebtor: has,
-      }),
+      appendAudit(
+        {
+          ...d,
+          hasSolidaryCoDebtor: has,
+          creditCheckInterest: has
+            ? d.creditCheckInterest
+            : { ...d.creditCheckInterest, codebtor: false },
+        },
+        "codebtor_option_selected",
+        {
+          hasCodebtor: has,
+        },
+      ),
     );
     setDecision(has ? "yes" : "no");
     setErrors([]);
@@ -96,6 +107,7 @@ export default function CodebtorStepPage() {
     }
 
     const economicSupport = sanitizeCodebtorEconomicSupportFromForm(formData);
+    const creditStudyCodebtor = formData.get("creditStudyCodebtor") === "on";
     updateDraft(id, (d) =>
       appendAudit(
         {
@@ -117,11 +129,16 @@ export default function CodebtorStepPage() {
             electronicSignatureConsent: true,
             solidaryObligationAcceptance: true,
           },
+          creditCheckInterest: {
+            ...d.creditCheckInterest,
+            codebtor: creditStudyCodebtor,
+          },
         },
         "codebtor_data_saved",
         {
           truthfulnessOathAccepted: Boolean(parsed.data.truthfulnessOath),
           hasEconomicSupport: Boolean(economicSupport),
+          creditStudyCodebtor,
         },
       ),
     );
@@ -221,6 +238,12 @@ export default function CodebtorStepPage() {
             initial={draft.solidaryCoDebtor.economicSupport}
           />
 
+          <CreditStudyOfferBlock
+            formCheckboxName="creditStudyCodebtor"
+            defaultChecked={draft.creditCheckInterest?.codebtor}
+            subjectLabel="el codeudor solidario"
+          />
+
           {errors.length > 0 && (
             <div
               role="alert"
@@ -253,7 +276,7 @@ export default function CodebtorStepPage() {
 
         {decision === "pending" && (
           <p className="text-sm text-amber-800">
-            Elegí si vas a incluir un codeudor solidario para continuar.
+            Elige si vas a incluir un codeudor solidario para continuar.
           </p>
         )}
 
