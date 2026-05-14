@@ -220,7 +220,7 @@ export default function SpecialClausesStepPage() {
                   onChange={(e) => setFreeText(e.target.value)}
                   rows={5}
                   maxLength={SPECIAL_CLAUSE_FREE_TEXT_MAX_LENGTH}
-                  placeholder="Ejemplo: el arrendatario se compromete a no realizar fiestas con música amplificada después de las 10:00 p. m. en respeto al reglamento de la propiedad horizontal."
+                  placeholder="Ejemplo: el arrendatario (inquilino) se compromete a no realizar fiestas con música amplificada después de las 10:00 p. m. en respeto al reglamento de la propiedad horizontal."
                   className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400"
                 />
                 <span className="mt-1 flex justify-between text-xs text-slate-600">

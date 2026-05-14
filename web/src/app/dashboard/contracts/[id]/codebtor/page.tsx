@@ -1,6 +1,6 @@
 "use client";
 
-import { CreditStudyOfferBlock } from "@/components/contracts/credit-study-offer-block";
+import { CreditHistoryGuidanceBlock } from "@/components/contracts/credit-history-guidance-block";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
@@ -71,9 +71,11 @@ export default function CodebtorStepPage() {
         {
           ...d,
           hasSolidaryCoDebtor: has,
-          creditCheckInterest: has
-            ? d.creditCheckInterest
-            : { ...d.creditCheckInterest, codebtor: false },
+          landlordCreditHistoryAttestation: has
+            ? d.landlordCreditHistoryAttestation
+            : {
+                tenantVerified: d.landlordCreditHistoryAttestation?.tenantVerified,
+              },
         },
         "codebtor_option_selected",
         {
@@ -106,8 +108,16 @@ export default function CodebtorStepPage() {
       return;
     }
 
+    const rawCodeVerify = formData.get("codebtorCreditHistoryVerified");
+    if (rawCodeVerify !== "yes" && rawCodeVerify !== "no") {
+      setErrors([
+        "Indica si verificaste o no el historial crediticio del codeudor solidario, según la orientación anterior. Es obligatorio elegir Sí o No.",
+      ]);
+      return;
+    }
+    const codebtorVerified = rawCodeVerify as "yes" | "no";
+
     const economicSupport = sanitizeCodebtorEconomicSupportFromForm(formData);
-    const creditStudyCodebtor = formData.get("creditStudyCodebtor") === "on";
     updateDraft(id, (d) =>
       appendAudit(
         {
@@ -129,16 +139,16 @@ export default function CodebtorStepPage() {
             electronicSignatureConsent: true,
             solidaryObligationAcceptance: true,
           },
-          creditCheckInterest: {
-            ...d.creditCheckInterest,
-            codebtor: creditStudyCodebtor,
+          landlordCreditHistoryAttestation: {
+            ...d.landlordCreditHistoryAttestation,
+            codebtorVerified,
           },
         },
         "codebtor_data_saved",
         {
           truthfulnessOathAccepted: Boolean(parsed.data.truthfulnessOath),
           hasEconomicSupport: Boolean(economicSupport),
-          creditStudyCodebtor,
+          codebtorCreditHistoryVerified: codebtorVerified,
         },
       ),
     );
@@ -166,8 +176,8 @@ export default function CodebtorStepPage() {
         </p>
         <p className="rounded-lg border border-slate-300 bg-white/95 p-3 text-sm text-slate-700">
           Un codeudor solidario es una persona que acepta respaldar las obligaciones del
-          arrendatario dentro del contrato. Si eliges esta opción, esa persona deberá ingresar sus
-          datos, aceptar el tratamiento de datos y firmar electrónicamente el contrato.
+          arrendatario (inquilino) dentro del contrato. Si eliges esta opción, esa persona deberá
+          ingresar sus datos, aceptar el tratamiento de datos y firmar electrónicamente el contrato.
         </p>
         <div
           className="flex flex-col gap-3 sm:flex-row"
@@ -238,10 +248,10 @@ export default function CodebtorStepPage() {
             initial={draft.solidaryCoDebtor.economicSupport}
           />
 
-          <CreditStudyOfferBlock
-            formCheckboxName="creditStudyCodebtor"
-            defaultChecked={draft.creditCheckInterest?.codebtor}
-            subjectLabel="el codeudor solidario"
+          <CreditHistoryGuidanceBlock
+            variant="codebtor"
+            verificationName="codebtorCreditHistoryVerified"
+            defaultVerified={draft.landlordCreditHistoryAttestation?.codebtorVerified}
           />
 
           {errors.length > 0 && (
@@ -345,11 +355,11 @@ function CodebtorCheckWithEvidence({
 /**
  * Bloque OPCIONAL de respaldo económico del codeudor solidario.
  *
- * En el mercado informal colombiano es común que el arrendador pida al
+ * En el mercado informal colombiano es común que el arrendador (dueño) pida al
  * codeudor carta laboral, colilla de pago y/o certificado de libertad y
  * tradición de un inmueble. ArriendoSeguro no custodia esos documentos
  * (la carga digital queda como mejora futura): solo registramos qué se
- * entregó y los datos básicos para que el arrendador pueda dejar la
+ * entregó y los datos básicos para que el arrendador (dueño) pueda dejar la
  * trazabilidad en el expediente.
  */
 function CodebtorEconomicSupportSection({
@@ -388,7 +398,7 @@ function CodebtorEconomicSupportSection({
         En Colombia es habitual pedirle al codeudor carta laboral, colilla
         de pago, certificado de libertad y tradición de un inmueble u otros
         soportes de capacidad de pago. Estos datos son <strong>informativos</strong>{" "}
-        para el arrendador y quedan en el expediente; ArriendoSeguro no
+        para el arrendador (dueño) y quedan en el expediente; ArriendoSeguro no
         custodia los documentos físicos en esta fase.
       </p>
 
@@ -428,7 +438,7 @@ function CodebtorEconomicSupportSection({
 
       <fieldset className="mt-3">
         <legend className="mb-1 block text-xs font-medium text-slate-700">
-          Soportes que entregó al arrendador
+          Soportes que entregó al arrendador (dueño)
         </legend>
         <div className="grid gap-1 sm:grid-cols-2">
           {docOptions.map((opt) => (
@@ -446,7 +456,7 @@ function CodebtorEconomicSupportSection({
       </fieldset>
 
       <label className="mt-3 block text-sm">
-        <span className="mb-1 block text-slate-700">Notas del arrendador (opcional)</span>
+        <span className="mb-1 block text-slate-700">Notas del arrendador (dueño) (opcional)</span>
         <textarea
           name="supportNotes"
           rows={2}
@@ -464,7 +474,7 @@ function CodebtorEconomicSupportSection({
           className="mt-0.5 h-4 w-4 accent-violet-500"
         />
         <span>
-          Como arrendador, declaro haber recibido y verificado los soportes
+          Como arrendador (dueño), declaro haber recibido y verificado los soportes
           marcados arriba (la verificación de autenticidad es de mi
           responsabilidad).
         </span>

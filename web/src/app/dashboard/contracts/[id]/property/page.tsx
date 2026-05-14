@@ -215,9 +215,9 @@ export default function PropertyStepPage() {
 
           {valueUnknown && (
             <div className="mt-3 rounded-lg border border-amber-300 bg-amber-100/60 p-3 text-xs leading-relaxed text-amber-800">
-              <p className="font-semibold">Declaración del arrendador</p>
+              <p className="font-semibold">Declaración del arrendador (dueño)</p>
               <p className="mt-1">
-                Como arrendador, declaro bajo mi responsabilidad que el canon mensual
+                Como arrendador (dueño del inmueble), declaro bajo mi responsabilidad que el canon mensual
                 pactado <strong>no superará el 1% del valor comercial</strong> real
                 del inmueble (Ley 820 de 2003). Acepto que si lo excede, asumo de
                 forma exclusiva las consecuencias legales y económicas, eximiendo a

@@ -31,9 +31,11 @@ const notarizationSchema = z.object({
 });
 
 const creditCheckSchema = z.object({
-  wantsCreditCheck: z.boolean(),
+  wantsCreditCheck: z.boolean().optional(),
   scope: z.array(z.enum(["TENANT", "CODEBTOR"])).optional(),
   partnerSlug: z.string().optional(),
+  landlordVerifiedTenantCreditHistory: z.enum(["yes", "no"]).optional(),
+  landlordVerifiedCodebtorCreditHistory: z.enum(["yes", "no"]).optional(),
 });
 
 const payloadSchema = z.object({

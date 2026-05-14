@@ -173,15 +173,15 @@ export default function PaymentSchedulePage() {
           <label className="text-xs text-slate-700">Días antes
             <input type="number" className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.defaultDaysBefore} onChange={(e) => setSettings((p) => ({ ...p, defaultDaysBefore: Number(e.target.value || 1) }))} />
           </label>
-          <label className="text-xs text-slate-700">Correo arrendatario
+          <label className="text-xs text-slate-700">Correo arrendatario (inquilino)
             <input className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.tenantEmail} onChange={(e) => setSettings((p) => ({ ...p, tenantEmail: e.target.value }))} />
           </label>
-          <label className="text-xs text-slate-700">Copiar arrendador
+          <label className="text-xs text-slate-700">Copiar arrendador (dueño)
             <select className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.landlordCopyEnabled ? "si" : "no"} onChange={(e) => setSettings((p) => ({ ...p, landlordCopyEnabled: e.target.value === "si" }))}>
               <option value="no">No</option><option value="si">Sí</option>
             </select>
           </label>
-          <label className="text-xs text-slate-700">Correo arrendador
+          <label className="text-xs text-slate-700">Correo arrendador (dueño)
             <input className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.landlordEmail} onChange={(e) => setSettings((p) => ({ ...p, landlordEmail: e.target.value }))} />
           </label>
           <label className="text-xs text-slate-700">Mensaje personalizado

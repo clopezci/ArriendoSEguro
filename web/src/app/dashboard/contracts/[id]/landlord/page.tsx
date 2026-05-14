@@ -59,7 +59,7 @@ export default function LandlordStepPage() {
   }
 
   return (
-    <WizardShell title="Datos del arrendador" currentStep={3} contractId={id}>
+    <WizardShell title="Datos del arrendador (dueño del inmueble)" currentStep={3} contractId={id}>
       <form
         id="wizard-form"
         className="grid gap-3 sm:grid-cols-2"

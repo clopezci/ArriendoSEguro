@@ -60,14 +60,19 @@ export interface NotarizationSelection {
 }
 
 /**
- * Estudio de crédito opcional para arrendatario y/o codeudor mediante aliado
- * especializado. En la fase inicial solo capturamos la intención del usuario;
- * el costo y la consulta los gestiona el aliado externo.
+ * Registro de orientación sobre historial crediticio (Bloque 6). El
+ * arrendador (dueño) indica si verificó o no fuera de la app; no hay
+ * carga de documentos. Campos opcionales en borradores anteriores.
  */
 export interface CreditCheckSelection {
-  wantsCreditCheck: boolean;
+  /** Legado: interés en estudio vía aliado; hoy suele ser false. */
+  wantsCreditCheck?: boolean;
   scope?: Array<"TENANT" | "CODEBTOR">;
   partnerSlug?: string;
+  /** Declaración Sí/No del arrendador sobre el inquilino. */
+  landlordVerifiedTenantCreditHistory?: "yes" | "no";
+  /** Declaración Sí/No del arrendador sobre el codeudor (si aplica). */
+  landlordVerifiedCodebtorCreditHistory?: "yes" | "no";
 }
 
 export interface PersonParty {

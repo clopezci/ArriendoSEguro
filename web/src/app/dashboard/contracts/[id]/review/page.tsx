@@ -49,12 +49,12 @@ export default function ReviewStepPage() {
             cuando esté disponible.
           </p>
         </Card>
-        <Card title="Arrendador">
+        <Card title="Arrendador (dueño del inmueble)">
           <p>{draft.landlord.fullName}</p>
           <p>{draft.landlord.documentType} {draft.landlord.documentNumber}</p>
           <p>{draft.landlord.email}</p>
         </Card>
-        <Card title="Arrendatario">
+        <Card title="Arrendatario (inquilino)">
           <p>{draft.tenant.fullName}</p>
           <p>{draft.tenant.documentType} {draft.tenant.documentNumber}</p>
           <p>{draft.tenant.email}</p>
@@ -74,7 +74,7 @@ export default function ReviewStepPage() {
           <p>Canon propuesto: ${rent.toLocaleString("es-CO")}</p>
           {valueUnknown ? (
             <p className="text-amber-800">
-              Valor comercial no informado — el arrendador asumió la
+              Valor comercial no informado — el arrendador (dueño) asumió la
               responsabilidad expresa de no superar el 1% legal.
             </p>
           ) : (
@@ -128,39 +128,48 @@ export default function ReviewStepPage() {
             <p>Sin cláusulas especiales.</p>
           )}
         </Card>
-        <Card title="Estudio de crédito">
+        <Card title="Historial crediticio (declaración del arrendador)">
           {(() => {
-            const tenantOn = Boolean(draft.creditCheckInterest?.tenant);
-            const codeOn = Boolean(
-              draft.hasSolidaryCoDebtor && draft.creditCheckInterest?.codebtor,
-            );
-            if (!tenantOn && !codeOn) {
+            const t = draft.landlordCreditHistoryAttestation?.tenantVerified;
+            const c = draft.landlordCreditHistoryAttestation?.codebtorVerified;
+            const tenantDone = t === "yes" || t === "no";
+            const codeDone =
+              !draft.hasSolidaryCoDebtor || c === "yes" || c === "no";
+            if (!tenantDone) {
               return (
-                <p>
-                  No marcaste interés en estudio de crédito. Puedes volver a los pasos de
-                  arrendatario o codeudor si quieres registrarlo antes de la vista previa.
+                <p className="text-slate-600">
+                  Falta la declaración sobre el arrendatario (inquilino). Vuelve a ese paso y
+                  elige Sí o No antes de generar la vista previa.
                 </p>
               );
             }
+            if (!codeDone) {
+              return (
+                <p className="text-amber-800">
+                  Falta la declaración sobre el codeudor solidario. Completa el paso del codeudor
+                  o indica que no hay codeudor.
+                </p>
+              );
+            }
+            const line = (label: string, v: "yes" | "no" | undefined) => (
+              <li>
+                <strong>{label}:</strong>{" "}
+                {v === "yes"
+                  ? "Indicas que verificaste o recibiste verificación del historial fuera de esta app."
+                  : v === "no"
+                    ? "Indicas que no verificaste el historial."
+                    : "—"}
+              </li>
+            );
             return (
               <>
-                <ul className="list-disc space-y-1 pl-4">
-                  {tenantOn && (
-                    <li>
-                      <strong>Arrendatario:</strong> quedó registrado que deseas complementar con
-                      estudio de crédito (lo gestionas con un aliado externo).
-                    </li>
-                  )}
-                  {codeOn && (
-                    <li>
-                      <strong>Codeudor solidario:</strong> mismo registro; el proveedor define costos
-                      y tiempos.
-                    </li>
-                  )}
+                <ul className="list-disc space-y-1 pl-4 text-slate-700">
+                  {line("Arrendatario (inquilino)", t)}
+                  {draft.hasSolidaryCoDebtor && line("Codeudor solidario", c)}
                 </ul>
                 <p className="mt-2 text-xs text-slate-600">
-                  Esto no bloquea la generación del contrato ni sustituye la debida diligencia que
-                  definas con tu contraparte.
+                  No se adjuntaron documentos ni puntajes; solo constancia de lo que marcaste en
+                  el asistente.
                 </p>
               </>
             );
@@ -182,7 +191,7 @@ export default function ReviewStepPage() {
           <li>Arriendo Seguro no recauda dinero ni garantiza pagos.</li>
           {valueUnknown ? (
             <li className="text-amber-800">
-              El arrendador declaró desconocer el valor comercial del inmueble y aceptó
+              El arrendador (dueño) declaró desconocer el valor comercial del inmueble y aceptó
               expresamente la responsabilidad de no superar el 1% del valor real
               (Ley 820 de 2003). ArriendoSeguro no calcula el tope en este caso.
             </li>

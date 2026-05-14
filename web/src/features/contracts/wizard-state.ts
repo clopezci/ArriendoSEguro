@@ -180,13 +180,14 @@ export interface ContractDraft {
    */
   expedienteNotes?: string;
   /**
-   * Interés del arrendador en solicitar estudio de crédito para el
-   * arrendatario y/o el codeudor (Bloque 6). Opcional en borradores
-   * anteriores. Se traduce a `creditCheck` en `toContractInput`.
+   * Declaración del arrendador (dueño) sobre verificación de historial
+   * crediticio fuera de ArriendoSeguro (Bloque 6). Sin adjuntos.
+   * Reemplaza el registro previo `creditCheckInterest` de borradores
+   * antiguos (se ignora al generar el payload).
    */
-  creditCheckInterest?: {
-    tenant?: boolean;
-    codebtor?: boolean;
+  landlordCreditHistoryAttestation?: {
+    tenantVerified?: "yes" | "no";
+    codebtorVerified?: "yes" | "no";
   };
   lastUpdatedAt: string;
   auditTrail: AuditEvent[];
@@ -568,19 +569,15 @@ export function setExpedienteNotes(
 export function deriveCreditCheckFromDraft(
   draft: ContractDraft,
 ): CreditCheckSelection | undefined {
-  const tenantInterested = Boolean(draft.creditCheckInterest?.tenant);
-  const codebtorInterested = Boolean(
-    draft.hasSolidaryCoDebtor && draft.creditCheckInterest?.codebtor,
-  );
-  if (!tenantInterested && !codebtorInterested) return undefined;
-  const scope: Array<"TENANT" | "CODEBTOR"> = [];
-  if (tenantInterested) scope.push("TENANT");
-  if (codebtorInterested) scope.push("CODEBTOR");
-  const slug = (process.env.NEXT_PUBLIC_CREDIT_STUDY_PARTNER_SLUG ?? "").trim();
+  const tenantV = draft.landlordCreditHistoryAttestation?.tenantVerified;
+  const codeV = draft.landlordCreditHistoryAttestation?.codebtorVerified;
+  const codeEffective =
+    draft.hasSolidaryCoDebtor && codeV !== undefined ? codeV : undefined;
+  if (tenantV === undefined && codeEffective === undefined) return undefined;
   return {
-    wantsCreditCheck: true,
-    scope,
-    partnerSlug: slug || undefined,
+    wantsCreditCheck: false,
+    landlordVerifiedTenantCreditHistory: tenantV,
+    landlordVerifiedCodebtorCreditHistory: codeEffective,
   };
 }
 

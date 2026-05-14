@@ -1,6 +1,6 @@
 "use client";
 
-import { CreditStudyOfferBlock } from "@/components/contracts/credit-study-offer-block";
+import { CreditHistoryGuidanceBlock } from "@/components/contracts/credit-history-guidance-block";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
@@ -40,8 +40,16 @@ export default function TenantStepPage() {
       return;
     }
 
+    const rawVerify = formData.get("tenantCreditHistoryVerified");
+    if (rawVerify !== "yes" && rawVerify !== "no") {
+      setErrors([
+        "Indica si verificaste o no el historial crediticio del arrendatario (inquilino), según la orientación anterior. Es obligatorio elegir Sí o No.",
+      ]);
+      return;
+    }
+    const tenantVerified = rawVerify as "yes" | "no";
+
     const { truthfulnessOath, ...tenantData } = parsed.data;
-    const creditStudyTenant = formData.get("creditStudyTenant") === "on";
     updateDraft(id, (d) =>
       appendAudit(
         {
@@ -51,16 +59,16 @@ export default function TenantStepPage() {
             notificationAddressParts: addrParsed.data,
             truthfulnessOathAccepted: Boolean(truthfulnessOath),
           },
-          creditCheckInterest: {
-            ...d.creditCheckInterest,
-            tenant: creditStudyTenant,
+          landlordCreditHistoryAttestation: {
+            ...d.landlordCreditHistoryAttestation,
+            tenantVerified,
           },
           status: "data_in_progress",
         },
         "tenant_data_saved",
         {
           truthfulnessOathAccepted: Boolean(truthfulnessOath),
-          creditStudyTenant,
+          tenantCreditHistoryVerified: tenantVerified,
         },
       ),
     );
@@ -68,7 +76,11 @@ export default function TenantStepPage() {
   }
 
   return (
-    <WizardShell title="Datos del arrendatario" currentStep={4} contractId={id}>
+    <WizardShell
+      title="Datos del arrendatario (inquilino)"
+      currentStep={4}
+      contractId={id}
+    >
       <form
         id="wizard-form"
         className="grid gap-3 sm:grid-cols-2"
@@ -85,10 +97,10 @@ export default function TenantStepPage() {
           oathId="tenant_truthfulness_oath"
           contractDraftId={id}
         />
-        <CreditStudyOfferBlock
-          formCheckboxName="creditStudyTenant"
-          defaultChecked={draft.creditCheckInterest?.tenant}
-          subjectLabel="el arrendatario"
+        <CreditHistoryGuidanceBlock
+          variant="tenant"
+          verificationName="tenantCreditHistoryVerified"
+          defaultVerified={draft.landlordCreditHistoryAttestation?.tenantVerified}
         />
         {errors.length > 0 && (
           <div

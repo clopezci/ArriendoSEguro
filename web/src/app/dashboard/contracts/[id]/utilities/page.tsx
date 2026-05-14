@@ -61,8 +61,8 @@ export default function UtilitiesStepPage() {
             defaultValue={draft.utilities.responsibleParty ?? "arrendatario"}
             className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
           >
-            <option value="arrendatario">Arrendatario</option>
-            <option value="arrendador">Arrendador</option>
+            <option value="arrendatario">Arrendatario (inquilino)</option>
+            <option value="arrendador">Arrendador (dueño)</option>
             <option value="compartido">Compartido</option>
           </select>
           <span className="mt-1 block text-xs text-slate-600">
@@ -75,7 +75,7 @@ export default function UtilitiesStepPage() {
           label="Detalle de servicios públicos"
           defaultValue={draft.utilities.details}
           placeholder={
-            "Ejemplos: el arrendatario asume agua, luz, gas, internet y aseo a su nombre. " +
+            "Ejemplos: el arrendatario (inquilino) asume agua, luz, gas, internet y aseo a su nombre. " +
             "El primer y último mes los servicios se liquidan al corte de factura, no por días corridos. " +
             "Los servicios deben quedar al día al momento de la entrega del inmueble; los recibos se entregan como soporte."
           }
@@ -86,8 +86,8 @@ export default function UtilitiesStepPage() {
           label="Detalle de administración y expensas"
           defaultValue={draft.utilities.adminFeesDetails}
           placeholder={
-            "Ejemplos: la administración mensual es de $250.000, a cargo del arrendatario, pagaderos en la oficina de la copropiedad antes del día 5 de cada mes. " +
-            "Las cuotas extraordinarias decretadas por la asamblea son responsabilidad del arrendador. " +
+            "Ejemplos: la administración mensual es de $250.000, a cargo del arrendatario (inquilino), pagaderos en la oficina de la copropiedad antes del día 5 de cada mes. " +
+            "Las cuotas extraordinarias decretadas por la asamblea son responsabilidad del arrendador (dueño). " +
             "Si el inmueble no tiene administración, escribe «No aplica»."
           }
           hint="Indica el valor mensual de la administración, quién la paga, dónde se paga y qué pasa con cuotas extraordinarias."

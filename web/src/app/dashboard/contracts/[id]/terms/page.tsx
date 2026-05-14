@@ -123,7 +123,7 @@ export default function TermsStepPage() {
           label="Umbral de mora (meses)"
           type="number"
           defaultValue={String(draft.lease.latePaymentMonthsThreshold ?? 2)}
-          hint="Meses de canon impago acumulados a partir de los cuales el arrendador puede iniciar gestiones de cobro o terminación del contrato. La ley colombiana exige al menos 2 meses; puedes pactar más, nunca menos."
+          hint="Meses de canon impago acumulados a partir de los cuales el arrendador (dueño) puede iniciar gestiones de cobro o terminación del contrato. La ley colombiana exige al menos 2 meses; puedes pactar más, nunca menos."
         />
 
         {errors.length > 0 && (

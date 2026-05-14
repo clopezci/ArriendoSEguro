@@ -21,16 +21,16 @@ import { useEffect, useState } from "react";
  * contrato o el PDF.
  */
 const CONTRACT_FIELD_LABELS: Record<string, string> = {
-  "landlord.fullName": "Nombre del arrendador",
-  "landlord.documentNumber": "Documento del arrendador",
-  "landlord.email": "Correo del arrendador",
-  "landlord.phone": "Teléfono del arrendador",
-  "landlord.notificationAddress": "Dirección de notificación del arrendador",
-  "tenant.fullName": "Nombre del arrendatario",
-  "tenant.documentNumber": "Documento del arrendatario",
-  "tenant.email": "Correo del arrendatario",
-  "tenant.phone": "Teléfono del arrendatario",
-  "tenant.notificationAddress": "Dirección de notificación del arrendatario",
+  "landlord.fullName": "Nombre del arrendador (dueño)",
+  "landlord.documentNumber": "Documento del arrendador (dueño)",
+  "landlord.email": "Correo del arrendador (dueño)",
+  "landlord.phone": "Teléfono del arrendador (dueño)",
+  "landlord.notificationAddress": "Dirección de notificación del arrendador (dueño)",
+  "tenant.fullName": "Nombre del arrendatario (inquilino)",
+  "tenant.documentNumber": "Documento del arrendatario (inquilino)",
+  "tenant.email": "Correo del arrendatario (inquilino)",
+  "tenant.phone": "Teléfono del arrendatario (inquilino)",
+  "tenant.notificationAddress": "Dirección de notificación del arrendatario (inquilino)",
   "solidaryCoDebtor": "Codeudor solidario",
   "solidaryCoDebtor.fullName": "Nombre del codeudor",
   "solidaryCoDebtor.documentNumber": "Documento del codeudor",
@@ -42,7 +42,7 @@ const CONTRACT_FIELD_LABELS: Record<string, string> = {
   "property.registryNumber": "Matrícula / registro del inmueble",
   "property.commercialValue": "Valor comercial del inmueble",
   "property.legalRentCap": "Tope legal del canon",
-  "property.noCapAcknowledgement": "Aceptación del arrendador",
+  "property.noCapAcknowledgement": "Aceptación del arrendador (dueño)",
   "lease.monthlyRent": "Canon mensual",
   "lease.monthlyRentText": "Canon mensual en letras",
   "lease.paymentDueDay": "Día de pago",
@@ -322,8 +322,8 @@ export default function PreviewStepPage() {
       // configurado (modo `mock`), avisamos sin asustar para que se sepa
       // que en producción esto sí saldrá del servidor.
       const partyLabel: Record<string, string> = {
-        landlord: "Arrendador",
-        tenant: "Arrendatario",
+        landlord: "Arrendador (dueño)",
+        tenant: "Arrendatario (inquilino)",
         solidaryCoDebtor: "Codeudor",
       };
       const details = data.signatures.map((s) => {

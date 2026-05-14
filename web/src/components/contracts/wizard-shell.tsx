@@ -6,8 +6,8 @@ import { useMemo, type ReactNode } from "react";
 const steps = [
   "Acceso",
   "Tipo de contrato",
-  "Arrendador",
-  "Arrendatario",
+  "Arrendador (dueño)",
+  "Arrendatario (inquilino)",
   "Codeudor",
   "Inmueble a arrendar",
   "Términos",
