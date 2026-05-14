@@ -1,5 +1,6 @@
 import { LeadMarketForm } from "@/components/forms/lead-market-form";
 import { BrandLockup } from "@/components/brand/brand-lockup";
+import { BlogTopicLinks } from "@/components/landing/blog-topic-links";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -36,6 +37,12 @@ export default function Home() {
             <BrandLockup />
           </span>
           <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+            <Link
+              href="/blog"
+              className="rounded-md border border-slate-300 px-2 py-1 text-[11px] font-medium text-slate-800 transition hover:border-violet-500 hover:text-slate-900 sm:px-2.5 sm:text-xs"
+            >
+              Blog
+            </Link>
             <a
               href="#interes"
               className="rounded-md border border-slate-300 px-2 py-1 text-[11px] font-medium text-slate-800 transition hover:border-violet-500 hover:text-slate-900 sm:px-2.5 sm:text-xs"
@@ -91,6 +98,8 @@ export default function Home() {
                 </Link>
               </div>
             </section>
+
+            <BlogTopicLinks />
 
             <p className="flex flex-wrap items-center justify-center gap-2 text-[11px] leading-snug text-slate-600 lg:justify-start">
               <span className="inline-flex items-center rounded-full border border-violet-300 bg-violet-100/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700">

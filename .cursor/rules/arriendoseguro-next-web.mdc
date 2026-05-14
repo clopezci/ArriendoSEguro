@@ -11,6 +11,7 @@ alwaysApply: false
 - **Auth cliente:** `firebase` SDK en **client components**; estado de sesión vía `AuthProvider`; rutas de panel con guard cliente (`RequireAuth`) hasta exista sesión por cookie/ servidor.
 - **Formularios y API:** validar con Zod; APIs en `app/api/**` con `runtime: "nodejs"` si usan Admin.
 - **Build:** `npm run build` en `web/` antes de dar por cerrada una entrega. Root Vercel = directorio `web/`.
+- **Git (flujo con el usuario):** el agente ejecuta `git add` / `commit` / `push` de los cambios en el repo salvo que falte permiso o credencial; el usuario solo aprueba en la UI de Cursor o resuelve lo que el entorno no automatice (merge en GitHub, 2FA, etc.). No pedirle al usuario que haga git “a mano” para validar entregas.
 - **Diseño visual base (obligatorio):** paleta principal en **grises y azules oscuros** con acento **morado brillante** para marca. El texto `ArriendoSeguro` debe usar tono morado vibrante.
 - **Sombras (obligatorio):** botones, menú/navegación y tarjetas/cuadros deben llevar sombra con matiz morado (`violet`) para coherencia de marca.
 - **Landing pública (`/`):** landing SEO + encuesta (fase inicial); CTA principal a `/#interes` (“Responder encuesta”); ruta de ayuda: `/entiendelo-facil`. Alias comercial: `/landing-comercial` redirige a `/interno/landing-principal`.

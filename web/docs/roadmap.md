@@ -1,7 +1,7 @@
 # Roadmap visual — ArriendoSeguro
 
 > Tablero rápido del producto. Mantener sincronizado con la regla
-> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-05-13**.
+> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-05-14**.
 >
 > Convenciones:
 > - **[x]** = listo en producción o en `main`.
@@ -30,6 +30,9 @@
 - [x] Panel `/admin` con tablero de respuestas (encabezados con texto de la pregunta).
 - [x] Auth Firebase (cliente) y Admin SDK solo en `route.ts`.
 - [x] Aviso legal y términos básicos en footer.
+- [x] Blog orientativo (`/blog`, `/blog/[slug]`) con JSON-LD (Blog / BlogPosting), seis artículos iniciales, `sitemap.xml` y `robots.txt`; GA4 opcional vía `NEXT_PUBLIC_GA_MEASUREMENT_ID` en el layout.
+- [x] Enlazado interno desde la landing hacia guías del blog por tema (`BlogTopicLinks` + `landing-topic-links.ts`).
+- [ ] **En fila (SEO):** ampliar calendario editorial, Search Console (propiedad + sitemap), validación de datos estructurados en Rich Results y enlaces entrantes.
 
 ---
 
