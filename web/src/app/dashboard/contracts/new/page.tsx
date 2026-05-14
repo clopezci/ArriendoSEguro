@@ -45,13 +45,20 @@ export default function NewContractPage() {
         success?: boolean;
         plusActive?: boolean;
         demoActive?: boolean;
+        canCreateRealContract?: boolean;
+        canUseDemo?: boolean;
       };
       if (!accessRes.ok || !accessData.success) {
         router.replace("/dashboard/contracts/access-blocked");
         return;
       }
 
-      if (accessData.plusActive) {
+      // `canCreateRealContract` solo es true si queda crédito por
+      // consumir en algún entitlement Plus. Si el usuario ya gastó su
+      // crédito y vuelve aquí, lo mandamos a la pantalla de acceso
+      // bloqueado con motivo claro, en lugar de intentar consumir y
+      // fallar a mitad del flujo.
+      if (accessData.canCreateRealContract) {
         const consume = await fetch("/api/access/contracts/consume-plus", {
           method: "POST",
           headers,
@@ -70,7 +77,7 @@ export default function NewContractPage() {
         return;
       }
 
-      if (accessData.demoActive) {
+      if (accessData.canUseDemo) {
         const demoDraft = createContractDraft({
           userId: user.uid,
           accessStatus: "demo",

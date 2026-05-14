@@ -33,11 +33,16 @@ type AccessState = {
   errored: boolean;
   plusActive: boolean;
   demoActive: boolean;
+  canCreateRealContract: boolean;
+  canUseDemo: boolean;
 };
 
 function statusLabel(state: AccessState): string {
   if (state.loading) return "Consultando estado…";
   if (state.errored) return "No disponible";
+  if (state.plusActive && !state.canCreateRealContract) {
+    return "Plan Plus activo (sin créditos para crear nuevos expedientes)";
+  }
   if (state.plusActive) return "Plan Plus activo";
   if (state.demoActive) return "Demo activo";
   return "Pendiente de pago";
@@ -52,6 +57,8 @@ export default function MisArriendosPage() {
     errored: false,
     plusActive: false,
     demoActive: false,
+    canCreateRealContract: false,
+    canUseDemo: false,
   });
   const internal = canSeeInternalDashboardTools(user?.email ?? null);
 
@@ -66,6 +73,8 @@ export default function MisArriendosPage() {
         success?: boolean;
         plusActive?: boolean;
         demoActive?: boolean;
+        canCreateRealContract?: boolean;
+        canUseDemo?: boolean;
       };
       if (!res.ok || !data.success) {
         setAccess({
@@ -73,6 +82,8 @@ export default function MisArriendosPage() {
           errored: true,
           plusActive: false,
           demoActive: false,
+          canCreateRealContract: false,
+          canUseDemo: false,
         });
         return;
       }
@@ -81,6 +92,8 @@ export default function MisArriendosPage() {
         errored: false,
         plusActive: Boolean(data.plusActive),
         demoActive: Boolean(data.demoActive),
+        canCreateRealContract: Boolean(data.canCreateRealContract),
+        canUseDemo: Boolean(data.canUseDemo),
       });
     } catch {
       setAccess({
@@ -88,6 +101,8 @@ export default function MisArriendosPage() {
         errored: true,
         plusActive: false,
         demoActive: false,
+        canCreateRealContract: false,
+        canUseDemo: false,
       });
     }
   }, [user]);
@@ -104,8 +119,15 @@ export default function MisArriendosPage() {
     [user, refreshSeed],
   );
 
-  const canCreate = access.plusActive || access.demoActive;
-  const showBlocked = !access.loading && !access.errored && !canCreate;
+  // `canCreate` mira si queda crédito para CREAR un expediente nuevo.
+  // `plusActive` (o `demoActive`) puede ser true incluso cuando el
+  // crédito ya se consumió, porque el usuario sigue teniendo derecho a
+  // abrir y trabajar el expediente que ya empezó. Por eso solo
+  // mostramos el bloqueador cuando NI plus NI demo siguen vigentes.
+  const canCreate = access.canCreateRealContract || access.canUseDemo;
+  const hasAnyAccess = access.plusActive || access.demoActive;
+  const showBlocked = !access.loading && !access.errored && !hasAnyAccess;
+  const plusConsumed = access.plusActive && !access.canCreateRealContract;
 
   useEffect(() => {
     if (showBlocked) {
@@ -146,6 +168,13 @@ export default function MisArriendosPage() {
             {showBlocked && (
               <p className="mt-2 text-sm text-amber-800">
                 Para crear expedientes necesitas Plan Plus activo o modo demo desde Planes.
+              </p>
+            )}
+            {plusConsumed && (
+              <p className="mt-2 text-sm text-amber-800">
+                Tu Plan Plus está activo, pero ya usaste el crédito disponible para crear un
+                expediente nuevo. Puedes seguir trabajando los expedientes que ya creaste; cuando
+                necesites otro, ve a <strong>Planes</strong> para activar un crédito adicional.
               </p>
             )}
             {access.errored && (
