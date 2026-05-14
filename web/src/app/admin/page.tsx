@@ -50,6 +50,19 @@ export default function AdminPage() {
   const [grantMsg, setGrantMsg] = useState("");
   const [grantErr, setGrantErr] = useState("");
   const [grantLoading, setGrantLoading] = useState(false);
+  const [grantDetail, setGrantDetail] = useState<{
+    status: "created" | "already_exists";
+    entitlementId: string;
+    userId: string;
+    userEmail: string;
+  } | null>(null);
+
+  // Diagnóstico rápido: dado un email, mostrar el usuario de Auth y todas
+  // sus filas en `access_entitlements`. Resuelve el caso típico "le di
+  // Plus a alguien pero le sigue pidiendo el plan": basta con escribir
+  // el correo y se ve si el entitlement existe, su estado y su uid.
+  const [inspectEmail, setInspectEmail] = useState("");
+  const [inspectedEmail, setInspectedEmail] = useState("");
 
   const hintSet = useMemo(() => new Set(publicAdminHintEmails()), []);
   const [mounted, setMounted] = useState(false);
@@ -110,18 +123,53 @@ export default function AdminPage() {
     setGrantLoading(true);
     setGrantMsg("");
     setGrantErr("");
+    setGrantDetail(null);
     try {
       const res = await fetch("/api/platform-payments/internal/grant-plus", {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
         body: JSON.stringify({ email: grantEmail.trim(), validDays: 365 }),
       });
-      const json = (await res.json()) as { success?: boolean; errors?: { message: string }[] };
+      const json = (await res.json()) as {
+        success?: boolean;
+        status?: "created" | "already_exists";
+        entitlementId?: string;
+        userId?: string;
+        userEmail?: string;
+        errors?: { field?: string; message: string }[];
+      };
       if (!res.ok || !json.success) {
-        setGrantErr(json.errors?.[0]?.message ?? "No se pudo otorgar Plus.");
+        const issue = json.errors?.[0];
+        if (issue?.field === "email") {
+          // Caso típico: la persona aún no se registró en Firebase Auth,
+          // así que el grant falla y la UI lo dejaba pasar como un mensaje
+          // genérico. Aquí lo hacemos muy explícito porque era la causa
+          // raíz cuando otorgábamos Plus a correos de prueba.
+          setGrantErr(
+            `${issue.message} Pídele que entre a "Iniciar sesión" y cree su cuenta con ${grantEmail.trim()}; cuando aparezca en la pestaña Usuarios, vuelve a hacer clic en "Otorgar Plus".`,
+          );
+        } else {
+          setGrantErr(issue?.message ?? "No se pudo otorgar Plus.");
+        }
         return;
       }
-      setGrantMsg("Plan Plus manual otorgado (revisa entitlements).");
+      if (json.status === "already_exists") {
+        setGrantMsg(
+          `El usuario ya tenía un Plan Plus activo. No se creó uno nuevo (entitlement ${json.entitlementId ?? "—"}).`,
+        );
+      } else {
+        setGrantMsg(
+          `Plan Plus manual creado correctamente para ${json.userEmail ?? grantEmail.trim()} (entitlement ${json.entitlementId ?? "—"}).`,
+        );
+      }
+      setGrantDetail({
+        status: json.status ?? "created",
+        entitlementId: json.entitlementId ?? "",
+        userId: json.userId ?? "",
+        userEmail: json.userEmail ?? grantEmail.trim(),
+      });
+      setInspectEmail(json.userEmail ?? grantEmail.trim());
+      setInspectedEmail((json.userEmail ?? grantEmail.trim()).toLowerCase());
       setGrantEmail("");
       await load();
     } catch {
@@ -130,6 +178,30 @@ export default function AdminPage() {
       setGrantLoading(false);
     }
   }
+
+  /** Inspecciona el estado del correo escrito: usuario Auth + accesos. */
+  const inspection = useMemo(() => {
+    if (!data || !inspectedEmail) return null;
+    const email = inspectedEmail.toLowerCase();
+    const users = (data.users ?? []) as Array<{ email: string; uid: string; fechaRegistro: string; disabled: boolean }>;
+    const accesses = (data.accesses ?? []) as Array<{
+      id: string;
+      userEmail: string;
+      userId: string;
+      planCode: string;
+      accessType: string;
+      status: string;
+      contractsUsed: number;
+      maxContractsAllowed: number;
+      validUntil: string;
+      updatedAt: string;
+    }>;
+    const matchingUsers = users.filter((u) => (u.email ?? "").toLowerCase() === email);
+    const matchingAccesses = accesses.filter(
+      (a) => (a.userEmail ?? "").toLowerCase() === email,
+    );
+    return { email, users: matchingUsers, accesses: matchingAccesses };
+  }, [data, inspectedEmail]);
 
   if (loading || !user) {
     return (
@@ -204,8 +276,120 @@ export default function AdminPage() {
                 {grantLoading ? "…" : "Otorgar Plus"}
               </button>
             </div>
-            {grantMsg && <p className="mt-2 text-xs text-emerald-400">{grantMsg}</p>}
-            {grantErr && <p className="mt-2 text-xs text-rose-400">{grantErr}</p>}
+            {grantMsg && (
+              <div className="mt-3 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-800">
+                <p className="font-semibold">{grantMsg}</p>
+                {grantDetail && (
+                  <ul className="mt-1 space-y-0.5">
+                    <li>
+                      <strong>UID:</strong> {grantDetail.userId || "—"}
+                    </li>
+                    <li>
+                      <strong>Entitlement:</strong> {grantDetail.entitlementId || "—"}
+                    </li>
+                    <li>
+                      Pídele a la persona que recargue <em>Mis arriendos</em> con Ctrl+F5; verá
+                      &quot;Plan Plus activo&quot;.
+                    </li>
+                  </ul>
+                )}
+              </div>
+            )}
+            {grantErr && (
+              <div className="mt-3 rounded-lg border border-rose-300 bg-rose-50 p-3 text-xs text-rose-800">
+                <p className="font-semibold">No se pudo otorgar Plus</p>
+                <p className="mt-1">{grantErr}</p>
+              </div>
+            )}
+
+            <div className="mt-4 border-t border-slate-200 pt-3">
+              <h3 className="text-xs font-semibold text-slate-800">
+                Inspeccionar accesos de un correo
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Útil cuando la persona dice &quot;me sigue pidiendo el plan&quot;: aquí ves si su
+                cuenta existe en Auth y qué entitlements tiene.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <input
+                  value={inspectEmail}
+                  onChange={(e) => setInspectEmail(e.target.value)}
+                  placeholder="correo@usuario.com"
+                  className="min-w-[200px] flex-1 rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => setInspectedEmail(inspectEmail.trim().toLowerCase())}
+                  className="rounded-lg border border-slate-400 px-3 py-2 text-xs text-slate-800"
+                >
+                  Inspeccionar
+                </button>
+                {inspectedEmail && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInspectEmail("");
+                      setInspectedEmail("");
+                    }}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-600"
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
+
+              {inspection && (
+                <div className="mt-3 rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs text-slate-800">
+                  <p>
+                    Resultado para <strong>{inspection.email}</strong>:
+                  </p>
+                  <p className="mt-1">
+                    Cuentas en Firebase Auth:{" "}
+                    <strong>{inspection.users.length}</strong>
+                  </p>
+                  {inspection.users.length === 0 ? (
+                    <p className="mt-1 text-rose-700">
+                      Esta persona aún no se ha registrado en la plataforma. Pídele que entre a{" "}
+                      <code>/ingresar</code>, cree su cuenta con ese correo, refresca este panel y
+                      vuelve a otorgar Plus.
+                    </p>
+                  ) : (
+                    <ul className="mt-1 space-y-0.5">
+                      {inspection.users.map((u) => (
+                        <li key={u.uid}>
+                          UID <code>{u.uid}</code> · creado {u.fechaRegistro}{" "}
+                          {u.disabled ? "(deshabilitado)" : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <p className="mt-2">
+                    Entitlements asociados: <strong>{inspection.accesses.length}</strong>
+                  </p>
+                  {inspection.accesses.length === 0 ? (
+                    <p className="mt-1 text-rose-700">
+                      No hay ninguna fila en <code>access_entitlements</code> para este correo. Por
+                      eso /dashboard/leases dice &quot;Pendiente de pago&quot;. Si la cuenta sí
+                      existe en Auth (ver arriba), basta con hacer clic en{" "}
+                      <strong>Otorgar Plus</strong> de nuevo.
+                    </p>
+                  ) : (
+                    <ul className="mt-1 space-y-0.5">
+                      {inspection.accesses.map((a) => (
+                        <li key={a.id}>
+                          {a.planCode}/{a.accessType} · estado{" "}
+                          <strong>{a.status}</strong> · usados {a.contractsUsed}/
+                          {a.maxContractsAllowed}
+                          {a.validUntil ? ` · vigente hasta ${a.validUntil}` : ""} · UID{" "}
+                          <code>{a.userId}</code>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
           </section>
         )}
 
