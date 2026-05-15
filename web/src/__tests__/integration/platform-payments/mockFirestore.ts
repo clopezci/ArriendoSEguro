@@ -44,8 +44,8 @@ class MockQuery {
   private take = Number.POSITIVE_INFINITY;
 
   constructor(
-    private readonly store: Map<string, Map<string, Row>>,
-    private readonly collectionName: string,
+    protected readonly store: Map<string, Map<string, Row>>,
+    protected readonly collectionName: string,
   ) {}
 
   where(field: string, _op: string, value: unknown) {
@@ -73,10 +73,7 @@ class MockQuery {
 }
 
 class MockCollectionRef extends MockQuery {
-  constructor(
-    private readonly store: Map<string, Map<string, Row>>,
-    private readonly collectionName: string,
-  ) {
+  constructor(store: Map<string, Map<string, Row>>, collectionName: string) {
     super(store, collectionName);
   }
 

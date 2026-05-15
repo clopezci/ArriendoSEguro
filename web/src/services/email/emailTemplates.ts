@@ -5,7 +5,8 @@ export type EmailTemplateCode =
   | "paymentReminderEmail"
   | "contractSignedEmail"
   | "plusAccessConfirmedEmail"
-  | "surveyThankYouEmail";
+  | "surveyThankYouEmail"
+  | "expedienteNovedadEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
@@ -134,6 +135,42 @@ export function surveyThankYouEmail(): CompiledEmailTemplate {
     `<p>Gracias por responder la encuesta de ArriendoSeguro.</p>
      <p>Tus respuestas nos ayudan a priorizar esta fase inicial del producto.</p>
      <p><a href="${base}/entiendelo-facil" style="color:#6d28d9;">Conocer más</a></p>`,
+  );
+  return { subject, html, text };
+}
+
+export function expedienteNovedadEmail(input: {
+  authorName: string;
+  authorRoleLabel: string;
+  tipoLabel: string;
+  description: string;
+  contractId: string;
+  leaseProcessId?: string;
+  hasAttachment: boolean;
+}): CompiledEmailTemplate {
+  const base = appBaseUrl();
+  const dashId = input.leaseProcessId ?? input.contractId;
+  const link = `${base}/dashboard/contracts/${dashId}/novedades`;
+  const subject = `Novedad en el expediente de arriendo: ${input.tipoLabel}`;
+  const desc = input.description.trim() || "(Sin texto adicional.)";
+  const att = input.hasAttachment ? "\nSe adjuntó un archivo en el expediente (revísalo en la plataforma)." : "";
+  const text = `Hola,\n\n${input.authorName} (${input.authorRoleLabel}) registró una novedad: ${input.tipoLabel}.\n\nDetalle:\n${desc}${att}\n\nVer expediente: ${link}`;
+  const esc = (s: string) =>
+    s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  const safeDesc =
+    desc.length > 4000 ? `${esc(desc.slice(0, 4000))}…` : esc(desc).replace(/\n/g, "<br/>");
+  const html = baseHtml(
+    "Novedad en tu expediente de arriendo",
+    `<p><strong>${input.authorName}</strong> (${input.authorRoleLabel}) registró una novedad en el expediente.</p>
+     <p><strong>Tipo:</strong> ${input.tipoLabel}</p>
+     <p><strong>Detalle:</strong><br/>${safeDesc}</p>
+     ${input.hasAttachment ? "<p><em>Hay un archivo adjunto; ábrelo desde el enlace del expediente.</em></p>" : ""}
+     <p><a href="${link}" style="color:#6d28d9;">Abrir novedades del expediente</a></p>
+     <p style="font-size:12px;color:#64748b;">ArriendoSeguro organiza comunicaciones entre partes; no sustituye asesoría legal ni mediación.</p>`,
   );
   return { subject, html, text };
 }

@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { getAllDrafts } from "@/features/contracts/wizard-state";
 import { multiFactor } from "firebase/auth";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -20,8 +21,9 @@ type EntitlementsResponse = {
 };
 
 export default function AccountPage() {
-  const { user, resetPassword } = useAuth();
+  const { user, resetPassword, signOut } = useAuth();
   const [ent, setEnt] = useState<EntitlementsResponse | null>(null);
+  const [signedCount, setSignedCount] = useState<number | null>(null);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [sending, setSending] = useState(false);
@@ -29,12 +31,20 @@ export default function AccountPage() {
   useEffect(() => {
     (async () => {
       if (!user) return;
-      const res = await fetch("/api/access/entitlements/me", {
-        headers: { ...(await buildAuthHeaders(user)) },
-      });
-      const data = (await res.json()) as EntitlementsResponse;
-      if (res.ok && data.success) setEnt(data);
+      const [resEnt, resSum] = await Promise.all([
+        fetch("/api/access/entitlements/me", {
+          headers: { ...(await buildAuthHeaders(user)) },
+        }),
+        fetch("/api/cuenta/resumen", {
+          headers: { ...(await buildAuthHeaders(user)) },
+        }),
+      ]);
+      const data = (await resEnt.json()) as EntitlementsResponse;
+      if (resEnt.ok && data.success) setEnt(data);
       else setEnt({ success: false });
+      const sum = (await resSum.json()) as { success?: boolean; signedContractsCount?: number };
+      if (resSum.ok && sum.success) setSignedCount(Number(sum.signedContractsCount ?? 0));
+      else setSignedCount(null);
     })();
   }, [user]);
 
@@ -61,6 +71,11 @@ export default function AccountPage() {
   }
 
   const factors = user ? multiFactor(user).enrolledFactors : [];
+
+  const draftsCount = useMemo(() => {
+    if (!user) return 0;
+    return getAllDrafts().filter((d) => d.userId === user.uid).length;
+  }, [user]);
 
   return (
     <section className="space-y-6">
@@ -112,6 +127,53 @@ export default function AccountPage() {
       </article>
 
       <article className="rounded-2xl border border-slate-300 bg-white/95 p-5">
+        <h2 className="text-lg font-semibold text-slate-900">Mis expedientes (resumen)</h2>
+        <div className="mt-3 space-y-2 text-sm text-slate-700">
+          <p>
+            Borradores en este navegador: <strong className="text-slate-900">{draftsCount}</strong>
+          </p>
+          <p>
+            Contratos firmados en la plataforma con tu correo (referencia):{" "}
+            <strong className="text-slate-900">{signedCount === null ? "—" : signedCount}</strong>
+          </p>
+          <p className="text-xs text-slate-500">
+            Los borradores viven en tu equipo hasta que guardes versión en el servidor. El conteo de firmados se basa en
+            registros de firma y estado del expediente.
+          </p>
+        </div>
+        <Link href="/dashboard/leases" className="mt-3 inline-block text-sm text-violet-700 hover:underline">
+          Ir a Mis arriendos
+        </Link>
+      </article>
+
+      <article className="rounded-2xl border border-slate-300 bg-white/95 p-5">
+        <h2 className="text-lg font-semibold text-slate-900">Derechos Habeas Data (Ley 1581 de 2012)</h2>
+        <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-slate-700">
+          <li>Acceso, actualización y rectificación de tus datos.</li>
+          <li>Supresión cuando proceda y revocatoria del consentimiento.</li>
+          <li>Consulta sobre el uso que damos a la información.</li>
+          <li>Prueba del consentimiento, salvo excepciones legales.</li>
+          <li>Presentar queja ante la Superintendencia de Industria y Comercio cuando corresponda.</li>
+          <li>Conocer las políticas de tratamiento y los canales habilitados.</li>
+        </ul>
+        <p className="mt-3 text-sm text-slate-700">
+          Plazos orientativos de respuesta: hasta <strong>diez días hábiles</strong> para consultas y hasta{" "}
+          <strong>quince días hábiles</strong> para reclamos, sin perjuicio de acuse de recibo y complejidad del caso.
+        </p>
+        <p className="mt-2 text-sm text-slate-700">
+          Canal:{" "}
+          <a href="mailto:privacidad@arriendoseguro.com.co" className="text-violet-700 underline">
+            privacidad@arriendoseguro.com.co
+          </a>
+          . Aviso completo:{" "}
+          <Link href="/legal/aviso-privacidad" className="text-violet-700 hover:underline">
+            Aviso de privacidad
+          </Link>
+          .
+        </p>
+      </article>
+
+      <article className="rounded-2xl border border-slate-300 bg-white/95 p-5">
         <h2 className="text-lg font-semibold text-slate-900">Estado de acceso</h2>
         <div className="mt-3 text-sm text-slate-700">
           {!ent ? (
@@ -132,6 +194,29 @@ export default function AccountPage() {
         <Link href="/dashboard/plans" className="mt-3 inline-block text-sm text-violet-700 hover:underline">
           Ver o cambiar plan
         </Link>
+      </article>
+
+      <article className="rounded-2xl border border-rose-200 bg-rose-50/40 p-5">
+        <h2 className="text-lg font-semibold text-rose-950">Zona sensible</h2>
+        <p className="mt-2 text-sm text-slate-700">
+          Puedes cerrar sesión desde aquí o eliminar tu cuenta. La eliminación es definitiva para el acceso con este
+          correo y está sujeta a retención legal cuando hay contratos firmados.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 hover:border-violet-500"
+          >
+            Cerrar sesión
+          </button>
+          <Link
+            href="/dashboard/cuenta/eliminar"
+            className="rounded-lg border border-rose-400 bg-white px-4 py-2 text-sm font-medium text-rose-900 hover:bg-rose-100"
+          >
+            Eliminar mi cuenta
+          </Link>
+        </div>
       </article>
     </section>
   );

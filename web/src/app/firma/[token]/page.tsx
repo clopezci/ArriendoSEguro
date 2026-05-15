@@ -129,18 +129,31 @@ export default function SignatureTokenPage() {
         }),
       });
       const data = (await res.json()) as
-        | { success: true; contractStatus: string }
+        | {
+            success: true;
+            contractStatus: string;
+            partyEmailDelivery?: "ok" | "partial" | "failed";
+          }
         | { success: false; errors: { field: string; message: string }[] };
       if (!res.ok || !data.success) {
         const msg = !data.success ? data.errors.map((e) => e.message).join(" | ") : "No se pudo completar la firma.";
         setError(msg);
         return;
       }
-      setOkMsg(
+      let msg =
         data.contractStatus === "signed"
           ? "Firma registrada. El contrato quedó completamente firmado."
-          : "Firma registrada correctamente.",
-      );
+          : "Firma registrada correctamente.";
+      if (data.contractStatus === "signed") {
+        if (data.partyEmailDelivery === "partial") {
+          msg +=
+            " Algunas partes no recibieron el aviso por correo; revisa spam o promociones. El contrato sí quedó firmado.";
+        } else if (data.partyEmailDelivery === "failed") {
+          msg +=
+            " No pudimos enviar el aviso por correo a las partes; el contrato sí quedó firmado. Revisa la configuración del correo del sistema.";
+        }
+      }
+      setOkMsg(msg);
     } catch {
       setError("Error de red al completar la firma.");
     } finally {
@@ -205,7 +218,7 @@ export default function SignatureTokenPage() {
                 disabled={otpBusy}
                 className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
               >
-                {otpBusy ? "Enviando…" : "Solicitar código al correo"}
+                {otpBusy ? "Enviando…" : "Solicitar o reenviar código al correo"}
               </button>
               <div className="flex flex-wrap items-end gap-2">
                 <label className="block text-sm">

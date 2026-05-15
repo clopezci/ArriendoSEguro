@@ -248,6 +248,17 @@ export default function CodebtorStepPage() {
             initial={draft.solidaryCoDebtor.economicSupport}
           />
 
+          <div className="sm:col-span-2 rounded-lg border border-violet-200 bg-violet-50/80 p-3 text-sm text-slate-700">
+            <p>
+              Cuando ya guardaste una <strong>versión contractual</strong> en vista previa, puedes cargar PDF o imágenes
+              de respaldo del codeudor en la pestaña{" "}
+              <Link href={`/dashboard/contracts/${id}/soportes-codeudor`} className="font-medium text-violet-800 underline">
+                Soportes codeudor
+              </Link>{" "}
+              del expediente (sube el arrendador; arrendatario y codeudor pueden descargar).
+            </p>
+          </div>
+
           <CreditHistoryGuidanceBlock
             variant="codebtor"
             verificationName="codebtorCreditHistoryVerified"

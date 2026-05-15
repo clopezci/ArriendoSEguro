@@ -227,6 +227,7 @@ export function LeadMarketForm({
         error?: string;
         stored?: boolean;
         duplicate?: boolean;
+        emailNotice?: string;
         issues?: { fieldErrors?: Record<string, string[]> };
       } = {};
       try {
@@ -272,9 +273,13 @@ export function LeadMarketForm({
         return;
       }
       setStatus("done");
-      setMessage(
+      const baseDone =
         data.message ??
-          "¡Encuesta enviada con éxito! Gracias por ayudarnos a validar Arriendo Seguro. Tus respuestas nos permitirán construir una herramienta más útil para arrendar directamente con mayor claridad y tranquilidad."
+        "¡Encuesta enviada con éxito! Gracias por ayudarnos a validar Arriendo Seguro. Tus respuestas nos permitirán construir una herramienta más útil para arrendar directamente con mayor claridad y tranquilidad.";
+      setMessage(
+        typeof data.emailNotice === "string" && data.emailNotice.trim() !== ""
+          ? `${baseDone}\n\n${data.emailNotice.trim()}`
+          : baseDone,
       );
       resetForm();
     } catch {
@@ -582,7 +587,7 @@ export function LeadMarketForm({
         <p
           role="status"
           aria-live="polite"
-          className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-100/50 dark:text-emerald-800"
+          className="whitespace-pre-line rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-100/50 dark:text-emerald-800"
         >
           {message}
         </p>

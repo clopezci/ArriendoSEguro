@@ -4,6 +4,8 @@ import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { renderPaymentLogAnnex } from "@/domain/payments/renderPaymentLogAnnex";
 import type { PaymentLog } from "@/domain/payments/types";
+import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
+import { persistContractPdfAsset } from "@/domain/contracts/persistContractPdfAsset";
 import { auditEvent } from "@/features/contracts/audit";
 import {
   getAuthenticatedUser,
@@ -67,6 +69,7 @@ export async function POST(request: Request) {
     }
     const version = versionSnap.data() as {
       contractId?: string;
+      versionNumber?: number;
       contractPayload?: {
         property?: { address?: string };
         landlord?: { fullName?: string };
@@ -92,9 +95,10 @@ export async function POST(request: Request) {
       payments,
     });
     const now = new Date().toISOString();
-    await firestore.collection("contract_annexes").doc(`annex_payments_${parsed.data.contractId}_${parsed.data.contractVersionId}`).set(
+    const annexId = `annex_payments_${parsed.data.contractId}_${parsed.data.contractVersionId}`;
+    await firestore.collection("contract_annexes").doc(annexId).set(
       {
-        id: `annex_payments_${parsed.data.contractId}_${parsed.data.contractVersionId}`,
+        id: annexId,
         contractId: parsed.data.contractId,
         contractVersionId: parsed.data.contractVersionId,
         leaseProcessId: parsed.data.contractId,
@@ -111,6 +115,38 @@ export async function POST(request: Request) {
       },
       { merge: true },
     );
+
+    try {
+      const generatedAtPdf = new Date().toISOString();
+      const pdfBytes = await renderContractPdfFromHtml({
+        html: rendered.html,
+        contractId: parsed.data.contractId,
+        contractVersionId: parsed.data.contractVersionId,
+        versionNumber: version?.versionNumber ?? 1,
+        documentHash: rendered.hash,
+        generatedAt: generatedAtPdf,
+      });
+      const persisted = await persistContractPdfAsset({
+        pdfBytes,
+        storageObjectPath: `contracts/${parsed.data.contractId}/annexes/${annexId}.pdf`,
+        annexFirestoreDocId: annexId,
+      });
+      await firestore.collection("contract_annexes").doc(annexId).set(
+        {
+          pdfUrl: persisted.pdfUrl,
+          pdfStoragePath: persisted.pdfStoragePath,
+          paymentLogPdfGeneratedAt: generatedAtPdf,
+          updatedAt: generatedAtPdf,
+          updatedAtServer: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+      auditEvent("payment_log_annex_pdf_generated", { contractId: parsed.data.contractId });
+    } catch (pdfErr) {
+      auditEvent("payment_log_annex_pdf_failed", { contractId: parsed.data.contractId });
+      if (process.env.NODE_ENV !== "production") console.error("payment_log_annex_pdf", pdfErr);
+    }
+
     await logPaymentAudit("payment_log_annex_generated", {
       contractId: parsed.data.contractId,
       contractVersionId: parsed.data.contractVersionId,

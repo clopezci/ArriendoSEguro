@@ -512,7 +512,21 @@ confirmados.
 
 ---
 
-**Bloque 7 — avance 2026-05-14:** OTP por correo (rutas `request-otp` / `verify-otp`), verificación obligatoria antes de `complete`, evidencia con hash de consentimientos y datos OTP, anexo HTML ampliado (Ley 527), `signingRoundStartedAt` en versión contractual. Pendiente: PDF certificado separado del anexo HTML si el abogado lo exige; escribir `audit_logs` en Firestore para eventos OTP (hoy `auditEvent` es consola en dev).
+**Bloque 7 — cerrado 2026-05-15:** OTP (`request-otp` / `verify-otp`), anexo HTML de evidencia, **constancia en PDF** del mismo anexo al completar todas las firmas (`pdfStoragePath` / `pdfUrl`), id determinístico `annex_sig_evidence_{contractId}_{versionId}`, **`auditEvent` escribe en Firestore** (`audit_logs`) con metadatos sanitizados (correos enmascarados, textos acotados).
+
+**Bloque 8 — cerrado 2026-05-15:** Hub de descargas, ZIP con límites (~52 MB total, ~22 MB por archivo), **PDF del anexo de registro de pagos**, `persistContractPdfAsset`, descarga autenticada `GET /api/contracts/annexes/pdf`.
+
+**Bloque 9 — cerrado 2026-05-13:** Preferencia en borrador + vista previa, pantalla `/dashboard/contracts/[id]/notarial`, `POST /api/contracts/notarial/upload` (multipart, PDF máx. 15 MB, `requireContractParticipant`, Zod `notarialUploadIdsSchema`, cabecera `%PDF-`), anexo `notarial_authentication` con id determinístico `annex_notarial_auth_{contractId}_{contractVersionId}`, persistencia con `persistContractPdfAsset`, actualización de `contract_versions.contractPayload.notarization`, `auditEvent("notarial_authentication_pdf_uploaded")`, ZIP de evidencia con `context=notary` en metadatos de auditoría.
+
+**Bloque 10 — cerrado 2026-05-13:** Pestaña `/dashboard/contracts/[id]/novedades`, `ExpedienteNav`, `POST /api/contracts/novedades` (multipart, Zod, adjunto opcional PDF/JPG/PNG máx. 5 MB, `persistExpedienteAttachment`), subcolección `contracts/{id}/novedades`, `GET /api/contracts/novedades/list` (participante autenticado), `GET /api/contracts/novedades/attachment`, correo `expedienteNovedadEmail` + `email_logs`, `auditEvent` (`expediente_novedad_registered`, descarga de adjunto).
+
+**Bloque 11 — cerrado 2026-05-13:** Flag `NEXT_PUBLIC_LEASE_TEMPLATE_2026_2_ENABLED`, `getDefaultLeaseContractVersion()` en nuevos borradores, `renderResidentialLeaseDispatch` + `POST /api/contracts/preview` usa plantilla 2026.2 solo con flag; expedientes ya guardados siguen según `contractPayload.contractVersion`.
+
+**Bloque 12 — parcial 2026-05-13:** `POST /api/codebtor-supports/upload-url` (Zod, solo arrendador, URL firmada v4 de subida, requiere `FIREBASE_STORAGE_BUCKET` y codeudor en la versión). Pendiente: `confirm`, `download-url`, UI wizard, reglas `storage.rules`, inclusión en ZIP de evidencia.
+
+**Bloque 13 — parcial 2026-05-13:** Sección de encargados y canal Habeas Data en `/legal/aviso-privacidad`. Pendiente: texto completo `AVISO-PRIV-2026.2`, página eliminar cuenta, `POST /api/cuenta/eliminar`, versionado de consentimiento.
+
+**Próximo paso:** cerrar **Bloque 12** (UI + confirmación + Storage rules) y **Bloque 13** (aviso completo + eliminación de cuenta) antes de producción amplia; validación legal final del texto 2026.2.
 
 **Bloque 1 entregado** el 2026-05-11 (commit `5222d0e`).
 **Bloques 2 y 3 entregados** el 2026-05-11 (commits `6c996cb`, `ea47792`).
@@ -533,8 +547,6 @@ costo adicional. Las selecciones quedan en `ContractDraft.specialClauses`
 y se ven en el resumen previo; aún no se imprimen en el contrato
 (eso lo activa la plantilla `AS-LEASE-2026.2` en el Bloque 11). Audit
 event `special_clauses_updated`.
-
-**Próximo paso (2026-05-14):** cerrar pendientes del **Bloque 7** (PDF certificado opcional, `audit_logs` persistentes) y continuar con **Bloque 8** (anexo de evidencia / paquete de descargas).
 
 **Notas adicionales del usuario para no olvidar (2026-05-11):**
 

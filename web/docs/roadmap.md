@@ -1,7 +1,7 @@
 # Roadmap visual — ArriendoSeguro
 
 > Tablero rápido del producto. Mantener sincronizado con la regla
-> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-05-14** (Bloque 7 avanzado: OTP firma).
+> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-05-13** (Bloques 11 parcial operativo, 12–13 y PWA en curso).
 >
 > Convenciones:
 > - **[x]** = listo en producción o en `main`.
@@ -92,19 +92,19 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 - [x] Bloque 4 — Selector de tipo de contrato (urbano activo; otros “próximamente”).
 - [x] Bloque 5 — Cláusulas especiales (mascotas, etc.) + aviso de costo adicional.
 - [x] Bloque 6 — Estudio de crédito (link/aliado o “próximamente”).
-- [~] Bloque 7 — Firma reforzada: OTP por correo (envío + verificación), evidencia ampliada (`otpVerifiedAt`, `otpEmail`, `consentBlockHash`), UI en `/firma/[token]`, anexo HTML con Ley 527 y columnas OTP, bloqueo de ronda en `contract_versions`. Pendiente: PDF “certificado” dedicado (si aplica) y `audit_logs` persistentes para OTP.
-- [ ] Bloque 8 — Anexo de evidencia (paquete de descargas por expediente).
-- [ ] Bloque 9 — Autenticación notarial opcional (descarga + carga de PDF autenticado).
-- [ ] Bloque 10 — Módulo de novedades y solicitudes con notificación por email y trazabilidad.
-- [ ] Bloque 11 — Activación oficial de `AS-LEASE-2026.2` para nuevos expedientes.
-- [ ] Bloque 12 — Carga segura de soportes del codeudor (Firebase Storage + URLs firmadas + reglas de seguridad). Requiere habilitar Storage en el proyecto Firebase.
-- [ ] Bloque 13 — Aviso de privacidad completo `AVISO-PRIV-2026.2` (Firebase, Vercel/AWS, Resend, Supabase reservado, transferencia internacional, derechos Habeas Data Ley 1581, canal y endpoint para eliminación de cuenta). Recomendado **antes** del Bloque 11.
+- [x] Bloque 7 — Firma reforzada: OTP por correo, verificación, evidencia ampliada, anexo HTML (Ley 527), **constancia PDF** del anexo de evidencia al completar firma, **`audit_logs` en Firestore** vía `auditEvent` (incluye OTP).
+- [x] Bloque 8 — Anexo de evidencia: hub `/dashboard/contracts/[id]/evidencia`, ZIP `GET /api/contracts/evidence-bundle` con límites de tamaño, **PDF del anexo de pagos**, descarga autenticada `GET /api/contracts/annexes/pdf`, persistencia en Storage o disco.
+- [x] Bloque 9 — Autenticación notarial opcional (descarga + carga de PDF autenticado).
+- [x] Bloque 10 — Módulo de novedades y solicitudes con notificación por email y trazabilidad.
+- [x] Bloque 11 — Activación operativa de `AS-LEASE-2026.2` vía `NEXT_PUBLIC_LEASE_TEMPLATE_2026_2_ENABLED` + render en preview; expedientes antiguos conservan su versión guardada.
+- [~] Bloque 12 — Soportes codeudor: listo `POST /api/codebtor-supports/upload-url` (firma v4, solo arrendador). Falta confirm, download, UI, `storage.rules`, ZIP evidencia.
+- [~] Bloque 13 — Aviso de privacidad: resumen de encargados + canal en `/legal/aviso-privacidad`. Falta `AVISO-PRIV-2026.2` completo, eliminación de cuenta y endpoint.
 
 ### PWA instalable *(prio 2)*
-- [ ] `web/public/manifest.webmanifest` (`display: standalone`, theme/background `#0b0f1a`).
-- [ ] Íconos morados AS 192/512 + maskable.
-- [ ] Service worker (cache-first estáticos, network-first `/api/*`).
-- [ ] Splash y meta-tags iOS/Android.
+- [x] `web/public/manifest.webmanifest` (`display: standalone`, theme/background `#0b0f1a`, íconos desde PNG existente).
+- [x] Service worker mínimo (`/sw.js`, cache-first GET estático, red directa para `/api/*`) + registro en layout.
+- [ ] Íconos morados AS dedicados 192/512 + maskable (sustituir placeholder cuando existan assets finales).
+- [ ] Splash y meta-tags iOS/Android dedicados.
 - [ ] Probar instalación real en Android (Chrome) y iOS (Safari → Compartir).
 
 ### Cobros reales *(prio 3)*
@@ -146,7 +146,7 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 ### Seguridad y datos
 - [x] Validación Zod en API públicas (`/api/leads`, etc.).
 - [x] Admin SDK aislado en server.
-- [~] Reglas Firestore mínimas viables (revisar caso a caso al avanzar).
+- [~] Reglas Firestore mínimas viables (revisar caso a caso al avanzar). Subcolección `contracts/{id}/novedades`: hoy las escrituras van por **Admin SDK** en `route.ts`; si habilitas reglas cliente, alinea lectura/escritura con participantes del contrato (ver `web/docs/checklist-firebase-vercel-operacion.md`).
 - [ ] Rate-limit explícito en endpoints públicos.
 - [x] Mapas de error de Firebase a textos en español (`firebase-errors.ts`).
 

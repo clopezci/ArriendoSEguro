@@ -143,7 +143,7 @@ export async function POST(request: Request) {
         leasePartyId: `${contractId}:${party}`,
         partyType: party,
         signerName: person.fullName,
-        signerEmail: person.email,
+        signerEmail: person.email.trim().toLowerCase(),
         signerDocument: `${person.documentType} ${person.documentNumber}`,
         signatureStatus: "sent",
         signatureMethod: "email_link",
@@ -179,7 +179,7 @@ export async function POST(request: Request) {
 
       signatures.push({
         partyType: party,
-        signerEmail: person.email,
+        signerEmail: person.email.trim().toLowerCase(),
         signatureStatus: "sent",
         tokenExpiresAt,
         sentAt,

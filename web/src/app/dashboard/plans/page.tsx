@@ -121,16 +121,21 @@ export default function PlansPage() {
       const data = (await res.json()) as {
         success?: boolean;
         status?: "created" | "already_exists";
+        emailDelivery?: "ok" | "failed" | "skipped";
         errors?: { message?: string }[];
       };
       if (!res.ok || !data.success) {
         throw new Error(data.errors?.[0]?.message ?? "No se pudo activar Plan Plus de prueba.");
       }
-      setMsg(
+      let line =
         data.status === "already_exists"
           ? "Ya tenías un Plan Plus activo disponible para pruebas."
-          : "Plan Plus de prueba activado correctamente.",
-      );
+          : "Plan Plus de prueba activado correctamente.";
+      if (data.emailDelivery && data.emailDelivery !== "ok") {
+        line +=
+          " El correo de confirmación no salió bien; revisa el proveedor de correo del servidor si esperabas un mensaje en la bandeja.";
+      }
+      setMsg(line);
       await loadAccess();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error activando Plan Plus de prueba.");

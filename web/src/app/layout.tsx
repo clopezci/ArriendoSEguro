@@ -1,5 +1,6 @@
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { LegalFooter } from "@/components/layout/legal-footer";
+import { PwaRegister } from "@/components/pwa-register";
 import { AppProviders } from "@/components/providers/app-providers";
 import { appConfig } from "@/lib/config";
 import type { Metadata } from "next";
@@ -18,6 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(appConfig.publicUrl),
+  manifest: "/manifest.webmanifest",
   title: {
     default: `${appConfig.name} | Arriendo entre personas en Colombia`,
     template: `%s | ${appConfig.name}`,
@@ -36,6 +38,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} bg-slate-50 text-slate-900 antialiased`}
       >
         <GoogleAnalytics />
+        <PwaRegister />
         <AppProviders>
           <div className="flex min-h-screen flex-col">
             <div className="flex-1">{children}</div>

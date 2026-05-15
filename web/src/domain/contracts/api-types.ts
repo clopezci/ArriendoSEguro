@@ -178,6 +178,8 @@ export type StartSignatureResponse =
         signatureStatus: "pending" | "sent" | "opened" | "signed" | "expired" | "cancelled" | "failed";
         tokenExpiresAt: string;
         sentAt: string;
+        /** Resultado del envío de la invitación al iniciar la ronda (Resend / mock). */
+        emailMode?: "real" | "mock" | "failed" | "skipped";
       }>;
     }
   | { success: false; errors: { field: string; message: string }[] };
@@ -202,7 +204,13 @@ export type SignatureOtpResponse =
   | { success: false; errors: { field: string; message: string }[] };
 
 export type CompleteSignatureResponse =
-  | { success: true; signatureStatus: "signed"; contractStatus: string }
+  | {
+      success: true;
+      signatureStatus: "signed";
+      contractStatus: string;
+      /** Solo cuando el contrato queda totalmente firmado y se intentó avisar por correo a las partes. */
+      partyEmailDelivery?: "ok" | "partial" | "failed";
+    }
   | { success: false; errors: { field: string; message: string }[] };
 
 export type ContractLifecycleStatus =
@@ -211,4 +219,10 @@ export type ContractLifecycleStatus =
   | "ready_for_signature"
   | "signed"
   | "voided";
+
+/** Metadatos del formulario multipart de carga notarial (Bloque 9). */
+export const notarialUploadIdsSchema = z.object({
+  contractId: z.string().min(3),
+  contractVersionId: z.string().min(3),
+});
 

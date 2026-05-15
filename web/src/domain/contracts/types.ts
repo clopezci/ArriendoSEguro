@@ -14,12 +14,11 @@ export type SourceLegalFramework =
  * Versiones registradas de la plantilla del contrato.
  * - `AS-LEASE-MVP-2026.1`: plantilla en producción para todos los expedientes vivos
  *   en la fase inicial (vivienda urbana, Ley 820 de 2003).
- * - `AS-LEASE-2026.2`: nueva versión en borrador (no activa todavía). Agrega
- *   cláusula de liquidación, refuerzos a codeudor, firma electrónica reforzada
- *   con OTP, autenticación notarial opcional y cláusulas especiales solicitadas
- *   por las partes. Su activación queda condicionada a la confirmación del
- *   abogado y a la entrega de los bloques 2 a 10 del plan de mejoras
- *   (`web/docs/plan-mejoras-contrato-flujo.md`).
+ * - `AS-LEASE-2026.2`: plantilla ampliada (liquidación, codeudor reforzado, OTP,
+ *   notaría opcional, cláusulas especiales). Se activa para **nuevos** borradores
+ *   cuando `NEXT_PUBLIC_LEASE_TEMPLATE_2026_2_ENABLED=true` en el entorno, tras
+ *   validación legal. Los expedientes ya persistidos conservan la versión con la
+ *   que se generaron.
  */
 export type ContractVersion = "AS-LEASE-MVP-2026.1" | "AS-LEASE-2026.2";
 

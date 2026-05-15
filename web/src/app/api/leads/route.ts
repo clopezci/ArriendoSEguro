@@ -9,6 +9,19 @@ export const runtime = "nodejs";
 
 const MAX_JSON_BYTES = 32_000;
 
+/**
+ * Correos que omiten la comprobación de duplicado en `lead_forms` (pruebas repetidas
+ * sin bloqueo). Incluye correo interno acordado; amplía con `LEAD_FORM_DEDUP_BYPASS_EMAILS`
+ * en Vercel (lista separada por comas, sin espacios obligatorios).
+ */
+function leadDedupBypassEmails(): Set<string> {
+  const fromEnv =
+    process.env.LEAD_FORM_DEDUP_BYPASS_EMAILS?.split(/[,;\s]+/)
+      .map((s) => s.trim().toLowerCase())
+      .filter((s) => s.length > 0) ?? [];
+  return new Set(["clopezci@hotmail.com", ...fromEnv]);
+}
+
 function jsonError(message: string, status: number) {
   return NextResponse.json({ ok: false, error: message }, { status });
 }
@@ -44,7 +57,8 @@ export function OPTIONS() {
 
 /**
  * Lead público: validación con Zod, tope de tamaño, email normalizado,
- * y evita duplicar por el mismo correo (cuando el usuario lo informa).
+ * y evita duplicar por el mismo correo (cuando el usuario lo informa), salvo
+ * correos en la lista de omisión de deduplicación (pruebas; ver `leadDedupBypassEmails`).
  * Abuso: mitigar más adelante con rate limit (Edge/KV) o reglas de red en Vercel.
  *
  * Importante: este handler siempre debe responder JSON estructurado
@@ -116,7 +130,7 @@ async function handlePost(request: Request) {
     });
   }
 
-  if (email) {
+  if (email && !leadDedupBypassEmails().has(email)) {
     const existing = await firestore
       .collection("lead_forms")
       .where("email", "==", email)
@@ -128,7 +142,7 @@ async function handlePost(request: Request) {
         stored: false,
         duplicate: true,
         message:
-          "Ese correo ya está registrado para la lista de interés. Si necesitas actualizar datos, contáctanos por el canal oficial cuando lo publiquemos.",
+          "Ese correo ya está registrado para la lista de interés. No reenviamos el correo de agradecimiento para evitar duplicados. Si necesitas actualizar datos, contáctanos por el canal oficial cuando lo publiquemos.",
       });
     }
   }
@@ -150,9 +164,10 @@ async function handlePost(request: Request) {
     createdAt: FieldValue.serverTimestamp(),
   });
 
+  let emailNotice: string | undefined;
   if (email) {
     const template = surveyThankYouEmail();
-    await sendEmail({
+    const emailResult = await sendEmail({
       to: email,
       subject: template.subject,
       html: template.html,
@@ -161,7 +176,23 @@ async function handlePost(request: Request) {
       relatedEntityType: "lead_form",
       relatedEntityId: ref.id,
     });
+    if (emailResult.status === "failed") {
+      emailNotice =
+        "Guardamos tu encuesta, pero el correo de confirmación no se pudo enviar en este momento. Revisa en un rato o en spam y promociones; si sigue sin llegar, contáctanos por el canal oficial cuando lo publiquemos.";
+    } else if (emailResult.status === "skipped") {
+      emailNotice =
+        "Guardamos tu encuesta, pero no enviamos correo (destinatario no válido según nuestros controles).";
+    } else if (emailResult.status === "mock") {
+      emailNotice =
+        "En este entorno el correo no se envía de verdad (no hay RESEND_API_KEY o estás en modo simulado).";
+    } else {
+      emailNotice =
+        "Te enviamos un correo de agradecimiento. Si no lo ves en unos minutos, revisa spam o promociones.";
+    }
+  } else {
+    emailNotice =
+      "No indicaste correo electrónico en el formulario (es opcional), así que no enviamos confirmación por e-mail.";
   }
 
-  return NextResponse.json({ ok: true, stored: true, id: ref.id });
+  return NextResponse.json({ ok: true, stored: true, id: ref.id, emailNotice });
 }

@@ -197,7 +197,7 @@ export async function POST(request: Request) {
         orderId: order.id,
       });
       const plusTemplate = plusAccessConfirmedEmail({ userEmail: order.userEmail, source: "payment" });
-      await sendEmail({
+      const emailResult = await sendEmail({
         to: order.userEmail,
         subject: plusTemplate.subject,
         html: plusTemplate.html,
@@ -206,6 +206,12 @@ export async function POST(request: Request) {
         relatedEntityType: "platform_order",
         relatedEntityId: order.id,
       });
+      if (emailResult.status !== "sent" && emailResult.status !== "mock") {
+        await auditPlatformPaymentEvent(firestore, "plus_access_email_failed", {
+          orderId: order.id,
+          status: emailResult.status,
+        });
+      }
       return NextResponse.json({ success: true, status: "approved" });
     }
     const mappedOrderStatus = decision.status;

@@ -109,12 +109,57 @@ export function renderElectronicSignatureEvidenceAnnex(input: {
   `;
 
   return {
-    id: `annex_sig_${Date.now()}`,
+    id: `annex_sig_evidence_${input.contract.id}_${input.contractVersion.id}`,
     contractId: input.contract.id,
     contractVersionId: input.contractVersion.id,
     leaseProcessId: input.leaseProcessId,
     annexType: "electronic_signature_evidence",
     title: ANNEX_TITLES.electronic_signature_evidence,
+    status: "generated",
+    htmlContent,
+    documentHash: generateDocumentHash(htmlContent),
+    createdAt: now,
+    updatedAt: now,
+    generatedAt: now,
+  };
+}
+
+export function notarialAuthenticationAnnexId(contractId: string, contractVersionId: string): string {
+  return `annex_notarial_auth_${contractId}_${contractVersionId}`;
+}
+
+/**
+ * Constancia HTML del anexo; el PDF visible es el cargado por las partes
+ * (autenticado en notaría), no generado desde este HTML.
+ */
+export function buildNotarialAuthenticationAnnex(input: {
+  contractId: string;
+  contractVersionId: string;
+  leaseProcessId: string;
+  uploadedAtIso: string;
+  uploadedByRole: string;
+}): ContractAnnex {
+  const now = new Date().toISOString();
+  const id = notarialAuthenticationAnnexId(input.contractId, input.contractVersionId);
+  const htmlContent = `
+    <article>
+      <h1>${ANNEX_TITLES.notarial_authentication}</h1>
+      <p>Expediente (contrato): ${input.contractId}</p>
+      <p>Versión contractual: ${input.contractVersionId}</p>
+      <p>Fecha de registro de la carga en la plataforma (UTC): ${input.uploadedAtIso}</p>
+      <p>Rol de quien subió el archivo: ${input.uploadedByRole}</p>
+      <p><strong>Importante:</strong> ArriendoSeguro no actúa como notaría ni revisa el contenido del documento autenticado. Este anexo solo archiva el PDF que cargaste como parte del expediente. Para notariado digital con aliado, estamos trabajando en integraciones futuras.</p>
+      <p><strong>Marco legal (orientación general):</strong> la autenticación de documentos y competencias notariales se rigen por la normativa colombiana aplicable. Si tienes dudas, consulta a un notario o a tu asesor jurídico.</p>
+    </article>
+  `;
+
+  return {
+    id,
+    contractId: input.contractId,
+    contractVersionId: input.contractVersionId,
+    leaseProcessId: input.leaseProcessId,
+    annexType: "notarial_authentication",
+    title: ANNEX_TITLES.notarial_authentication,
     status: "generated",
     htmlContent,
     documentHash: generateDocumentHash(htmlContent),

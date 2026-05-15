@@ -3,7 +3,7 @@
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { ExpedienteNotesCard } from "@/components/contracts/expediente-notes-card";
 import { WizardShell } from "@/components/contracts/wizard-shell";
-import { appendAudit, toContractInput, updateDraft } from "@/features/contracts/wizard-state";
+import { appendAudit, getDraft, setNotarizationSelection, toContractInput, updateDraft } from "@/features/contracts/wizard-state";
 import { auditEvent } from "@/features/contracts/audit";
 import type {
   ContractPreviewResponse,
@@ -100,6 +100,7 @@ export default function PreviewStepPage() {
     tone: "info" | "warning";
     title: string;
     details: string[];
+    footer?: "mock" | "send_failed";
   } | null>(null);
   const [signatureRows, setSignatureRows] = useState<
     Array<{
@@ -132,6 +133,8 @@ export default function PreviewStepPage() {
     documentHash: string | null;
   } | null>(null);
 
+  const [wantsNotarizationUi, setWantsNotarizationUi] = useState(false);
+
   const activeDraft = draft;
 
   // Genera automáticamente la vista previa la primera vez que el usuario llega
@@ -153,6 +156,12 @@ export default function PreviewStepPage() {
     // las guardas anteriores.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDraft?.id]);
+
+  useEffect(() => {
+    if (state !== "ready" || !id) return;
+    const d = getDraft(id);
+    setWantsNotarizationUi(Boolean(d?.notarization?.wantsNotarization));
+  }, [id, state]);
 
   async function requestPreview() {
     if (!activeDraft) return;
@@ -343,12 +352,16 @@ export default function PreviewStepPage() {
       const anyFailed = data.signatures.some(
         (s) => s.emailMode === "failed" || s.emailMode === "skipped",
       );
+      let footer: "mock" | "send_failed" | undefined;
+      if (anyFailed) footer = "send_failed";
+      else if (!anyReal) footer = "mock";
       setSignatureRoundMessage({
         tone: anyFailed || !anyReal ? "warning" : "info",
         title: anyReal
           ? "Iniciamos la ronda de firmas y enviamos los correos a las partes."
           : "Iniciamos la ronda de firmas en modo demo. Cuando configures el proveedor de correo, las invitaciones se enviarán automáticamente.",
         details,
+        footer,
       });
     } catch {
       setRenderErrors([
@@ -426,6 +439,42 @@ export default function PreviewStepPage() {
           initialNotes={activeDraft.expedienteNotes ?? ""}
           variant="banner"
         />
+      </div>
+      <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-800">
+        <h2 className="font-semibold text-slate-900">Autenticación notarial (opcional)</h2>
+        <p className="mt-1 text-xs text-slate-600">
+          Si las partes van a autenticar el contrato en notaría, deja constancia aquí. Cuando la plantilla{" "}
+          <span className="font-mono">AS-LEASE-2026.2</span> esté activa, la cláusula correspondiente puede mostrarse al
+          regenerar la vista previa. El archivo autenticado lo subes desde la pantalla dedicada (no sustituye la firma
+          electrónica en la plataforma).
+        </p>
+        <label className="mt-3 flex cursor-pointer items-start gap-2">
+          <input
+            type="checkbox"
+            checked={wantsNotarizationUi}
+            onChange={(e) => {
+              const v = e.target.checked;
+              setWantsNotarizationUi(v);
+              setNotarizationSelection(id, v);
+              if (previewHtml) {
+                setSaveMessage(
+                  "Actualizaste la preferencia de notaría. Pulsa «Regenerar vista previa» y, si ya habías guardado versión, vuelve a guardarla para alinear el expediente.",
+                );
+              }
+            }}
+            className="mt-0.5"
+          />
+          <span>Llevaremos el contrato a notaría para autenticación (como refuerzo a la firma electrónica aquí).</span>
+        </label>
+        <p className="mt-3 text-xs">
+          <Link href={`/dashboard/contracts/${id}/novedades`} className="font-medium text-violet-700 underline">
+            Novedades y solicitudes del expediente
+          </Link>
+          <span className="text-slate-400"> · </span>
+          <Link href={`/dashboard/contracts/${id}/notarial`} className="font-medium text-violet-700 underline">
+            Descargas y carga del PDF autenticado
+          </Link>
+        </p>
       </div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <button
@@ -539,6 +588,12 @@ export default function PreviewStepPage() {
           <h3 className="text-sm font-semibold text-slate-900">Inventario y entrega</h3>
           <div className="mt-2 flex flex-wrap gap-2">
             <Link
+              href={`/dashboard/contracts/${id}/evidencia`}
+              className="rounded border border-violet-600 px-3 py-2 text-xs font-medium text-violet-800"
+            >
+              Anexo de evidencia (descargas)
+            </Link>
+            <Link
               href={`/dashboard/contracts/${id}/inventory`}
               className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-800"
             >
@@ -582,10 +637,18 @@ export default function PreviewStepPage() {
               ))}
             </ul>
           )}
-          {signatureRoundMessage.tone === "warning" && (
+          {signatureRoundMessage.footer === "mock" && (
             <p className="mt-2">
-              Aún no hemos configurado el proveedor de correo (Resend). Las firmas quedan registradas
-              en el expediente; pronto activaremos el envío real cuando el dominio esté listo.
+              Aún no hay envío real de correo: falta configurar el proveedor en el servidor (clave de API y remitente)
+              o estás en modo simulado. Las firmas quedan en el expediente; al activar el proveedor, las invitaciones
+              saldrán automáticamente.
+            </p>
+          )}
+          {signatureRoundMessage.footer === "send_failed" && (
+            <p className="mt-2">
+              Uno o más correos de invitación no se pudieron enviar. Revisa la configuración del proveedor, la carpeta
+              de spam de las partes y los registros de correo del sistema. Puedes intentar de nuevo más tarde o repetir
+              la ronda si hace falta.
             </p>
           )}
         </div>
@@ -619,7 +682,10 @@ export default function PreviewStepPage() {
               </tbody>
             </table>
           </div>
-          <p className="mt-2 text-xs text-slate-600">Reenviar enlace: TODO (siguiente iteración).</p>
+          <p className="mt-2 text-xs text-slate-600">
+            Para pedir de nuevo el código de verificación (OTP), cada firmante usa «Solicitar código al correo» en su
+            enlace de firma. Las invitaciones con enlace se envían al pulsar «Iniciar firma» arriba.
+          </p>
         </section>
       )}
       {pdfInfo && (

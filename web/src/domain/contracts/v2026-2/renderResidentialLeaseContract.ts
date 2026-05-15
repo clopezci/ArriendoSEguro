@@ -62,10 +62,9 @@ function withConditionalBlocksV2026_2(
 /**
  * Render del contrato bajo la plantilla `AS-LEASE-2026.2`.
  *
- * Importante: este render aún no se conecta al wizard. Se invocará desde el
- * bloque 11 del plan `web/docs/plan-mejoras-contrato-flujo.md`, una vez se
- * validen los demás bloques. Mientras tanto puede usarse en tests o en
- * vistas previas internas que reciban el flag `contractVersion`.
+ * Importante: el render se invoca desde `renderResidentialLeaseDispatch` cuando
+ * el flag `NEXT_PUBLIC_LEASE_TEMPLATE_2026_2_ENABLED` está en `true` y el payload
+ * trae `contractVersion: "AS-LEASE-2026.2"`.
  */
 export function renderResidentialLeaseContractV2026_2(
   input: ResidentialLeaseContractInput,

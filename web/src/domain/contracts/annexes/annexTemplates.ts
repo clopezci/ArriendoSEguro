@@ -8,6 +8,7 @@ export const ANNEX_TITLES: Record<ContractAnnexType, string> = {
   payment_log: "Anexo No. 3 - Registro de pagos",
   closing_act: "Anexo No. 4 - Acta de cierre",
   electronic_signature_evidence: "Anexo No. 5 - Evidencia de firma electrónica",
+  notarial_authentication: "Anexo — Copia autenticada en notaría (opcional)",
   data_processing_authorizations: "Anexo No. 6 - Autorizaciones de tratamiento de datos",
   structured_evaluation: "Anexo No. 7 - Evaluación estructurada",
 };

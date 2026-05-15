@@ -68,19 +68,6 @@ export async function POST(request: Request) {
     const expiresAt = new Date(now + SIGNATURE_OTP_TTL_MS).toISOString();
     const sentAt = new Date().toISOString();
 
-    await ref.set(
-      {
-        signatureOtpHash: otpHash,
-        signatureOtpExpiresAt: expiresAt,
-        signatureOtpVerifyAttempts: 0,
-        signatureOtpLastSentAt: sentAt,
-        otpVerifiedAt: null,
-        otpEmailAtVerification: null,
-        updatedAt: sentAt,
-      },
-      { merge: true },
-    );
-
     const tpl = signatureOtpEmail({
       signerName: signature.signerName,
       code,
@@ -96,13 +83,21 @@ export async function POST(request: Request) {
       relatedEntityId: signature.contractId,
     });
 
-    auditEvent("signature_otp_sent", {
-      contractId: signature.contractId,
-      partyType: signature.partyType,
-      mode: emailResult.status,
-    });
+    auditEvent(
+      emailResult.status === "sent" || emailResult.status === "mock"
+        ? "signature_otp_sent"
+        : "signature_otp_send_failed",
+      {
+        contractId: signature.contractId,
+        partyType: signature.partyType,
+        mode: emailResult.status,
+      },
+    );
 
     if (emailResult.status !== "sent" && emailResult.status !== "mock") {
+      // Aplica el mismo enfriamiento aunque falle el envío, para no martillar al proveedor;
+      // no actualizamos el hash hasta que el correo salga, así un código anterior sigue válido si existía.
+      await ref.set({ signatureOtpLastSentAt: sentAt, updatedAt: sentAt }, { merge: true });
       return NextResponse.json<SignatureOtpResponse>(
         {
           success: false,
@@ -111,6 +106,19 @@ export async function POST(request: Request) {
         { status: 502 },
       );
     }
+
+    await ref.set(
+      {
+        signatureOtpHash: otpHash,
+        signatureOtpExpiresAt: expiresAt,
+        signatureOtpVerifyAttempts: 0,
+        signatureOtpLastSentAt: sentAt,
+        otpVerifiedAt: null,
+        otpEmailAtVerification: null,
+        updatedAt: sentAt,
+      },
+      { merge: true },
+    );
 
     return NextResponse.json<SignatureOtpResponse>({
       success: true,

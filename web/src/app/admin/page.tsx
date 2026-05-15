@@ -136,6 +136,7 @@ export default function AdminPage() {
         entitlementId?: string;
         userId?: string;
         userEmail?: string;
+        emailDelivery?: "ok" | "failed" | "skipped";
         errors?: { field?: string; message: string }[];
       };
       if (!res.ok || !json.success) {
@@ -158,9 +159,12 @@ export default function AdminPage() {
           `El usuario ya tenía un Plan Plus activo. No se creó uno nuevo (entitlement ${json.entitlementId ?? "—"}).`,
         );
       } else {
-        setGrantMsg(
-          `Plan Plus manual creado correctamente para ${json.userEmail ?? grantEmail.trim()} (entitlement ${json.entitlementId ?? "—"}).`,
-        );
+        let base = `Plan Plus manual creado correctamente para ${json.userEmail ?? grantEmail.trim()} (entitlement ${json.entitlementId ?? "—"}).`;
+        if (json.emailDelivery && json.emailDelivery !== "ok") {
+          base +=
+            " El correo de confirmación no se envió correctamente: revisa la configuración del proveedor y los registros de correo.";
+        }
+        setGrantMsg(base);
       }
       setGrantDetail({
         status: json.status ?? "created",

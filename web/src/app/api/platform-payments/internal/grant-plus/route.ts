@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     userEmail: result.userEmail,
     source: "manual",
   });
-  await sendEmail({
+  const emailResult = await sendEmail({
     to: result.userEmail,
     subject: plusTemplate.subject,
     html: plusTemplate.html,
@@ -98,6 +98,12 @@ export async function POST(request: Request) {
     entitlementId: result.entitlementId,
     userId: result.userId,
     userEmail: result.userEmail,
+    emailDelivery:
+      emailResult.status === "sent" || emailResult.status === "mock"
+        ? "ok"
+        : emailResult.status === "failed"
+          ? "failed"
+          : "skipped",
   });
 }
 

@@ -6,6 +6,7 @@ import type { ColombianNotificationAddressParts } from "@/domain/colombia/struct
 import type {
   ContractType,
   CreditCheckSelection,
+  NotarizationSelection,
   ResidentialLeaseContractInput,
   SpecialClausesSelection,
 } from "@/domain/contracts/types";
@@ -17,6 +18,7 @@ import {
   partyDraftToPersonParty,
   type PropertyDraftWithParts,
 } from "@/features/contracts/party-normalize";
+import { getDefaultLeaseContractVersion } from "@/domain/contracts/leaseTemplateFlags";
 
 export type AccessStatus = "demo" | "paid" | "pending_payment" | "expired";
 export type ContractFlowStatus =
@@ -84,6 +86,12 @@ export type AuditEventName =
    * (Bloque 11 del plan).
    */
   | "special_clauses_updated"
+  /**
+   * Las partes marcaron (o desmarcaron) que desean autenticar el contrato
+   * ante notaría. La impresión de la cláusula condicional corresponde a la
+   * plantilla `AS-LEASE-2026.2` cuando esté activa.
+   */
+  | "notarization_selection_updated"
   /** Recorrido /demo (localStorage); no implica expediente real. */
   | "demo_viewed"
   | "demo_step_opened"
@@ -179,6 +187,12 @@ export interface ContractDraft {
    * Bloque 3 del plan de mejoras.
    */
   expedienteNotes?: string;
+  /**
+   * Intención de autenticación notarial (Bloque 9). El PDF autenticado
+   * cargado por las partes queda en `contract_annexes` y en
+   * `contractPayload.notarization` al completar la subida en servidor.
+   */
+  notarization?: NotarizationSelection;
   /**
    * Declaración del arrendador (dueño) sobre verificación de historial
    * crediticio fuera de ArriendoSeguro (Bloque 6). Sin adjuntos.
@@ -451,7 +465,7 @@ export function createContractDraft(input: {
     accessStatusSnapshot: input.accessStatus,
     isDemo: input.isDemo,
     hasSolidaryCoDebtor: false,
-    contractVersion: "AS-LEASE-MVP-2026.1",
+    contractVersion: getDefaultLeaseContractVersion(),
     contractType: "VIVIENDA_URBANA",
     generatedAt: now,
     status: "draft",
@@ -539,6 +553,26 @@ export function setSpecialClauses(
         hasFreeText: Boolean(cleaned.freeText),
         costNotified: cleaned.costNotified,
       },
+    ),
+  );
+}
+
+/**
+ * Preferencia de autenticación notarial (Bloque 9). El archivo autenticado
+ * se registra aparte vía API al subir el PDF.
+ */
+export function setNotarizationSelection(
+  draftId: string,
+  wantsNotarization: boolean,
+): ContractDraft | null {
+  return updateDraft(draftId, (draft) =>
+    appendAudit(
+      {
+        ...draft,
+        notarization: { wantsNotarization },
+      },
+      "notarization_selection_updated",
+      { wantsNotarization },
     ),
   );
 }
@@ -650,6 +684,7 @@ export function toContractInput(draft: ContractDraft): ResidentialLeaseContractI
     // automáticamente en el HTML del contrato sin costo adicional. La
     // opción «Otra» también se imprime con disclaimer y se tarifa aparte.
     specialClauses: draft.specialClauses,
+    notarization: draft.notarization,
     // Las anotaciones especiales del expediente sí se imprimen en el
     // contrato como sección complementaria con disclaimer legal explícito,
     // por solicitud del usuario para que queden visibles en el documento

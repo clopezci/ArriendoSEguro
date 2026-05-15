@@ -13,6 +13,8 @@ import { allRequiredSignaturesCompleted } from "@/domain/signatures/signatureRul
 import type { SignatureRecord } from "@/domain/signatures/types";
 import { auditEvent } from "@/features/contracts/audit";
 import { renderElectronicSignatureEvidenceAnnex } from "@/domain/contracts/annexes/renderAnnex";
+import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
+import { persistContractPdfAsset } from "@/domain/contracts/persistContractPdfAsset";
 import { contractSignedEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
 
@@ -178,19 +180,38 @@ export async function POST(request: Request) {
             .filter((email): email is string => Boolean(email)),
         ),
       );
-      await Promise.all(
-        uniqueEmails.map((email) =>
-          sendEmail({
-            to: email,
+      const emailOutcomes = await Promise.all(
+        uniqueEmails.map(async (to) => {
+          const r = await sendEmail({
+            to,
             subject: signedTemplate.subject,
             html: signedTemplate.html,
             text: signedTemplate.text,
             templateCode: "contractSignedEmail",
             relatedEntityType: "contract",
             relatedEntityId: signature.contractId,
-          }),
-        ),
+          });
+          return r;
+        }),
       );
+      const ok = (s: (typeof emailOutcomes)[number]) => s.status === "sent" || s.status === "mock";
+      const anyOk = emailOutcomes.some(ok);
+      const allOk = emailOutcomes.length > 0 && emailOutcomes.every(ok);
+      emailOutcomes.forEach((r, i) => {
+        if (ok(r)) return;
+        auditEvent("contract_signed_party_email_failed", {
+          contractId: signature.contractId,
+          templateCode: "contractSignedEmail",
+          status: r.status,
+          recipientIndex: i,
+        });
+      });
+      let partyEmailDelivery: "ok" | "partial" | "failed" | undefined;
+      if (uniqueEmails.length > 0) {
+        if (allOk) partyEmailDelivery = "ok";
+        else if (anyOk) partyEmailDelivery = "partial";
+        else partyEmailDelivery = "failed";
+      }
       if (version?.documentHash) {
         const annex = renderElectronicSignatureEvidenceAnnex({
           contract: { id: signature.contractId, status: "signed" },
@@ -207,11 +228,47 @@ export async function POST(request: Request) {
           contractId: signature.contractId,
           contractVersionId: signature.contractVersionId,
         });
+        try {
+          const generatedAtPdf = new Date().toISOString();
+          const pdfBytes = await renderContractPdfFromHtml({
+            html: annex.htmlContent,
+            contractId: signature.contractId,
+            contractVersionId: signature.contractVersionId,
+            versionNumber: version?.versionNumber ?? 1,
+            documentHash: annex.documentHash ?? version.documentHash,
+            generatedAt: generatedAtPdf,
+          });
+          const persisted = await persistContractPdfAsset({
+            pdfBytes,
+            storageObjectPath: `contracts/${signature.contractId}/annexes/${annex.id}.pdf`,
+            annexFirestoreDocId: annex.id,
+          });
+          await firestore.collection("contract_annexes").doc(annex.id).set(
+            {
+              pdfUrl: persisted.pdfUrl,
+              pdfStoragePath: persisted.pdfStoragePath,
+              evidenceCertificatePdfGeneratedAt: generatedAtPdf,
+              updatedAt: generatedAtPdf,
+            },
+            { merge: true },
+          );
+          auditEvent("electronic_signature_evidence_pdf_generated", {
+            contractId: signature.contractId,
+            contractVersionId: signature.contractVersionId,
+          });
+        } catch (pdfErr) {
+          auditEvent("electronic_signature_evidence_pdf_failed", {
+            contractId: signature.contractId,
+            contractVersionId: signature.contractVersionId,
+          });
+          if (process.env.NODE_ENV !== "production") console.error("electronic_signature_evidence_pdf", pdfErr);
+        }
       }
       return NextResponse.json<CompleteSignatureResponse>({
         success: true,
         signatureStatus: "signed",
         contractStatus: "signed",
+        partyEmailDelivery,
       });
     }
 

@@ -3,7 +3,7 @@ import {
   contractPreviewRequestSchema,
   type ContractPreviewResponse,
 } from "@/domain/contracts/api-types";
-import { renderResidentialLeaseContract } from "@/domain/contracts/renderResidentialLeaseContract";
+import { renderResidentialLeaseDispatch } from "@/domain/contracts/renderResidentialLeaseDispatch";
 import { applyDemoWatermark } from "@/domain/contracts/demoWatermark";
 import { validateContractData } from "@/domain/contracts/validateContractData";
 import { generateDocumentHash } from "@/domain/contracts/hash";
@@ -74,7 +74,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const rendered = renderResidentialLeaseContract(payload);
+    let rendered;
+    try {
+      rendered = renderResidentialLeaseDispatch(payload);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "No se pudo generar la vista previa del contrato.";
+      return NextResponse.json<ContractPreviewResponse>(
+        {
+          success: false,
+          html: null,
+          validationErrors: [{ field: "contractVersion", message: msg }],
+          contractVersionDraft: null,
+        },
+        { status: 422 },
+      );
+    }
     const html = parsedReq.data.isDemo ? applyDemoWatermark(rendered.html) : rendered.html;
     // Importante: el hash debe calcularse sobre el HTML que se envía al
     // cliente, no sobre el HTML "limpio" pre-watermark. De lo contrario,

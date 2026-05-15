@@ -4,6 +4,7 @@ export type ContractAnnexType =
   | "payment_log"
   | "closing_act"
   | "electronic_signature_evidence"
+  | "notarial_authentication"
   | "data_processing_authorizations"
   | "structured_evaluation";
 
@@ -19,6 +20,8 @@ export interface ContractAnnex {
   status: ContractAnnexStatus;
   htmlContent: string;
   pdfUrl?: string;
+  /** Ruta local o `gs://bucket/path` para descarga estable (ZIP / `/api/contracts/annexes/pdf`). */
+  pdfStoragePath?: string;
   documentHash?: string;
   createdAt: string;
   updatedAt: string;
