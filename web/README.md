@@ -26,7 +26,10 @@ npm test
 
 ## Vercel
 
-- **Root directory:** `web` (el código vive en esta subcarpeta; el repositorio puede incluir documentos u otros en la raíz).
+- **Producción:** [https://arriendoseguro.vercel.app/](https://arriendoseguro.vercel.app/) — cuenta **`clpezci@gmail.com`**.
+- **Root directory:** `web` (obligatorio en el proyecto Vercel).
+- **Operación y antipatrones de deploy:** [docs/checklist-firebase-vercel-operacion.md](docs/checklist-firebase-vercel-operacion.md) (§0).
+- Archivos de config: `web/vercel.json` (canónico) y `vercel.json` en la raíz del repo (solo si algún proyecto despliega sin Root Directory).
 - Añade `FIREBASE_SERVICE_ACCOUNT_KEY`, `NEXT_PUBLIC_APP_URL` y las variables `NEXT_PUBLIC_FIREBASE_*` (misma app web que en local) en *Environment Variables*.
 
 ## Autenticación (Firebase, cliente)

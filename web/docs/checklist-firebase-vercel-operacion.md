@@ -6,25 +6,74 @@ Guía en español para lo implementado en código y lo que debes configurar **fu
 
 ---
 
-## 0. Vercel: un solo proyecto bien configurado
+## 0. Vercel — producción y cómo no romper el deploy
 
-Si ves **un deploy en verde y otro en rojo** para el mismo commit, suele haber **dos proyectos** en Vercel conectados al mismo repo:
+### 0.1. Referencia (mantener actualizada)
 
-| Proyecto (ejemplo) | Root Directory | Resultado típico |
-|--------------------|----------------|------------------|
-| `arriendo-s-eguro` | `web` | Correcto |
-| `arriendoseguro` | raíz del repo (vacía) | Falla (no encuentra `package.json`) |
+| Qué | Valor |
+|-----|--------|
+| **URL de producción** | [https://arriendoseguro.vercel.app/](https://arriendoseguro.vercel.app/) |
+| **Cuenta Vercel / GitHub** | `clpezci@gmail.com` (mismo correo en ambos) |
+| **Repositorio** | [github.com/clopezci/ArriendoSEguro](https://github.com/clopezci/ArriendoSEguro) — rama **`main`** |
+| **Código de la app** | carpeta **`web/`** (Next.js 15) |
+| **Proyecto Vercel** | uno solo con dominio de producción arriba; **Root Directory = `web`** |
 
-**Qué hacer:**
+Tras cada `git push` a `main`, Vercel redeploya solo. Comprueba en **Deployments** que el commit desplegado coincide con el último de GitHub.
 
-1. En [vercel.com](https://vercel.com) → **Settings** del proyecto que falla → **General** → **Root Directory** → pon **`web`** → Guardar.
-2. O elimina el proyecto duplicado y deja solo uno con dominio de producción.
-3. En la raíz del repo hay `vercel.json` y `package.json` por si algún proyecto sigue desplegando desde la raíz: instalan y construyen dentro de `web/`.
-4. Si **Root Directory = `web`**, Vercel usa `web/vercel.json` (sin `--prefix web`). Si solo existía el `vercel.json` de la raíz, el build podía fallar al buscar `web/web/`.
+### 0.2. Configuración obligatoria en Vercel (panel)
 
-Tras un push a `main`, Vercel redeploya solo. El commit debe usar el correo verificado en GitHub (**`clpezci@gmail.com`**).
+1. Entra a [vercel.com](https://vercel.com) con **`clpezci@gmail.com`**.
+2. Abre el proyecto que sirve [arriendoseguro.vercel.app](https://arriendoseguro.vercel.app/).
+3. **Settings → General → Root Directory** → **`web`** → **Save**.
+4. **Framework Preset:** Next.js (detección automática).
+5. **Build Command** y **Install Command:** déjalos en **vacío** (por defecto) si Root Directory es `web`; Vercel ejecutará `npm install` y `npm run build` **dentro de `web/`**.
+6. No uses **Redeploy** de un deployment viejo en rojo para “probar el arreglo”; espera el deploy del **commit nuevo** en `main`.
+
+Si ves **un deploy en verde y otro en rojo** para el mismo commit, suele haber **dos proyectos** Vercel conectados al mismo repo. Deja **uno** con el dominio de producción y elimina o desconecta el duplicado.
+
+### 0.3. Dos archivos `vercel.json` (no mezclar)
+
+| Archivo | Cuándo aplica | Contenido |
+|---------|----------------|-----------|
+| **`web/vercel.json`** | Root Directory = **`web`** (configuración canónica) | Solo `framework: nextjs`. **Sin** `--prefix web`. |
+| **`vercel.json`** (raíz del repo) | Solo si un proyecto Vercel tiene Root Directory **vacío** | `npm install --prefix web`, `npm run build --prefix web`, `outputDirectory: web/.next` |
+
+**Error que ya ocurrió (mayo 2026):** Root Directory = `web` **y** solo el `vercel.json` de la raíz con `--prefix web` → Vercel buscaba `web/web/` → `npm run build` fallaba con código 1.
+
+**Regla para desarrolladores y agentes:** no añadas `--prefix web` en `web/vercel.json`. Si cambias el de la raíz, no copies esos comandos al de `web/`.
+
+### 0.4. Firebase Admin y auditoría (no volver a empaquetar Admin en el cliente)
+
+- **Cliente** (`"use client"`, páginas del dashboard): solo `@/features/contracts/audit` (consola en desarrollo) o `logGlobalAudit` / `appendAudit` en `wizard-state.ts`.
+- **Servidor** (`app/api/**/route.ts`, servicios con Admin): `@/features/contracts/audit-server` + `import "server-only"` en `web/src/lib/firebase/admin.ts`.
+- **Nunca** importar `firebase-admin`, `@/lib/firebase/admin` ni `audit-server` desde componentes cliente ni desde módulos compartidos que el cliente importe.
+
+Síntoma en log de Vercel si se rompe de nuevo: `Can't resolve 'fs'`, `'net'`, `'http2'` en la traza de `firebase-admin`.
+
+`web/next.config.ts` incluye `serverExternalPackages: ["resend", "firebase-admin"]`; eso **no** sustituye separar imports en código.
+
+### 0.5. Antes de cada push a `main`
+
+1. En PowerShell, desde `web/`: `npm run build` (debe terminar sin error).
+2. Commits con autor verificado en GitHub: **`clpezci@gmail.com`** (no `clopezci@gmail.com` ni correos hotmail/outlook del otro equipo local). Ejemplo en PowerShell sin tocar la config global:
+   ```powershell
+   $env:GIT_AUTHOR_EMAIL='clpezci@gmail.com'
+   $env:GIT_COMMITTER_EMAIL='clpezci@gmail.com'
+   git commit -m "tu mensaje"
+   ```
+3. `git push origin main`
+4. En Vercel → **Deployments** → confirmar que el **commit** es el mismo que `main` en GitHub y el estado es **Ready**.
+5. Abrir [https://arriendoseguro.vercel.app/](https://arriendoseguro.vercel.app/) y validar la landing.
+
+### 0.6. Commits de referencia (incidente deploy mayo 2026)
+
+| Commit | Qué corrige |
+|--------|------------|
+| `0c3bc04` | `audit` / `audit-server`, fuentes sin Google Fonts en build, `serverExternalPackages` |
+| `a02acb0` | `web/vercel.json` para Root Directory = `web` |
 
 ---
+
 
 ## 1. Plantilla `AS-LEASE-2026.2` (Bloque 11)
 
@@ -88,7 +137,7 @@ Recomendación del producto: **mantener `write: if false`** y seguir usando solo
 
 - **HTTPS** es la conexión cifrada entre tu computador e **internet** (por ejemplo a Google o a Vercel).
 - **Saliente** significa: **tu PC inicia** la conexión hacia afuera (descargar fuentes, paquetes, etc.).
-- Durante el build, Next puede **descargar fuentes** (en este proyecto: **Geist** y **Geist Mono** desde los servidores de Google Fonts). Eso usa HTTPS saliente.
+- En redes restrictivas, un build que **descargue fuentes externas** (p. ej. Google Fonts vía `next/font/google`) puede fallar por HTTPS saliente. En producción Vercel el proyecto usa **fuentes del sistema** en `layout.tsx` para evitar esa dependencia en el build.
 - Si tu red (oficina, antivirus, proxy) **no confía** en el certificado de esa conexión, Windows muestra errores como:  
   `unable to verify the first certificate` o `UNABLE_TO_VERIFY_LEAF_SIGNATURE`  
   **No significa que tu código esté malo**; suele ser **red o certificados del entorno**.

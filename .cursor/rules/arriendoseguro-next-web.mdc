@@ -10,7 +10,8 @@ alwaysApply: false
 - **Seguridad:** nunca commitear `.env.local`, JSON de servicio, ni claves. Variables públicas solo con `NEXT_PUBLIC_`. Admin SDK **solo** en `route.ts` / server.
 - **Auth cliente:** `firebase` SDK en **client components**; estado de sesión vía `AuthProvider`; rutas de panel con guard cliente (`RequireAuth`) hasta exista sesión por cookie/ servidor.
 - **Formularios y API:** validar con Zod; APIs en `app/api/**` con `runtime: "nodejs"` si usan Admin.
-- **Build:** `npm run build` en `web/` antes de dar por cerrada una entrega. Root Vercel = directorio `web/`.
+- **Build:** `npm run build` en `web/` antes de dar por cerrada una entrega. Root Vercel = directorio `web/`. Producción: [arriendoseguro.vercel.app](https://arriendoseguro.vercel.app/). Guía deploy: `web/docs/checklist-firebase-vercel-operacion.md` §0.
+- **Deploy (no romper):** no importar `firebase-admin` ni `audit-server` en cliente; usar `audit-server` solo en `route.ts`. Con Root Directory `web`, no poner `--prefix web` en `web/vercel.json`. Commits con `clpezci@gmail.com`.
 - **Git (flujo con el usuario):** el agente ejecuta `git add` / `commit` / `push` de los cambios en el repo salvo que falte permiso o credencial; el usuario solo aprueba en la UI de Cursor o resuelve lo que el entorno no automatice (merge en GitHub, 2FA, etc.). No pedirle al usuario que haga git “a mano” para validar entregas.
 - **Rama por defecto:** trabajar en **`main`** y publicar desde ahí, salvo que el usuario pida explícitamente una rama temporal. No abrir ramas `feat/...` por costumbre del documento de planificación; ese procedimiento es opcional.
 - **Diseño visual base (obligatorio):** paleta principal en **grises y azules oscuros** con acento **morado brillante** para marca. El texto `ArriendoSeguro` debe usar tono morado vibrante.

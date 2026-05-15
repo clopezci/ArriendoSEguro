@@ -9,7 +9,7 @@ Repositorio del emprendimiento **ArriendoSeguro** (formalización y trazabilidad
 ## Arranque rápido
 
 1. Abre la carpeta `web` y sigue [web/README.md](web/README.md) (`npm install`, `npm run dev`).
-2. En Vercel, configura el proyecto con **Root Directory = `web`**.
+2. **Producción:** [https://arriendoseguro.vercel.app/](https://arriendoseguro.vercel.app/) — Vercel con **Root Directory = `web`**, cuenta `clpezci@gmail.com`. Detalle en [web/docs/checklist-firebase-vercel-operacion.md](web/docs/checklist-firebase-vercel-operacion.md) (§0).
 
 ## Próximos hitos (según Instrucciones)
 
