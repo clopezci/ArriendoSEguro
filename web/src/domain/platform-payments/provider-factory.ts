@@ -17,4 +17,3 @@ export function getPaymentProvider(preferred?: "mock" | "wompi"): {
     ? { provider: wompiPaymentProvider, providerCode: "wompi" }
     : { provider: mockPaymentProvider, providerCode: "mock" };
 }
-

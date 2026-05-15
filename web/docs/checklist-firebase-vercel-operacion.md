@@ -6,6 +6,25 @@ Guía en español para lo implementado en código y lo que debes configurar **fu
 
 ---
 
+## 0. Vercel: un solo proyecto bien configurado
+
+Si ves **un deploy en verde y otro en rojo** para el mismo commit, suele haber **dos proyectos** en Vercel conectados al mismo repo:
+
+| Proyecto (ejemplo) | Root Directory | Resultado típico |
+|--------------------|----------------|------------------|
+| `arriendo-s-eguro` | `web` | Correcto |
+| `arriendoseguro` | raíz del repo (vacía) | Falla (no encuentra `package.json`) |
+
+**Qué hacer:**
+
+1. En [vercel.com](https://vercel.com) → **Settings** del proyecto que falla → **General** → **Root Directory** → pon **`web`** → Guardar.
+2. O elimina el proyecto duplicado y deja solo uno con dominio de producción.
+3. En la raíz del repo hay `vercel.json` y `package.json` por si algún proyecto sigue desplegando desde la raíz: instalan y construyen dentro de `web/`.
+
+Tras un push a `main`, Vercel redeploya solo. El commit debe usar el correo verificado en GitHub (**`clpezci@gmail.com`**).
+
+---
+
 ## 1. Plantilla `AS-LEASE-2026.2` (Bloque 11)
 
 1. **Validación legal:** no pongas `true` en producción hasta que el abogado confirme el texto de `web/src/domain/contracts/v2026-2/`.

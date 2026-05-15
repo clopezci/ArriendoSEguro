@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
 

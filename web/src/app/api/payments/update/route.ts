@@ -16,7 +16,7 @@ import {
   sanitizeSupportFileName,
   validatePaymentSupportFile,
 } from "@/domain/payments/supportValidation";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import { logPaymentAudit } from "@/features/payments/paymentAuditLog";
 
 export const runtime = "nodejs";

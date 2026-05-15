@@ -1,6 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import type { Firestore } from "firebase-admin/firestore";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 
 export async function auditPlatformPaymentEvent(
   firestore: Firestore,

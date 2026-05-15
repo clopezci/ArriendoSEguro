@@ -9,7 +9,7 @@ import {
   type GenerateContractPdfResponse,
 } from "@/domain/contracts/api-types";
 import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
 const MAX_JSON_BYTES = 16_000;

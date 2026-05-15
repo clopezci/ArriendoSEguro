@@ -8,7 +8,7 @@ import {
   generateSixDigitOtpCode,
   hashOtpForSignature,
 } from "@/domain/signatures/signatureOtp";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import { signatureOtpEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
 

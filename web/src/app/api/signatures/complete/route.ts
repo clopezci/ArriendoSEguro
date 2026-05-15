@@ -11,7 +11,7 @@ import { buildSignatureEvidence } from "@/domain/signatures/signatureEvidence";
 import { SIGNING_CONSENT_TEXTS, hashConsentBlock } from "@/domain/signatures/signingConsents";
 import { allRequiredSignaturesCompleted } from "@/domain/signatures/signatureRules";
 import type { SignatureRecord } from "@/domain/signatures/types";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import { renderElectronicSignatureEvidenceAnnex } from "@/domain/contracts/annexes/renderAnnex";
 import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
 import { persistContractPdfAsset } from "@/domain/contracts/persistContractPdfAsset";

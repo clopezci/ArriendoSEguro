@@ -3,7 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import { deleteSupportRequestSchema } from "@/domain/codebtor-supports/support-schema";
 import { parseGsUri } from "@/domain/codebtor-supports/storage-path";
 import { codebtorSupportsCollection, type CodebtorSupportDoc } from "@/domain/codebtor-supports/firestore-supports";

@@ -9,7 +9,7 @@ import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
 import { persistExpedienteAttachment } from "@/domain/contracts/persistExpedienteAttachment";
 import { sendEmail } from "@/services/email/sendEmail";
 import { expedienteNovedadEmail } from "@/services/email/emailTemplates";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
 
@@ -151,12 +151,7 @@ export async function POST(request: Request) {
       attachmentUrl = persisted.publicUrl;
     }
 
-    const recipients = resolveNovedadRecipientEmails(
-      payload,
-      hasCodebtor,
-      participant.user.email,
-      participant.role,
-    );
+    const recipients = resolveNovedadRecipientEmails(payload, hasCodebtor, participant.user.email);
 
     const draftId = (cSnap.data() as { draftId?: string } | undefined)?.draftId;
 

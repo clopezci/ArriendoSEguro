@@ -3,7 +3,7 @@ import { signatureVerifyOtpSchema, type SignatureOtpResponse } from "@/domain/co
 import { loadSignatureForToken } from "@/domain/signatures/loadSignatureForToken";
 import { canBeSigned } from "@/domain/signatures/signatureStatus";
 import { SIGNATURE_OTP_MAX_VERIFY_ATTEMPTS, verifyOtpCode } from "@/domain/signatures/signatureOtp";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
 

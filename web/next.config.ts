@@ -43,7 +43,7 @@ const nextConfig: NextConfig = {
    * Marcando `resend` como external del servidor, Next no lo bundlea y Node
    * lo carga en runtime, donde la importación dinámica nunca se ejecuta.
    */
-  serverExternalPackages: ["resend"],
+  serverExternalPackages: ["resend", "firebase-admin"],
   async headers() {
     return [
       {

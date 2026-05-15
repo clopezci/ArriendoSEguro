@@ -5,7 +5,7 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { validateInventoryCompletion } from "@/domain/inventory/validateInventory";
 import { renderInitialInventoryAnnex } from "@/domain/inventory/renderInitialInventoryAnnex";
 import type { Inventory, InventoryItem, InventoryKey, InventoryMeterReading } from "@/domain/inventory/types";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
 const schema = z.object({ inventoryId: z.string().min(3) });

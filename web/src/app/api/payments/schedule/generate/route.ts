@@ -3,7 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { scheduleGenerateSchema } from "@/domain/payments/validatePaymentLog";
 import { generatePaymentSchedule } from "@/domain/payments/generatePaymentSchedule";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
 

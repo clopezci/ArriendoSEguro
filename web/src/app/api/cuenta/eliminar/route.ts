@@ -3,7 +3,7 @@ import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import { getAllEntitlementsForUser } from "@/domain/platform-payments/entitlements";
 import { listFullySignedContractIdsForSignerEmail } from "@/lib/account/signedContractsForEmail";
 

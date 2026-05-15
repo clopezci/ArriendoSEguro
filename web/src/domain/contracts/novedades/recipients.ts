@@ -1,5 +1,4 @@
 import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
-import type { ContractParticipantRole } from "@/lib/auth/serverAuth";
 
 /**
  * Correos de las demás partes del contrato (contraparte y codeudor si aplica),
@@ -9,7 +8,6 @@ export function resolveNovedadRecipientEmails(
   payload: ResidentialLeaseContractInput | undefined,
   hasSolidaryCoDebtor: boolean,
   authorEmail: string,
-  _authorRole: ContractParticipantRole,
 ): string[] {
   const author = authorEmail.trim().toLowerCase();
   const land = (payload?.landlord?.email ?? "").trim().toLowerCase();

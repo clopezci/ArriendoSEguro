@@ -3,7 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import {
   CODEBTOR_SUPPORT_MAX_BYTES,
   CODEBTOR_SUPPORT_MAX_PER_TYPE,

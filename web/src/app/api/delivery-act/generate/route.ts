@@ -7,7 +7,7 @@ import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { Inventory, InventoryKey, InventoryMeterReading } from "@/domain/inventory/types";
 import { renderInitialDeliveryAct } from "@/domain/inventory/renderInitialDeliveryAct";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
 
 export const runtime = "nodejs";

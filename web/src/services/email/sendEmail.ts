@@ -1,5 +1,5 @@
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import { MockEmailProvider, type EmailProvider } from "@/services/email/emailProvider";
 import { ResendProvider } from "@/services/email/resendProvider";
 import type { EmailTemplateCode } from "@/services/email/emailTemplates";

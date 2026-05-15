@@ -6,7 +6,7 @@ import { renderPaymentLogAnnex } from "@/domain/payments/renderPaymentLogAnnex";
 import type { PaymentLog } from "@/domain/payments/types";
 import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
 import { persistContractPdfAsset } from "@/domain/contracts/persistContractPdfAsset";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import {
   getAuthenticatedUser,
   requestClientIp,

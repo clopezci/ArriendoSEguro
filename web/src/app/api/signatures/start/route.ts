@@ -8,7 +8,7 @@ import {
 import { requiredParties, SIGNATURE_TOKEN_HOURS } from "@/domain/signatures/signatureRules";
 import { generateSignatureToken } from "@/domain/signatures/generateSignatureToken";
 import { sendSignatureEmail } from "@/features/signatures/sendSignatureEmail";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import type { SignaturePartyType } from "@/domain/signatures/types";
 
 export const runtime = "nodejs";

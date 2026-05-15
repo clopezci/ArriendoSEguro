@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { readPdfBytesFlexible } from "@/domain/contracts/readStoredPdfBytes";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import { codebtorSupportsCollection, type CodebtorSupportDoc } from "@/domain/codebtor-supports/firestore-supports";
 
 export const runtime = "nodejs";

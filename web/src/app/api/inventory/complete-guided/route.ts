@@ -12,7 +12,7 @@ import type {
   InventoryZoneItem,
 } from "@/domain/inventory/types";
 import { renderInitialInventoryAnnex } from "@/domain/inventory/renderInitialInventoryAnnex";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
 const schema = z.object({ inventoryId: z.string().min(3) });

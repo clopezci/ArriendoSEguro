@@ -23,7 +23,7 @@
  */
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
 

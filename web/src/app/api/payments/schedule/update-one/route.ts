@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { updateScheduledOneSchema } from "@/domain/payments/validatePaymentLog";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import {
   getAuthenticatedUser,
   requestClientIp,

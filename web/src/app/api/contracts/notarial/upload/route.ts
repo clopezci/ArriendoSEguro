@@ -8,7 +8,7 @@ import {
 } from "@/domain/contracts/annexes/renderAnnex";
 import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
 import { persistContractPdfAsset } from "@/domain/contracts/persistContractPdfAsset";
-import { auditEvent } from "@/features/contracts/audit";
+import { auditEvent } from "@/features/contracts/audit-server";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
 
 export const runtime = "nodejs";
