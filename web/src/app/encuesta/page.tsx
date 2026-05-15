@@ -1,4 +1,10 @@
 import { LeadMarketForm } from "@/components/forms/lead-market-form";
+import {
+  CONTRACT_EARLY_BIRD_PRICE_COP,
+  CONTRACT_LIST_PRICE_COP,
+  formatCopPlain,
+  PER_CONTRACT_PAYMENT_NOTICE,
+} from "@/lib/product-pricing";
 import { LandingPublicHeader } from "@/components/landing/landing-public-header";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -36,12 +42,18 @@ export default function EncuestaPage() {
               ¡Cupos limitados!
             </span>
             <span>
-              Los primeros en inscribirse aseguran{" "}
-              <strong className="font-semibold text-slate-900">50% de descuento</strong> en su{" "}
-              <strong className="font-semibold text-slate-900">primer contrato</strong> cuando abramos la
-              fase inicial.
+              Los primeros en inscribirse acceden a{" "}
+              <strong className="font-semibold text-slate-900">
+                {formatCopPlain(CONTRACT_EARLY_BIRD_PRICE_COP)}
+              </strong>{" "}
+              por contrato en la plataforma (lista{" "}
+              <strong className="font-semibold text-slate-900">
+                {formatCopPlain(CONTRACT_LIST_PRICE_COP)}
+              </strong>
+              ), mientras dure la promoción.
             </span>
           </p>
+          <p className="text-xs leading-relaxed text-slate-600">{PER_CONTRACT_PAYMENT_NOTICE}</p>
         </header>
 
         <LeadMarketForm sourcePage="landing_fase_inicial" />

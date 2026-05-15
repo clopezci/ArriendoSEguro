@@ -1,4 +1,10 @@
 import { BlogTopicLinks } from "@/components/landing/blog-topic-links";
+import {
+  CONTRACT_EARLY_BIRD_PRICE_COP,
+  CONTRACT_LIST_PRICE_COP,
+  formatCopPlain,
+  PER_CONTRACT_PAYMENT_NOTICE,
+} from "@/lib/product-pricing";
 import { LandingPublicHeader } from "@/components/landing/landing-public-header";
 import { LandingStepsSection } from "@/components/landing/landing-steps-section";
 import { SurveyFloatingCta } from "@/components/landing/survey-floating-cta";
@@ -97,11 +103,19 @@ export default function Home() {
                 ¡Cupos limitados!
               </span>
               <span>
-                Los primeros en inscribirse aseguran{" "}
-                <strong className="font-semibold text-slate-900">50% de descuento</strong> en su{" "}
-                <strong className="font-semibold text-slate-900">primer contrato</strong> cuando abramos la
-                fase inicial.
+                Los primeros en inscribirse en la encuesta acceden a{" "}
+                <strong className="font-semibold text-slate-900">
+                  {formatCopPlain(CONTRACT_EARLY_BIRD_PRICE_COP)}
+                </strong>{" "}
+                por contrato gestionado en la plataforma (precio de lista{" "}
+                <strong className="font-semibold text-slate-900">
+                  {formatCopPlain(CONTRACT_LIST_PRICE_COP)}
+                </strong>
+                ), mientras dure la promoción de lanzamiento.
               </span>
+            </p>
+            <p className="text-center text-[11px] leading-snug text-slate-600 lg:text-left">
+              {PER_CONTRACT_PAYMENT_NOTICE}
             </p>
             <div className="flex justify-center pt-1 lg:justify-start">
               <Link

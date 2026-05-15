@@ -16,6 +16,11 @@ const STEPS = [
     description: "Inventario fotográfico por zonas y acta de entrega del inmueble.",
   },
   {
+    title: "Califica la experiencia",
+    description:
+      "Al cerrar el arriendo, las partes pueden dejar una evaluación estructurada. Si construimos comunidad con el tiempo, tendrás más contexto para decidir con quién arrendar — sin sustituir tu propia diligencia.",
+  },
+  {
     title: "Lleva el control",
     description: "Registro de pagos, recordatorios y respaldo documental del arriendo.",
   },
@@ -31,7 +36,7 @@ export function LandingStepsSection() {
         Hazlo en{" "}
         <span className="text-violet-700">{STEPS.length} sencillos pasos</span>
       </h2>
-      <ol className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {STEPS.map((step, index) => (
           <li
             key={step.title}

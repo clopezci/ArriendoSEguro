@@ -1,4 +1,5 @@
 import { LeadMarketForm } from "@/components/forms/lead-market-form";
+import { PER_CONTRACT_PAYMENT_NOTICE } from "@/lib/product-pricing";
 import Link from "next/link";
 
 export const metadata = {
@@ -222,22 +223,29 @@ export default function EntiendeloFacilPage() {
                 <tr>
                   <td className="border border-slate-300 px-3 py-2">$1.000.000</td>
                   <td className="border border-slate-300 px-3 py-2">$80.000 a $100.000 al mes</td>
-                  <td className="border border-slate-300 px-3 py-2">Pago único muy bajo por contrato</td>
+                  <td className="border border-slate-300 px-3 py-2">
+                    $49.900 promoción · $89.900 lista (por contrato)
+                  </td>
                 </tr>
                 <tr>
                   <td className="border border-slate-300 px-3 py-2">$2.000.000</td>
                   <td className="border border-slate-300 px-3 py-2">$160.000 a $200.000 al mes</td>
-                  <td className="border border-slate-300 px-3 py-2">Pago único muy bajo por contrato</td>
+                  <td className="border border-slate-300 px-3 py-2">
+                    $49.900 promoción · $89.900 lista (por contrato)
+                  </td>
                 </tr>
                 <tr>
                   <td className="border border-slate-300 px-3 py-2">$3.000.000</td>
                   <td className="border border-slate-300 px-3 py-2">$240.000 a $300.000 al mes</td>
-                  <td className="border border-slate-300 px-3 py-2">Pago único muy bajo por contrato</td>
+                  <td className="border border-slate-300 px-3 py-2">
+                    $49.900 promoción · $89.900 lista (por contrato)
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <p className="mt-4 text-xs text-slate-600">
+          <p className="mt-4 text-xs text-slate-600">{PER_CONTRACT_PAYMENT_NOTICE}</p>
+          <p className="mt-2 text-xs text-slate-600">
             Valores ilustrativos. Las tarifas de agencias, inmobiliarias, pólizas, estudios y
             servicios adicionales pueden variar según ciudad, empresa y condiciones comerciales.
             Arriendo Seguro no reemplaza una inmobiliaria ni una asesoría legal personalizada; es

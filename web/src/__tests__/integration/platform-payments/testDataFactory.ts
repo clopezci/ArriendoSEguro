@@ -25,7 +25,7 @@ export function makePlatformOrder(input?: Partial<{
     userEmail: input?.userEmail ?? users.owner.email,
     leaseProcessId: null,
     planCode: input?.planCode ?? "plus",
-    amount: input?.amount ?? 39900,
+    amount: input?.amount ?? 49900,
     currency: input?.currency ?? "COP",
     status: input?.status ?? "pending",
     paymentProvider: "wompi",

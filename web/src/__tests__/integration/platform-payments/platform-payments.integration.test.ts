@@ -48,7 +48,7 @@ test("2) create-order plus usa identidad del token y crea orden", async () => {
   const orders = firestore.all("platform_orders");
   assert.equal(orders.length, 1);
   const order = orders[0] as { amount: number; currency: string; planCode: string; userId: string; userEmail: string; status: string };
-  assert.equal(order.amount, 39900);
+  assert.equal(order.amount, 49900);
   assert.equal(order.currency, "COP");
   assert.equal(order.planCode, "plus");
   assert.equal(order.userId, users.owner.uid);

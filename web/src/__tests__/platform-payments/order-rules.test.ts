@@ -11,7 +11,7 @@ test("create-order normaliza identidad desde token e ignora identidad cliente", 
   });
   assert.equal(r.userId, "uid_token");
   assert.equal(r.userEmail, "user@test.com");
-  assert.equal(r.amount, 39900);
+  assert.equal(r.amount, 49900);
   assert.equal(r.currency, "COP");
   assert.equal(r.planCode, "plus");
 });

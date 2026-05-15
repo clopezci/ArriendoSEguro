@@ -1,6 +1,7 @@
+import { PLATFORM_PLAN_PLUS_PRICE_COP } from "@/lib/product-pricing";
 import type { AccessType, PlatformPlanCode } from "./types";
 
-export const PLATFORM_PLAN_PLUS_PRICE_COP = 39_900;
+export { PLATFORM_PLAN_PLUS_PRICE_COP };
 
 export const PLATFORM_PLANS: Record<
   PlatformPlanCode,

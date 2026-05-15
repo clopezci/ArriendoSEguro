@@ -28,6 +28,8 @@ export const leadFormSchema = z.object({
     .optional(),
   q4NoReasonOther: z.string().trim().max(280).optional(),
   q5WillingToPay: z.enum([
+    "early_bird_50",
+    "list_90",
     "under_50",
     "range_50_70",
     "range_70_100",

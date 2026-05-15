@@ -11,7 +11,7 @@ Este módulo cobra únicamente el uso de Arriendo Seguro (Plan Plus).
 ## Planes y flujo
 
 - **Plan Básico Demo**: gratis, sin contratos reales, documentos con marca de agua `DOCUMENTO DEMO SIN VALIDEZ`.
-- **Plan Plus**: `$39.900 COP`, pago único por expediente.
+- **Plan Plus**: promoción `$49.900 COP` (lista `$89.900 COP`) por **contrato gestionado** en la plataforma; sin mensualidades. Renovación o contrato nuevo = nuevo expediente y pago según tarifa vigente.
 - **Plan Premium**: futuro, no comprable.
 
 Flujo Plus:

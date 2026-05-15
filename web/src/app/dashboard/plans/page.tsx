@@ -3,6 +3,12 @@
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { canSeeInternalDashboardTools } from "@/lib/dashboard/internal-tools";
+import {
+  CONTRACT_EARLY_BIRD_PRICE_COP,
+  CONTRACT_LIST_PRICE_COP,
+  formatCopPlain,
+  PER_CONTRACT_PAYMENT_NOTICE,
+} from "@/lib/product-pricing";
 import { useCallback, useEffect, useState } from "react";
 
 type EntitlementsResponse = {
@@ -184,8 +190,19 @@ export default function PlansPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <article className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
           <h2 className="text-xl font-semibold text-slate-900">Plan Plus</h2>
-          <p className="mt-2 text-lg font-medium text-violet-700">$39.900 COP</p>
-          <p className="mt-1 text-sm text-slate-600">Pago único por expediente. Sin mensualidades.</p>
+          <p className="mt-2 flex flex-wrap items-baseline gap-2">
+            <span className="text-sm text-slate-500 line-through">
+              {formatCopPlain(CONTRACT_LIST_PRICE_COP)} COP
+            </span>
+            <span className="text-lg font-semibold text-violet-700">
+              {formatCopPlain(CONTRACT_EARLY_BIRD_PRICE_COP)} COP
+            </span>
+          </p>
+          <p className="mt-1 text-xs font-medium text-violet-800">
+            Promoción primeros inscritos (mientras dure el lanzamiento).
+          </p>
+          <p className="mt-2 text-sm text-slate-600">Pago único por contrato gestionado en la plataforma. Sin mensualidades.</p>
+          <p className="mt-2 text-xs leading-relaxed text-slate-600">{PER_CONTRACT_PAYMENT_NOTICE}</p>
           <ul className="mt-4 space-y-2 text-sm text-slate-700">
             <li>Contrato de arrendamiento</li>
             <li>Opción con o sin codeudor</li>

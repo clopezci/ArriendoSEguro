@@ -20,7 +20,7 @@ test("webhook inválido por monto incorrecto", () => {
 test("webhook inválido por moneda distinta", () => {
   const d = decideWebhookHandling({
     eventName: "transaction.updated",
-    amount: 39900,
+    amount: 49900,
     currency: "USD",
     providerReference: "AS_PLUS_1",
     orderFound: true,
@@ -35,7 +35,7 @@ test("webhook inválido por moneda distinta", () => {
 test("webhook aprobado válido", () => {
   const d = decideWebhookHandling({
     eventName: "transaction.updated",
-    amount: 39900,
+    amount: 49900,
     currency: "COP",
     providerReference: "AS_PLUS_1",
     orderFound: true,
@@ -50,7 +50,7 @@ test("webhook aprobado válido", () => {
 test("webhook aprobado duplicado se ignora idempotente", () => {
   const d = decideWebhookHandling({
     eventName: "transaction.updated",
-    amount: 39900,
+    amount: 49900,
     currency: "COP",
     providerReference: "AS_PLUS_1",
     orderFound: true,
@@ -65,7 +65,7 @@ test("webhook aprobado duplicado se ignora idempotente", () => {
 test("webhook declined marca rejected", () => {
   const d = decideWebhookHandling({
     eventName: "transaction.updated",
-    amount: 39900,
+    amount: 49900,
     currency: "COP",
     providerReference: "AS_PLUS_1",
     orderFound: true,

@@ -215,9 +215,12 @@ export default function LandingPrincipalInterna() {
             </article>
             <article className="rounded-2xl border border-violet-300 bg-white/95 p-4 shadow-[0_10px_24px_rgba(139,92,246,0.25)]">
               <h3 className="text-lg font-semibold">Plan Plus</h3>
-              <p className="mt-1 text-violet-700">$39.900 COP</p>
+              <p className="mt-1 text-violet-700">
+                <span className="text-slate-500 line-through">$89.900</span>{" "}
+                <span className="font-semibold">$49.900 COP</span> (primeros inscritos)
+              </p>
               <ul className="mt-2 space-y-1 text-sm text-slate-700">
-                <li>Pago único por expediente.</li>
+                <li>Pago único por contrato gestionado en la plataforma.</li>
                 <li>Sin mensualidades.</li>
                 <li>Contrato, firma, inventario, acta, pagos y recordatorios.</li>
               </ul>
