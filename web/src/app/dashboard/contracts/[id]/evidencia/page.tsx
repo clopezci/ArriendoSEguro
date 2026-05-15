@@ -148,26 +148,16 @@ export default function EvidenciaExpedientePage() {
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-6 text-slate-900">
       <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Expediente</p>
-        <h1 className="text-2xl font-bold">Anexo de evidencia (descargas)</h1>
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Paso 12 · Evidencias</p>
+        <h1 className="text-2xl font-bold">Paquete de evidencia (descargas)</h1>
         <p className="text-sm text-slate-600">
           Aquí reunimos los enlaces de descarga del contrato y anexos generados en la plataforma. También puedes bajar un
           solo archivo ZIP (contrato, inventario, acta si existen, anexos con PDF o HTML como el registro de pagos). Si
           falta algo, genera primero el PDF o el anexo desde la vista previa o el módulo correspondiente.
         </p>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Link href={`/dashboard/contracts/${id}/preview`} className="text-violet-700 underline">
-            Volver a vista previa
-          </Link>
-          <span className="text-slate-400">·</span>
-          <Link href={`/dashboard/contracts/${id}/notarial`} className="text-violet-700 underline">
-            Autenticación notarial (opcional)
-          </Link>
-          <span className="text-slate-400">·</span>
-          <Link href={`/dashboard/contracts/${id}/payments`} className="text-violet-700 underline">
-            Pagos
-          </Link>
-        </div>
+        <Link href={`/dashboard/contracts/${id}/evidencias`} className="inline-block text-sm text-violet-700 underline">
+          ← Evidencias del expediente
+        </Link>
       </header>
 
       <ExpedienteNav contractId={id} />

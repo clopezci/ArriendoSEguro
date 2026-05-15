@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
 
-const steps = [
+export const WIZARD_STEPS = [
   "Acceso",
   "Tipo de contrato",
   "Arrendador (dueño)",
@@ -15,7 +15,11 @@ const steps = [
   "Cláusulas especiales",
   "Resumen",
   "Vista previa",
+  "Evidencias del expediente",
+  "Novedades del arriendo",
 ] as const;
+
+const steps = WIZARD_STEPS;
 
 export function WizardShell({
   title,
@@ -55,7 +59,7 @@ export function WizardShell({
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-1 text-[11px] text-slate-600 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-11">
+          <div className="mt-3 grid grid-cols-3 gap-1 text-[11px] text-slate-600 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-13">
             {steps.map((s, idx) => (
               <span
                 key={s}

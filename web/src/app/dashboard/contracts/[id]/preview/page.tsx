@@ -95,6 +95,7 @@ export default function PreviewStepPage() {
     documentHash: string;
   } | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [pdfFeedback, setPdfFeedback] = useState("");
   const [startingSignatures, setStartingSignatures] = useState(false);
   const [signatureRoundMessage, setSignatureRoundMessage] = useState<{
     tone: "info" | "warning";
@@ -213,12 +214,20 @@ export default function PreviewStepPage() {
     }
   }
 
-  async function saveDraftVersion() {
-    if (!activeDraft) return;
+  type SavedVersionState = {
+    contractId: string;
+    contractVersionId: string;
+    versionNumber: number;
+    documentHash: string;
+  };
+
+  async function saveDraftVersion(): Promise<SavedVersionState | null> {
+    if (!activeDraft) return null;
     if (!previewHtml || !versionInfo) {
       setRenderErrors(["Primero genera la vista previa del contrato."]);
-      return;
+      return null;
     }
+    if (savedVersion) return savedVersion;
     setSavingVersion(true);
     setSaveMessage("");
     try {
@@ -240,47 +249,55 @@ export default function PreviewStepPage() {
         setRenderErrors(
           list.length > 0 ? list : ["No se pudo guardar la versión del contrato."],
         );
-        return;
+        return null;
       }
       setSaveMessage(
         `Versión del contrato guardada correctamente. Versión #${data.versionNumber}.`,
       );
-      setSavedVersion({
+      const next: SavedVersionState = {
         contractId: data.contractId,
         contractVersionId: data.contractVersionId,
         versionNumber: data.versionNumber,
         documentHash: data.documentHash,
-      });
+      };
+      setSavedVersion(next);
       updateDraft(id, (d) => appendAudit({ ...d, status: "version_saved" }, "contract_draft_saved"));
+      return next;
     } catch {
       setRenderErrors([
         "No pudimos conectar con el servidor para guardar la versión. Inténtalo nuevamente.",
       ]);
+      return null;
     } finally {
       setSavingVersion(false);
     }
   }
 
   async function generatePdf() {
-    if (!savedVersion) {
-      setRenderErrors(["Primero guarda una versión del contrato."]);
+    setPdfFeedback("");
+    setRenderErrors([]);
+    const version = savedVersion ?? (await saveDraftVersion());
+    if (!version) {
+      setPdfFeedback(
+        "Para generar el PDF necesitas una vista previa válida y guardar la versión (pulsa «Guardar versión» o vuelve a intentar).",
+      );
       return;
     }
     setGeneratingPdf(true);
-    setRenderErrors([]);
     try {
       const res = await fetch("/api/contracts/generate-pdf", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          contractId: savedVersion.contractId,
-          contractVersionId: savedVersion.contractVersionId,
+          contractId: version.contractId,
+          contractVersionId: version.contractVersionId,
         }),
       });
       const data = (await res.json()) as GenerateContractPdfResponse;
       if (!res.ok || !data.success) {
         const list = !data.success ? formatBackendIssues(data.errors) : [];
         setRenderErrors(list.length > 0 ? list : ["No se pudo generar el PDF del contrato."]);
+        setPdfFeedback("Revisa los errores indicados arriba.");
         return;
       }
       setPdfInfo({
@@ -289,10 +306,15 @@ export default function PreviewStepPage() {
         versionNumber: data.versionNumber,
         documentHash: data.documentHash,
       });
+      setPdfFeedback("PDF generado correctamente.");
+      if (data.pdfUrl) {
+        window.open(data.pdfUrl, "_blank", "noopener,noreferrer");
+      }
     } catch {
       setRenderErrors([
         "No pudimos conectar con el servidor para generar el PDF. Inténtalo nuevamente.",
       ]);
+      setPdfFeedback("Error de conexión al generar el PDF.");
     } finally {
       setGeneratingPdf(false);
     }
@@ -445,8 +467,11 @@ export default function PreviewStepPage() {
         <p className="mt-1 text-xs text-slate-600">
           Si las partes van a autenticar el contrato en notaría, deja constancia aquí. Cuando la plantilla{" "}
           <span className="font-mono">AS-LEASE-2026.2</span> esté activa, la cláusula correspondiente puede mostrarse al
-          regenerar la vista previa. El archivo autenticado lo subes desde la pantalla dedicada (no sustituye la firma
-          electrónica en la plataforma).
+          regenerar la vista previa. El PDF autenticado lo subes en el{" "}
+          <Link href={`/dashboard/contracts/${id}/evidencias`} className="font-medium text-violet-700 underline">
+            paso 12 — Evidencias
+          </Link>{" "}
+          → Notaría (no sustituye la firma electrónica en la plataforma).
         </p>
         <label className="mt-3 flex cursor-pointer items-start gap-2">
           <input
@@ -466,15 +491,6 @@ export default function PreviewStepPage() {
           />
           <span>Llevaremos el contrato a notaría para autenticación (como refuerzo a la firma electrónica aquí).</span>
         </label>
-        <p className="mt-3 text-xs">
-          <Link href={`/dashboard/contracts/${id}/novedades`} className="font-medium text-violet-700 underline">
-            Novedades y solicitudes del expediente
-          </Link>
-          <span className="text-slate-400"> · </span>
-          <Link href={`/dashboard/contracts/${id}/notarial`} className="font-medium text-violet-700 underline">
-            Descargas y carga del PDF autenticado
-          </Link>
-        </p>
       </div>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <button
@@ -529,7 +545,7 @@ export default function PreviewStepPage() {
         </Link>
         <button
           type="button"
-          onClick={saveDraftVersion}
+          onClick={() => void saveDraftVersion()}
           disabled={savingVersion || !previewHtml || Boolean(savedVersion)}
           title={
             !previewHtml
@@ -548,11 +564,16 @@ export default function PreviewStepPage() {
         </button>
         <button
           type="button"
-          onClick={generatePdf}
-          disabled={generatingPdf || !savedVersion}
-          className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700 disabled:opacity-60"
+          onClick={() => void generatePdf()}
+          disabled={generatingPdf || savingVersion || !previewHtml}
+          title={
+            !previewHtml
+              ? "Genera primero la vista previa del contrato."
+              : "Guarda la versión automáticamente si aún no lo hiciste y genera el PDF."
+          }
+          className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {generatingPdf ? "Generando PDF…" : "Generar PDF"}
+          {generatingPdf ? "Generando PDF…" : savingVersion ? "Guardando versión…" : "Generar PDF"}
         </button>
         {pdfInfo && (
           <a
@@ -582,16 +603,54 @@ export default function PreviewStepPage() {
         </button>
       </div>
       {saveMessage && <p className="mt-3 text-sm text-emerald-700">{saveMessage}</p>}
+      {pdfFeedback && (
+        <p className="mt-2 text-sm text-violet-800" role="status">
+          {pdfFeedback}
+        </p>
+      )}
       {contractStatus && <p className="text-xs text-slate-600">Estado contractual: {contractStatus}</p>}
+
+      <section className="mt-8 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50/90 to-white p-5 shadow-[0_8px_28px_rgba(139,92,246,0.14)]">
+        <h3 className="text-base font-bold text-slate-900">Durante el arriendo</h3>
+        <p className="mt-1 text-xs text-slate-600">
+          Después de firmar, usa estos módulos para respaldos documentales y comunicación entre partes.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <Link
+            href={`/dashboard/contracts/${id}/evidencias`}
+            className="rounded-xl border border-violet-300 bg-white p-4 shadow-sm transition hover:border-violet-500 hover:shadow-md"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Paso 12</p>
+            <p className="mt-1 text-sm font-bold text-slate-900">Evidencias del expediente</p>
+            <p className="mt-2 text-xs leading-relaxed text-slate-600">
+              Soportes del codeudor, paquete ZIP, notaría, pagos e inventario en un solo lugar.
+            </p>
+          </Link>
+          <Link
+            href={`/dashboard/contracts/${id}/novedades`}
+            title="Ejemplos: mora en el canon, daños o reparaciones, convivencia, solicitudes entre arrendador y arrendatario, acuerdos documentados."
+            className="rounded-xl border border-violet-300 bg-white p-4 shadow-sm transition hover:border-violet-500 hover:shadow-md"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Paso 13</p>
+            <p className="mt-1 text-sm font-bold text-slate-900">
+              Registrar novedades y solicitudes del arrendamiento
+            </p>
+            <p className="mt-2 text-xs leading-relaxed text-slate-600">
+              Incumplimientos, reparaciones, convivencia u otras situaciones con historial y notificación por correo.
+            </p>
+          </Link>
+        </div>
+      </section>
+
       {savedVersion && (
         <section className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4">
           <h3 className="text-sm font-semibold text-slate-900">Inventario y entrega</h3>
           <div className="mt-2 flex flex-wrap gap-2">
             <Link
-              href={`/dashboard/contracts/${id}/evidencia`}
+              href={`/dashboard/contracts/${id}/evidencias`}
               className="rounded border border-violet-600 px-3 py-2 text-xs font-medium text-violet-800"
             >
-              Anexo de evidencia (descargas)
+              Ir a evidencias del expediente
             </Link>
             <Link
               href={`/dashboard/contracts/${id}/inventory`}

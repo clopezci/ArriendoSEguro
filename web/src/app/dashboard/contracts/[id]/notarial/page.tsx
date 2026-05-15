@@ -164,7 +164,7 @@ export default function NotarialOptionalPage() {
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-6 text-slate-900">
       <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Expediente</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Paso 12 · Evidencias</p>
         <h1 className="text-2xl font-bold">Autenticación notarial (opcional)</h1>
         <p className="text-sm text-slate-600">
           Si las partes deciden autenticar el contrato en una notaría, este espacio te orienta: descargas el paquete
@@ -172,15 +172,9 @@ export default function NotarialOptionalPage() {
           archivar el PDF que te entreguen. ArriendoSeguro no reemplaza al notario ni valida el contenido del
           documento autenticado.
         </p>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Link href={`/dashboard/contracts/${id}/evidencia`} className="text-violet-700 underline">
-            Anexo de evidencia
-          </Link>
-          <span className="text-slate-400">·</span>
-          <Link href={`/dashboard/contracts/${id}/preview`} className="text-violet-700 underline">
-            Vista previa
-          </Link>
-        </div>
+        <Link href={`/dashboard/contracts/${id}/evidencias`} className="inline-block text-sm text-violet-700 underline">
+          ← Evidencias del expediente
+        </Link>
       </header>
 
       <ExpedienteNav contractId={id} />
