@@ -20,6 +20,7 @@ Si ves **un deploy en verde y otro en rojo** para el mismo commit, suele haber *
 1. En [vercel.com](https://vercel.com) → **Settings** del proyecto que falla → **General** → **Root Directory** → pon **`web`** → Guardar.
 2. O elimina el proyecto duplicado y deja solo uno con dominio de producción.
 3. En la raíz del repo hay `vercel.json` y `package.json` por si algún proyecto sigue desplegando desde la raíz: instalan y construyen dentro de `web/`.
+4. Si **Root Directory = `web`**, Vercel usa `web/vercel.json` (sin `--prefix web`). Si solo existía el `vercel.json` de la raíz, el build podía fallar al buscar `web/web/`.
 
 Tras un push a `main`, Vercel redeploya solo. El commit debe usar el correo verificado en GitHub (**`clpezci@gmail.com`**).
 
