@@ -57,6 +57,14 @@ export default function AdminPage() {
     userId: string;
     userEmail: string;
   } | null>(null);
+  /** Limite inicial de expedientes reales para Plan Plus manual (1–50). */
+  const [grantMaxContracts, setGrantMaxContracts] = useState("");
+  /** Ajustar cupos de testers con Plus ya creado. */
+  const [quotaMaxInput, setQuotaMaxInput] = useState("");
+  const [quotaSlotsInput, setQuotaSlotsInput] = useState("1");
+  const [quotaMsg, setQuotaMsg] = useState("");
+  const [quotaErr, setQuotaErr] = useState("");
+  const [quotaLoading, setQuotaLoading] = useState(false);
 
   // Diagnóstico rápido: dado un email, mostrar el usuario de Auth y todas
   // sus filas en `access_entitlements`. Resuelve el caso típico "le di
@@ -202,6 +210,68 @@ export default function AdminPage() {
     URL.revokeObjectURL(url);
   }
 
+  async function adjustTesterQuota(mode: "set_max" | "add_slots") {
+    if (!user) return;
+    const emailTarget = (inspectedEmail || inspectEmail.trim()).toLowerCase();
+    setQuotaErr("");
+    setQuotaMsg("");
+    if (!emailTarget) {
+      setQuotaErr("Escribe el correo arriba (o usa Inspeccionar).");
+      return;
+    }
+
+    let payload: { mode: string; email: string; maxContractsAllowed?: number; slots?: number };
+    if (mode === "set_max") {
+      const digits = quotaMaxInput.replace(/[^\d]/g, "");
+      const n = digits === "" ? NaN : Number(digits);
+      if (!Number.isInteger(n) || n < 1 || n > 50) {
+        setQuotaErr("Indica un máximo de expedientes entero entre 1 y 50.");
+        return;
+      }
+      payload = { mode: "set_max", email: emailTarget, maxContractsAllowed: n };
+    } else {
+      const digits = (quotaSlotsInput.replace(/[^\d]/g, "") || "1").slice(0, 2);
+      const s = Number(digits || "1");
+      if (!Number.isInteger(s) || s < 1 || s > 20) {
+        setQuotaErr("Los cupos a sumar deben ser de 1 a 20.");
+        return;
+      }
+      payload = { mode: "add_slots", email: emailTarget, slots: s };
+    }
+
+    setQuotaLoading(true);
+    try {
+      const res = await fetch("/api/platform-payments/internal/adjust-plus-quota", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify(payload),
+      });
+      const json = (await res.json()) as {
+        success?: boolean;
+        entitlementId?: string;
+        contractsUsed?: number;
+        newMax?: number;
+        previousMax?: number;
+        status?: string;
+        errors?: { field?: string; message: string }[];
+      };
+      if (!res.ok || !json.success) {
+        setQuotaErr(json.errors?.[0]?.message ?? "No se pudo actualizar.");
+        return;
+      }
+      setQuotaMsg(
+        `Listo. Entitlement ${json.entitlementId ?? "—"}: usados ${json.contractsUsed ?? "—"}, máximo ${json.previousMax ?? "—"} → ${json.newMax ?? "—"}. Estado: ${json.status ?? "—"} (pídeles recargar el dashboard).`,
+      );
+      setInspectEmail(emailTarget);
+      setInspectedEmail(emailTarget);
+      await load();
+    } catch {
+      setQuotaErr("Error de red.");
+    } finally {
+      setQuotaLoading(false);
+    }
+  }
+
   async function grantPlus() {
     if (!user) return;
     setGrantLoading(true);
@@ -209,10 +279,26 @@ export default function AdminPage() {
     setGrantErr("");
     setGrantDetail(null);
     try {
+      let maxContractsAllowed: number | undefined;
+      const rawGx = grantMaxContracts.replace(/[^\d]/g, "");
+      if (rawGx !== "") {
+        const n = Number(rawGx);
+        if (!Number.isInteger(n) || n < 1 || n > 50) {
+          setGrantErr("Máximo de expedientes inicial: número entero entre 1 y 50 (o déjalo vacío para usar 1).");
+          setGrantLoading(false);
+          return;
+        }
+        maxContractsAllowed = n;
+      }
+
       const res = await fetch("/api/platform-payments/internal/grant-plus", {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ email: grantEmail.trim(), validDays: 365 }),
+        body: JSON.stringify({
+          email: grantEmail.trim(),
+          validDays: 365,
+          ...(maxContractsAllowed !== undefined ? { maxContractsAllowed } : {}),
+        }),
       });
       const json = (await res.json()) as {
         success?: boolean;
@@ -240,10 +326,10 @@ export default function AdminPage() {
       }
       if (json.status === "already_exists") {
         setGrantMsg(
-          `El usuario ya tenía un Plan Plus activo. No se creó uno nuevo (entitlement ${json.entitlementId ?? "—"}).`,
+          `Ya tenía un Plan Plus sin consumir todos los cupos activos (${json.entitlementId ?? "—"}). No se creó fila nueva. Si necesitas más expedientes para pruebas, usa «Más cupos para testers» abajo.`,
         );
       } else {
-        let base = `Plan Plus manual creado correctamente para ${json.userEmail ?? grantEmail.trim()} (entitlement ${json.entitlementId ?? "—"}).`;
+        let base = `Plan Plus manual creado para ${json.userEmail ?? grantEmail.trim()} (${maxContractsAllowed ?? 1} expediente(s) máx.). Entitlement ${json.entitlementId ?? "—"}.`;
         if (json.emailDelivery && json.emailDelivery !== "ok") {
           base +=
             " El correo de confirmación no se envió correctamente: revisa la configuración del proveedor y los registros de correo.";
@@ -259,6 +345,7 @@ export default function AdminPage() {
       setInspectEmail(json.userEmail ?? grantEmail.trim());
       setInspectedEmail((json.userEmail ?? grantEmail.trim()).toLowerCase());
       setGrantEmail("");
+      setGrantMaxContracts("");
       await load();
     } catch {
       setGrantErr("Error de red.");
@@ -448,6 +535,21 @@ export default function AdminPage() {
                 {grantLoading ? "…" : "Otorgar Plus"}
               </button>
             </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <label htmlFor="grant-max-contracts" className="text-[11px] text-slate-600">
+                Expedientes máx. (nuevos testers, opcional)
+              </label>
+              <input
+                id="grant-max-contracts"
+                type="text"
+                inputMode="numeric"
+                placeholder="1 (predeterminado)"
+                value={grantMaxContracts}
+                onChange={(e) => setGrantMaxContracts(e.target.value)}
+                className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+              />
+              <span className="text-[10px] text-slate-500">1–50. Vacío = 1 expediente.</span>
+            </div>
             {grantMsg && (
               <div className="mt-3 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-800">
                 <p className="font-semibold">{grantMsg}</p>
@@ -550,15 +652,77 @@ export default function AdminPage() {
                     <ul className="mt-1 space-y-0.5">
                       {inspection.accesses.map((a) => (
                         <li key={a.id}>
-                          {a.planCode}/{a.accessType} · estado{" "}
-                          <strong>{a.status}</strong> · usados {a.contractsUsed}/
-                          {a.maxContractsAllowed}
+                          <code className="text-[10px]" title="ID en Firestore">
+                            {a.id}
+                          </code>{" "}
+                          · {a.planCode}/{a.accessType} · estado <strong>{a.status}</strong> · usados{" "}
+                          {a.contractsUsed}/{a.maxContractsAllowed}
                           {a.validUntil ? ` · vigente hasta ${a.validUntil}` : ""} · UID{" "}
                           <code>{a.userId}</code>
                         </li>
                       ))}
                     </ul>
                   )}
+
+                  <div className="mt-4 border-t border-dashed border-slate-200 pt-3">
+                    <h4 className="text-xs font-semibold text-slate-800">Más cupos para testers</h4>
+                    <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+                      Aumenta el máximo de <strong>expedientes reales</strong> sobre un Plan Plus ya creado (manual
+                      o pago). Correo usado:{" "}
+                      <strong>{(inspectedEmail || inspectEmail.trim().toLowerCase() || "—")}</strong>. Si hay varias
+                      filas Plus, el servidor prioriza la que tenga cupo libre o la más reciente.
+                    </p>
+                    {quotaErr && (
+                      <p className="mt-2 rounded border border-rose-400/50 bg-rose-50 px-2 py-1 text-[11px] text-rose-800">
+                        {quotaErr}
+                      </p>
+                    )}
+                    {quotaMsg && (
+                      <p className="mt-2 rounded border border-emerald-400/40 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-800">
+                        {quotaMsg}
+                      </p>
+                    )}
+                    <div className="mt-2 flex flex-wrap items-end gap-2">
+                      <label className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-medium text-slate-600">Fijar máximo total</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={quotaMaxInput}
+                          onChange={(e) => setQuotaMaxInput(e.target.value)}
+                          placeholder="p. ej. 5"
+                          className="w-20 rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        disabled={quotaLoading}
+                        onClick={() => void adjustTesterQuota("set_max")}
+                        className="rounded border border-violet-500 bg-violet-600 px-2 py-1 text-[11px] font-semibold text-white disabled:opacity-50"
+                      >
+                        {quotaLoading ? "…" : "Aplicar máximo"}
+                      </button>
+                      <label className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-medium text-slate-600">Sumar cupos</span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={quotaSlotsInput}
+                          onChange={(e) => setQuotaSlotsInput(e.target.value)}
+                          placeholder="1"
+                          className="w-14 rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        disabled={quotaLoading}
+                        onClick={() => void adjustTesterQuota("add_slots")}
+                        className="rounded border border-slate-400 bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-800 disabled:opacity-50"
+                      >
+                        {quotaLoading ? "…" : `Sumar (${quotaSlotsInput || "1"})`}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

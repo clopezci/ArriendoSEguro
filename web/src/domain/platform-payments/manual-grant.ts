@@ -3,6 +3,7 @@ import type { Auth } from "firebase-admin/auth";
 import type { Firestore } from "firebase-admin/firestore";
 import { getActivePlusEntitlementForUser } from "./entitlements";
 import { auditPlatformPaymentEvent } from "./audit";
+import { TESTER_PLUS_MAX_EXPEDIENTES } from "./adjust-tester-plus-quota";
 
 type GrantResult =
   | { ok: false; reason: "user_not_found"; email: string }
@@ -17,6 +18,7 @@ export async function grantManualPlusEntitlement(
   input: {
     email: string;
     validDays?: number;
+    maxContractsAllowed?: number;
   },
 ): Promise<GrantResult> {
   const email = input.email.trim().toLowerCase();
@@ -49,6 +51,11 @@ export async function grantManualPlusEntitlement(
   validUntilDate.setDate(validUntilDate.getDate() + validDays);
   const validUntilIso = validUntilDate.toISOString();
 
+  const maxContracts = Math.min(
+    TESTER_PLUS_MAX_EXPEDIENTES,
+    Math.max(1, Math.floor(input.maxContractsAllowed ?? 1)),
+  );
+
   const entitlementRef = deps.firestore.collection("access_entitlements").doc();
   await entitlementRef.set({
     id: entitlementRef.id,
@@ -58,7 +65,7 @@ export async function grantManualPlusEntitlement(
     planCode: "plus",
     accessType: "plus_paid",
     status: "active",
-    maxContractsAllowed: 1,
+    maxContractsAllowed: maxContracts,
     contractsUsed: 0,
     validUntil: validUntilIso,
     createdAt: nowIso,

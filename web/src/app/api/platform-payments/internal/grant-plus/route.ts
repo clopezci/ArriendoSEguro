@@ -12,6 +12,7 @@ export const runtime = "nodejs";
 const schema = z.object({
   email: z.string().email(),
   validDays: z.number().int().min(1).max(365).optional(),
+  maxContractsAllowed: z.number().int().min(1).max(50).optional(),
 });
 
 function isInternalEnabled() {
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
 
   const result = await grantManualPlusEntitlement(
     { auth, firestore, requestedBy: authUser.user.email },
-    { email: parsed.data.email, validDays: parsed.data.validDays },
+    { email: parsed.data.email, validDays: parsed.data.validDays, maxContractsAllowed: parsed.data.maxContractsAllowed },
   );
 
   if (!result.ok) {
