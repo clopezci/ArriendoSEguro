@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { PLAN_PLUS_CUSTOM_COP_LIMITS } from "@/domain/platform-payments/plan-plus-pricing";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -64,6 +65,13 @@ export default function AdminPage() {
   const [inspectEmail, setInspectEmail] = useState("");
   const [inspectedEmail, setInspectedEmail] = useState("");
 
+  const [ppPreset, setPpPreset] = useState<"promo_49900" | "list_89900" | "custom">("promo_49900");
+  const [ppCustom, setPpCustom] = useState("");
+  const [ppResolved, setPpResolved] = useState<{ checkoutCop: number; listCompareCop: number } | null>(null);
+  const [ppPricingErr, setPpPricingErr] = useState("");
+  const [ppPricingMsg, setPpPricingMsg] = useState("");
+  const [ppSaveLoading, setPpSaveLoading] = useState(false);
+
   const hintSet = useMemo(() => new Set(publicAdminHintEmails()), []);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -92,6 +100,27 @@ export default function AdminPage() {
         return;
       }
       setData(json);
+      try {
+        const prRes = await fetch("/api/admin/plan-plus-pricing", { headers: { ...(await buildAuthHeaders(user)) } });
+        type PrJson = {
+          success?: boolean;
+          resolved?: { checkoutCop: number; listCompareCop: number; preset: "promo_49900" | "list_89900" | "custom" };
+          stored?: { customCheckoutCop?: number | null } | null;
+          errors?: { message?: string }[];
+        };
+        const prJson = (await prRes.json()) as PrJson;
+        if (prRes.ok && prJson.success && prJson.resolved) {
+          setPpPreset(prJson.resolved.preset);
+          const cust = prJson.stored?.customCheckoutCop;
+          setPpCustom(String(typeof cust === "number" && Number.isFinite(cust) ? cust : prJson.resolved.checkoutCop));
+          setPpResolved({ checkoutCop: prJson.resolved.checkoutCop, listCompareCop: prJson.resolved.listCompareCop });
+          setPpPricingErr("");
+        } else {
+          setPpPricingErr(prJson.errors?.[0]?.message ?? "No se pudo cargar el precio del Plan Plus.");
+        }
+      } catch {
+        setPpPricingErr("Error de red al cargar precio Plan Plus.");
+      }
     } catch {
       setLoadError("Error de red al cargar el panel.");
       setData(null);
@@ -101,6 +130,61 @@ export default function AdminPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function savePlanPlusPricing() {
+    if (!user) return;
+    setPpSaveLoading(true);
+    setPpPricingErr("");
+    setPpPricingMsg("");
+    try {
+      const digits = ppCustom.replace(/[^\d]/g, "");
+      const n = digits === "" ? NaN : Number(digits);
+      const body: { preset: "promo_49900" | "list_89900" | "custom"; customCheckoutCop?: number } =
+        ppPreset === "custom" ? { preset: "custom", customCheckoutCop: n } : { preset: ppPreset };
+      if (
+        ppPreset === "custom" &&
+        (!Number.isInteger(n) ||
+          n < PLAN_PLUS_CUSTOM_COP_LIMITS.min ||
+          n > PLAN_PLUS_CUSTOM_COP_LIMITS.max)
+      ) {
+        setPpPricingErr(
+          `El monto personalizado debe ser un entero entre ${PLAN_PLUS_CUSTOM_COP_LIMITS.min.toLocaleString(
+            "es-CO",
+          )} y ${PLAN_PLUS_CUSTOM_COP_LIMITS.max.toLocaleString("es-CO")} COP.`,
+        );
+        return;
+      }
+      const res = await fetch("/api/admin/plan-plus-pricing", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json()) as {
+        success?: boolean;
+        resolved?: {
+          checkoutCop: number;
+          listCompareCop: number;
+          preset: "promo_49900" | "list_89900" | "custom";
+        };
+        errors?: { message?: string }[];
+      };
+      if (!res.ok || !json.success) {
+        setPpPricingErr(json.errors?.[0]?.message ?? "No se pudo guardar.");
+        return;
+      }
+      if (json.resolved) {
+        setPpResolved({ checkoutCop: json.resolved.checkoutCop, listCompareCop: json.resolved.listCompareCop });
+        setPpPreset(json.resolved.preset);
+        setPpPricingMsg(
+          `Listo: nueva orden cobrará ${json.resolved.checkoutCop.toLocaleString("es-CO")} COP (referencia lista ${json.resolved.listCompareCop.toLocaleString("es-CO")} COP).`,
+        );
+      }
+    } catch {
+      setPpPricingErr("Error de red al guardar.");
+    } finally {
+      setPpSaveLoading(false);
+    }
+  }
 
   async function downloadSurveysCsv() {
     if (!user) return;
@@ -255,6 +339,90 @@ export default function AdminPage() {
           <div className="mb-4 rounded-lg border border-rose-800/60 bg-rose-50 p-3 text-sm text-rose-800">
             {loadError}
           </div>
+        )}
+
+        {data && (
+          <section className="mb-6 rounded-xl border border-sky-400/40 bg-white/95 p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">Precio vigente Plan Plus</h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              La landing principal, Mis planes y el comparativo público usan los mismos montos. Se guarda en Firestore (
+              <code className="text-[11px]">app_settings/plan_plus_pricing</code>). Protege la colección: lectura y
+              escritura únicamente desde el servidor.
+            </p>
+            {ppResolved && (
+              <p className="mt-2 text-xs text-slate-800">
+                Aplicando ahora:{" "}
+                <strong>${ppResolved.checkoutCop.toLocaleString("es-CO")}</strong> COP a cobrar · referencia lista{" "}
+                <strong>${ppResolved.listCompareCop.toLocaleString("es-CO")}</strong> COP
+              </p>
+            )}
+            {ppPricingErr && (
+              <p className="mt-2 rounded border border-rose-400/45 bg-rose-50 px-2 py-1 text-xs text-rose-800">
+                {ppPricingErr}
+              </p>
+            )}
+            {ppPricingMsg && (
+              <p className="mt-2 rounded border border-emerald-400/40 bg-emerald-50 px-2 py-1 text-xs text-emerald-800">
+                {ppPricingMsg}
+              </p>
+            )}
+            <fieldset className="mt-3 space-y-2 border-0 p-0 text-xs text-slate-800">
+              <legend className="sr-only">Modo de precio</legend>
+              <label className="flex cursor-pointer items-start gap-2">
+                <input
+                  type="radio"
+                  name="plan-plus-preset"
+                  className="mt-0.5"
+                  checked={ppPreset === "promo_49900"}
+                  onChange={() => setPpPreset("promo_49900")}
+                />
+                <span>$49.900 COP (beneficio lanzamiento versus lista)</span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-2">
+                <input
+                  type="radio"
+                  name="plan-plus-preset"
+                  className="mt-0.5"
+                  checked={ppPreset === "list_89900"}
+                  onChange={() => setPpPreset("list_89900")}
+                />
+                <span>$89.900 COP (precio de lista sin beneficio lanzamiento)</span>
+              </label>
+              <label className="flex cursor-pointer flex-wrap items-start gap-2">
+                <input
+                  type="radio"
+                  name="plan-plus-preset"
+                  className="mt-0.5"
+                  checked={ppPreset === "custom"}
+                  onChange={() => setPpPreset("custom")}
+                />
+                <span className="flex flex-wrap items-center gap-2">
+                  Otro monto COP
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    aria-label="Monto COP personalizado"
+                    disabled={ppPreset !== "custom"}
+                    value={ppCustom}
+                    onChange={(e) => setPpCustom(e.target.value)}
+                    className="w-36 rounded border border-slate-300 px-2 py-1 text-xs disabled:opacity-50"
+                  />
+                </span>
+              </label>
+            </fieldset>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Otro: enteros entre {PLAN_PLUS_CUSTOM_COP_LIMITS.min.toLocaleString("es-CO")} y{" "}
+              {PLAN_PLUS_CUSTOM_COP_LIMITS.max.toLocaleString("es-CO")} COP.
+            </p>
+            <button
+              type="button"
+              disabled={ppSaveLoading}
+              onClick={() => void savePlanPlusPricing()}
+              className="mt-3 rounded-lg bg-violet-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            >
+              {ppSaveLoading ? "Guardando…" : "Guardar precio"}
+            </button>
+          </section>
         )}
 
         {data?.features?.manualGrantPlus && (

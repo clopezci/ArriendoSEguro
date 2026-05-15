@@ -1,5 +1,10 @@
 import { LeadMarketForm } from "@/components/forms/lead-market-form";
 import { PER_CONTRACT_PAYMENT_NOTICE } from "@/lib/product-pricing";
+import {
+  formatPlanPlusPriceLineCheckoutAndList,
+  getPlanPlusPricingForPublicPages,
+} from "@/domain/platform-payments/plan-plus-pricing";
+import { getAdminFirestore } from "@/lib/firebase/admin";
 import Link from "next/link";
 
 export const metadata = {
@@ -91,7 +96,10 @@ const conocerMasCards = [
   },
 ] as const;
 
-export default function EntiendeloFacilPage() {
+export default async function EntiendeloFacilPage() {
+  const firestore = getAdminFirestore();
+  const pricing = await getPlanPlusPricingForPublicPages(firestore);
+  const planPlusPriceComparison = formatPlanPlusPriceLineCheckoutAndList(pricing.checkoutCop, pricing.listCompareCop);
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6">
@@ -223,23 +231,17 @@ export default function EntiendeloFacilPage() {
                 <tr>
                   <td className="border border-slate-300 px-3 py-2">$1.000.000</td>
                   <td className="border border-slate-300 px-3 py-2">$80.000 a $100.000 al mes</td>
-                  <td className="border border-slate-300 px-3 py-2">
-                    $49.900 promoción · $89.900 lista (por contrato)
-                  </td>
+                  <td className="border border-slate-300 px-3 py-2">{planPlusPriceComparison}</td>
                 </tr>
                 <tr>
                   <td className="border border-slate-300 px-3 py-2">$2.000.000</td>
                   <td className="border border-slate-300 px-3 py-2">$160.000 a $200.000 al mes</td>
-                  <td className="border border-slate-300 px-3 py-2">
-                    $49.900 promoción · $89.900 lista (por contrato)
-                  </td>
+                  <td className="border border-slate-300 px-3 py-2">{planPlusPriceComparison}</td>
                 </tr>
                 <tr>
                   <td className="border border-slate-300 px-3 py-2">$3.000.000</td>
                   <td className="border border-slate-300 px-3 py-2">$240.000 a $300.000 al mes</td>
-                  <td className="border border-slate-300 px-3 py-2">
-                    $49.900 promoción · $89.900 lista (por contrato)
-                  </td>
+                  <td className="border border-slate-300 px-3 py-2">{planPlusPriceComparison}</td>
                 </tr>
               </tbody>
             </table>

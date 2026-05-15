@@ -36,12 +36,21 @@ export function LandingStepsSection() {
         Hazlo en{" "}
         <span className="text-violet-700">{STEPS.length} sencillos pasos</span>
       </h2>
+      <p className="text-center text-xs leading-relaxed text-slate-600 sm:text-[13px] lg:text-left">
+        Cada tarjeta es un paso numerado del 1 al {STEPS.length}. El paso 5 cubre{" "}
+        <span className="font-semibold text-slate-800">evaluar la experiencia</span> cuando hayas cerrado el
+        arriendo.
+      </p>
       <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {STEPS.map((step, index) => (
           <li
             key={step.title}
+            aria-label={`Paso ${index + 1} de ${STEPS.length}: ${step.title}`}
             className="flex min-h-[7.5rem] flex-col rounded-xl border border-violet-300/80 bg-white p-4 shadow-[0_8px_28px_rgba(139,92,246,0.16)] transition hover:border-violet-400 hover:shadow-[0_12px_32px_rgba(139,92,246,0.22)]"
           >
+            <span className="mb-2 text-[10px] font-bold uppercase tracking-wider text-violet-600">
+              Paso {index + 1} de {STEPS.length}
+            </span>
             <span
               aria-hidden
               className="mb-3 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-violet-500 text-2xl font-black text-white shadow-[0_4px_14px_rgba(124,58,237,0.45)]"

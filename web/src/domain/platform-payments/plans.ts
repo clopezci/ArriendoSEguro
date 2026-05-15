@@ -23,6 +23,7 @@ export const PLATFORM_PLANS: Record<
   plus: {
     code: "plus",
     title: "Plan Plus",
+    /** Fallback de catálogo; el cobro efectivo viene de Firestore (`plan_plus_pricing`). */
     priceCop: PLATFORM_PLAN_PLUS_PRICE_COP,
     purchasable: true,
     accessType: "plus_paid",

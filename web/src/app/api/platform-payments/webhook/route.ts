@@ -85,6 +85,7 @@ export async function POST(request: Request) {
       leaseProcessId?: string | null;
       status: string;
       planCode?: string;
+      amount?: number;
     }) ?? {
       id: "",
       userId: "",
@@ -92,6 +93,8 @@ export async function POST(request: Request) {
       status: "",
       planCode: undefined,
     };
+
+    const expectedOrderAmountCop = typeof order.amount === "number" && Number.isInteger(order.amount) ? order.amount : -1;
 
     const duplicatePayment = orderDoc
       ? await firestore
@@ -104,6 +107,7 @@ export async function POST(request: Request) {
     const decision = decideWebhookHandling({
       eventName: event.event,
       amount,
+      expectedOrderAmountCop,
       currency,
       providerReference,
       orderFound: Boolean(orderDoc),

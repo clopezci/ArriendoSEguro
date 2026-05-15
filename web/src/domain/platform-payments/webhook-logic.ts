@@ -1,5 +1,3 @@
-import { PLATFORM_PLAN_PLUS_PRICE_COP } from "./plans";
-
 export type WebhookDecision =
   | { kind: "ignore"; reason: string }
   | { kind: "reject"; field: string; message: string; auditEvent?: string }
@@ -9,7 +7,10 @@ export type WebhookDecision =
 
 export function decideWebhookHandling(input: {
   eventName?: string;
+  /** Monto en COP según el proveedor de pago. */
   amount: number;
+  /** Copia de `platform_orders.amount` para la orden enlazada por referencia. */
+  expectedOrderAmountCop: number;
   currency: string;
   providerReference: string;
   orderFound: boolean;
@@ -30,7 +31,7 @@ export function decideWebhookHandling(input: {
   if (input.orderPlanCode !== "plus") {
     return { kind: "reject", field: "planCode", message: "Solo se procesa Plan Plus." };
   }
-  if (input.amount !== PLATFORM_PLAN_PLUS_PRICE_COP) {
+  if (input.amount !== input.expectedOrderAmountCop) {
     return {
       kind: "reject",
       field: "amount",

@@ -3,7 +3,6 @@ import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { requireAuthenticatedUser, requestClientIp, requestUserAgent } from "@/lib/auth/serverAuth";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import { PLATFORM_PLAN_PLUS_PRICE_COP } from "@/domain/platform-payments/plans";
 import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
 
 export const runtime = "nodejs";
@@ -108,7 +107,7 @@ export async function POST(request: Request) {
     await auditPlatformPaymentEvent(firestore, "platform_payment_mock_approved", {
       orderId: order.id,
       paymentId: paymentRef.id,
-      amount: PLATFORM_PLAN_PLUS_PRICE_COP,
+      amount: order.amount,
       userId: order.userId,
       userEmail: order.userEmail,
       ipAddress: requestClientIp(request),

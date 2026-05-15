@@ -476,7 +476,7 @@ export function LeadMarketForm({
               }}
             >
               <option value="" disabled>Selecciona una opción</option>
-              <option value="early_bird_50">Cerca de $49.900 (promoción primeros inscritos)</option>
+              <option value="early_bird_50">~$49.900 COP (precio lanzamiento, primeros inscritos)</option>
               <option value="list_90">Cerca de $89.900 (precio de lista)</option>
               <option value="under_50">Menos de $50.000</option>
               <option value="range_50_70">Entre $50.000 y $70.000</option>

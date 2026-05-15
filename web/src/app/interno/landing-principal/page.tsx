@@ -4,9 +4,14 @@
  */
 import { LeadMarketForm } from "@/components/forms/lead-market-form";
 import { appConfig } from "@/lib/config";
+import { formatCopPlain } from "@/lib/product-pricing";
+import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/plan-plus-pricing";
+import { getAdminFirestore } from "@/lib/firebase/admin";
 import Link from "next/link";
 
-export default function LandingPrincipalInterna() {
+export default async function LandingPrincipalInterna() {
+  const firestore = getAdminFirestore();
+  const pricing = await getPlanPlusPricingForPublicPages(firestore);
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="border-b border-slate-300 bg-slate-100/90 shadow-[0_8px_30px_rgba(139,92,246,0.15)] backdrop-blur">
@@ -216,8 +221,15 @@ export default function LandingPrincipalInterna() {
             <article className="rounded-2xl border border-violet-300 bg-white/95 p-4 shadow-[0_10px_24px_rgba(139,92,246,0.25)]">
               <h3 className="text-lg font-semibold">Plan Plus</h3>
               <p className="mt-1 text-violet-700">
-                <span className="text-slate-500 line-through">$89.900</span>{" "}
-                <span className="font-semibold">$49.900 COP</span> (primeros inscritos)
+                {pricing.checkoutCop < pricing.listCompareCop ? (
+                  <>
+                    <span className="text-slate-500 line-through">{formatCopPlain(pricing.listCompareCop)} COP</span>{" "}
+                    <span className="font-semibold">{formatCopPlain(pricing.checkoutCop)} COP</span>
+                    <span className="ml-1 text-sm font-normal text-slate-600">(beneficio lanzamiento)</span>
+                  </>
+                ) : (
+                  <span className="font-semibold">{formatCopPlain(pricing.checkoutCop)} COP</span>
+                )}
               </p>
               <ul className="mt-2 space-y-1 text-sm text-slate-700">
                 <li>Pago único por contrato gestionado en la plataforma.</li>

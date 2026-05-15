@@ -1,5 +1,3 @@
-import { PLATFORM_PLAN_PLUS_PRICE_COP } from "./plans";
-
 export function validatePurchasablePlan(planCode: string): {
   ok: boolean;
   message?: string;
@@ -15,6 +13,8 @@ export function normalizeCreateOrderIdentity(input: {
   tokenUserEmail: string;
   planCode: "plus";
   leaseProcessId?: string;
+  /** COP enteros cobrados en esta orden (resuelto en servidor desde configuración vigente). */
+  checkoutAmountCop: number;
 }): {
   userId: string;
   userEmail: string;
@@ -27,7 +27,7 @@ export function normalizeCreateOrderIdentity(input: {
     userId: input.tokenUserId,
     userEmail: input.tokenUserEmail,
     planCode: input.planCode,
-    amount: PLATFORM_PLAN_PLUS_PRICE_COP,
+    amount: input.checkoutAmountCop,
     currency: "COP",
     leaseProcessId: input.leaseProcessId ?? null,
   };

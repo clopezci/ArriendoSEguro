@@ -4,7 +4,7 @@ import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { requireAuthenticatedUser, requestClientIp, requestUserAgent } from "@/lib/auth/serverAuth";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import { PLATFORM_PLAN_PLUS_PRICE_COP } from "@/domain/platform-payments/plans";
+import { getResolvedPlanPlusPricing } from "@/domain/platform-payments/plan-plus-pricing";
 import { getPaymentProvider } from "@/domain/platform-payments/provider-factory";
 import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
 import { normalizeCreateOrderIdentity } from "@/domain/platform-payments/order-rules";
@@ -42,11 +42,13 @@ export async function POST(request: Request) {
     const orderRef = firestore.collection("platform_orders").doc();
     const providerReference = `AS_PLUS_${Date.now()}_${randomUUID().slice(0, 8)}`;
     const selected = getPaymentProvider(parsed.data.paymentProvider);
+    const pricing = await getResolvedPlanPlusPricing(firestore);
     const normalized = normalizeCreateOrderIdentity({
       tokenUserId: auth.user.uid,
       tokenUserEmail: auth.user.email,
       planCode: "plus",
       leaseProcessId: parsed.data.leaseProcessId,
+      checkoutAmountCop: pricing.checkoutCop,
     });
     const baseOrder = {
       id: orderRef.id,
@@ -79,7 +81,7 @@ export async function POST(request: Request) {
       userId: auth.user.uid,
       userEmail: auth.user.email,
       planCode: "plus",
-      amount: PLATFORM_PLAN_PLUS_PRICE_COP,
+      amount: normalized.amount,
       provider: selected.providerCode,
       ipAddress: requestClientIp(request),
       userAgent: requestUserAgent(request),
@@ -95,7 +97,7 @@ export async function POST(request: Request) {
       orderId: orderRef.id,
       checkoutUrl: checkout.checkoutUrl,
       status: "pending",
-      amount: PLATFORM_PLAN_PLUS_PRICE_COP,
+      amount: normalized.amount,
       currency: "COP",
     });
   } catch {

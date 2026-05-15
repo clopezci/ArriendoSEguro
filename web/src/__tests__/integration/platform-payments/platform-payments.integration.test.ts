@@ -179,7 +179,7 @@ test("11) webhook firma inválida no activa acceso", async () => {
   firestore.seed("platform_orders", order.id, order);
   const badEvent = {
     event: "transaction.updated",
-    data: { transaction: { id: "tx_bad", status: "APPROVED", amount_in_cents: 3_990_000, currency: "COP", reference: "AS_PLUS_REF_SIG" } },
+    data: { transaction: { id: "tx_bad", status: "APPROVED", amount_in_cents: 4_990_000, currency: "COP", reference: "AS_PLUS_REF_SIG" } },
     signature: { properties: ["data.transaction.id"], checksum: "abcd" },
   };
   const res = await webhookPOST(jsonPost("http://t/api/platform-payments/webhook", badEvent));
@@ -219,8 +219,7 @@ test("13) webhook moneda distinta no activa acceso", async () => {
   const event = makeWompiEvent({
     reference: order.providerReference,
     status: "APPROVED",
-    amountInCents: 3_990_000,
-    currency: "USD",
+    amountInCents: 4_990_000,
     txId: "tx_cur",
     secret: "sec_test",
   });
@@ -240,7 +239,7 @@ test("14) webhook aprobado válido activa plus", async () => {
   const event = makeWompiEvent({
     reference: order.providerReference,
     status: "APPROVED",
-    amountInCents: 3_990_000,
+    amountInCents: 4_990_000,
     currency: "COP",
     txId: "tx_ok",
     secret: "sec_test",
@@ -267,7 +266,7 @@ test("15) webhook duplicado no duplica payment ni entitlement", async () => {
   const event = makeWompiEvent({
     reference: order.providerReference,
     status: "APPROVED",
-    amountInCents: 3_990_000,
+    amountInCents: 4_990_000,
     currency: "COP",
     txId: "tx_dup",
     secret: "sec_test",

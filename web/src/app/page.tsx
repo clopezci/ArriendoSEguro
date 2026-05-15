@@ -1,10 +1,7 @@
 import { BlogTopicLinks } from "@/components/landing/blog-topic-links";
-import {
-  CONTRACT_EARLY_BIRD_PRICE_COP,
-  CONTRACT_LIST_PRICE_COP,
-  formatCopPlain,
-  PER_CONTRACT_PAYMENT_NOTICE,
-} from "@/lib/product-pricing";
+import { formatCopPlain, PER_CONTRACT_PAYMENT_NOTICE } from "@/lib/product-pricing";
+import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/plan-plus-pricing";
+import { getAdminFirestore } from "@/lib/firebase/admin";
 import { LandingPublicHeader } from "@/components/landing/landing-public-header";
 import { LandingStepsSection } from "@/components/landing/landing-steps-section";
 import { SurveyFloatingCta } from "@/components/landing/survey-floating-cta";
@@ -35,7 +32,9 @@ export const metadata: Metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  const firestore = getAdminFirestore();
+  const pricing = await getPlanPlusPricingForPublicPages(firestore);
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <LandingPublicHeader />
@@ -103,15 +102,27 @@ export default function Home() {
                 ¡Cupos limitados!
               </span>
               <span>
-                Los primeros en inscribirse en la encuesta acceden a{" "}
-                <strong className="font-semibold text-slate-900">
-                  {formatCopPlain(CONTRACT_EARLY_BIRD_PRICE_COP)}
-                </strong>{" "}
-                por contrato gestionado en la plataforma (precio de lista{" "}
-                <strong className="font-semibold text-slate-900">
-                  {formatCopPlain(CONTRACT_LIST_PRICE_COP)}
-                </strong>
-                ), mientras dure la promoción de lanzamiento.
+                {pricing.checkoutCop < pricing.listCompareCop ? (
+                  <>
+                    Los primeros en inscribirse en la encuesta acceden a{" "}
+                    <strong className="font-semibold text-slate-900">
+                      {formatCopPlain(pricing.checkoutCop)}
+                    </strong>{" "}
+                    por contrato gestionado en la plataforma (precio de lista{" "}
+                    <strong className="font-semibold text-slate-900">
+                      {formatCopPlain(pricing.listCompareCop)}
+                    </strong>
+                    ), mientras dure la promoción de lanzamiento.
+                  </>
+                ) : (
+                  <>
+                    Precio vigente por contrato gestionado en la plataforma:{" "}
+                    <strong className="font-semibold text-slate-900">
+                      {formatCopPlain(pricing.checkoutCop)}
+                    </strong>
+                    .
+                  </>
+                )}
               </span>
             </p>
             <p className="text-center text-[11px] leading-snug text-slate-600 lg:text-left">

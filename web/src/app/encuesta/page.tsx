@@ -1,10 +1,7 @@
 import { LeadMarketForm } from "@/components/forms/lead-market-form";
-import {
-  CONTRACT_EARLY_BIRD_PRICE_COP,
-  CONTRACT_LIST_PRICE_COP,
-  formatCopPlain,
-  PER_CONTRACT_PAYMENT_NOTICE,
-} from "@/lib/product-pricing";
+import { formatCopPlain, PER_CONTRACT_PAYMENT_NOTICE } from "@/lib/product-pricing";
+import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/plan-plus-pricing";
+import { getAdminFirestore } from "@/lib/firebase/admin";
 import { LandingPublicHeader } from "@/components/landing/landing-public-header";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -16,7 +13,9 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function EncuestaPage() {
+export default async function EncuestaPage() {
+  const firestore = getAdminFirestore();
+  const pricing = await getPlanPlusPricingForPublicPages(firestore);
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <LandingPublicHeader surveyHref="/encuesta" />
@@ -42,15 +41,24 @@ export default function EncuestaPage() {
               ¡Cupos limitados!
             </span>
             <span>
-              Los primeros en inscribirse acceden a{" "}
-              <strong className="font-semibold text-slate-900">
-                {formatCopPlain(CONTRACT_EARLY_BIRD_PRICE_COP)}
-              </strong>{" "}
-              por contrato en la plataforma (lista{" "}
-              <strong className="font-semibold text-slate-900">
-                {formatCopPlain(CONTRACT_LIST_PRICE_COP)}
-              </strong>
-              ), mientras dure la promoción.
+              {pricing.checkoutCop < pricing.listCompareCop ? (
+                <>
+                  Los primeros en inscribirse acceden a{" "}
+                  <strong className="font-semibold text-slate-900">
+                    {formatCopPlain(pricing.checkoutCop)}
+                  </strong>{" "}
+                  por contrato en la plataforma (lista{" "}
+                  <strong className="font-semibold text-slate-900">
+                    {formatCopPlain(pricing.listCompareCop)}
+                  </strong>
+                  ), mientras dure la promoción.
+                </>
+              ) : (
+                <>
+                  Precio vigente por contrato en la plataforma:{" "}
+                  <strong className="font-semibold text-slate-900">{formatCopPlain(pricing.checkoutCop)}</strong>.
+                </>
+              )}
             </span>
           </p>
           <p className="text-xs leading-relaxed text-slate-600">{PER_CONTRACT_PAYMENT_NOTICE}</p>

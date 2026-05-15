@@ -47,7 +47,7 @@ const Q4_NO: Record<string, string> = {
 };
 
 const WILLING: Record<string, string> = {
-  early_bird_50: "Cerca de $49.900 (promoción primeros inscritos)",
+  early_bird_50: "~$49.900 COP (precio lanzamiento primeros inscritos)",
   list_90: "Cerca de $89.900 (precio de lista)",
   under_50: "Menos de $50.000",
   range_50_70: "Entre $50.000 y $70.000",

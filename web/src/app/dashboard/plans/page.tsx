@@ -9,7 +9,7 @@ import {
   formatCopPlain,
   PER_CONTRACT_PAYMENT_NOTICE,
 } from "@/lib/product-pricing";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type EntitlementsResponse = {
   success: boolean;
@@ -19,6 +19,8 @@ type EntitlementsResponse = {
   demoEntitlement?: { id: string } | null;
 };
 
+type ActivePricing = { checkoutCop: number; listCompareCop: number };
+
 export default function PlansPage() {
   const { user } = useAuth();
   const [msg, setMsg] = useState("");
@@ -26,8 +28,25 @@ export default function PlansPage() {
   const [checkoutUrl, setCheckoutUrl] = useState("");
   const [orderId, setOrderId] = useState("");
   const [loading, setLoading] = useState(false);
+  const [pricing, setPricing] = useState<ActivePricing | null>(null);
   const [entitlements, setEntitlements] = useState<EntitlementsResponse | null>(null);
   const internal = canSeeInternalDashboardTools(user?.email ?? null);
+
+  const checkoutCop = pricing?.checkoutCop ?? CONTRACT_EARLY_BIRD_PRICE_COP;
+  const listCompareCop = pricing?.listCompareCop ?? CONTRACT_LIST_PRICE_COP;
+
+  const pricingLine = useMemo(() => {
+    if (checkoutCop < listCompareCop) {
+      return {
+        showStrikethrough: true as const,
+        subtitle: "Precio promocional mientras aplique la configuración vigente.",
+      };
+    }
+    return {
+      showStrikethrough: false as const,
+      subtitle: "Precio vigente en la plataforma (sin comparación con lista).",
+    };
+  }, [checkoutCop, listCompareCop]);
 
   const loadAccess = useCallback(async () => {
     if (!user) return;
@@ -37,6 +56,25 @@ export default function PlansPage() {
     const data = (await res.json()) as EntitlementsResponse;
     if (res.ok && data.success) setEntitlements(data);
   }, [user]);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const res = await fetch("/api/platform-payments/active-pricing");
+        const j = (await res.json()) as { success?: boolean; checkoutCop?: number; listCompareCop?: number };
+        if (
+          res.ok &&
+          j.success &&
+          typeof j.checkoutCop === "number" &&
+          typeof j.listCompareCop === "number"
+        ) {
+          setPricing({ checkoutCop: j.checkoutCop, listCompareCop: j.listCompareCop });
+        }
+      } catch {
+        /* respaldo: constantes locales */
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     void loadAccess();
@@ -191,16 +229,16 @@ export default function PlansPage() {
         <article className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
           <h2 className="text-xl font-semibold text-slate-900">Plan Plus</h2>
           <p className="mt-2 flex flex-wrap items-baseline gap-2">
-            <span className="text-sm text-slate-500 line-through">
-              {formatCopPlain(CONTRACT_LIST_PRICE_COP)} COP
-            </span>
-            <span className="text-lg font-semibold text-violet-700">
-              {formatCopPlain(CONTRACT_EARLY_BIRD_PRICE_COP)} COP
-            </span>
+            {pricingLine.showStrikethrough ? (
+              <>
+                <span className="text-sm text-slate-500 line-through">{formatCopPlain(listCompareCop)} COP</span>
+                <span className="text-lg font-semibold text-violet-700">{formatCopPlain(checkoutCop)} COP</span>
+              </>
+            ) : (
+              <span className="text-lg font-semibold text-violet-700">{formatCopPlain(checkoutCop)} COP</span>
+            )}
           </p>
-          <p className="mt-1 text-xs font-medium text-violet-800">
-            Promoción primeros inscritos (mientras dure el lanzamiento).
-          </p>
+          <p className="mt-1 text-xs font-medium text-violet-800">{pricingLine.subtitle}</p>
           <p className="mt-2 text-sm text-slate-600">Pago único por contrato gestionado en la plataforma. Sin mensualidades.</p>
           <p className="mt-2 text-xs leading-relaxed text-slate-600">{PER_CONTRACT_PAYMENT_NOTICE}</p>
           <ul className="mt-4 space-y-2 text-sm text-slate-700">
