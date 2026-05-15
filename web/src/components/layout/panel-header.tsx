@@ -12,7 +12,7 @@ const links = [
   { href: "/panel/expediente", label: "Expediente" },
   { href: "/panel/inventario", label: "Inventario" },
   { href: "/panel/pagos", label: "Pagos" },
-  { href: "/#interes", label: "Inscribirse" },
+  { href: "/encuesta", label: "Inscribirse" },
 ] as const;
 
 export function PanelHeader() {
@@ -36,7 +36,7 @@ export function PanelHeader() {
         <nav className="flex flex-wrap gap-2" aria-label="Módulos del panel">
           {links.map(({ href, label }) => {
             const active =
-              href === "/#interes"
+              href === "/encuesta"
                 ? false
                 : pathname === href || (href !== "/panel" && pathname?.startsWith(href));
             return (

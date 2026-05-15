@@ -23,7 +23,7 @@ export function BlogTopicLinks() {
         </Link>
         .
       </p>
-      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {links.map((item) => (
           <li key={item.href}>
             <Link
