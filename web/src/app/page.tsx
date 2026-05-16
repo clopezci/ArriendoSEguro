@@ -3,6 +3,7 @@ import { formatCopPlain, PER_CONTRACT_PAYMENT_NOTICE } from "@/lib/product-prici
 import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/plan-plus-pricing";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { LandingPublicHeader } from "@/components/landing/landing-public-header";
+import { LandingInstallApp } from "@/components/landing/landing-install-app";
 import { LandingStepsSection } from "@/components/landing/landing-steps-section";
 import { SurveyFloatingCta } from "@/components/landing/survey-floating-cta";
 import Link from "next/link";
@@ -65,10 +66,35 @@ export default async function Home() {
                 y sin dejarlo informal.
               </p>
             </div>
+            <section
+              aria-labelledby="instalar-app-heading"
+              className="rounded-xl border border-violet-300/90 bg-gradient-to-br from-violet-50 to-white p-4 shadow-[0_8px_28px_rgba(139,92,246,0.14)] sm:p-5"
+            >
+              <h2
+                id="instalar-app-heading"
+                className="text-center text-base font-bold text-slate-900 sm:text-lg lg:text-left"
+              >
+                Instala ArriendoSeguro en tu dispositivo
+              </h2>
+              <p className="mt-2 text-center text-sm leading-relaxed text-slate-600 lg:text-left">
+                Celular, tablet o computador: agrega un acceso directo en tu pantalla de inicio para entrar al
+                panel, contratos y expedientes con un solo toque.
+              </p>
+              <div className="mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:justify-start">
+                <LandingInstallApp className="w-full sm:w-auto" />
+                <Link
+                  href="/ingresar"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-800 shadow-sm transition hover:border-violet-400 sm:w-auto"
+                >
+                  Ya tengo cuenta — ingresar
+                </Link>
+              </div>
+            </section>
+
             <div className="flex justify-center lg:justify-start">
               <Link
                 href="/entiendelo-facil"
-                className="inline-flex rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-800 shadow-[0_0_0_1px_rgba(139,92,246,0.2)] transition hover:border-sky-500/60 hover:text-sky-800"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-800 shadow-[0_0_0_1px_rgba(139,92,246,0.2)] transition hover:border-sky-500/60 hover:text-sky-800"
               >
                 Entender cómo funciona
               </Link>
