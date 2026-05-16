@@ -1,5 +1,6 @@
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { LegalFooter } from "@/components/layout/legal-footer";
+import { PwaInstallSiteBanner } from "@/components/pwa/pwa-install-site-banner";
 import { PwaRegister } from "@/components/pwa-register";
 import { AppProviders } from "@/components/providers/app-providers";
 import { appConfig } from "@/lib/config";
@@ -31,6 +32,7 @@ export default function RootLayout({
             <div className="flex-1">{children}</div>
             <LegalFooter />
           </div>
+          <PwaInstallSiteBanner />
         </AppProviders>
       </body>
     </html>
