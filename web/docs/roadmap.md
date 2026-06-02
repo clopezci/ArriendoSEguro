@@ -1,7 +1,7 @@
 # Roadmap visual — ArriendoSeguro
 
 > Tablero rápido del producto. Mantener sincronizado con la regla
-> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-05-13** (Bloques 11 parcial operativo, 12–13 y PWA en curso).
+> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-06-02** (PWA banner global; Bloques 12–13 en curso).
 >
 > Convenciones:
 > - **[x]** = listo en producción o en `main`.
@@ -102,7 +102,8 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 
 ### PWA instalable *(prio 2)*
 - [x] `web/public/manifest.webmanifest` (`display: standalone`, theme/background `#0b0f1a`, íconos desde PNG existente).
-- [x] Service worker mínimo (`/sw.js`, cache-first GET estático, red directa para `/api/*`) + registro en layout.
+- [x] Service worker (`/sw.js`, estáticos con huella; sin cache-first en HTML de navegación) + registro en layout.
+- [x] CTA instalar en landing (`LandingInstallApp`) + banner global en layout (`PwaInstallSiteBanner`, oculto en `/`).
 - [ ] Íconos morados AS dedicados 192/512 + maskable (sustituir placeholder cuando existan assets finales).
 - [ ] Splash y meta-tags iOS/Android dedicados.
 - [ ] Probar instalación real en Android (Chrome) y iOS (Safari → Compartir).
