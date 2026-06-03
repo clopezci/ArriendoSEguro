@@ -17,7 +17,7 @@
 [ Fase 0 ]      [ Fase 1 ]      [ Fase 2 ]        [ Fase 3 ]        [ Fase 4 ]
  Validación  →  Contrato +   →  Calidad legal  →  Confianza      →  Crecimiento
  de mercado     expediente      + PWA + cobros    (reputación)      (marketplace)
-   ✅ activo     ✅ activo        🔄 en curso        ⏳ por iniciar    ⏳ por iniciar
+   ✅ activo     ✅ activo        🔄 en curso        🔄 en curso       ⏳ por iniciar
 ```
 
 ---
@@ -81,8 +81,8 @@
 - [x] Texto del contrato extraído para revisión (`web/docs/contrato-vivienda-urbana-revision-legal.txt`).
 - [x] Análisis comparativo con modelo del abogado (`web/docs/legal-abogado/analisis-comparativo.md`).
 - [x] Plan de mejoras contrato + flujo (`web/docs/plan-mejoras-contrato-flujo.md`).
-- [ ] Confirmaciones pendientes del abogado (sección 6 del plan).
-- [ ] Aplicar cambios → nueva versión `AS-LEASE-2026.2`.
+- [x] Confirmaciones del abogado: **sin cambios**; `AS-LEASE-2026.2` queda confirmado tal cual (2026-06-03).
+- [x] No requiere aplicar cambios al texto (el abogado validó la versión vigente).
 - [ ] Definir y precificar **cláusulas particulares** como servicio adicional.
 - [ ] Insertar bloque `[CLAUSULAS_ESPECIALES_CONDICIONAL]` (entre DÉCIMA NOVENA y VIGÉSIMA).
 
@@ -124,15 +124,17 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 
 ---
 
-## Fase 3 — Confianza (reputación y calificaciones) ⏳
+## Fase 3 — Confianza (reputación y calificaciones) 🔄
 
-- [~] Evaluación estructurada en código (`dashboard/contracts/[id]/review` + cláusula DÉCIMA CUARTA).
-- [ ] Flujo público para calificar tras cierre o hito definido.
-- [ ] Visualización agregada en perfil (sin lista negra ni consulta libre por cédula).
-- [ ] Reglas para anti-fraude / disputas básicas.
-- [ ] Política de retención y portabilidad de evaluaciones.
+- [x] **Calificación bidireccional por estrellas (1–5), sin texto libre** (`/dashboard/contracts/[id]/reputacion`): el arrendador califica al arrendatario (pago, cuidado del inmueble, comunicación, respeto, entrega) y el arrendatario al arrendador (mantenimiento, tiempos de respuesta, comunicación, respeto, transparencia). Variables según la dirección. APIs `/api/reputation/submit` y `/for-contract`.
+- [x] Se habilita **tras el cierre/firma** del contrato (estados signed/closed); validación rol↔dirección en servidor.
+- [x] **Anti-represalia**: la calificación recibida solo se revela tras emitir la propia.
+- [x] **Visualización agregada privada** en `/dashboard/reputacion` (promedio por criterio y global; sin lista negra ni consulta por cédula). Resumen `/api/reputation/summary`.
+- [ ] Disputas / solicitud de revisión de una calificación (canal de soporte).
+- [ ] Política de retención y portabilidad de evaluaciones (ampliar `/legal/evaluacion`).
+- [ ] (Futuro, con base legal) eventual visibilidad entre partes antes de contratar.
 
-> Restricción de fase: no exponer calificaciones públicas mientras esté en **Fase 2**.
+> Diseño alineado con `/legal/evaluacion`: estructurado, privado, sin lista negra ni búsqueda pública por cédula.
 
 ---
 

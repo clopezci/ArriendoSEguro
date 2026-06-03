@@ -1,0 +1,96 @@
+import { NextResponse } from "next/server";
+import { getAdminFirestore } from "@/lib/firebase/admin";
+import { requireContractParticipant } from "@/lib/auth/serverAuth";
+import {
+  REPUTATION_CRITERIA,
+  directionForRaterRole,
+  type ReputationDirection,
+} from "@/domain/reputation/criteria";
+
+export const runtime = "nodejs";
+
+const REVIEWS_COLLECTION = "reputation_reviews";
+const RATEABLE_STATUSES = new Set(["signed", "closed", "finished", "completed"]);
+
+type ReviewView = {
+  direction: string;
+  ratings: Record<string, number>;
+  overall: number;
+  raterRole: string;
+  updatedAt: string;
+} | null;
+
+async function readReview(
+  firestore: NonNullable<ReturnType<typeof getAdminFirestore>>,
+  contractId: string,
+  direction: ReputationDirection,
+): Promise<ReviewView> {
+  const snap = await firestore.collection(REVIEWS_COLLECTION).doc(`${contractId}__${direction}`).get();
+  if (!snap.exists) return null;
+  const x = snap.data() as Record<string, unknown>;
+  return {
+    direction,
+    ratings: (x.ratings as Record<string, number>) ?? {},
+    overall: Number(x.overall ?? 0),
+    raterRole: String(x.raterRole ?? ""),
+    updatedAt: String(x.updatedAt ?? ""),
+  };
+}
+
+export async function GET(request: Request) {
+  const firestore = getAdminFirestore();
+  if (!firestore) {
+    return NextResponse.json(
+      { success: false, errors: [{ field: "server", message: "Firestore no configurado." }] },
+      { status: 503 },
+    );
+  }
+
+  const contractId = new URL(request.url).searchParams.get("contractId") ?? "";
+  if (!contractId) {
+    return NextResponse.json(
+      { success: false, errors: [{ field: "contractId", message: "Falta contractId." }] },
+      { status: 422 },
+    );
+  }
+
+  const participant = await requireContractParticipant(request, firestore, contractId, { kind: "current" });
+  if (!participant.ok) return participant.response;
+
+  const myDirection = directionForRaterRole(participant.role);
+  const cSnap = await firestore.collection("contracts").doc(contractId).get();
+  const status = String((cSnap.data() as { status?: string } | undefined)?.status ?? "draft");
+  const canRate = Boolean(myDirection) && RATEABLE_STATUSES.has(status);
+
+  if (!myDirection) {
+    return NextResponse.json({
+      success: true,
+      canRate: false,
+      reason: "role",
+      myDirection: null,
+      criteria: [],
+      myReview: null,
+      counterpartReview: null,
+    });
+  }
+
+  const otherDirection: ReputationDirection =
+    myDirection === "landlord_to_tenant" ? "tenant_to_landlord" : "landlord_to_tenant";
+
+  const myReview = await readReview(firestore, contractId, myDirection);
+  // Anti-represalia: la calificación recibida solo se revela cuando ya emitiste la tuya.
+  const counterpartReview = myReview ? await readReview(firestore, contractId, otherDirection) : null;
+  const counterpartPending = !myReview;
+
+  return NextResponse.json({
+    success: true,
+    canRate,
+    reason: canRate ? null : "status",
+    contractStatus: status,
+    myDirection,
+    criteria: REPUTATION_CRITERIA[myDirection],
+    myReview,
+    counterpartReview,
+    counterpartPending,
+  });
+}

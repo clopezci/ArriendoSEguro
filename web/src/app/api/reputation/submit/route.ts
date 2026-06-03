@@ -1,0 +1,148 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { FieldValue } from "firebase-admin/firestore";
+import { getAdminFirestore } from "@/lib/firebase/admin";
+import { loadCurrentContractContext, requireContractParticipant } from "@/lib/auth/serverAuth";
+import { auditEvent } from "@/features/contracts/audit-server";
+import { logServerError } from "@/lib/observability/observability";
+import {
+  REPUTATION_DIRECTIONS,
+  directionForRaterRole,
+  validateRatings,
+  type ReputationDirection,
+} from "@/domain/reputation/criteria";
+
+export const runtime = "nodejs";
+
+const REVIEWS_COLLECTION = "reputation_reviews";
+/** Estados de contrato que habilitan calificar (tras el cierre/firma). */
+const RATEABLE_STATUSES = new Set(["signed", "closed", "finished", "completed"]);
+
+type Err = { success: false; errors: { field: string; message: string }[] };
+
+const schema = z.object({
+  contractId: z.string().min(3),
+  direction: z.enum(REPUTATION_DIRECTIONS as [ReputationDirection, ...ReputationDirection[]]),
+  ratings: z.record(z.string(), z.number()),
+});
+
+export async function POST(request: Request) {
+  try {
+    const firestore = getAdminFirestore();
+    if (!firestore) {
+      return NextResponse.json<Err>(
+        { success: false, errors: [{ field: "server", message: "Firestore no configurado." }] },
+        { status: 503 },
+      );
+    }
+
+    const parsed = schema.safeParse(await request.json().catch(() => null));
+    if (!parsed.success) {
+      return NextResponse.json<Err>(
+        { success: false, errors: [{ field: "body", message: "Datos de calificación inválidos." }] },
+        { status: 422 },
+      );
+    }
+    const { contractId, direction, ratings } = parsed.data;
+
+    const participant = await requireContractParticipant(request, firestore, contractId, { kind: "current" });
+    if (!participant.ok) return participant.response;
+
+    // La dirección debe corresponder al rol de quien califica.
+    const allowed = directionForRaterRole(participant.role);
+    if (!allowed) {
+      return NextResponse.json<Err>(
+        { success: false, errors: [{ field: "direction", message: "Tu rol no puede emitir calificaciones en esta fase." }] },
+        { status: 403 },
+      );
+    }
+    if (allowed !== direction) {
+      return NextResponse.json<Err>(
+        { success: false, errors: [{ field: "direction", message: "La dirección no corresponde a tu rol en el contrato." }] },
+        { status: 403 },
+      );
+    }
+
+    const ctx = await loadCurrentContractContext(firestore, contractId);
+    if (!ctx) {
+      return NextResponse.json<Err>(
+        { success: false, errors: [{ field: "contract", message: "No se pudo cargar la versión del contrato." }] },
+        { status: 422 },
+      );
+    }
+
+    // Gate: solo se califica tras el cierre/firma del arriendo.
+    const cSnap = await firestore.collection("contracts").doc(contractId).get();
+    const status = String((cSnap.data() as { status?: string } | undefined)?.status ?? "draft");
+    if (!RATEABLE_STATUSES.has(status)) {
+      return NextResponse.json<Err>(
+        {
+          success: false,
+          errors: [
+            {
+              field: "status",
+              message: "La calificación estará disponible cuando el contrato esté firmado o cerrado.",
+            },
+          ],
+        },
+        { status: 409 },
+      );
+    }
+
+    const check = validateRatings(direction, ratings);
+    if (!check.ok) {
+      return NextResponse.json<Err>(
+        { success: false, errors: [{ field: "ratings", message: check.error }] },
+        { status: 422 },
+      );
+    }
+
+    const subjectEmail = (
+      direction === "landlord_to_tenant"
+        ? ctx.contractPayload?.tenant?.email
+        : ctx.contractPayload?.landlord?.email
+    )
+      ?.trim()
+      .toLowerCase() ?? null;
+    const subjectRole = direction === "landlord_to_tenant" ? "tenant" : "landlord";
+
+    const now = new Date().toISOString();
+    // Un único documento por (contrato, dirección): quien califica puede actualizar el suyo.
+    const ref = firestore.collection(REVIEWS_COLLECTION).doc(`${contractId}__${direction}`);
+    const existed = (await ref.get()).exists;
+    await ref.set(
+      {
+        contractId,
+        contractVersionId: ctx.contractVersionId,
+        direction,
+        ratings: check.values,
+        overall: check.overall,
+        raterUid: participant.user.uid,
+        raterEmail: participant.user.email,
+        raterRole: participant.role,
+        subjectEmail,
+        subjectRole,
+        status: "active",
+        updatedAt: now,
+        updatedAtServer: FieldValue.serverTimestamp(),
+        ...(existed ? {} : { createdAt: now, createdAtServer: FieldValue.serverTimestamp() }),
+      },
+      { merge: true },
+    );
+
+    auditEvent("reputation_review_submitted", {
+      contractId,
+      direction,
+      overall: check.overall,
+      updated: existed,
+    });
+
+    return NextResponse.json({ success: true, overall: check.overall, updated: existed });
+  } catch (err) {
+    await logServerError("reputation/submit", err);
+    return NextResponse.json<Err>(
+      { success: false, errors: [{ field: "server", message: "No se pudo guardar la calificación." }] },
+      { status: 500 },
+    );
+  }
+}

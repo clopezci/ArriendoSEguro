@@ -182,7 +182,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 | **Firestore rules** | Baseline *deny-all* versionado y seguro; **falta desplegarlo** (`firebase deploy`) y confirmar en consola |
 | **Upstash** | Variables `UPSTASH_REDIS_REST_*` por configurar en Vercel (sin ellas, rate-limit usa memoria best-effort) |
 | **AdSense** | CMP de cookies ✅; blog ampliado a 15 artículos con fuentes reales ✅; Search Console **scaffold listo** (`NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → pegar token en Vercel). Faltan: separar ads solo en páginas públicas, alta en AdSense |
-| **Legal abogado** | Confirmaciones plan §6 → activar redacción final 2026.2 |
+| **Legal abogado** | ✅ Confirmado **sin cambios**: `AS-LEASE-2026.2` queda tal cual (2026-06-03) |
 
 ### ⏳ Pendiente prioritario (orden sugerido)
 
@@ -196,7 +196,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 
 ### 🔮 Mejoras futuras (backlog, no implementar sin plan)
 
-- Reputación y calificaciones post-cierre (Fase 3).
+- ~~Reputación y calificaciones post-cierre (Fase 3)~~ ✅ implementado (calificación bidireccional por estrellas + resumen privado). Pendiente: disputas/revisión y retención.
 - Marketplace ligero (Fase 4).
 - Pasarela que recaude canon (producto distinto; fuera de fase actual).
 - Sentry / panel errores.
@@ -258,6 +258,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 
 | Fecha | Agente / nota | Resumen | Commit(s) |
 |-------|---------------|---------|-----------|
+| 2026-06-03 | Claude Code | **Fase 3 — Reputación**: calificación bidireccional por estrellas (sin texto libre), variables según dirección (arrendador↔arrendatario), tras cierre, anti-represalia, resumen privado en `/dashboard/reputacion`. APIs `reputation/submit|for-contract|summary`, dominio `reputation/criteria`, `StarRating`, +5 tests (48/48). Abogado: `AS-LEASE-2026.2` confirmado **sin cambios**. | `(commit reputacion)` |
 | 2026-06-03 | Claude Code | Captura de errores de **servidor** (`logServerError` → `error_events`, reutiliza `recordErrorEvent`) cableada en webhook Wompi, generación de PDF y firma; refactor del endpoint de cliente para compartir la lógica. Completa la observabilidad propia. | `(commit obs-servidor)` |
 | 2026-06-03 | Claude Code | Observabilidad propia (alternativa a Sentry, $0): captura automática de errores de cliente (`error_events`, agregada por huella), reportes de usuario (`/reportar` → `user_reports`) y pestañas **Reportes**/**Errores** en `/admin` (cambiar estado, marcar resuelto). PII enmascarada, datos en Firebase. Wompi aparcado (hub vive en `/wompi`, hecho para Supabase). | `(commit observabilidad)` |
 | 2026-06-03 | Claude Code | Auditoría Bloque 12 (soportes codeudor): ya estaba completo y seguro (rol landlord forzado en servidor, verificación en Storage, ZIP evidencia, storage.rules). Marcado `[x]`; +6 tests de validación de ruta `storage-path` (43/43). | `(commit bloque12)` |
