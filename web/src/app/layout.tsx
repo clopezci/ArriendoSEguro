@@ -9,6 +9,8 @@ import { appConfig } from "@/lib/config";
 import type { Metadata } from "next";
 import "./globals.css";
 
+const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
+
 export const metadata: Metadata = {
   metadataBase: new URL(appConfig.publicUrl),
   manifest: "/manifest.webmanifest",
@@ -17,6 +19,9 @@ export const metadata: Metadata = {
     template: `%s | ${appConfig.name}`,
   },
   description: appConfig.seoDescription,
+  // Verificación de propiedad en Google Search Console (pega el valor del
+  // método "etiqueta HTML" en NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION en Vercel).
+  ...(googleSiteVerification ? { verification: { google: googleSiteVerification } } : {}),
 };
 
 export default function RootLayout({

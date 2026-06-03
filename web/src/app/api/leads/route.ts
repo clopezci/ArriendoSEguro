@@ -17,15 +17,16 @@ const MAX_JSON_BYTES = 32_000;
 
 /**
  * Correos que omiten la comprobación de duplicado en `lead_forms` (pruebas repetidas
- * sin bloqueo). Incluye correo interno acordado; amplía con `LEAD_FORM_DEDUP_BYPASS_EMAILS`
- * en Vercel (lista separada por comas, sin espacios obligatorios).
+ * sin bloqueo). Se configura por completo con `LEAD_FORM_DEDUP_BYPASS_EMAILS` en Vercel
+ * (lista separada por comas/; o espacios). Sin la variable, no hay omisiones: ningún
+ * correo queda quemado en el código.
  */
 function leadDedupBypassEmails(): Set<string> {
   const fromEnv =
     process.env.LEAD_FORM_DEDUP_BYPASS_EMAILS?.split(/[,;\s]+/)
       .map((s) => s.trim().toLowerCase())
       .filter((s) => s.length > 0) ?? [];
-  return new Set(["clopezci@hotmail.com", ...fromEnv]);
+  return new Set(fromEnv);
 }
 
 function jsonError(message: string, status: number) {
