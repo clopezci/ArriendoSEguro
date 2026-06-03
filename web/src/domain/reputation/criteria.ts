@@ -55,6 +55,33 @@ export function criteriaKeys(direction: ReputationDirection): string[] {
 }
 
 /**
+ * Dirección de la calificación que recibe (es titular/sujeto) quien tiene este
+ * rol. Sirve para el derecho de réplica: el arrendatario es sujeto de la
+ * calificación `landlord_to_tenant` y el arrendador de `tenant_to_landlord`.
+ */
+export function reviewDirectionAboutRole(
+  role: "landlord" | "tenant" | "solidaryCoDebtor",
+): ReputationDirection | null {
+  if (role === "tenant") return "landlord_to_tenant";
+  if (role === "landlord") return "tenant_to_landlord";
+  return null;
+}
+
+/** Motivos cerrados para una réplica (derecho de rectificación / respuesta). */
+export const REPLICA_REASONS = [
+  "No refleja lo que ocurrió",
+  "Información inexacta",
+  "Hubo un malentendido o fuerza mayor",
+  "En desacuerdo con la valoración",
+  "Otro",
+] as const;
+
+export type ReplicaReason = (typeof REPLICA_REASONS)[number];
+
+/** Longitud máxima de la respuesta breve de la réplica. */
+export const REPLICA_TEXT_MAX = 1000;
+
+/**
  * Valida un mapa de calificaciones: deben estar exactamente las claves del
  * criterio de la dirección, cada una entera entre 1 y 5.
  */

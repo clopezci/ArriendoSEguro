@@ -12,12 +12,15 @@ export const runtime = "nodejs";
 const REVIEWS_COLLECTION = "reputation_reviews";
 const RATEABLE_STATUSES = new Set(["signed", "closed", "finished", "completed"]);
 
+type ReplyView = { reason: string; text: string; byRole: string; createdAt: string } | null;
+
 type ReviewView = {
   direction: string;
   ratings: Record<string, number>;
   overall: number;
   raterRole: string;
   updatedAt: string;
+  reply: ReplyView;
 } | null;
 
 async function readReview(
@@ -28,12 +31,21 @@ async function readReview(
   const snap = await firestore.collection(REVIEWS_COLLECTION).doc(`${contractId}__${direction}`).get();
   if (!snap.exists) return null;
   const x = snap.data() as Record<string, unknown>;
+  const rawReply = x.reply as Record<string, unknown> | undefined;
   return {
     direction,
     ratings: (x.ratings as Record<string, number>) ?? {},
     overall: Number(x.overall ?? 0),
     raterRole: String(x.raterRole ?? ""),
     updatedAt: String(x.updatedAt ?? ""),
+    reply: rawReply
+      ? {
+          reason: String(rawReply.reason ?? ""),
+          text: String(rawReply.text ?? ""),
+          byRole: String(rawReply.byRole ?? ""),
+          createdAt: String(rawReply.createdAt ?? ""),
+        }
+      : null,
   };
 }
 
@@ -78,9 +90,9 @@ export async function GET(request: Request) {
     myDirection === "landlord_to_tenant" ? "tenant_to_landlord" : "landlord_to_tenant";
 
   const myReview = await readReview(firestore, contractId, myDirection);
-  // Anti-represalia: la calificación recibida solo se revela cuando ya emitiste la tuya.
-  const counterpartReview = myReview ? await readReview(firestore, contractId, otherDirection) : null;
-  const counterpartPending = !myReview;
+  // La calificación que recibí (soy su sujeto) es siempre visible para mí, para
+  // poder ejercer el derecho de réplica. `otherDirection` es justamente esa.
+  const counterpartReview = await readReview(firestore, contractId, otherDirection);
 
   return NextResponse.json({
     success: true,
@@ -91,6 +103,5 @@ export async function GET(request: Request) {
     criteria: REPUTATION_CRITERIA[myDirection],
     myReview,
     counterpartReview,
-    counterpartPending,
   });
 }

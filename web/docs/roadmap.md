@@ -128,9 +128,10 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 
 - [x] **Calificación bidireccional por estrellas (1–5), sin texto libre** (`/dashboard/contracts/[id]/reputacion`): el arrendador califica al arrendatario (pago, cuidado del inmueble, comunicación, respeto, entrega) y el arrendatario al arrendador (mantenimiento, tiempos de respuesta, comunicación, respeto, transparencia). Variables según la dirección. APIs `/api/reputation/submit` y `/for-contract`.
 - [x] Se habilita **tras el cierre/firma** del contrato (estados signed/closed); validación rol↔dirección en servidor.
-- [x] **Anti-represalia**: la calificación recibida solo se revela tras emitir la propia.
+- [x] **Acceso restringido**: solo correos parte del contrato (`requireContractParticipant`); `summary` solo devuelve los datos del propio usuario. Nadie ajeno puede ver ni calificar.
+- [x] **Derecho de réplica (cumplimiento legal)**: la persona calificada puede responder (motivo cerrado + texto breve opcional) vía `/api/reputation/reply`; la réplica queda junto a la calificación. La calificación recibida es **visible para su titular** para poder ejercer la réplica.
 - [x] **Visualización agregada privada** en `/dashboard/reputacion` (promedio por criterio y global; sin lista negra ni consulta por cédula). Resumen `/api/reputation/summary`.
-- [ ] Disputas / solicitud de revisión de una calificación (canal de soporte).
+- [ ] Escalar la réplica a revisión por soporte/moderación cuando se requiera.
 - [ ] Política de retención y portabilidad de evaluaciones (ampliar `/legal/evaluacion`).
 - [ ] (Futuro, con base legal) eventual visibilidad entre partes antes de contratar.
 
