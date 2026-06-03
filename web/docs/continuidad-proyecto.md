@@ -174,7 +174,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 
 | Ítem | Detalle |
 |------|---------|
-| **Bloque 12** codeudor | API `upload-url`; falta UI completa, confirm/download, `storage.rules`, ZIP evidencia |
+| **Bloque 12** codeudor | ✅ Completo: APIs (upload-url/confirm/download-url/delete/list, rol landlord forzado en servidor), UI `CodebtorSupportsPanel`, ZIP evidencia y `storage.rules`. Auditado 2026-06-03 |
 | **Bloque 13** privacidad | ✅ `AVISO-PRIV-2026.2` completo (encargados incl. Upstash, transferencia internacional, derechos, cookies/Consent Mode) y eliminación de cuenta operativa. Solo falta poner razón social/NIT cuando te formalices |
 | **Wompi** | Webhook producción, reconciliación, mensajes bloqueo sin plan |
 | **PWA** | Íconos 192/512 maskable finales, splash iOS, pruebas dispositivo real |
@@ -257,6 +257,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 
 | Fecha | Agente / nota | Resumen | Commit(s) |
 |-------|---------------|---------|-----------|
+| 2026-06-03 | Claude Code | Auditoría Bloque 12 (soportes codeudor): ya estaba completo y seguro (rol landlord forzado en servidor, verificación en Storage, ZIP evidencia, storage.rules). Marcado `[x]`; +6 tests de validación de ruta `storage-path` (43/43). | `(commit bloque12)` |
 | 2026-06-03 | Claude Code | Blog ampliado a 15 artículos (9 nuevos) con datos reales verificados y bloque `sources` con enlaces oficiales (Ley 820, IPC 2025 DANE, Ley 527/Decreto 2364, Ley 1266/1581, CGP art. 384). Nuevo tipo de bloque `sources` en `types.ts` + renderer. | `(commit blog)` |
 | 2026-06-03 | Claude Code | Doc de acciones manuales del fundador (`acciones-manuales-fundador.md`). `AVISO-PRIV-2026.2` completado (sección cookies/Consent Mode + encargado Upstash). **CI** GitHub Actions (lint+test+build). Arreglado test preexistente roto (`server-only` no resolvía en `tsx`; ahora `--conditions=react-server` + dep) y +5 tests de rate-limit (37/37). | `(commit priv+CI)` |
 | 2026-06-03 | Claude Code | Search Console scaffold (`verification.google` vía `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`); seguridad #3: correo de bypass de dedup ya no va hardcodeado (solo `LEAD_FORM_DEDUP_BYPASS_EMAILS`). | `1ba12f2` |

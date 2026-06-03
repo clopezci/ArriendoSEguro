@@ -100,7 +100,7 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 - [x] Bloque 9 — Autenticación notarial opcional (descarga + carga de PDF autenticado).
 - [x] Bloque 10 — Módulo de novedades y solicitudes con notificación por email y trazabilidad.
 - [x] Bloque 11 — Activación operativa de `AS-LEASE-2026.2` vía `NEXT_PUBLIC_LEASE_TEMPLATE_2026_2_ENABLED` + render en preview; expedientes antiguos conservan su versión guardada.
-- [~] Bloque 12 — Soportes codeudor: listo `POST /api/codebtor-supports/upload-url` (firma v4, solo arrendador). Falta confirm, download, UI, `storage.rules`, ZIP evidencia.
+- [x] Bloque 12 — Soportes codeudor completo: `upload-url`/`confirm`/`download-url`/`delete`/`list` (firma v4, **rol landlord forzado en servidor** para subir/confirmar/borrar, verificación de tamaño real en Storage, dedupe y límites por tipo), UI `CodebtorSupportsPanel` (subir/listar/descargar/eliminar según rol), inclusión en el ZIP de evidencia (`soportes-codeudor/…`) y `storage.rules` deny-all (acceso solo por URL firmada). Auditado 2026-06-03; +6 tests de validación de ruta (`storage-path`).
 - [x] Bloque 13 — `AVISO-PRIV-2026.2` completo en `/legal/aviso-privacidad` (responsable, finalidades, categorías, **encargados** incl. Firebase/Vercel/Resend/Upstash/Turnstile, **transferencia internacional** Decreto 1377/2013 + Circular SIC 02/2015, **derechos** Ley 1581 art. 8, **cookies/Consent Mode**, conservación y canal Habeas Data) + **eliminación de cuenta** operativa. Pendiente solo: razón social/NIT cuando exista figura comercial.
 
 ### PWA instalable *(prio 2)*
