@@ -13,6 +13,7 @@ import {
   isExpedienteCompleto,
 } from "@/lib/dashboard/expediente-ui";
 import { canSeeInternalDashboardTools } from "@/lib/dashboard/internal-tools";
+import { freeTierEnabled } from "@/lib/config";
 import {
   getAllDrafts,
   logGlobalAudit,
@@ -45,7 +46,9 @@ function statusLabel(state: AccessState): string {
   }
   if (state.plusActive) return "Plan Plus activo";
   if (state.demoActive) return "Demo activo";
-  return "Pendiente de pago";
+  return freeTierEnabled
+    ? "Gratis · genera tu contrato; firma, inventario y soportes con Plan Plus"
+    : "Pendiente de pago";
 }
 
 export default function MisArriendosPage() {
@@ -124,9 +127,13 @@ export default function MisArriendosPage() {
   // crédito ya se consumió, porque el usuario sigue teniendo derecho a
   // abrir y trabajar el expediente que ya empezó. Por eso solo
   // mostramos el bloqueador cuando NI plus NI demo siguen vigentes.
-  const canCreate = access.canCreateRealContract || access.canUseDemo;
+  // Con el tier gratis activo, cualquier usuario autenticado puede crear y
+  // generar el contrato (con marca de agua + CTA a Plus). Plus/demo desbloquean
+  // firma y posventa. Si el tier gratis se apaga, vuelve el bloqueo por pago.
+  const freeCanCreate = freeTierEnabled && !access.loading && !access.errored;
+  const canCreate = access.canCreateRealContract || access.canUseDemo || freeCanCreate;
   const hasAnyAccess = access.plusActive || access.demoActive;
-  const showBlocked = !access.loading && !access.errored && !hasAnyAccess;
+  const showBlocked = !access.loading && !access.errored && !hasAnyAccess && !freeTierEnabled;
   const plusConsumed = access.plusActive && !access.canCreateRealContract;
 
   useEffect(() => {
@@ -237,8 +244,9 @@ export default function MisArriendosPage() {
           <div className="rounded-2xl border border-slate-300 bg-white/95 p-8 text-center">
             <p className="text-slate-700">Todavía no tienes expedientes.</p>
             <p className="mt-2 text-sm text-slate-500">
-              Cuando actives Plus o demo, puedes crear el primero desde el panel principal o desde
-              aquí.
+              {freeTierEnabled
+                ? "Crea tu primer contrato gratis desde aquí. La firma electrónica, el inventario y los soportes se activan con Plan Plus."
+                : "Cuando actives Plus o demo, puedes crear el primero desde el panel principal o desde aquí."}
             </p>
           </div>
         ) : (

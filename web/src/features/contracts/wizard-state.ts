@@ -20,7 +20,7 @@ import {
 } from "@/features/contracts/party-normalize";
 import { getDefaultLeaseContractVersion } from "@/domain/contracts/leaseTemplateFlags";
 
-export type AccessStatus = "demo" | "paid" | "pending_payment" | "expired";
+export type AccessStatus = "demo" | "paid" | "free" | "pending_payment" | "expired";
 export type ContractFlowStatus =
   | "draft"
   | "data_in_progress"
@@ -417,7 +417,7 @@ export function canCreateContract(user: User | null, accessStatus: AccessStatus)
   reason?: "not_authenticated" | "pending_payment" | "expired";
 } {
   if (!user) return { allowed: false, reason: "not_authenticated" };
-  if (accessStatus === "demo" || accessStatus === "paid") return { allowed: true };
+  if (accessStatus === "demo" || accessStatus === "paid" || accessStatus === "free") return { allowed: true };
   if (accessStatus === "pending_payment") return { allowed: false, reason: "pending_payment" };
   return { allowed: false, reason: "expired" };
 }

@@ -7,6 +7,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { freeTierEnabled } from "@/lib/config";
 
 export default function NewContractPage() {
   const { user } = useAuth();
@@ -86,6 +87,20 @@ export default function NewContractPage() {
         router.replace(`/dashboard/contracts/${demoDraft.id}/contract-type`);
         return;
       }
+
+      // Tier gratuito: sin Plus ni demo, igual puede crear y generar el
+      // contrato (saldrá con marca de agua + CTA a Plus). Firma y posventa
+      // siguen siendo Plus. Se puede apagar con NEXT_PUBLIC_FREE_TIER_ENABLED.
+      if (freeTierEnabled) {
+        const freeDraft = createContractDraft({
+          userId: user.uid,
+          accessStatus: "free",
+          isDemo: false,
+        });
+        router.replace(`/dashboard/contracts/${freeDraft.id}/contract-type`);
+        return;
+      }
+
       router.replace("/dashboard/contracts/access-blocked");
     };
     void run();
