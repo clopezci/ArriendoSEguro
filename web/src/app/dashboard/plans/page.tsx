@@ -3,6 +3,7 @@
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { canSeeInternalDashboardTools } from "@/lib/dashboard/internal-tools";
+import { freeTierEnabled } from "@/lib/config";
 import {
   CONTRACT_EARLY_BIRD_PRICE_COP,
   CONTRACT_LIST_PRICE_COP,
@@ -193,7 +194,9 @@ export default function PlansPage() {
       <header className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Planes</h1>
         <p className="max-w-3xl text-sm text-slate-600">
-          El cobro es solo por uso de la plataforma; no procesamos ni depositamos tu canon de arriendo.
+          {freeTierEnabled
+            ? "Generar tu contrato es gratis. Con Plan Plus desbloqueas la firma electrónica, el inventario, los pagos y todo el respaldo. El cobro es solo por uso de la plataforma; no procesamos ni depositamos tu canon."
+            : "El cobro es solo por uso de la plataforma; no procesamos ni depositamos tu canon de arriendo."}
         </p>
       </header>
 
@@ -225,7 +228,28 @@ export default function PlansPage() {
         <p className="rounded border border-rose-600/40 bg-rose-900/20 p-2 text-sm text-rose-700">{error}</p>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className={`grid gap-6 ${freeTierEnabled ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+        {freeTierEnabled && (
+          <article className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(0,0,0,0.12)]">
+            <h2 className="text-xl font-semibold text-slate-900">Gratis</h2>
+            <p className="mt-2 text-lg font-semibold text-slate-800">$0</p>
+            <p className="mt-1 text-xs font-medium text-slate-500">Sin costo</p>
+            <p className="mt-2 text-sm text-slate-600">
+              Crea e imprime tu contrato de arrendamiento. Sale con una marca discreta
+              «arriendoseguro.app» y recomendaciones; es utilizable.
+            </p>
+            <ul className="mt-4 space-y-2 text-sm text-slate-700">
+              <li>Contrato de arrendamiento (generar e imprimir)</li>
+              <li>Con o sin codeudor</li>
+              <li>Guías y blog</li>
+            </ul>
+            <p className="mt-4 rounded-lg border border-violet-200 bg-violet-50/60 p-3 text-xs text-violet-800">
+              La firma electrónica, el inventario, los pagos, las novedades, las alertas y la reputación se activan con
+              Plan Plus.
+            </p>
+          </article>
+        )}
+
         <article className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
           <h2 className="text-xl font-semibold text-slate-900">Plan Plus</h2>
           <p className="mt-2 flex flex-wrap items-baseline gap-2">
@@ -292,15 +316,26 @@ export default function PlansPage() {
         </article>
 
         <article className="rounded-2xl border border-slate-300 bg-white/65 p-6 opacity-95 shadow-[0_10px_24px_rgba(0,0,0,0.2)]">
-          <h2 className="text-xl font-semibold text-slate-900">Premium</h2>
-          <p className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-500">Próximamente</p>
+          <h2 className="text-xl font-semibold text-slate-900">Aliados (opcional)</h2>
+          <p className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-500">Servicios de terceros</p>
           <p className="mt-4 text-sm text-slate-600">
-            Futuros aliados para seguros, garantías, cobranza, asesoría jurídica y validaciones avanzadas.
+            No es un plan: son servicios de aliados con <strong>costo aparte</strong> que tú decides tomar según tu
+            necesidad. Por ejemplo:
+          </p>
+          <ul className="mt-3 space-y-2 text-sm text-slate-700">
+            <li>Seguro de arrendamiento</li>
+            <li>Estudio de crédito</li>
+            <li>Autenticación notarial</li>
+            <li>Cobranza</li>
+            <li>Asesoría jurídica</li>
+          </ul>
+          <p className="mt-4 text-xs text-slate-500">
+            Los presta y cobra directamente el aliado, bajo sus condiciones. Se habilitan progresivamente.
           </p>
           <button
             type="button"
             disabled
-            className="mt-8 w-full cursor-not-allowed rounded-lg border border-slate-300 px-4 py-3 text-sm text-slate-500"
+            className="mt-6 w-full cursor-not-allowed rounded-lg border border-slate-300 px-4 py-3 text-sm text-slate-500"
           >
             Próximamente
           </button>

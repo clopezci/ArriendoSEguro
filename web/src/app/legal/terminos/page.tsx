@@ -137,11 +137,28 @@ export default function TerminosPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-900">13. Plan Plus</h2>
+        <h2 className="text-lg font-semibold text-slate-900">13. Planes: Gratis y Plus (únicos planes) y servicios de aliados</h2>
+        <p>{appConfig.name} ofrece únicamente dos planes:</p>
+        <ul className="list-inside list-disc space-y-1 text-slate-600">
+          <li>
+            <strong>Gratis:</strong> puedes generar e imprimir tu contrato de arrendamiento. La versión gratuita sale con
+            una marca discreta «arriendoseguro.app» y recomendaciones, y es utilizable. La firma electrónica con validez
+            y evidencia, el inventario y acta, el registro de pagos, los soportes, las novedades, las alertas de
+            vencimiento y la calificación de reputación requieren Plan Plus.
+          </li>
+          <li>
+            <strong>Plan Plus:</strong> pago único por contrato (sin mensualidades) que habilita la firma electrónica
+            simple, el inventario y acta de entrega, el calendario y registro de pagos, los anexos y la evidencia, el
+            módulo de novedades, las alertas de terminación o renovación y la calificación de reputación. El precio
+            vigente se muestra al contratar y puede actualizarse con preaviso razonable.
+          </li>
+        </ul>
         <p>
-          El Plan Plus u otros planes pagos habilitan funciones adicionales (por ejemplo, expediente real, límites de
-          uso y generación de documentos según la configuración vigente). Las condiciones comerciales, precios y
-          renovación se muestran al contratar y pueden actualizarse con preaviso razonable.
+          <strong>Servicios de aliados (terceros):</strong> de forma opcional podrás acceder a servicios de aliados con
+          costo independiente (por ejemplo, seguros de arrendamiento, estudio de crédito, autenticación notarial,
+          cobranza o asesoría jurídica). No son planes de {appConfig.name}: los presta y cobra directamente el tercero,
+          bajo sus propias condiciones, y tú decides libremente si los tomas según tu necesidad puntual.{" "}
+          {appConfig.name} no garantiza ni responde por esos servicios de terceros.
         </p>
       </section>
 
