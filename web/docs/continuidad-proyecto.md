@@ -175,7 +175,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 | Ítem | Detalle |
 |------|---------|
 | **Bloque 12** codeudor | API `upload-url`; falta UI completa, confirm/download, `storage.rules`, ZIP evidencia |
-| **Bloque 13** privacidad | Endpoint de eliminación de cuenta ya operativo; falta `AVISO-PRIV-2026.2` completo (encargados, transferencia internacional) |
+| **Bloque 13** privacidad | ✅ `AVISO-PRIV-2026.2` completo (encargados incl. Upstash, transferencia internacional, derechos, cookies/Consent Mode) y eliminación de cuenta operativa. Solo falta poner razón social/NIT cuando te formalices |
 | **Wompi** | Webhook producción, reconciliación, mensajes bloqueo sin plan |
 | **PWA** | Íconos 192/512 maskable finales, splash iOS, pruebas dispositivo real |
 | **Firestore rules** | Baseline *deny-all* versionado y seguro; **falta desplegarlo** (`firebase deploy`) y confirmar en consola |
@@ -216,6 +216,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 | [payments-wompi.md](./payments-wompi.md) | Integración pagos Plus |
 | [email-resend-setup.md](./email-resend-setup.md) | Email transaccional |
 | [guia-camara-comercio-virtual.md](./guia-camara-comercio-virtual.md) | Formalización del emprendimiento (RUT + Cámara de Comercio, virtual) |
+| [acciones-manuales-fundador.md](./acciones-manuales-fundador.md) | **Tareas que solo el fundador puede hacer** (deploy reglas, env Vercel, Resend, Search Console, AdSense) |
 | [legal-abogado/analisis-comparativo.md](./legal-abogado/analisis-comparativo.md) | Comparativa plantilla vs abogado |
 | `contrato-vivienda-urbana-revision-legal.txt` | Texto plano para revisión legal |
 | [web/README.md](../README.md) | Arranque local, tests, Firebase |
@@ -256,7 +257,8 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 
 | Fecha | Agente / nota | Resumen | Commit(s) |
 |-------|---------------|---------|-----------|
-| 2026-06-03 | Claude Code | Search Console scaffold (`verification.google` vía `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`); seguridad #3: correo de bypass de dedup ya no va hardcodeado (solo `LEAD_FORM_DEDUP_BYPASS_EMAILS`). | `(commit SC+sec3)` |
+| 2026-06-03 | Claude Code | Doc de acciones manuales del fundador (`acciones-manuales-fundador.md`). `AVISO-PRIV-2026.2` completado (sección cookies/Consent Mode + encargado Upstash). **CI** GitHub Actions (lint+test+build). Arreglado test preexistente roto (`server-only` no resolvía en `tsx`; ahora `--conditions=react-server` + dep) y +5 tests de rate-limit (37/37). | `(commit priv+CI)` |
+| 2026-06-03 | Claude Code | Search Console scaffold (`verification.google` vía `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`); seguridad #3: correo de bypass de dedup ya no va hardcodeado (solo `LEAD_FORM_DEDUP_BYPASS_EMAILS`). | `1ba12f2` |
 | 2026-06-03 | Claude Code | Banner de consentimiento de cookies (Consent Mode v2): `ConsentMode`, `CookieConsentBanner`, `CookiePreferencesLink` (footer), `/legal/cookies`, helper `lib/consent/cookie-consent.ts`; GA4 gateado por consentimiento. | `d677b2f` |
 | 2026-06-03 | Claude Code | Seguridad #1: reglas `firestore.rules`/`storage.rules`/`firebase.json` versionadas (deny-all cliente). Rate-limit Upstash+memoria en `/api/leads`, `/api/contact`, `/api/signatures/request-otp`. Páginas `/acerca-de` y `/contacto` (form→Resend, `contact_messages`) + footer + sitemap. Dominio canónico `arriendoseguro.app`. Guía Cámara de Comercio. Docs sincronizadas (CSP/headers, créditos, baja de cuenta ya estaban hechos). | `a38af5d` |
 | 2026-06-02 | Cursor | Banner PWA global (`PwaInstallSiteBanner` en layout), hook `usePwaInstall`, oculto en `/`; precio Plus admin y cupos testers en commits previos | `a107b32`, `519513b`, `6533edc`, `9486a0d` |

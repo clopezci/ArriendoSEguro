@@ -18,7 +18,9 @@ export type PrivacyPolicyMeta = {
 export const PRIVACY_POLICY_REGISTRY: Record<PrivacyPolicyVersionId, PrivacyPolicyMeta> = {
   "AVISO-PRIV-2026.2": {
     id: "AVISO-PRIV-2026.2",
-    publishedAt: "2026-05-13",
+    // Revisado 2026-06-03: se añadió la sección de cookies/Consent Mode y el
+    // encargado Upstash (rate-limit). Cambio aclaratorio, no exige reaceptación.
+    publishedAt: "2026-06-03",
     controllerLabel: "ArriendoSeguro",
   },
 };

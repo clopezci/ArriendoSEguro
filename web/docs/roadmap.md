@@ -100,7 +100,7 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 - [x] Bloque 10 — Módulo de novedades y solicitudes con notificación por email y trazabilidad.
 - [x] Bloque 11 — Activación operativa de `AS-LEASE-2026.2` vía `NEXT_PUBLIC_LEASE_TEMPLATE_2026_2_ENABLED` + render en preview; expedientes antiguos conservan su versión guardada.
 - [~] Bloque 12 — Soportes codeudor: listo `POST /api/codebtor-supports/upload-url` (firma v4, solo arrendador). Falta confirm, download, UI, `storage.rules`, ZIP evidencia.
-- [~] Bloque 13 — Aviso de privacidad: resumen de encargados + canal en `/legal/aviso-privacidad`; **eliminación de cuenta ya operativa** (`/api/cuenta/eliminar` + `/dashboard/cuenta/eliminar`). Falta `AVISO-PRIV-2026.2` completo (encargados, transferencia internacional).
+- [x] Bloque 13 — `AVISO-PRIV-2026.2` completo en `/legal/aviso-privacidad` (responsable, finalidades, categorías, **encargados** incl. Firebase/Vercel/Resend/Upstash/Turnstile, **transferencia internacional** Decreto 1377/2013 + Circular SIC 02/2015, **derechos** Ley 1581 art. 8, **cookies/Consent Mode**, conservación y canal Habeas Data) + **eliminación de cuenta** operativa. Pendiente solo: razón social/NIT cuando exista figura comercial.
 
 ### PWA instalable *(prio 2)*
 - [x] `web/public/manifest.webmanifest` (`display: standalone`, theme/background `#0b0f1a`, íconos desde PNG existente).
@@ -163,6 +163,7 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 
 ### Observabilidad
 - [x] Auditoría persistente (`audit_logs`) en eventos críticos.
+- [x] **CI** (GitHub Actions `.github/workflows/ci.yml`): `lint` + `test` + `build` en cada push/PR a main. Suite verde 37/37 (se arregló un test de integración que no resolvía `server-only` bajo `tsx`).
 - [ ] Panel de errores (Sentry o equivalente) — opcional, evaluar costo/beneficio.
 
 ### KPIs (revisar mensual)

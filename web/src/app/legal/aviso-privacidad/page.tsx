@@ -69,10 +69,13 @@ export default function AvisoPrivacidadPage() {
           Para operar utilizamos proveedores que tratan datos en nuestro nombre, entre ellos:{" "}
           <strong>Google Cloud / Firebase</strong> (autenticación, base de datos Firestore, almacenamiento de archivos),
           <strong> Vercel</strong> (despliegue e infraestructura serverless, con proveedores subyacentes),{" "}
-          <strong>Resend</strong> (correo transaccional) y, en formularios públicos,{" "}
+          <strong>Resend</strong> (correo transaccional),{" "}
+          <strong>Upstash</strong> (control de tasa/anti-abuso de formularios públicos; trata identificadores técnicos
+          como la dirección IP de forma temporal) y, en formularios públicos,{" "}
           <strong>Cloudflare Turnstile</strong> (verificación anti-bot orientada a no conservar datos personales de
-          contacto). <strong>Supabase</strong> figura como proveedor reservado para fases futuras si se incorpora al
-          stack; en ese caso actualizaremos este aviso.
+          contacto). Cuando habilitemos publicidad o medición, <strong>Google</strong> (Analytics y AdSense) podrá tratar
+          datos según tu consentimiento de cookies. <strong>Supabase</strong> figura como proveedor reservado para fases
+          futuras si se incorpora al stack; en ese caso actualizaremos este aviso.
         </p>
       </section>
 
@@ -134,6 +137,21 @@ export default function AvisoPrivacidadPage() {
             Política de tratamiento de la información personal
           </Link>
           , que complementa este aviso.
+        </p>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold text-slate-900">9. Cookies y tecnologías similares</h2>
+        <p>
+          Usamos cookies necesarias para el funcionamiento del sitio y, solo con tu consentimiento, cookies de analítica
+          (Google Analytics 4) y de publicidad (Google AdSense, cuando se active). Gestionamos el consentimiento con el
+          modo de consentimiento de Google (Consent Mode v2): por defecto, analítica y publicidad quedan denegadas hasta
+          que las autorices en el banner. Puedes cambiar tu decisión en cualquier momento desde &quot;Preferencias de
+          cookies&quot; en el pie de página. El detalle está en la{" "}
+          <Link href="/legal/cookies" className="text-violet-600 underline">
+            política de cookies
+          </Link>
+          .
         </p>
       </section>
 
