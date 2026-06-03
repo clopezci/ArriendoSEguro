@@ -34,7 +34,8 @@
 - [x] Enlazado interno desde la landing hacia guías del blog por tema (`BlogTopicLinks` + `landing-topic-links.ts`).
 - [x] Páginas **Acerca de** (`/acerca-de`) y **Contacto** (`/contacto`, formulario → Resend + `contact_messages`), enlazadas en footer y sitemap. Transparencia requerida por AdSense.
 - [x] **Consentimiento de cookies (CMP propia)** con Google Consent Mode v2: banner, preferencias granulares, reapertura desde footer y política en `/legal/cookies`. GA4 gateado por consentimiento.
-- [ ] **En fila (SEO/AdSense):** ampliar calendario editorial a ~15 artículos, Search Console (propiedad + sitemap), validación de datos estructurados en Rich Results y enlaces entrantes; alta en AdSense y separar slots solo en páginas públicas.
+- [x] **Blog ampliado a 15 artículos** con contenido real y citado (Ley 820 arts. 15/16/20/22-25, IPC 2025 DANE 5,10 %, Ley 527/Decreto 2364, Ley 1266/1581, CGP art. 384). Nuevo bloque `sources` con enlaces a fuentes oficiales (Función Pública, Secretaría del Senado, DANE, SIC).
+- [ ] **En fila (SEO/AdSense):** Search Console (propiedad + sitemap), validación de datos estructurados en Rich Results y enlaces entrantes; alta en AdSense y separar slots solo en páginas públicas; mantener calendario editorial.
 
 ---
 

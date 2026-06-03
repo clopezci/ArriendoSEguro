@@ -104,6 +104,30 @@ export function ArticleBody({ blocks }: { blocks: ContentBlock[] }) {
                 </table>
               </div>
             );
+          case "sources":
+            return (
+              <section
+                key={key}
+                className="my-8 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3"
+                aria-label="Fuentes"
+              >
+                <h2 className="text-sm font-semibold text-slate-900">Fuentes oficiales</h2>
+                <ul className="mt-2 space-y-1 text-sm">
+                  {block.items.map((s) => (
+                    <li key={s.href}>
+                      <a
+                        href={s.href}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="text-violet-700 underline underline-offset-2 hover:text-violet-900"
+                      >
+                        {s.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
           case "cta":
             return (
               <div

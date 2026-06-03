@@ -18,7 +18,8 @@ export type ContentBlock =
   | { type: "ol"; items: string[] }
   | { type: "note"; text: string }
   | { type: "table"; caption?: string; headers: string[]; rows: string[][] }
-  | { type: "cta"; href: string; label: string; description?: string };
+  | { type: "cta"; href: string; label: string; description?: string }
+  | { type: "sources"; items: { label: string; href: string }[] };
 
 export interface BlogArticle {
   slug: string;
