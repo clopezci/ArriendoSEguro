@@ -17,6 +17,7 @@ import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
 import { persistContractPdfAsset } from "@/domain/contracts/persistContractPdfAsset";
 import { contractSignedEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
+import { logServerError } from "@/lib/observability/observability";
 
 export const runtime = "nodejs";
 
@@ -278,6 +279,7 @@ export async function POST(request: Request) {
       contractStatus: "signature_in_progress",
     });
   } catch (error) {
+    await logServerError("signatures/complete", error);
     if (process.env.NODE_ENV !== "production") console.error("signatures/complete error", error);
     return NextResponse.json<CompleteSignatureResponse>(
       { success: false, errors: [{ field: "server", message: "No se pudo completar la firma." }] },

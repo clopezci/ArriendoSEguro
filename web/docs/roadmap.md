@@ -165,7 +165,7 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 ### Observabilidad
 - [x] Auditoría persistente (`audit_logs`) en eventos críticos.
 - [x] **CI** (GitHub Actions `.github/workflows/ci.yml`): `lint` + `test` + `build` en cada push/PR a main. Suite verde 43/43.
-- [x] **Observabilidad propia (alternativa a Sentry, costo $0):** captura automática de errores de cliente (`ClientErrorReporter` → `/api/observability/client-error`, agregada por huella en `error_events`), reportes de usuario (`/reportar` → `user_reports`) y panel admin con pestañas **Reportes** y **Errores**. Datos en el propio Firebase, sin terceros; PII enmascarada. Sentry queda como opción futura si se requiere alerta proactiva por correo/Slack.
+- [x] **Observabilidad propia (alternativa a Sentry, costo $0):** captura automática de errores de **cliente** (`ClientErrorReporter`) y de **servidor** (`logServerError` en `catch` de webhook Wompi, generación de PDF y firma), agregados por huella en `error_events`; reportes de usuario (`/reportar` → `user_reports`) y panel admin con pestañas **Reportes** y **Errores**. Datos en el propio Firebase, sin terceros; PII enmascarada. Sentry queda como opción futura si se requiere alerta proactiva por correo/Slack.
 
 ### KPIs (revisar mensual)
 - [ ] Funnel landing → encuesta → registro → primer contrato firmado.

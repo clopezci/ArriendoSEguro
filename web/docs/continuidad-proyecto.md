@@ -258,6 +258,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 
 | Fecha | Agente / nota | Resumen | Commit(s) |
 |-------|---------------|---------|-----------|
+| 2026-06-03 | Claude Code | Captura de errores de **servidor** (`logServerError` → `error_events`, reutiliza `recordErrorEvent`) cableada en webhook Wompi, generación de PDF y firma; refactor del endpoint de cliente para compartir la lógica. Completa la observabilidad propia. | `(commit obs-servidor)` |
 | 2026-06-03 | Claude Code | Observabilidad propia (alternativa a Sentry, $0): captura automática de errores de cliente (`error_events`, agregada por huella), reportes de usuario (`/reportar` → `user_reports`) y pestañas **Reportes**/**Errores** en `/admin` (cambiar estado, marcar resuelto). PII enmascarada, datos en Firebase. Wompi aparcado (hub vive en `/wompi`, hecho para Supabase). | `(commit observabilidad)` |
 | 2026-06-03 | Claude Code | Auditoría Bloque 12 (soportes codeudor): ya estaba completo y seguro (rol landlord forzado en servidor, verificación en Storage, ZIP evidencia, storage.rules). Marcado `[x]`; +6 tests de validación de ruta `storage-path` (43/43). | `(commit bloque12)` |
 | 2026-06-03 | Claude Code | Blog ampliado a 15 artículos (9 nuevos) con datos reales verificados y bloque `sources` con enlaces oficiales (Ley 820, IPC 2025 DANE, Ley 527/Decreto 2364, Ley 1266/1581, CGP art. 384). Nuevo tipo de bloque `sources` en `types.ts` + renderer. | `(commit blog)` |

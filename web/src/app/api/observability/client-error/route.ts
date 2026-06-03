@@ -1,12 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { FieldValue } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import {
-  ERROR_EVENTS_COLLECTION,
-  errorFingerprint,
-  maskPii,
-} from "@/lib/observability/observability";
+import { recordErrorEvent } from "@/lib/observability/observability";
 import {
   RATE_LIMIT_RULES,
   checkRateLimit,
@@ -57,43 +52,17 @@ export async function POST(request: Request) {
     const firestore = getAdminFirestore();
     if (!firestore) return new NextResponse(null, { status: 204 });
 
-    const fingerprint = errorFingerprint({
+    await recordErrorEvent(firestore, {
+      kind: data.kind,
       message: data.message,
-      source: data.source,
-      kind: data.kind,
-    });
-    const now = new Date().toISOString();
-    const userAgent = request.headers.get("user-agent")?.slice(0, 300) ?? null;
-
-    const ref = firestore.collection(ERROR_EVENTS_COLLECTION).doc(fingerprint);
-    const snap = await ref.get();
-
-    const common = {
-      fingerprint,
-      kind: data.kind,
-      message: maskPii(data.message, 2000),
-      source: data.source ? maskPii(data.source, 500) : null,
+      source: data.source ?? null,
       line: data.line ?? null,
       column: data.column ?? null,
-      stack: data.stack ? maskPii(data.stack, 4000) : null,
-      lastPageUrl: data.pageUrl ? maskPii(data.pageUrl, 600) : null,
-      lastUserAgent: userAgent,
+      stack: data.stack ?? null,
+      pageUrl: data.pageUrl ?? null,
+      userAgent: request.headers.get("user-agent"),
       appVersion: data.appVersion ?? null,
-      lastSeenAt: now,
-      lastSeenServer: FieldValue.serverTimestamp(),
-      count: FieldValue.increment(1),
-      resolved: snap.exists ? (snap.data()?.resolved ?? false) : false,
-    };
-
-    if (!snap.exists) {
-      await ref.set({
-        ...common,
-        firstSeenAt: now,
-        firstSeenServer: FieldValue.serverTimestamp(),
-      });
-    } else {
-      await ref.set(common, { merge: true });
-    }
+    });
 
     return new NextResponse(null, { status: 204 });
   } catch {

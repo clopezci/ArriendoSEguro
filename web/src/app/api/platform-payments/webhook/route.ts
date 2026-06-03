@@ -6,6 +6,7 @@ import { verifyWompiWebhookSignature } from "@/domain/platform-payments/wompi-si
 import { decideWebhookHandling } from "@/domain/platform-payments/webhook-logic";
 import { plusAccessConfirmedEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
+import { logServerError } from "@/lib/observability/observability";
 
 export const runtime = "nodejs";
 
@@ -227,7 +228,8 @@ export async function POST(request: Request) {
       await auditPlatformPaymentEvent(firestore, "platform_payment_rejected", { orderId: order.id });
     }
     return NextResponse.json({ success: true, status: mappedOrderStatus });
-  } catch {
+  } catch (err) {
+    await logServerError("platform-payments/webhook", err);
     return NextResponse.json(
       { success: false, errors: [{ field: "server", message: "No se pudo procesar webhook Wompi." }] },
       { status: 500 },

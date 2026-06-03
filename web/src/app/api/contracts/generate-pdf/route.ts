@@ -10,6 +10,7 @@ import {
 } from "@/domain/contracts/api-types";
 import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { logServerError } from "@/lib/observability/observability";
 
 export const runtime = "nodejs";
 const MAX_JSON_BYTES = 16_000;
@@ -171,6 +172,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     auditEvent("contract_pdf_generation_failed");
+    await logServerError("contracts/generate-pdf", error);
     console.error("contracts/generate-pdf error", error);
     const detail = error instanceof Error ? error.message : "";
     const exposeDetail = process.env.NODE_ENV !== "production" && detail.length > 0;
