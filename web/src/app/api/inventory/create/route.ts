@@ -4,6 +4,8 @@ import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { validateInventoryDraft } from "@/domain/inventory/validateInventory";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { requireContractParticipant } from "@/lib/auth/serverAuth";
+import { shouldBlockForPlus, plusRequiredResponse } from "@/lib/auth/contractPlusGate";
 
 export const runtime = "nodejs";
 
@@ -44,13 +46,23 @@ export async function POST(request: Request) {
       );
     }
 
+    // Autenticación (cierra hueco previo) + gate de pago: el inventario es Plan Plus.
+    const participant = await requireContractParticipant(request, firestore, parsed.data.contractId, {
+      kind: "by_version",
+      contractVersionId: parsed.data.contractVersionId,
+    });
+    if (!participant.ok) return participant.response;
+    if (await shouldBlockForPlus(firestore, participant.user.uid)) {
+      return plusRequiredResponse("El inventario del inmueble");
+    }
+
     const ref = firestore.collection("inventories").doc();
     const now = new Date().toISOString();
     await ref.set({
       id: ref.id,
       ...parsed.data,
       status: "draft",
-      createdByUserId: "TODO_AUTH_USER",
+      createdByUserId: participant.user.uid,
       completedAt: null,
       signedAt: null,
       generatedHtml: null,

@@ -11,6 +11,8 @@ import {
 } from "@/domain/inventory/inventoryRules";
 import type { InventorySelectedZone, InventoryZoneDetail, InventoryZoneItem } from "@/domain/inventory/types";
 import { auditEvent } from "@/features/contracts/audit";
+import { useAuth } from "@/contexts/auth-context";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 
 type UIMeter = { id?: string; meterType: "water" | "electricity" | "gas" | "other"; meterNumber: string; readingValue: string; photoUrl?: string };
 type UIKey = { id?: string; keyType: string; quantity: number; notes: string };
@@ -18,6 +20,7 @@ type UIKey = { id?: string; keyType: string; quantity: number; notes: string };
 export default function InventoryNewPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
+  const { user } = useAuth();
   const qs = useSearchParams();
   const router = useRouter();
   const initialInventoryId = qs.get("inventoryId") ?? "";
@@ -73,7 +76,7 @@ export default function InventoryNewPage() {
     if (inventoryId) return inventoryId;
     const res = await fetch("/api/inventory/create", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
       body: JSON.stringify({
         leaseProcessId: id,
         contractId: id,

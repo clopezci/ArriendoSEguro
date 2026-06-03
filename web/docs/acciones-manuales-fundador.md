@@ -128,6 +128,15 @@ El código ya envía **recordatorios de vencimiento** (terminación/renovación)
       con header `Authorization: Bearer <CRON_SECRET>`. Opciones: **Vercel Cron** (añadir `crons` en `vercel.json`), GitHub Actions, o un servicio externo (cron-job.org). Recomendado: 1 vez al día.
 - [ ] (Ya existía) recordatorios de **pago**: `POST /api/payments/reminders/send-due` (mismo esquema de cron).
 
+## 7c. Firma electrónica con proveedor (Firma.dev) — próximo bloque
+
+Hoy la firma es electrónica **simple** (token + OTP por correo + evidencia, Ley 527). Para escalar a una firma con mayor respaldo se evaluará **Firma.dev** (opción asequible para empezar, con posibilidad de escalar; si cubre el crecimiento, queda como definitivo).
+
+- [ ] Crear cuenta en **Firma.dev** y obtener credenciales/API key (sandbox y producción).
+- [ ] Definir plan/costo y límites de firmas según el volumen esperado.
+- [ ] Compartir al agente las llaves para integrarlas (irán como variables de entorno en Vercel, **nunca** en el código).
+- [ ] (El agente) dejará la integración **detrás de una abstracción** para poder cambiar de proveedor a futuro sin reescribir el flujo de firma.
+
 ## 8. Pagos (Wompi) — más adelante
 
 Queda de último. Vas a integrar tu **hub de pagos portátil** (ya funcional en otra app).

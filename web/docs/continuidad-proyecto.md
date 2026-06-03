@@ -183,6 +183,9 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 | **Upstash** | Variables `UPSTASH_REDIS_REST_*` por configurar en Vercel (sin ellas, rate-limit usa memoria best-effort) |
 | **AdSense** | CMP de cookies ✅; blog ampliado a 15 artículos con fuentes reales ✅; Search Console **scaffold listo** (`NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` → pegar token en Vercel). Faltan: separar ads solo en páginas públicas, alta en AdSense |
 | **Legal abogado** | ✅ Confirmado **sin cambios**: `AS-LEASE-2026.2` queda tal cual (2026-06-03) |
+| **Modelo gratis/pago** | Hecho: crear gratis, watermark+CTA, gate de firma y posventa (novedades/alertas/soportes/evidencia/pagos/inventario). Falta: marca en **PDF de descarga**, copy gratis en **landing/entiéndelo**, revisar **demo** |
+| **Firma con proveedor (Firma.dev)** | Próximo: integrar Firma.dev (asequible, escalable) tras una abstracción para poder cambiar de proveedor. Ver acciones en `acciones-manuales-fundador.md` §7c |
+| **Garantía de servicios públicos (Art. 15 Ley 820)** | Próximo: en el flujo de creación, preguntar si incluir garantía **exclusiva de servicios públicos** (legalmente permitida, **no** depósito general del art. 16); campos de las **2 últimas facturas** → el sistema calcula el **máximo** (≤ valor de 2 períodos); aceptación con **captura de IP** como el resto de la app. Verificado: Función Pública Ley 820 art. 15 + Decreto 3130/2003 |
 
 ### ⏳ Pendiente prioritario (orden sugerido)
 
@@ -258,6 +261,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 
 | Fecha | Agente / nota | Resumen | Commit(s) |
 |-------|---------------|---------|-----------|
+| 2026-06-03 | Claude Code | Modelo gratis/pago: gate de **inventario** (`inventory/create`) — añade Plus + **cierra hueco de auth** (antes `createdByUserId: TODO_AUTH_USER`; ahora `requireContractParticipant` y uid real; el cliente envía token). Anotados en plan/manual: **Firma.dev** (§7c) y **garantía de servicios públicos Art. 15** (a implementar en creación). | `(este)` |
 | 2026-06-03 | Claude Code | Modelo gratis/pago (incr. 3b — **gate de posventa**): helper `contractPlusGate` (`shouldBlockForPlus`/`plusRequiredResponse`, 402) aplicado a **novedades**, **alertas (renewal-reminder)**, **soportes codeudor (upload)**, **evidencia (ZIP)** y **pagos (create)**. Reputación queda implícita (requiere firmado). **Pendiente:** `inventory/create` (además **no tiene auth** — `TODO_AUTH_USER`, hueco a cerrar) y marca en PDF de descarga; gap de copy en landing/entiéndelo. | `(este)` |
 | 2026-06-03 | Claude Code | **Documentos actualizados con el modelo gratis/pago**: `/legal/terminos` §13 reescrita (solo 2 planes: **Gratis** = generar/imprimir contrato; **Plus** = firma+posventa; **aliados** = terceros de pago opcionales, no son planes); `/dashboard/plans` con tarjeta **Gratis**, Plus y **Aliados (opcional, costo aparte)**. | `(este)` |
 | 2026-06-03 | Claude Code | Modelo gratis/pago (incr. 3a — **gate de firma**): `signatures/start` ahora **autentica** (cierra hueco: antes no validaba a nadie) con `requireContractParticipant` y **exige Plus o demo** cuando `freeTierEnabled` (free → 402 con CTA a Plus); el preview envía auth y muestra el CTA. **Pendiente (3b):** gatear posventa (novedades/pagos/inventario/evidencia/reputación/alertas/soportes) con Plus + marca en PDF de descarga. | `(este)` |
