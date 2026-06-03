@@ -4,6 +4,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { shouldBlockForPlus, plusRequiredResponse } from "@/lib/auth/contractPlusGate";
 
 export const runtime = "nodejs";
 
@@ -52,6 +53,10 @@ export async function POST(request: Request) {
   }
   const participant = await requireContractParticipant(request, firestore, parsed.data.contractId, { kind: "current" });
   if (!participant.ok) return participant.response;
+
+  if (await shouldBlockForPlus(firestore, participant.user.uid)) {
+    return plusRequiredResponse("Las alertas de vencimiento");
+  }
 
   await firestore.collection("contracts").doc(parsed.data.contractId).set(
     { renewalReminderEnabled: parsed.data.enabled, updatedAt: new Date().toISOString(), updatedAtServer: FieldValue.serverTimestamp() },

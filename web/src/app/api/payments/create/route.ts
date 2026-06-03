@@ -19,6 +19,7 @@ import {
 } from "@/domain/payments/supportValidation";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { logPaymentAudit } from "@/features/payments/paymentAuditLog";
+import { shouldBlockForPlus, plusRequiredResponse } from "@/lib/auth/contractPlusGate";
 
 export const runtime = "nodejs";
 
@@ -88,6 +89,11 @@ export async function POST(request: Request) {
         });
       }
       return participant.response;
+    }
+
+    // Gate de pago: el registro de pagos es Plan Plus (posventa).
+    if (await shouldBlockForPlus(firestore, participant.user.uid)) {
+      return plusRequiredResponse("El registro de pagos");
     }
 
     if (bodyContainsIgnoredIdentityFields(rawJson)) {

@@ -5,6 +5,7 @@ import { readPdfBytesFlexible } from "@/domain/contracts/readStoredPdfBytes";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { codebtorSupportsCollection, type CodebtorSupportDoc } from "@/domain/codebtor-supports/firestore-supports";
+import { shouldBlockForPlus, plusRequiredResponse } from "@/lib/auth/contractPlusGate";
 
 export const runtime = "nodejs";
 
@@ -65,6 +66,10 @@ export async function GET(request: Request) {
       contractVersionId,
     });
     if (!participant.ok) return participant.response;
+
+    if (await shouldBlockForPlus(firestore, participant.user.uid)) {
+      return plusRequiredResponse("Descargar el paquete de evidencia");
+    }
 
     const versionRef = firestore.collection("contract_versions").doc(contractVersionId);
     const versionSnap = await versionRef.get();

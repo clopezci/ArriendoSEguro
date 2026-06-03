@@ -11,6 +11,7 @@ import { sendEmail } from "@/services/email/sendEmail";
 import { expedienteNovedadEmail } from "@/services/email/emailTemplates";
 import { sendSms } from "@/services/sms/sendSms";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { shouldBlockForPlus, plusRequiredResponse } from "@/lib/auth/contractPlusGate";
 
 export const runtime = "nodejs";
 
@@ -89,6 +90,11 @@ export async function POST(request: Request) {
       contractVersionId: currentVersionId,
     });
     if (!participant.ok) return participant.response;
+
+    // Gate de pago: registrar novedades es Plan Plus (posventa).
+    if (await shouldBlockForPlus(firestore, participant.user.uid)) {
+      return plusRequiredResponse("Registrar novedades del arriendo");
+    }
 
     const vSnap = await firestore.collection("contract_versions").doc(currentVersionId).get();
     const vData = vSnap.data() as {

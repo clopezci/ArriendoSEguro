@@ -9,6 +9,7 @@ import {
   safeSupportFilename,
 } from "@/domain/codebtor-supports/support-schema";
 import { countActiveSupportsForType } from "@/domain/codebtor-supports/firestore-supports";
+import { shouldBlockForPlus, plusRequiredResponse } from "@/lib/auth/contractPlusGate";
 
 export const runtime = "nodejs";
 
@@ -61,6 +62,10 @@ export async function POST(request: Request) {
       contractVersionId: body.contractVersionId,
     });
     if (!participant.ok) return participant.response;
+
+    if (await shouldBlockForPlus(firestore, participant.user.uid)) {
+      return plusRequiredResponse("Cargar soportes del codeudor");
+    }
 
     if (participant.role !== "landlord") {
       return NextResponse.json<Err>(
