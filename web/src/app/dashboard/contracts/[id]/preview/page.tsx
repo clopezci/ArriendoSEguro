@@ -367,7 +367,7 @@ export default function PreviewStepPage() {
     try {
       const res = await fetch("/api/signatures/start", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({
           contractId: savedVersion.contractId,
           contractVersionId: savedVersion.contractVersionId,
@@ -377,6 +377,14 @@ export default function PreviewStepPage() {
         | { success: true; signatures: typeof signatureRows }
         | { success: false; errors: { field: string; message: string }[] };
       if (!res.ok || !data.success) {
+        // Gate de pago: la firma es Plus. Mostramos un CTA claro.
+        if (res.status === 402) {
+          const msg = !data.success ? data.errors[0]?.message : "";
+          setRenderErrors([
+            `${msg ?? "La firma es parte de Plan Plus."} Actívalo en «Planes» (menú del panel) para firmar tu contrato.`,
+          ]);
+          return;
+        }
         const list = !data.success ? formatBackendIssues(data.errors) : [];
         setRenderErrors(list.length > 0 ? list : ["No se pudo iniciar la ronda de firmas."]);
         return;

@@ -10,6 +10,12 @@ import { generateSignatureToken } from "@/domain/signatures/generateSignatureTok
 import { sendSignatureEmail } from "@/features/signatures/sendSignatureEmail";
 import { auditEvent } from "@/features/contracts/audit-server";
 import type { SignaturePartyType } from "@/domain/signatures/types";
+import { requireContractParticipant } from "@/lib/auth/serverAuth";
+import {
+  getAnyValidPlusEntitlementForUser,
+  getAnyValidDemoEntitlementForUser,
+} from "@/domain/platform-payments/entitlements";
+import { freeTierEnabled } from "@/lib/config";
 
 export const runtime = "nodejs";
 
@@ -94,6 +100,37 @@ export async function POST(request: Request) {
         { success: false, errors: [{ field: "contractPayload", message: "La versión no tiene payload." }] },
         { status: 422 },
       );
+    }
+
+    // Autenticación: solo una parte del contrato puede iniciar la firma.
+    const participant = await requireContractParticipant(request, firestore, contractId, {
+      kind: "by_version",
+      contractVersionId,
+    });
+    if (!participant.ok) return participant.response;
+
+    // Gate de pago: con el tier gratis activo, la firma electrónica es Plus
+    // (o demo). Un contrato gratis se genera, pero firmar requiere Plus.
+    if (freeTierEnabled) {
+      const [plus, demo] = await Promise.all([
+        getAnyValidPlusEntitlementForUser(firestore, participant.user.uid),
+        getAnyValidDemoEntitlementForUser(firestore, participant.user.uid),
+      ]);
+      if (!plus && !demo) {
+        return NextResponse.json<StartSignatureResponse>(
+          {
+            success: false,
+            errors: [
+              {
+                field: "plus_required",
+                message:
+                  "La firma electrónica con validez y evidencia (Ley 527) es parte de Plan Plus. Actívalo para firmar tu contrato y guardar los soportes.",
+              },
+            ],
+          },
+          { status: 402 },
+        );
+      }
     }
 
     const parties = requiredParties(version.contractPayload.hasSolidaryCoDebtor);
