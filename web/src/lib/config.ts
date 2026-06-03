@@ -25,3 +25,12 @@ export const featureFlags = {
   /** Reputación y calificaciones: orden 4 */
   reviewsAndReputation: false,
 } as const;
+
+/**
+ * Tier gratuito: permite generar/imprimir el contrato sin pagar (con marca de
+ * agua `arriendoseguro.app` y CTA a Plus). Firma e posventa siguen siendo Plus.
+ * Se puede APAGAR (`NEXT_PUBLIC_FREE_TIER_ENABLED=false`) para volver a
+ * "todo pago" si los ingresos por publicidad no sostienen el tier gratis.
+ * Por defecto: activado.
+ */
+export const freeTierEnabled = process.env.NEXT_PUBLIC_FREE_TIER_ENABLED !== "false";

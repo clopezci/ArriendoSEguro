@@ -5,8 +5,10 @@ import {
 } from "@/domain/contracts/api-types";
 import { renderResidentialLeaseDispatch } from "@/domain/contracts/renderResidentialLeaseDispatch";
 import { applyDemoWatermark } from "@/domain/contracts/demoWatermark";
+import { applyFreeTierWatermark } from "@/domain/contracts/freeTierWatermark";
 import { validateContractData } from "@/domain/contracts/validateContractData";
 import { generateDocumentHash } from "@/domain/contracts/hash";
+import { freeTierEnabled } from "@/lib/config";
 
 export const runtime = "nodejs";
 const MAX_JSON_BYTES = 128_000;
@@ -89,7 +91,12 @@ export async function POST(request: Request) {
         { status: 422 },
       );
     }
-    const html = parsedReq.data.isDemo ? applyDemoWatermark(rendered.html) : rendered.html;
+    const useFreeWatermark = !parsedReq.data.isDemo && freeTierEnabled && Boolean(parsedReq.data.isFreeTier);
+    const html = parsedReq.data.isDemo
+      ? applyDemoWatermark(rendered.html)
+      : useFreeWatermark
+        ? applyFreeTierWatermark(rendered.html)
+        : rendered.html;
     // Importante: el hash debe calcularse sobre el HTML que se envía al
     // cliente, no sobre el HTML "limpio" pre-watermark. De lo contrario,
     // cuando el cliente vuelva a enviar el HTML al endpoint de
@@ -98,7 +105,7 @@ export async function POST(request: Request) {
     // con "Hash no coincide con el HTML recibido" en modo demo
     // (regresión vista en producción al añadir la marca de agua).
     const documentHash =
-      parsedReq.data.isDemo ? generateDocumentHash(html) : rendered.documentHash;
+      parsedReq.data.isDemo || useFreeWatermark ? generateDocumentHash(html) : rendered.documentHash;
     return NextResponse.json<ContractPreviewResponse>({
       success: true,
       html,

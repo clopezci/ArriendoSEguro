@@ -90,11 +90,14 @@ const payloadSchema = z.object({
 export const contractPreviewRequestSchema = z.object({
   contractPayload: payloadSchema,
   isDemo: z.boolean().optional(),
+  /** Tier gratuito: marca de agua + CTA a Plus (no invalida el documento). */
+  isFreeTier: z.boolean().optional(),
 });
 
 export type ContractPreviewRequest = {
   contractPayload: ResidentialLeaseContractInput;
   isDemo?: boolean;
+  isFreeTier?: boolean;
 };
 
 export type ContractPreviewResponse =

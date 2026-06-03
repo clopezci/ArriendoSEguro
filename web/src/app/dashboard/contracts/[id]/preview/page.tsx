@@ -5,6 +5,9 @@ import { ExpedienteNotesCard } from "@/components/contracts/expediente-notes-car
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { appendAudit, getDraft, setNotarizationSelection, toContractInput, updateDraft } from "@/features/contracts/wizard-state";
 import { auditEvent } from "@/features/contracts/audit";
+import { useAuth } from "@/contexts/auth-context";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { freeTierEnabled } from "@/lib/config";
 import type {
   ContractPreviewResponse,
   GenerateContractPdfResponse,
@@ -71,6 +74,10 @@ function formatBackendIssues(
 export default function PreviewStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
+  const { user } = useAuth();
+  // Estado Plus: define si el contrato lleva marca de agua + CTA del tier gratis.
+  const [plusActive, setPlusActive] = useState(false);
+  const [entitlementsLoaded, setEntitlementsLoaded] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [savingVersion, setSavingVersion] = useState(false);
   const [renderErrors, setRenderErrors] = useState<string[]>([]);
@@ -146,7 +153,34 @@ export default function PreviewStepPage() {
   // realmente estaba bloqueado por `disabled={!previewHtml}`. Auto-generar al
   // montar mantiene el control manual del botón "Generar vista previa" para
   // refrescar si el usuario edita y vuelve, y evita el clic extra inicial.
+  // Estado Plus (entitlements): para decidir marca de agua + CTA del tier gratis.
   useEffect(() => {
+    let cancelled = false;
+    async function loadEntitlements() {
+      if (!user) {
+        setEntitlementsLoaded(true);
+        return;
+      }
+      try {
+        const res = await fetch("/api/access/entitlements/me", {
+          headers: { ...(await buildAuthHeaders(user)) },
+        });
+        const data = (await res.json()) as { success?: boolean; plusActive?: boolean };
+        if (!cancelled) setPlusActive(Boolean(res.ok && data.success && data.plusActive));
+      } catch {
+        /* si falla, asumimos no-Plus (tier gratis con marca de agua) */
+      } finally {
+        if (!cancelled) setEntitlementsLoaded(true);
+      }
+    }
+    void loadEntitlements();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!entitlementsLoaded) return; // evita marca de agua errónea antes de saber si es Plus
     if (!activeDraft) return;
     if (previewHtml) return;
     if (loadingPreview) return;
@@ -156,7 +190,7 @@ export default function PreviewStepPage() {
     // fuera del array de deps para evitar bucle, controlando re-ejecución con
     // las guardas anteriores.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDraft?.id]);
+  }, [activeDraft?.id, entitlementsLoaded]);
 
   useEffect(() => {
     if (state !== "ready" || !id) return;
@@ -177,6 +211,7 @@ export default function PreviewStepPage() {
         body: JSON.stringify({
           contractPayload: toContractInput(activeDraft),
           isDemo: Boolean(activeDraft.isDemo),
+          isFreeTier: freeTierEnabled && !activeDraft.isDemo && !plusActive,
         }),
       });
       const data = (await res.json()) as ContractPreviewResponse;
