@@ -15,6 +15,7 @@ const STATIC_PATHS = [
   "/legal/terminos",
   "/legal/privacidad",
   "/legal/aviso-privacidad",
+  "/legal/cookies",
   "/legal/firma-electronica",
   "/legal/demo",
   "/legal/evaluacion",

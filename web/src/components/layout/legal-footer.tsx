@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookiePreferencesLink } from "@/components/consent/cookie-preferences-link";
 
 const LEGAL_LINKS = [
   { href: "/acerca-de", label: "Acerca de" },
@@ -7,6 +8,7 @@ const LEGAL_LINKS = [
   { href: "/legal/terminos", label: "Términos" },
   { href: "/legal/privacidad", label: "Tratamiento de datos" },
   { href: "/legal/aviso-privacidad", label: "Aviso de privacidad" },
+  { href: "/legal/cookies", label: "Cookies" },
   { href: "/legal/firma-electronica", label: "Firma electrónica" },
   { href: "/legal/demo", label: "Demo" },
   { href: "/legal/evaluacion", label: "Política de evaluación de reputación" },
@@ -26,6 +28,7 @@ export function LegalFooter() {
               {item.label}
             </Link>
           ))}
+          <CookiePreferencesLink />
         </nav>
       </div>
     </footer>

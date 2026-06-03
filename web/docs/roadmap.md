@@ -33,7 +33,8 @@
 - [x] Blog orientativo (`/blog`, `/blog/[slug]`) con JSON-LD (Blog / BlogPosting), seis artículos iniciales, `sitemap.xml` y `robots.txt`; GA4 opcional vía `NEXT_PUBLIC_GA_MEASUREMENT_ID` en el layout.
 - [x] Enlazado interno desde la landing hacia guías del blog por tema (`BlogTopicLinks` + `landing-topic-links.ts`).
 - [x] Páginas **Acerca de** (`/acerca-de`) y **Contacto** (`/contacto`, formulario → Resend + `contact_messages`), enlazadas en footer y sitemap. Transparencia requerida por AdSense.
-- [ ] **En fila (SEO/AdSense):** ampliar calendario editorial a ~15 artículos, Search Console (propiedad + sitemap), CMP de consentimiento de cookies para anuncios, validación de datos estructurados en Rich Results y enlaces entrantes.
+- [x] **Consentimiento de cookies (CMP propia)** con Google Consent Mode v2: banner, preferencias granulares, reapertura desde footer y política en `/legal/cookies`. GA4 gateado por consentimiento.
+- [ ] **En fila (SEO/AdSense):** ampliar calendario editorial a ~15 artículos, Search Console (propiedad + sitemap), validación de datos estructurados en Rich Results y enlaces entrantes; alta en AdSense y separar slots solo en páginas públicas.
 
 ---
 

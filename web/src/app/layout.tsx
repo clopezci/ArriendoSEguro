@@ -1,4 +1,6 @@
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
+import { ConsentMode } from "@/components/consent/consent-mode";
+import { CookieConsentBanner } from "@/components/consent/cookie-consent-banner";
 import { LegalFooter } from "@/components/layout/legal-footer";
 import { PwaInstallSiteBanner } from "@/components/pwa/pwa-install-site-banner";
 import { PwaRegister } from "@/components/pwa-register";
@@ -25,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="es" className="scroll-smooth">
       <body className="bg-slate-50 font-sans text-slate-900 antialiased">
+        <ConsentMode />
         <GoogleAnalytics />
         <PwaRegister />
         <AppProviders>
@@ -33,6 +36,7 @@ export default function RootLayout({
             <LegalFooter />
           </div>
           <PwaInstallSiteBanner />
+          <CookieConsentBanner />
         </AppProviders>
       </body>
     </html>
