@@ -4,6 +4,7 @@ import { CookiePreferencesLink } from "@/components/consent/cookie-preferences-l
 const LEGAL_LINKS = [
   { href: "/acerca-de", label: "Acerca de" },
   { href: "/contacto", label: "Contacto" },
+  { href: "/reportar", label: "Reportar un problema" },
   { href: "/blog", label: "Blog" },
   { href: "/legal/terminos", label: "Términos" },
   { href: "/legal/privacidad", label: "Tratamiento de datos" },

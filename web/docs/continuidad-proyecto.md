@@ -168,6 +168,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 - **Historial crediticio:** orientación + enlaces a MiDatacrédito y BDME en el wizard (sin cargar archivos en la app); ver `credit-history-guidance-block.tsx`.
 - **Baja de cuenta:** `/api/cuenta/eliminar` + `/dashboard/cuenta/eliminar` operativos (parte del Bloque 13).
 - **Dominio canónico** `arriendoseguro.app` en metadata/sitemap (`NEXT_PUBLIC_APP_URL`).
+- **Observabilidad propia (en vez de Sentry):** `ClientErrorReporter` captura errores del navegador → `error_events` (agregados por huella); usuarios reportan en `/reportar` → `user_reports`; el admin los gestiona en pestañas **Reportes** y **Errores** de `/admin`. Cero costo, datos en Firebase, PII enmascarada. Permisos de testing ya existen (otorgar Plus / cupos en `/admin`).
 - **Consentimiento de cookies (CMP propia):** banner con Google **Consent Mode v2** (`ConsentMode` + `CookieConsentBanner`), categorías necesarias/analítica/publicidad, reabrible desde footer («Preferencias de cookies»), política en `/legal/cookies`. GA4 solo mide tras consentimiento; listo para gatear AdSense.
 
 ### 🔄 En curso / parcial
@@ -257,6 +258,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 
 | Fecha | Agente / nota | Resumen | Commit(s) |
 |-------|---------------|---------|-----------|
+| 2026-06-03 | Claude Code | Observabilidad propia (alternativa a Sentry, $0): captura automática de errores de cliente (`error_events`, agregada por huella), reportes de usuario (`/reportar` → `user_reports`) y pestañas **Reportes**/**Errores** en `/admin` (cambiar estado, marcar resuelto). PII enmascarada, datos en Firebase. Wompi aparcado (hub vive en `/wompi`, hecho para Supabase). | `(commit observabilidad)` |
 | 2026-06-03 | Claude Code | Auditoría Bloque 12 (soportes codeudor): ya estaba completo y seguro (rol landlord forzado en servidor, verificación en Storage, ZIP evidencia, storage.rules). Marcado `[x]`; +6 tests de validación de ruta `storage-path` (43/43). | `(commit bloque12)` |
 | 2026-06-03 | Claude Code | Blog ampliado a 15 artículos (9 nuevos) con datos reales verificados y bloque `sources` con enlaces oficiales (Ley 820, IPC 2025 DANE, Ley 527/Decreto 2364, Ley 1266/1581, CGP art. 384). Nuevo tipo de bloque `sources` en `types.ts` + renderer. | `(commit blog)` |
 | 2026-06-03 | Claude Code | Doc de acciones manuales del fundador (`acciones-manuales-fundador.md`). `AVISO-PRIV-2026.2` completado (sección cookies/Consent Mode + encargado Upstash). **CI** GitHub Actions (lint+test+build). Arreglado test preexistente roto (`server-only` no resolvía en `tsx`; ahora `--conditions=react-server` + dep) y +5 tests de rate-limit (37/37). | `(commit priv+CI)` |

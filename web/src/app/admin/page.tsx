@@ -30,6 +30,36 @@ type DashboardPayload = {
   errors?: { message: string }[];
 };
 
+type ObsReport = {
+  id: string;
+  category: string;
+  message: string;
+  reporterEmail: string;
+  isAuthenticated: boolean;
+  status: string;
+  pageUrl: string;
+  createdAt: string;
+};
+
+type ObsErrorEvent = {
+  id: string;
+  kind: string;
+  message: string;
+  source: string;
+  count: number;
+  resolved: boolean;
+  lastPageUrl: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+};
+
+type ObsPayload = {
+  success: boolean;
+  reports?: ObsReport[];
+  errorEvents?: ObsErrorEvent[];
+  totals?: { reportsNew: number; errorsUnresolved: number };
+};
+
 function publicAdminHintEmails(): string[] {
   if (typeof window === "undefined") return [];
   const raw = process.env.NEXT_PUBLIC_ADMIN_INTERNAL_EMAILS ?? "";
@@ -43,9 +73,18 @@ export default function AdminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState<
-    "resumen" | "encuestas" | "usuarios" | "accesos" | "pagos" | "expedientes" | "auditoria"
+    | "resumen"
+    | "encuestas"
+    | "usuarios"
+    | "accesos"
+    | "pagos"
+    | "expedientes"
+    | "auditoria"
+    | "reportes"
+    | "errores"
   >("resumen");
   const [data, setData] = useState<DashboardPayload | null>(null);
+  const [obs, setObs] = useState<ObsPayload | null>(null);
   const [loadError, setLoadError] = useState("");
   const [grantEmail, setGrantEmail] = useState("");
   const [grantMsg, setGrantMsg] = useState("");
@@ -135,9 +174,21 @@ export default function AdminPage() {
     }
   }, [user]);
 
+  const loadObs = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await fetch("/api/admin/observability", { headers: { ...(await buildAuthHeaders(user)) } });
+      const json = (await res.json()) as ObsPayload;
+      if (res.ok && json.success) setObs(json);
+    } catch {
+      /* silencioso: la observabilidad no debe romper el panel */
+    }
+  }, [user]);
+
   useEffect(() => {
     void load();
-  }, [load]);
+    void loadObs();
+  }, [load, loadObs]);
 
   async function savePlanPlusPricing() {
     if (!user) return;
@@ -739,6 +790,14 @@ export default function AdminPage() {
               ["pagos", "Pagos plataforma"],
               ["expedientes", "Expedientes"],
               ["auditoria", "Auditoría"],
+              [
+                "reportes",
+                obs?.totals?.reportsNew ? `Reportes (${obs.totals.reportsNew})` : "Reportes",
+              ],
+              [
+                "errores",
+                obs?.totals?.errorsUnresolved ? `Errores (${obs.totals.errorsUnresolved})` : "Errores",
+              ],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -772,8 +831,144 @@ export default function AdminPage() {
         )}
         {data && tab === "expedientes" && <TablaGenerica rows={data.expedientes ?? []} />}
         {data && tab === "auditoria" && <TablaGenerica rows={data.audit ?? []} />}
+        {tab === "reportes" && (
+          <ReportesTab reports={obs?.reports ?? []} user={user} onChange={() => void loadObs()} />
+        )}
+        {tab === "errores" && (
+          <ErroresTab events={obs?.errorEvents ?? []} user={user} onChange={() => void loadObs()} />
+        )}
       </div>
     </div>
+  );
+}
+
+function ReportesTab({
+  reports,
+  user,
+  onChange,
+}: {
+  reports: ObsReport[];
+  user: ReturnType<typeof useAuth>["user"];
+  onChange: () => void;
+}) {
+  const [busy, setBusy] = useState("");
+
+  async function setStatus(id: string, status: string) {
+    if (!user) return;
+    setBusy(id);
+    try {
+      await fetch("/api/admin/observability", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ kind: "report", id, status }),
+      });
+      onChange();
+    } finally {
+      setBusy("");
+    }
+  }
+
+  if (reports.length === 0) {
+    return <p className="text-sm text-slate-500">No hay reportes de usuarios todavía.</p>;
+  }
+  return (
+    <ul className="space-y-3">
+      {reports.map((r) => (
+        <li key={r.id} className="rounded-xl border border-slate-300 bg-white/95 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-medium text-violet-800">
+              {r.category}
+            </span>
+            <span className="text-[11px] text-slate-500">
+              {r.createdAt} · estado: <strong>{r.status}</strong>
+              {r.reporterEmail ? ` · ${r.reporterEmail}` : " · anónimo"}
+            </span>
+          </div>
+          <p className="mt-2 whitespace-pre-line text-sm text-slate-800">{r.message}</p>
+          {r.pageUrl && <p className="mt-1 text-[11px] text-slate-500">Página: {r.pageUrl}</p>}
+          <div className="mt-3 flex flex-wrap gap-2">
+            {(["in_review", "resolved", "dismissed"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                disabled={busy === r.id || r.status === s}
+                onClick={() => void setStatus(r.id, s)}
+                className="rounded border border-slate-300 px-2 py-1 text-[11px] text-slate-700 hover:border-violet-500 disabled:opacity-40"
+              >
+                {s === "in_review" ? "En revisión" : s === "resolved" ? "Resuelto" : "Descartar"}
+              </button>
+            ))}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ErroresTab({
+  events,
+  user,
+  onChange,
+}: {
+  events: ObsErrorEvent[];
+  user: ReturnType<typeof useAuth>["user"];
+  onChange: () => void;
+}) {
+  const [busy, setBusy] = useState("");
+
+  async function setResolved(id: string, resolved: boolean) {
+    if (!user) return;
+    setBusy(id);
+    try {
+      await fetch("/api/admin/observability", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ kind: "error", id, resolved }),
+      });
+      onChange();
+    } finally {
+      setBusy("");
+    }
+  }
+
+  if (events.length === 0) {
+    return (
+      <p className="text-sm text-slate-500">
+        Sin errores capturados. El analizador registra automáticamente los errores del navegador a medida que ocurren.
+      </p>
+    );
+  }
+  return (
+    <ul className="space-y-3">
+      {events.map((e) => (
+        <li
+          key={e.id}
+          className={`rounded-xl border p-4 ${e.resolved ? "border-slate-200 bg-slate-50" : "border-rose-300 bg-white/95"}`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[11px] font-medium text-rose-800">
+              {e.kind} · {e.count}×
+            </span>
+            <span className="text-[11px] text-slate-500">
+              último: {e.lastSeenAt} {e.resolved ? "· resuelto" : ""}
+            </span>
+          </div>
+          <p className="mt-2 break-words text-sm font-medium text-slate-900">{e.message}</p>
+          {e.source && <p className="mt-1 text-[11px] text-slate-500">Origen: {e.source}</p>}
+          {e.lastPageUrl && <p className="text-[11px] text-slate-500">Página: {e.lastPageUrl}</p>}
+          <div className="mt-3">
+            <button
+              type="button"
+              disabled={busy === e.id}
+              onClick={() => void setResolved(e.id, !e.resolved)}
+              className="rounded border border-slate-300 px-2 py-1 text-[11px] text-slate-700 hover:border-violet-500 disabled:opacity-40"
+            >
+              {e.resolved ? "Marcar como no resuelto" : "Marcar como resuelto"}
+            </button>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }
 

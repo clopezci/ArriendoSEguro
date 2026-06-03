@@ -1,6 +1,7 @@
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { ConsentMode } from "@/components/consent/consent-mode";
 import { CookieConsentBanner } from "@/components/consent/cookie-consent-banner";
+import { ClientErrorReporter } from "@/components/observability/client-error-reporter";
 import { LegalFooter } from "@/components/layout/legal-footer";
 import { PwaInstallSiteBanner } from "@/components/pwa/pwa-install-site-banner";
 import { PwaRegister } from "@/components/pwa-register";
@@ -34,6 +35,7 @@ export default function RootLayout({
       <body className="bg-slate-50 font-sans text-slate-900 antialiased">
         <ConsentMode />
         <GoogleAnalytics />
+        <ClientErrorReporter />
         <PwaRegister />
         <AppProviders>
           <div className="flex min-h-screen flex-col">

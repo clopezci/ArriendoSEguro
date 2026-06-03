@@ -145,6 +145,10 @@ export const RATE_LIMIT_RULES = {
   contact: { limit: 5, windowSeconds: 60 * 10, prefix: "contact" } satisfies RateLimitRule,
   /** Solicitud de OTP de firma: evita bombardeo de correos por IP. */
   signatureOtp: { limit: 10, windowSeconds: 60 * 10, prefix: "sig-otp" } satisfies RateLimitRule,
+  /** Reportes de usuario (bugs/quejas): moderado, evita spam. */
+  reports: { limit: 6, windowSeconds: 60 * 10, prefix: "reports" } satisfies RateLimitRule,
+  /** Captura automática de errores de cliente: tolera ráfagas pero acota por IP. */
+  clientError: { limit: 40, windowSeconds: 60, prefix: "cli-err" } satisfies RateLimitRule,
 } as const;
 
 /** Respuesta estándar 429 con `Retry-After`. */

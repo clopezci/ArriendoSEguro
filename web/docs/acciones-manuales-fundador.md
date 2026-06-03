@@ -47,6 +47,8 @@ Entra a **Vercel → Proyecto ArriendoSeguro → Settings → Environment Variab
 - [ ] `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` (ver paso 3)
 - [ ] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` (ver paso 5)
 - [ ] `NEXT_PUBLIC_GA_MEASUREMENT_ID` = `G-XXXXXXXX` (si vas a usar Google Analytics)
+- [ ] `ADMIN_INTERNAL_EMAILS` = `clpezci@gmail.com,clopezci@hotmail.com` — **necesario** para que tú (y solo tú) entres a `/admin` y veas las pestañas **Reportes** y **Errores** (la alternativa propia a Sentry). El servidor valida con esta lista; nunca con el navegador.
+- [ ] (Opcional) `ADMIN_INTERNAL_ENABLED=true` para habilitar "Otorgar Plus" manual desde el panel.
 
 > Tras cambiar variables, **vuelve a desplegar** (Vercel → Deployments → Redeploy) para que tomen
 > efecto, porque las `NEXT_PUBLIC_*` se inyectan en build.
