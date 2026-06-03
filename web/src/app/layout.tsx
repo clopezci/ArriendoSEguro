@@ -37,9 +37,14 @@ export default function RootLayout({
         <GoogleAnalytics />
         <ClientErrorReporter />
         <PwaRegister />
+        <a href="#contenido" className="skip-link">
+          Saltar al contenido
+        </a>
         <AppProviders>
           <div className="flex min-h-screen flex-col">
-            <div className="flex-1">{children}</div>
+            <div id="contenido" tabIndex={-1} className="flex-1">
+              {children}
+            </div>
             <LegalFooter />
           </div>
           <PwaInstallSiteBanner />

@@ -39,3 +39,59 @@ body {
   line-height: 1.4;
   color: rgb(15 23 42); /* slate-900 */
 }
+
+/*
+ * Accesibilidad (WCAG AA).
+ *
+ * Foco visible consistente en todos los elementos interactivos: anillo violeta
+ * con buen contraste, también para teclado (focus-visible). Evita el problema
+ * común de que el outline del navegador se pierda con resets de estilos.
+ */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+input:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #6d28d9; /* violet-700 */
+  outline-offset: 2px;
+  border-radius: 0.375rem;
+}
+
+.input:focus-visible {
+  outline: 2px solid #6d28d9;
+  outline-offset: 1px;
+  border-color: #6d28d9;
+}
+
+/* Enlace "saltar al contenido": oculto hasta recibir foco por teclado. */
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -3rem;
+  z-index: 100;
+  border-radius: 0.5rem;
+  background: #6d28d9;
+  color: #fff;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+/* Respeta la preferencia de reducir movimiento. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

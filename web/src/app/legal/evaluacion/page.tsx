@@ -11,7 +11,7 @@ export default function EvaluacionPage() {
   return (
     <article className="space-y-8 text-sm leading-relaxed text-slate-700">
       <header className="space-y-2 border-b border-slate-300 pb-6">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Información legal</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Información legal</p>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           Política de evaluación estructurada de experiencia
         </h1>
@@ -19,7 +19,7 @@ export default function EvaluacionPage() {
           Alineada al tratamiento de datos personales (Ley 1581 de 2012) y a la Ley 1480 de 2011 en lo pertinente a
           información al consumidor.
         </p>
-        <Link href="/" className="inline-block text-xs text-violet-400 hover:underline">
+        <Link href="/" className="inline-block text-xs text-violet-700 hover:underline">
           Volver al inicio
         </Link>
       </header>
@@ -89,7 +89,7 @@ export default function EvaluacionPage() {
         <p>
           Los datos de evaluación se tratan como datos personales cuando permiten identificar o hacer identificable a
           una persona; aplican los derechos del titular y las medidas de seguridad descritas en la{" "}
-          <Link href="/legal/privacidad" className="text-violet-400 hover:underline">
+          <Link href="/legal/privacidad" className="text-violet-700 hover:underline">
             Política de tratamiento de datos personales
           </Link>
           .

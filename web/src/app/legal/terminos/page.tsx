@@ -11,12 +11,12 @@ export default function TerminosPage() {
   return (
     <article className="space-y-8 text-sm leading-relaxed text-slate-700">
       <header className="space-y-2 border-b border-slate-300 pb-6">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Información legal</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Información legal</p>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Términos y condiciones de uso</h1>
         <p className="text-xs text-slate-500">
           Última actualización orientativa para esta fase inicial del servicio. Vigencia: Colombia.
         </p>
-        <Link href="/" className="inline-block text-xs text-violet-400 hover:underline">
+        <Link href="/" className="inline-block text-xs text-violet-700 hover:underline">
           Volver al inicio
         </Link>
       </header>
@@ -129,7 +129,7 @@ export default function TerminosPage() {
         <p>
           El modo demo permite explorar la interfaz con datos ficticios o marcas de agua. No produce contratos válidos
           para uso probatorio ni sustituye el Plan Plus. Detalle en{" "}
-          <Link href="/legal/demo" className="text-violet-400 hover:underline">
+          <Link href="/legal/demo" className="text-violet-700 hover:underline">
             Condiciones del modo demo
           </Link>
           .
@@ -202,7 +202,7 @@ export default function TerminosPage() {
         <p>
           Consultas sobre estos términos: use los canales de contacto publicados en el sitio o en la aplicación. Para
           ejercer derechos sobre datos personales, consulte la{" "}
-          <Link href="/legal/privacidad" className="text-violet-400 hover:underline">
+          <Link href="/legal/privacidad" className="text-violet-700 hover:underline">
             Política de tratamiento de datos personales
           </Link>
           .

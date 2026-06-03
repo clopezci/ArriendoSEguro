@@ -25,7 +25,7 @@ export function PanelHeader() {
         <div className="flex items-center justify-between gap-3">
           <Link
             href="/panel"
-            className="text-sm font-semibold text-violet-400"
+            className="text-sm font-semibold text-violet-700"
           >
             <BrandLockup />
           </Link>
@@ -45,7 +45,7 @@ export function PanelHeader() {
                 href={href}
                 className={`rounded-md px-2.5 py-1.5 text-sm font-medium transition ${
                   active
-                    ? "bg-sky-900/60 text-sky-800 ring-1 ring-violet-400/60 shadow-[0_0_14px_rgba(139,92,246,0.28)]"
+                    ? "bg-violet-100 text-violet-900 ring-1 ring-violet-400 shadow-[0_0_14px_rgba(139,92,246,0.28)]"
                     : "text-slate-700 shadow-[0_0_0_1px_rgba(139,92,246,0.22)] hover:bg-slate-200 hover:text-violet-700"
                 }`}
               >

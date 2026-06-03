@@ -11,15 +11,15 @@ export default function LegalDemoPage() {
   return (
     <article className="space-y-8 text-sm leading-relaxed text-slate-700">
       <header className="space-y-2 border-b border-slate-300 pb-6">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Información legal</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Información legal</p>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Condiciones del modo demo</h1>
         <p className="text-xs text-slate-500">Aplica al recorrido demostrativo y a datos de ejemplo en la interfaz.</p>
-        <Link href="/" className="inline-block text-xs text-violet-400 hover:underline">
+        <Link href="/" className="inline-block text-xs text-violet-700 hover:underline">
           Volver al inicio
         </Link>
         <p>
           El tour visual público está en{" "}
-          <Link href="/demo" className="text-violet-400 hover:underline">
+          <Link href="/demo" className="text-violet-700 hover:underline">
             /demo
           </Link>
           .

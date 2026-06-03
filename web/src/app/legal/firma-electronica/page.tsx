@@ -11,13 +11,13 @@ export default function FirmaElectronicaPage() {
   return (
     <article className="space-y-8 text-sm leading-relaxed text-slate-700">
       <header className="space-y-2 border-b border-slate-300 pb-6">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Información legal</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Información legal</p>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Política de firma electrónica</h1>
         <p className="text-xs text-slate-500">
           Marco general: Ley 527 de 1999 (mensajes de datos y certificados digitales) y normas concordantes. No
           sustituye asesoría sobre el tipo de firma exigible en cada acto.
         </p>
-        <Link href="/" className="inline-block text-xs text-violet-400 hover:underline">
+        <Link href="/" className="inline-block text-xs text-violet-700 hover:underline">
           Volver al inicio
         </Link>
       </header>
@@ -48,7 +48,7 @@ export default function FirmaElectronicaPage() {
           dirección IP de origen, user agent del navegador o dispositivo, identificador de la versión del documento y
           resumen criptográfico (hash) del contenido firmado. Estos datos forman parte del expediente y se tratan según
           la{" "}
-          <Link href="/legal/privacidad" className="text-violet-400 hover:underline">
+          <Link href="/legal/privacidad" className="text-violet-700 hover:underline">
             Política de tratamiento de datos personales
           </Link>
           .

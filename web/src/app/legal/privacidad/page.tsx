@@ -12,14 +12,14 @@ export default function PrivacidadPage() {
   return (
     <article className="space-y-8 text-sm leading-relaxed text-slate-700">
       <header className="space-y-2 border-b border-slate-300 pb-6">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Información legal</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Información legal</p>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
           Política de tratamiento de la información personal (datos personales)
         </h1>
         <p className="text-xs text-slate-500">
           Marco: Ley 1581 de 2012, Decreto 1377 de 2013 y demás normas concordantes (Colombia).
         </p>
-        <Link href="/" className="inline-block text-xs text-violet-400 hover:underline">
+        <Link href="/" className="inline-block text-xs text-violet-700 hover:underline">
           Volver al inicio
         </Link>
       </header>
@@ -88,7 +88,7 @@ export default function PrivacidadPage() {
         <p>
           Cuando use la firma electrónica ofrecida por la plataforma, se conservan datos de evidencia (fecha, hora, IP,
           user agent, identificador de versión y hash del documento) según lo descrito en la{" "}
-          <Link href="/legal/firma-electronica" className="text-violet-400 hover:underline">
+          <Link href="/legal/firma-electronica" className="text-violet-700 hover:underline">
             Política de firma electrónica
           </Link>
           , en concordancia con el marco general de mensajes de datos y firmas (Ley 527 de 1999 y normas concordantes).
@@ -108,7 +108,7 @@ export default function PrivacidadPage() {
         <h2 className="text-lg font-semibold text-slate-900">8. Tratamiento de evaluaciones estructuradas</h2>
         <p>
           Las respuestas a cuestionarios cerrados sobre la experiencia de arriendo se tratan según la{" "}
-          <Link href="/legal/evaluacion" className="text-violet-400 hover:underline">
+          <Link href="/legal/evaluacion" className="text-violet-700 hover:underline">
             Política de evaluación estructurada
           </Link>
           : no publicamos listas negras ni permitimos búsqueda pública por cédula en esta fase inicial.
@@ -177,7 +177,7 @@ export default function PrivacidadPage() {
         <p>
           Para ejercicio de derechos y preguntas sobre privacidad: utilice los canales oficiales publicados en la
           aplicación. Consulte también el{" "}
-          <Link href="/legal/aviso-privacidad" className="text-violet-400 hover:underline">
+          <Link href="/legal/aviso-privacidad" className="text-violet-700 hover:underline">
             Aviso de privacidad
           </Link>{" "}
           (resumen).

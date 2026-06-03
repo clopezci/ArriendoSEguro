@@ -161,7 +161,7 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 ### Mobile-first y accesibilidad
 - [x] Convenciones documentadas en `arriendoseguro-mobile-pwa.mdc`.
 - [~] Aplicar checklist mobile-first a pantallas existentes (encuesta lista, faltan formularios del wizard).
-- [ ] Auditoría AA de contraste y foco visible.
+- [~] **Accesibilidad AA**: foco visible global (`:focus-visible`), enlace «saltar al contenido», `prefers-reduced-motion`, foco en `.input` y corrección de contraste de etiquetas (`text-violet-400`→`700`) en header y páginas legales públicas. Falta: auditoría completa con Lighthouse/axe y contraste en páginas internas restantes.
 - [x] Tema visual claro forzado (`globals.css` → `color-scheme: light`, fondo `slate-50`, botones violet-600 con `text-white`).
 - [x] Tono colombiano en toda la copia visible al usuario (sin voseo argentino/chileno; se usan formas como “tienes”, “puedes”, “necesitas”).
 

@@ -16,7 +16,7 @@ export default function AvisoPrivacidadPage() {
   return (
     <article className="space-y-8 text-sm leading-relaxed text-slate-700">
       <header className="space-y-2 border-b border-slate-300 pb-6">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Información legal</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Información legal</p>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Aviso de privacidad</h1>
         <p className="text-xs text-slate-500">
           Documento {privacy.id} · Publicado {privacy.publishedAt} · Consentimiento de registro vigente:{" "}
@@ -26,7 +26,7 @@ export default function AvisoPrivacidadPage() {
           Este texto orienta sobre el tratamiento de datos personales en la plataforma. No sustituye asesoría legal
           particular; para revisar cláusulas contractuales o situaciones específicas consulta a un profesional idóneo.
         </p>
-        <Link href="/" className="inline-block text-xs text-violet-400 hover:underline">
+        <Link href="/" className="inline-block text-xs text-violet-700 hover:underline">
           Volver al inicio
         </Link>
       </header>
