@@ -82,6 +82,8 @@ export default function PreviewStepPage() {
   const [savingVersion, setSavingVersion] = useState(false);
   const [renderErrors, setRenderErrors] = useState<string[]>([]);
   const [previewHtml, setPreviewHtml] = useState("");
+  /** HTML limpio (sin marca de agua) que se guarda como versión legal. */
+  const [cleanHtmlForSave, setCleanHtmlForSave] = useState("");
   const [versionInfo, setVersionInfo] = useState<{
     versionNumber: number;
     generatedAt: string;
@@ -227,7 +229,10 @@ export default function PreviewStepPage() {
         });
         return;
       }
-      setPreviewHtml(data.html);
+      // En pantalla mostramos el HTML de display (con marca de agua + CTA en
+      // tier gratis); para GUARDAR usamos el HTML limpio (versión legal).
+      setPreviewHtml(data.displayHtml ?? data.html);
+      setCleanHtmlForSave(data.html);
       setVersionInfo(data.contractVersionDraft);
       updateDraft(id, (d) =>
         appendAudit(
@@ -272,7 +277,7 @@ export default function PreviewStepPage() {
         body: JSON.stringify({
           contractDraftId: id,
           contractPayload: toContractInput(activeDraft),
-          html: previewHtml,
+          html: cleanHtmlForSave || previewHtml,
           documentHash: versionInfo.documentHash,
           hasSolidaryCoDebtor: activeDraft.hasSolidaryCoDebtor,
           generatedAt: versionInfo.generatedAt,
@@ -323,7 +328,7 @@ export default function PreviewStepPage() {
     try {
       const res = await fetch("/api/contracts/generate-pdf", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({
           contractId: version.contractId,
           contractVersionId: version.contractVersionId,

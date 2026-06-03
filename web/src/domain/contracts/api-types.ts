@@ -103,7 +103,14 @@ export type ContractPreviewRequest = {
 export type ContractPreviewResponse =
   | {
       success: true;
+      /** HTML que se GUARDA (versión legal). Limpio en tier gratis y Plus. */
       html: string;
+      /**
+       * HTML para MOSTRAR en pantalla. Lleva marca de agua + CTA en tier gratis
+       * (y demo). El de descarga PDF se marca al renderizar según el plan; la
+       * versión legal guardada queda limpia.
+       */
+      displayHtml?: string;
       validationErrors: [];
       contractVersionDraft: {
         versionNumber: number;

@@ -11,6 +11,12 @@ import {
 import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { logServerError } from "@/lib/observability/observability";
+import { requireContractParticipant } from "@/lib/auth/serverAuth";
+import { userHasPlusOrDemo } from "@/lib/auth/contractPlusGate";
+import { freeTierEnabled } from "@/lib/config";
+import { applyFreeTierWatermark, type FreeTierCtaOptions } from "@/domain/contracts/freeTierWatermark";
+import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/plan-plus-pricing";
+import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
 
 export const runtime = "nodejs";
 const MAX_JSON_BYTES = 16_000;
@@ -105,9 +111,34 @@ export async function POST(request: Request) {
       );
     }
 
+    // Autenticación (cierra hueco previo): solo una parte del contrato descarga.
+    const participant = await requireContractParticipant(request, firestore, contractId, {
+      kind: "by_version",
+      contractVersionId,
+    });
+    if (!participant.ok) return participant.response;
+
+    // La versión guardada es limpia. Si el usuario NO es Plus (tier gratis),
+    // el PDF de descarga sale con marca de agua + CTA. Plus/demo lo descargan limpio.
+    let htmlForPdf = version.html;
+    if (freeTierEnabled && !(await userHasPlusOrDemo(firestore, participant.user.uid))) {
+      const payload = (versionSnap.data() as { contractPayload?: ResidentialLeaseContractInput } | undefined)
+        ?.contractPayload;
+      const total =
+        (Number(payload?.lease?.monthlyRent) || 0) * (Number(payload?.lease?.termMonths) || 0);
+      let plusPriceCop = 0;
+      try {
+        plusPriceCop = Number((await getPlanPlusPricingForPublicPages(firestore)).checkoutCop) || 0;
+      } catch {
+        /* sin precio: el CTA usa el copy genérico */
+      }
+      const opts: FreeTierCtaOptions = { totalContractCop: total, plusPriceCop };
+      htmlForPdf = applyFreeTierWatermark(version.html, opts);
+    }
+
     const generatedAt = new Date().toISOString();
     const pdfBytes = await renderContractPdfFromHtml({
-      html: version.html,
+      html: htmlForPdf,
       contractId,
       contractVersionId,
       versionNumber: version.versionNumber ?? 1,

@@ -111,23 +111,28 @@ export async function POST(request: Request) {
       freeOpts = { totalContractCop: total, plusPriceCop };
     }
 
-    const html = parsedReq.data.isDemo
-      ? applyDemoWatermark(rendered.html)
+    // La versión legal que se GUARDA es siempre limpia. La marca de agua + CTA
+    // del tier gratis va solo en el HTML de DISPLAY (lo que se ve en pantalla);
+    // el PDF de descarga se marca al renderizar según el plan. Así, si el usuario
+    // pasa a Plus, su contrato firmado queda limpio (sin marketing en el hash).
+    //
+    // Excepción: el modo demo sí guarda con marca (documento ficticio); su hash
+    // se recalcula sobre el HTML con marca para que `save-draft-version` valide
+    // igual (evita "Hash no coincide con el HTML recibido").
+    const saveHtml = parsedReq.data.isDemo ? applyDemoWatermark(rendered.html) : rendered.html;
+    const documentHash = parsedReq.data.isDemo
+      ? generateDocumentHash(saveHtml)
+      : rendered.documentHash;
+    const displayHtml = parsedReq.data.isDemo
+      ? saveHtml
       : useFreeWatermark
         ? applyFreeTierWatermark(rendered.html, freeOpts)
         : rendered.html;
-    // Importante: el hash debe calcularse sobre el HTML que se envía al
-    // cliente, no sobre el HTML "limpio" pre-watermark. De lo contrario,
-    // cuando el cliente vuelva a enviar el HTML al endpoint de
-    // `save-draft-version`, el rehash del servidor no coincidirá con el
-    // hash devuelto en este preview y el guardado de la versión fallará
-    // con "Hash no coincide con el HTML recibido" en modo demo
-    // (regresión vista en producción al añadir la marca de agua).
-    const documentHash =
-      parsedReq.data.isDemo || useFreeWatermark ? generateDocumentHash(html) : rendered.documentHash;
+
     return NextResponse.json<ContractPreviewResponse>({
       success: true,
-      html,
+      html: saveHtml,
+      displayHtml,
       validationErrors: [],
       contractVersionDraft: {
         versionNumber: 1,
