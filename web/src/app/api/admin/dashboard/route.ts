@@ -81,6 +81,7 @@ export async function GET(request: Request) {
       contractsCount,
       versionsCount,
       paymentsApproved,
+      contractsSigned,
     ] = await Promise.all([
       countSafe(() => firestore.collection("lead_forms").count().get()),
       countSafe(() =>
@@ -104,7 +105,22 @@ export async function GET(request: Request) {
       countSafe(() =>
         firestore.collection("platform_payments").where("status", "==", "approved").count().get(),
       ),
+      countSafe(() => firestore.collection("contracts").where("status", "==", "signed").count().get()),
     ]);
+
+    // Embudo de conversión (KPIs). La visita a la landing proviene de GA4
+    // (no de Firestore); aquí medimos de encuesta en adelante.
+    const pct = (num: number | null, den: number | null): number | null =>
+      num != null && den != null && den > 0 ? Math.round((num / den) * 1000) / 10 : null;
+    const funnel = {
+      surveys: surveysCount,
+      registered: usersRegistered,
+      contractsCreated: contractsCount,
+      contractsSigned,
+      surveyToRegistered: pct(usersRegistered, surveysCount),
+      registeredToContract: pct(contractsCount, usersRegistered),
+      contractToSigned: pct(contractsSigned, contractsCount),
+    };
 
     const [leadsSnap, auditSnap, entitlementsSnap, ordersSnap, paymentsSnap, contractsSnap] =
       await Promise.all([
@@ -263,6 +279,8 @@ export async function GET(request: Request) {
         expedientesCreados: contractsCount,
         contractVersions: versionsCount,
         platformPaymentsApproved: paymentsApproved,
+        contractsSigned,
+        funnel,
         recentErrors: errorish.slice(0, 25),
       },
       surveys,

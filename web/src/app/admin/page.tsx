@@ -18,6 +18,16 @@ type DashboardPayload = {
     expedientesCreados: number | null;
     contractVersions: number | null;
     platformPaymentsApproved: number | null;
+    contractsSigned?: number | null;
+    funnel?: {
+      surveys: number | null;
+      registered: number | null;
+      contractsCreated: number | null;
+      contractsSigned: number | null;
+      surveyToRegistered: number | null;
+      registeredToContract: number | null;
+      contractToSigned: number | null;
+    };
     recentErrors: { eventName: string; createdAt: string; metadataSummary: string }[];
   };
   surveys?: Record<string, unknown>[];
@@ -993,6 +1003,39 @@ function Resumen({ s }: { s?: DashboardPayload["summary"] }) {
           </div>
         ))}
       </div>
+      {s.funnel && (
+        <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
+          <p className="text-sm font-semibold text-slate-900">Embudo de conversión (KPIs)</p>
+          <p className="mt-1 text-[11px] text-slate-500">
+            La visita a la landing se mide en Google Analytics; aquí medimos de encuesta en adelante.
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-4">
+            {[
+              ["Encuestas", s.funnel.surveys],
+              ["Registrados", s.funnel.registered],
+              ["Contratos creados", s.funnel.contractsCreated],
+              ["Contratos firmados", s.funnel.contractsSigned],
+            ].map(([label, val]) => (
+              <div key={String(label)} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-center">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">{label}</p>
+                <p className="mt-1 text-xl font-semibold text-slate-900">{val ?? "—"}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 grid gap-2 text-xs text-slate-700 sm:grid-cols-3">
+            <p className="rounded bg-violet-50 px-2 py-1">
+              Encuesta → Registro: <strong>{s.funnel.surveyToRegistered ?? "—"}%</strong>
+            </p>
+            <p className="rounded bg-violet-50 px-2 py-1">
+              Registro → Contrato: <strong>{s.funnel.registeredToContract ?? "—"}%</strong>
+            </p>
+            <p className="rounded bg-violet-50 px-2 py-1">
+              Contrato → Firmado: <strong>{s.funnel.contractToSigned ?? "—"}%</strong>
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
         <p className="text-sm font-semibold text-slate-900">Errores recientes (heurística sobre auditoría)</p>
         {s.recentErrors.length === 0 ? (

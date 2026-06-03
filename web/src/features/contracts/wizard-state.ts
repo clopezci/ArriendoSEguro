@@ -188,6 +188,12 @@ export interface ContractDraft {
    */
   expedienteNotes?: string;
   /**
+   * Preferencia (no legal) de recibir recordatorios de terminación/renovación
+   * del contrato por correo y SMS. Por defecto activado; se persiste en el doc
+   * `contracts` al guardar versión. No forma parte del contrato ni del hash.
+   */
+  renewalReminderEnabled?: boolean;
+  /**
    * Intención de autenticación notarial (Bloque 9). El PDF autenticado
    * cargado por las partes queda en `contract_annexes` y en
    * `contractPayload.notarization` al completar la subida en servidor.
@@ -481,6 +487,7 @@ export function createContractDraft(input: {
     lease: { latePaymentMonthsThreshold: 2, paymentMethod: "transferencia bancaria" },
     utilities: {},
     expedienteNotes: "",
+    renewalReminderEnabled: true,
     lastUpdatedAt: now,
     auditTrail: [{ event: "contract_flow_started", at: now }],
   };

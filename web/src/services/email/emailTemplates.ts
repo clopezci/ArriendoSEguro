@@ -8,7 +8,8 @@ export type EmailTemplateCode =
   | "surveyThankYouEmail"
   | "expedienteNovedadEmail"
   | "contactMessageEmail"
-  | "contactAckEmail";
+  | "contactAckEmail"
+  | "contractRenewalReminderEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
@@ -210,6 +211,33 @@ export function contactMessageEmail(input: {
      ${input.phone ? `<p><strong>Teléfono:</strong> ${escapeHtml(input.phone)}</p>` : ""}
      <p><strong>Tema:</strong> ${escapeHtml(input.topic)}</p>
      <p><strong>Mensaje:</strong><br/>${safeMsg}</p>`,
+  );
+  return { subject, html, text };
+}
+
+/**
+ * Recordatorio de terminación/renovación del contrato. Se envía con suficiente
+ * antelación al preaviso legal de 3 meses (Ley 820 de 2003, vivienda urbana).
+ */
+export function contractRenewalReminderEmail(input: {
+  recipientName: string;
+  endDate: string;
+  daysUntilEnd: number;
+  contractId: string;
+  leaseProcessId?: string;
+}): CompiledEmailTemplate {
+  const base = appBaseUrl();
+  const dashId = input.leaseProcessId ?? input.contractId;
+  const link = `${base}/dashboard/contracts/${dashId}/novedades`;
+  const subject = `Tu contrato de arriendo vence el ${input.endDate}: decide renovación o terminación`;
+  const text = `Hola ${input.recipientName},\n\nTu contrato de arriendo termina el ${input.endDate} (en aproximadamente ${input.daysUntilEnd} días).\n\nRecuerda que para terminarlo debes dar un preaviso de al menos 3 meses (Ley 820 de 2003, vivienda urbana). Si quieres renovarlo o darlo por terminado, conversa con la otra parte y deja constancia.\n\nGestiona tu arriendo: ${link}\n\nArriendoSeguro no decide por ti; solo te recordamos a tiempo.`;
+  const html = baseHtml(
+    "Recordatorio: vencimiento de tu contrato de arriendo",
+    `<p>Hola <strong>${escapeHtml(input.recipientName)}</strong>,</p>
+     <p>Tu contrato de arriendo termina el <strong>${escapeHtml(input.endDate)}</strong> (en aproximadamente <strong>${input.daysUntilEnd} días</strong>).</p>
+     <p>Recuerda que para terminarlo debes dar un <strong>preaviso de al menos 3 meses</strong> (Ley 820 de 2003, vivienda urbana). Si deseas renovar o terminar, acuerda con la otra parte y deja constancia.</p>
+     <p><a href="${link}" style="color:#6d28d9;">Gestionar mi arriendo</a></p>
+     <p style="font-size:12px;color:#64748b;">ArriendoSeguro solo te recuerda a tiempo; no decide ni sustituye asesoría legal.</p>`,
   );
   return { subject, html, text };
 }

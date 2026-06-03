@@ -24,6 +24,11 @@ const links = [
     label: "Calificar (reputación)",
     match: (path: string) => path.includes("/reputacion"),
   },
+  {
+    href: (id: string) => `/dashboard/contracts/${id}/alertas`,
+    label: "Alertas (vencimiento)",
+    match: (path: string) => path.includes("/alertas"),
+  },
 ] as const;
 
 /** Navegación post-firma / durante el arriendo (pasos 12 y 13). */

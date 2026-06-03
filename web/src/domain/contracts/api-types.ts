@@ -124,6 +124,8 @@ export const saveDraftVersionRequestSchema = z.object({
   documentHash: z.string().min(6),
   hasSolidaryCoDebtor: z.boolean(),
   generatedAt: z.string(),
+  /** Preferencia de recordatorios de vencimiento (no legal). Opcional. */
+  renewalReminderEnabled: z.boolean().optional(),
 });
 
 export type SaveDraftVersionRequest = z.infer<typeof saveDraftVersionRequestSchema>;

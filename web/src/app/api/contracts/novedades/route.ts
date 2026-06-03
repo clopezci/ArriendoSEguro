@@ -9,6 +9,7 @@ import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
 import { persistExpedienteAttachment } from "@/domain/contracts/persistExpedienteAttachment";
 import { sendEmail } from "@/services/email/sendEmail";
 import { expedienteNovedadEmail } from "@/services/email/emailTemplates";
+import { sendSms } from "@/services/sms/sendSms";
 import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
@@ -194,6 +195,29 @@ export async function POST(request: Request) {
         html: tpl.html,
         text: tpl.text,
         templateCode: "expedienteNovedadEmail",
+        relatedEntityType: "contract",
+        relatedEntityId: parsed.data.contractId,
+      });
+    }
+
+    // Aviso por SMS a las otras partes (best-effort; mock si no hay proveedor).
+    const authorEmailLc = (participant.user.email ?? "").toLowerCase();
+    const phoneTargets = [
+      payload?.landlord,
+      payload?.tenant,
+      hasCodebtor ? payload?.solidaryCoDebtor : undefined,
+    ]
+      .filter((p): p is NonNullable<typeof p> => Boolean(p?.phone))
+      .filter((p) => (p.email ?? "").toLowerCase() !== authorEmailLc);
+    const smsBody = `ArriendoSeguro: ${authorName} registró una novedad (${tipoLabel}) en tu arriendo. Revísala en la plataforma.`;
+    const seenPhones = new Set<string>();
+    for (const p of phoneTargets) {
+      if (seenPhones.has(p.phone)) continue;
+      seenPhones.add(p.phone);
+      await sendSms({
+        to: p.phone,
+        body: smsBody,
+        templateCode: "expedienteNovedadSms",
         relatedEntityType: "contract",
         relatedEntityId: parsed.data.contractId,
       });

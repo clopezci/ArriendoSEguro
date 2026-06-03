@@ -117,6 +117,17 @@ banner de consentimiento de cookies, política de privacidad y de cookies.
 
 ---
 
+## 7b. SMS y recordatorios automáticos (posventa)
+
+El código ya envía **recordatorios de vencimiento** (terminación/renovación) y avisos de **novedades/daños** por correo y SMS. Para activarlos en producción:
+
+- [ ] **SMS** (opcional, tiene costo): crea cuenta en un proveedor (hoy soportado: **Twilio**) y define en Vercel `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` (y `SMS_PROVIDER=twilio`). Sin esto, los SMS quedan en **modo mock** (no se envían, no cobran) y los correos sí salen. *Si prefieres un proveedor colombiano, dímelo y agrego esa rama.*
+- [ ] **CRON_SECRET**: define un valor en Vercel y úsalo al programar el cron.
+- [ ] **Programar el cron diario** que dispara los recordatorios de vencimiento:
+      `POST https://arriendoseguro.app/api/contracts/renewal-reminders/send-due`
+      con header `Authorization: Bearer <CRON_SECRET>`. Opciones: **Vercel Cron** (añadir `crons` en `vercel.json`), GitHub Actions, o un servicio externo (cron-job.org). Recomendado: 1 vez al día.
+- [ ] (Ya existía) recordatorios de **pago**: `POST /api/payments/reminders/send-due` (mismo esquema de cron).
+
 ## 8. Pagos (Wompi) — más adelante
 
 Queda de último. Vas a integrar tu **hub de pagos portátil** (ya funcional en otra app).

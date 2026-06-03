@@ -241,6 +241,7 @@ export default function PreviewStepPage() {
           documentHash: versionInfo.documentHash,
           hasSolidaryCoDebtor: activeDraft.hasSolidaryCoDebtor,
           generatedAt: versionInfo.generatedAt,
+          renewalReminderEnabled: activeDraft.renewalReminderEnabled ?? true,
         }),
       });
       const data = (await res.json()) as SaveDraftVersionResponse;

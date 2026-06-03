@@ -170,8 +170,14 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 - [x] **CI** (GitHub Actions `.github/workflows/ci.yml`): `lint` + `test` + `build` en cada push/PR a main. Suite verde 43/43.
 - [x] **Observabilidad propia (alternativa a Sentry, costo $0):** captura automática de errores de **cliente** (`ClientErrorReporter`) y de **servidor** (`logServerError` en `catch` de webhook Wompi, generación de PDF y firma), agregados por huella en `error_events`; reportes de usuario (`/reportar` → `user_reports`) y panel admin con pestañas **Reportes** y **Errores**. Datos en el propio Firebase, sin terceros; PII enmascarada. Sentry queda como opción futura si se requiere alerta proactiva por correo/Slack.
 
+### Posventa / relación continua
+- [x] **Recordatorios de pago** (`api/payments/reminders/send-due`).
+- [x] **Recordatorios de terminación/renovación**: opt-in en el paso Términos + tarjeta `/dashboard/contracts/[id]/alertas`; cron `api/contracts/renewal-reminders/send-due` (protegido por `CRON_SECRET`) que envía por **email + SMS** dos avisos semanales (3 meses + 2 semanas y 3 meses + 1 semana antes del fin), antes del preaviso legal.
+- [x] **Novedades/daños** notifican a las otras partes por **email + SMS** (`services/sms`, Twilio o mock).
+- [ ] Programar el cron diario en producción (acción del fundador) y conectar proveedor SMS real.
+
 ### KPIs (revisar mensual)
-- [ ] Funnel landing → encuesta → registro → primer contrato firmado.
+- [x] **Funnel en `/admin`**: encuesta → registro → contrato creado → firmado, con % de conversión (la visita a la landing se mide aparte en GA4).
 - [ ] % de contratos completados sin abandono en wizard.
 - [ ] Tiempo medio para generar el primer contrato.
 - [ ] NPS post-firma vía evaluación estructurada.

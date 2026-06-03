@@ -98,6 +98,7 @@ export async function POST(request: Request) {
         status: "draft",
         hasSolidaryCoDebtor: body.hasSolidaryCoDebtor,
         currentVersionId: contractVersionRef.id,
+        renewalReminderEnabled: body.renewalReminderEnabled ?? true,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
         generatedAt: body.generatedAt,
