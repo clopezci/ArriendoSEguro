@@ -1,7 +1,7 @@
 # Roadmap visual — ArriendoSeguro
 
 > Tablero rápido del producto. Mantener sincronizado con la regla
-> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-06-02** (PWA banner global; Bloques 12–13 en curso).
+> `.cursor/rules/arriendoseguro-roadmap.mdc`. Última revisión: **2026-06-03** (seguridad: reglas Firestore/Storage versionadas + rate-limit Upstash; páginas Acerca de/Contacto; dominio canónico `arriendoseguro.app`).
 >
 > Convenciones:
 > - **[x]** = listo en producción o en `main`.
@@ -32,7 +32,8 @@
 - [x] Aviso legal y términos básicos en footer.
 - [x] Blog orientativo (`/blog`, `/blog/[slug]`) con JSON-LD (Blog / BlogPosting), seis artículos iniciales, `sitemap.xml` y `robots.txt`; GA4 opcional vía `NEXT_PUBLIC_GA_MEASUREMENT_ID` en el layout.
 - [x] Enlazado interno desde la landing hacia guías del blog por tema (`BlogTopicLinks` + `landing-topic-links.ts`).
-- [ ] **En fila (SEO):** ampliar calendario editorial, Search Console (propiedad + sitemap), validación de datos estructurados en Rich Results y enlaces entrantes.
+- [x] Páginas **Acerca de** (`/acerca-de`) y **Contacto** (`/contacto`, formulario → Resend + `contact_messages`), enlazadas en footer y sitemap. Transparencia requerida por AdSense.
+- [ ] **En fila (SEO/AdSense):** ampliar calendario editorial a ~15 artículos, Search Console (propiedad + sitemap), CMP de consentimiento de cookies para anuncios, validación de datos estructurados en Rich Results y enlaces entrantes.
 
 ---
 
@@ -98,7 +99,7 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 - [x] Bloque 10 — Módulo de novedades y solicitudes con notificación por email y trazabilidad.
 - [x] Bloque 11 — Activación operativa de `AS-LEASE-2026.2` vía `NEXT_PUBLIC_LEASE_TEMPLATE_2026_2_ENABLED` + render en preview; expedientes antiguos conservan su versión guardada.
 - [~] Bloque 12 — Soportes codeudor: listo `POST /api/codebtor-supports/upload-url` (firma v4, solo arrendador). Falta confirm, download, UI, `storage.rules`, ZIP evidencia.
-- [~] Bloque 13 — Aviso de privacidad: resumen de encargados + canal en `/legal/aviso-privacidad`. Falta `AVISO-PRIV-2026.2` completo, eliminación de cuenta y endpoint.
+- [~] Bloque 13 — Aviso de privacidad: resumen de encargados + canal en `/legal/aviso-privacidad`; **eliminación de cuenta ya operativa** (`/api/cuenta/eliminar` + `/dashboard/cuenta/eliminar`). Falta `AVISO-PRIV-2026.2` completo (encargados, transferencia internacional).
 
 ### PWA instalable *(prio 2)*
 - [x] `web/public/manifest.webmanifest` (`display: standalone`, theme/background `#0b0f1a`, íconos desde PNG existente).
@@ -147,8 +148,9 @@ Ver detalle en `web/docs/plan-mejoras-contrato-flujo.md`.
 ### Seguridad y datos
 - [x] Validación Zod en API públicas (`/api/leads`, etc.).
 - [x] Admin SDK aislado en server.
-- [~] Reglas Firestore mínimas viables (revisar caso a caso al avanzar). Subcolección `contracts/{id}/novedades`: hoy las escrituras van por **Admin SDK** en `route.ts`; si habilitas reglas cliente, alinea lectura/escritura con participantes del contrato (ver `web/docs/checklist-firebase-vercel-operacion.md`).
-- [ ] Rate-limit explícito en endpoints públicos.
+- [x] **Reglas Firestore/Storage versionadas** (`web/firestore.rules`, `web/storage.rules`, `web/firebase.json`) en modelo *deny-all* al cliente: el navegador no usa `firebase/firestore` ni `firebase/storage`; todo pasa por Admin SDK. **Pendiente desplegarlas** (`firebase deploy --only firestore:rules,storage:rules`) y confirmar en consola.
+- [x] **Rate-limit** en endpoints públicos (`/api/leads`, `/api/contact`, `/api/signatures/request-otp`) vía `src/lib/security/rate-limit.ts` (Upstash + fallback en memoria). Falta cargar `UPSTASH_REDIS_REST_*` en Vercel.
+- [x] **Cabeceras de seguridad + CSP** de producción en `web/next.config.ts`.
 - [x] Mapas de error de Firebase a textos en español (`firebase-errors.ts`).
 
 ### Mobile-first y accesibilidad

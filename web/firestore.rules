@@ -1,0 +1,34 @@
+rules_version = '2';
+
+// ===========================================================================
+// ArriendoSeguro — Reglas de seguridad de Cloud Firestore
+// ===========================================================================
+//
+// MODELO DE ACCESO (decisión de arquitectura, no reabrir sin motivo):
+//
+//   El navegador NUNCA usa el SDK de Firestore en cliente. No existe ningún
+//   import de "firebase/firestore" en `web/src/**` (solo "firebase/auth" y
+//   "firebase/app"). TODO el acceso a datos pasa por API routes en
+//   `app/api/**/route.ts` con `runtime: "nodejs"` usando Firebase Admin SDK.
+//
+//   El Admin SDK OMITE por completo estas reglas (actúa con credenciales de
+//   servicio). Por eso la postura correcta y más segura es NEGAR todo acceso
+//   directo del cliente: si algún día se filtra una API key pública o alguien
+//   intenta leer/escribir desde el navegador o un script, Firestore lo rechaza.
+//
+//   Si en el futuro se decide leer alguna colección desde el cliente, abrir
+//   SOLO esa colección con condiciones explícitas (request.auth != null y
+//   pertenencia del usuario al documento), nunca un `allow` amplio.
+//
+// DESPLIEGUE:  cd web && firebase deploy --only firestore:rules
+// Config:      web/firebase.json
+// ===========================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Denegar todo acceso del cliente. El servidor (Admin SDK) no se ve afectado.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

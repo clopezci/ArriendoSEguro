@@ -1,7 +1,7 @@
 # Continuidad del proyecto — ArriendoSeguro
 
 > **Documento vivo para agentes y humanos.** Objetivo: que cualquier sesión nueva retome el trabajo sin perder contexto.  
-> **Última actualización:** 2026-06-02 (banner PWA global, precio Plan Plus admin, cupos testers).
+> **Última actualización:** 2026-06-03 (reglas Firestore/Storage versionadas, rate-limit Upstash en endpoints públicos, páginas Acerca de / Contacto, dominio canónico `arriendoseguro.app`).
 
 ---
 
@@ -55,7 +55,7 @@ Si la sesión fue solo una pregunta sin cambios en repo, **no** hace falta actua
 
 **Orden de módulos (producto):** cuenta → expediente/contrato → inventario → pagos informativos → reputación (tras cierre) → marketplace (futuro). No mezclar fases.
 
-**Producción:** https://arriendoseguro.vercel.app/  
+**Producción:** https://arriendoseguro.app (dominio canónico; el subdominio `arriendoseguro.vercel.app` queda como respaldo)  
 **Repo:** https://github.com/clopezci/ArriendoSEguro (rama habitual: `main`)
 
 ---
@@ -161,27 +161,36 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 - Precio Plan Plus desde admin; checkout alineado al monto de orden.
 - PWA: manifest, SW (estáticos cacheados, HTML/API sin cache-first agresivo), instalación landing + banner sitio.
 - Documentos legales para abogado y plan de mejoras en `web/docs/`.
+- **Seguridad de datos:** reglas versionadas `web/firestore.rules` + `web/storage.rules` + `web/firebase.json` (modelo *deny-all* al cliente; todo el acceso es server-side con Admin SDK; no hay imports de `firebase/firestore` ni `firebase/storage` en cliente). Desplegar con `firebase deploy --only firestore:rules,storage:rules`.
+- **Cabeceras de seguridad + CSP** de producción ya configuradas en `web/next.config.ts` (X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, CSP con orígenes mínimos de Firebase/Turnstile/GA).
+- **Rate-limit** de endpoints públicos (`/api/leads`, `/api/contact`, `/api/signatures/request-otp`) vía `src/lib/security/rate-limit.ts` (Upstash Redis con *fallback* en memoria).
+- **Páginas Acerca de (`/acerca-de`) y Contacto (`/contacto`)** con formulario → email (Resend) + `contact_messages`; enlazadas en footer y sitemap (requisito de transparencia para AdSense).
+- **Historial crediticio:** orientación + enlaces a MiDatacrédito y BDME en el wizard (sin cargar archivos en la app); ver `credit-history-guidance-block.tsx`.
+- **Baja de cuenta:** `/api/cuenta/eliminar` + `/dashboard/cuenta/eliminar` operativos (parte del Bloque 13).
+- **Dominio canónico** `arriendoseguro.app` en metadata/sitemap (`NEXT_PUBLIC_APP_URL`).
 
 ### 🔄 En curso / parcial
 
 | Ítem | Detalle |
 |------|---------|
 | **Bloque 12** codeudor | API `upload-url`; falta UI completa, confirm/download, `storage.rules`, ZIP evidencia |
-| **Bloque 13** privacidad | Falta `AVISO-PRIV-2026.2` completo, endpoint eliminación cuenta |
+| **Bloque 13** privacidad | Endpoint de eliminación de cuenta ya operativo; falta `AVISO-PRIV-2026.2` completo (encargados, transferencia internacional) |
 | **Wompi** | Webhook producción, reconciliación, mensajes bloqueo sin plan |
 | **PWA** | Íconos 192/512 maskable finales, splash iOS, pruebas dispositivo real |
-| **Firestore rules** | Revisar por colección; novedades hoy vía Admin SDK |
+| **Firestore rules** | Baseline *deny-all* versionado y seguro; **falta desplegarlo** (`firebase deploy`) y confirmar en consola |
+| **Upstash** | Variables `UPSTASH_REDIS_REST_*` por configurar en Vercel (sin ellas, rate-limit usa memoria best-effort) |
+| **AdSense** | Faltan: ampliar blog (~15 artículos), CMP de consentimiento de cookies, Search Console, separar ads solo en páginas públicas |
 | **Legal abogado** | Confirmaciones plan §6 → activar redacción final 2026.2 |
 
 ### ⏳ Pendiente prioritario (orden sugerido)
 
-1. Cerrar confirmaciones abogado → versión contractual definitiva 2026.2.
-2. Bloque 12–13 operativos (Storage + privacidad completa **antes** marketing masivo).
-3. Wompi en producción con webhook verificado.
-4. Íconos PWA + QA instalación Android/iOS.
-5. Rate-limit endpoints públicos (`/api/leads`, contacto, Turnstile si aplica).
-6. Resend con dominio verificado (deliverability).
-7. **No iniciar** reputación pública ni marketplace hasta cerrar prio 1–3 de Fase 2.
+1. **Desplegar** las reglas Firestore/Storage versionadas y verificarlas en consola; configurar `UPSTASH_REDIS_REST_*` en Vercel.
+2. Cerrar confirmaciones abogado → versión contractual definitiva 2026.2.
+3. Bloque 12 (Storage codeudor UI/confirm/download) + `AVISO-PRIV-2026.2` completo **antes** del marketing masivo.
+4. Wompi en producción con webhook verificado.
+5. AdSense: ampliar blog, CMP de cookies, Search Console; conectar Resend con dominio verificado (deliverability).
+6. Íconos PWA + QA instalación Android/iOS.
+7. **No iniciar** reputación pública ni marketplace hasta cerrar prio 1–4 de Fase 2.
 
 ### 🔮 Mejoras futuras (backlog, no implementar sin plan)
 
@@ -205,6 +214,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 | [checklist-firebase-vercel-operacion.md](./checklist-firebase-vercel-operacion.md) | Deploy, env vars, Firebase, Vercel §0 |
 | [payments-wompi.md](./payments-wompi.md) | Integración pagos Plus |
 | [email-resend-setup.md](./email-resend-setup.md) | Email transaccional |
+| [guia-camara-comercio-virtual.md](./guia-camara-comercio-virtual.md) | Formalización del emprendimiento (RUT + Cámara de Comercio, virtual) |
 | [legal-abogado/analisis-comparativo.md](./legal-abogado/analisis-comparativo.md) | Comparativa plantilla vs abogado |
 | `contrato-vivienda-urbana-revision-legal.txt` | Texto plano para revisión legal |
 | [web/README.md](../README.md) | Arranque local, tests, Firebase |
@@ -245,6 +255,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 
 | Fecha | Agente / nota | Resumen | Commit(s) |
 |-------|---------------|---------|-----------|
+| 2026-06-03 | Claude Code | Seguridad #1: reglas `firestore.rules`/`storage.rules`/`firebase.json` versionadas (deny-all cliente). Rate-limit Upstash+memoria en `/api/leads`, `/api/contact`, `/api/signatures/request-otp`. Páginas `/acerca-de` y `/contacto` (form→Resend, `contact_messages`) + footer + sitemap. Dominio canónico `arriendoseguro.app`. Guía Cámara de Comercio. Docs sincronizadas (CSP/headers, créditos, baja de cuenta ya estaban hechos). | (este commit) |
 | 2026-06-02 | Cursor | Banner PWA global (`PwaInstallSiteBanner` en layout), hook `usePwaInstall`, oculto en `/`; precio Plus admin y cupos testers en commits previos | `a107b32`, `519513b`, `6533edc`, `9486a0d` |
 | 2026-05-13 | (histórico) | Bloques 7–11 evidencia/firma/activación 2026.2; roadmap actualizado | ver `git log` desde `723dbfb` |
 
@@ -284,6 +295,9 @@ npm test             # reglas rent-law y similares
 - Service worker: **no** cache-first en HTML de navegación (evita landings viejas en producción).
 - Banner instalar PWA en todas las páginas excepto `/` (landing tiene sección dedicada).
 - Precio checkout Plus = monto de la orden en Firestore, no constante hardcodeada.
+- **Acceso a datos solo server-side:** el cliente NO usa `firebase/firestore` ni `firebase/storage`; reglas en *deny-all* y todo pasa por Admin SDK en `route.ts`. Si algún día se lee desde cliente, abrir colección por colección con `request.auth` + pertenencia.
+- **Dominio canónico** = `arriendoseguro.app` (no usar el de vercel en metadata/SEO).
+- **Rate-limit** centralizado en `src/lib/security/rate-limit.ts` (Upstash si hay env; si no, memoria best-effort). Fail-open ante caída de Redis.
 
 ---
 

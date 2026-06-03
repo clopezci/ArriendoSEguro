@@ -4,6 +4,12 @@ import { leadFormSchema } from "@/lib/validations/lead-form";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { surveyThankYouEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
+import {
+  RATE_LIMIT_RULES,
+  checkRateLimit,
+  clientIpFromRequest,
+  tooManyRequestsJson,
+} from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -82,6 +88,12 @@ export async function POST(request: Request) {
 }
 
 async function handlePost(request: Request) {
+  const rate = await checkRateLimit(clientIpFromRequest(request), RATE_LIMIT_RULES.leads);
+  if (!rate.ok) {
+    const { body, headers } = tooManyRequestsJson(rate.retryAfterSeconds);
+    return NextResponse.json(body, { status: 429, headers });
+  }
+
   const len = request.headers.get("content-length");
   if (len != null) {
     const n = Number(len);

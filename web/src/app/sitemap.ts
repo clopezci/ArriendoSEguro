@@ -10,6 +10,8 @@ const STATIC_PATHS = [
   "/ingresar",
   "/crear-cuenta",
   "/entiendelo-facil",
+  "/acerca-de",
+  "/contacto",
   "/legal/terminos",
   "/legal/privacidad",
   "/legal/aviso-privacidad",

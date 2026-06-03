@@ -11,11 +11,26 @@ import {
 import { auditEvent } from "@/features/contracts/audit-server";
 import { signatureOtpEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
+import {
+  RATE_LIMIT_RULES,
+  checkRateLimit,
+  clientIpFromRequest,
+  tooManyRequestsJson,
+} from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    const rate = await checkRateLimit(clientIpFromRequest(request), RATE_LIMIT_RULES.signatureOtp);
+    if (!rate.ok) {
+      const { body, headers } = tooManyRequestsJson(rate.retryAfterSeconds);
+      return NextResponse.json<SignatureOtpResponse>(
+        { success: false, errors: body.errors },
+        { status: 429, headers },
+      );
+    }
+
     const parsed = signatureRequestOtpSchema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) {
       return NextResponse.json<SignatureOtpResponse>(

@@ -6,7 +6,9 @@ export type EmailTemplateCode =
   | "contractSignedEmail"
   | "plusAccessConfirmedEmail"
   | "surveyThankYouEmail"
-  | "expedienteNovedadEmail";
+  | "expedienteNovedadEmail"
+  | "contactMessageEmail"
+  | "contactAckEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
@@ -171,6 +173,58 @@ export function expedienteNovedadEmail(input: {
      ${input.hasAttachment ? "<p><em>Hay un archivo adjunto; ábrelo desde el enlace del expediente.</em></p>" : ""}
      <p><a href="${link}" style="color:#6d28d9;">Abrir novedades del expediente</a></p>
      <p style="font-size:12px;color:#64748b;">ArriendoSeguro organiza comunicaciones entre partes; no sustituye asesoría legal ni mediación.</p>`,
+  );
+  return { subject, html, text };
+}
+
+function escapeHtml(s: string) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Mensaje del formulario de contacto, dirigido al buzón interno
+ * (`CONTACT_INBOX_EMAIL`). Incluye los datos de quien escribe para responderle.
+ */
+export function contactMessageEmail(input: {
+  name: string;
+  fromEmail: string;
+  phone?: string;
+  topic: string;
+  message: string;
+}): CompiledEmailTemplate {
+  const subject = `Contacto web: ${input.topic} — ${input.name}`;
+  const phoneLine = input.phone ? `\nTeléfono: ${input.phone}` : "";
+  const text = `Nuevo mensaje desde el formulario de contacto de ArriendoSeguro.\n\nNombre: ${input.name}\nCorreo: ${input.fromEmail}${phoneLine}\nTema: ${input.topic}\n\nMensaje:\n${input.message}`;
+  const safeMsg =
+    input.message.length > 6000
+      ? `${escapeHtml(input.message.slice(0, 6000))}…`
+      : escapeHtml(input.message).replace(/\n/g, "<br/>");
+  const html = baseHtml(
+    "Nuevo mensaje de contacto",
+    `<p><strong>Nombre:</strong> ${escapeHtml(input.name)}</p>
+     <p><strong>Correo:</strong> ${escapeHtml(input.fromEmail)}</p>
+     ${input.phone ? `<p><strong>Teléfono:</strong> ${escapeHtml(input.phone)}</p>` : ""}
+     <p><strong>Tema:</strong> ${escapeHtml(input.topic)}</p>
+     <p><strong>Mensaje:</strong><br/>${safeMsg}</p>`,
+  );
+  return { subject, html, text };
+}
+
+/** Acuse de recibo para quien envió el formulario de contacto. */
+export function contactAckEmail(input: { name: string }): CompiledEmailTemplate {
+  const base = appBaseUrl();
+  const subject = "Recibimos tu mensaje — ArriendoSeguro";
+  const text = `Hola ${input.name},\n\nRecibimos tu mensaje y te responderemos lo antes posible al correo desde el que escribiste.\n\nMientras tanto, puedes conocer más en ${base}/entiendelo-facil\n\nEquipo ArriendoSeguro`;
+  const html = baseHtml(
+    "Recibimos tu mensaje",
+    `<p>Hola <strong>${escapeHtml(input.name)}</strong>,</p>
+     <p>Recibimos tu mensaje y te responderemos lo antes posible al correo desde el que escribiste.</p>
+     <p>Mientras tanto, puedes <a href="${base}/entiendelo-facil" style="color:#6d28d9;">conocer más sobre ArriendoSeguro</a>.</p>
+     <p>Equipo ArriendoSeguro</p>`,
   );
   return { subject, html, text };
 }

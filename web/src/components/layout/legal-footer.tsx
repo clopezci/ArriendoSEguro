@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 const LEGAL_LINKS = [
+  { href: "/acerca-de", label: "Acerca de" },
+  { href: "/contacto", label: "Contacto" },
   { href: "/blog", label: "Blog" },
   { href: "/legal/terminos", label: "Términos" },
   { href: "/legal/privacidad", label: "Tratamiento de datos" },

@@ -1,0 +1,32 @@
+rules_version = '2';
+
+// ===========================================================================
+// ArriendoSeguro — Reglas de seguridad de Cloud Storage
+// ===========================================================================
+//
+// MODELO DE ACCESO (alineado con firestore.rules):
+//
+//   El navegador NUNCA usa el SDK de Storage en cliente. No existe ningún
+//   import de "firebase/storage" en `web/src/**`. Todos los objetos (soportes
+//   de codeudor, adjuntos de novedades, PDFs de evidencia) se suben y se
+//   descargan mediante URLs firmadas v4 generadas por el Admin SDK en
+//   `app/api/**/route.ts`.
+//
+//   Las URLs firmadas se autentican por su propia firma criptográfica y NO
+//   dependen de estas reglas. Por eso negamos todo acceso directo del cliente:
+//   nadie puede listar, leer ni escribir objetos sin pasar por el servidor,
+//   que valida la pertenencia del usuario al contrato antes de firmar la URL.
+//
+// DESPLIEGUE:  cd web && firebase deploy --only storage:rules
+// Config:      web/firebase.json
+// ===========================================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Denegar todo acceso del cliente. Las URLs firmadas del servidor siguen
+    // funcionando porque no se rigen por estas reglas.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
