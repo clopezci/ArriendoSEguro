@@ -5,10 +5,12 @@ import {
 } from "@/domain/contracts/api-types";
 import { renderResidentialLeaseDispatch } from "@/domain/contracts/renderResidentialLeaseDispatch";
 import { applyDemoWatermark } from "@/domain/contracts/demoWatermark";
-import { applyFreeTierWatermark } from "@/domain/contracts/freeTierWatermark";
+import { applyFreeTierWatermark, type FreeTierCtaOptions } from "@/domain/contracts/freeTierWatermark";
 import { validateContractData } from "@/domain/contracts/validateContractData";
 import { generateDocumentHash } from "@/domain/contracts/hash";
 import { freeTierEnabled } from "@/lib/config";
+import { getAdminFirestore } from "@/lib/firebase/admin";
+import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/plan-plus-pricing";
 
 export const runtime = "nodejs";
 const MAX_JSON_BYTES = 128_000;
@@ -92,10 +94,27 @@ export async function POST(request: Request) {
       );
     }
     const useFreeWatermark = !parsedReq.data.isDemo && freeTierEnabled && Boolean(parsedReq.data.isFreeTier);
+
+    // Para el CTA del tier gratis: valor total del contrato (canon × meses) y
+    // precio de referencia de Plus, para mostrar "menos del 0,X% del valor".
+    let freeOpts: FreeTierCtaOptions = {};
+    if (useFreeWatermark) {
+      const total =
+        (Number(payload.lease?.monthlyRent) || 0) * (Number(payload.lease?.termMonths) || 0);
+      let plusPriceCop = 0;
+      try {
+        const pricing = await getPlanPlusPricingForPublicPages(getAdminFirestore());
+        plusPriceCop = Number(pricing.checkoutCop) || 0;
+      } catch {
+        /* sin precio: el CTA usa el copy genérico */
+      }
+      freeOpts = { totalContractCop: total, plusPriceCop };
+    }
+
     const html = parsedReq.data.isDemo
       ? applyDemoWatermark(rendered.html)
       : useFreeWatermark
-        ? applyFreeTierWatermark(rendered.html)
+        ? applyFreeTierWatermark(rendered.html, freeOpts)
         : rendered.html;
     // Importante: el hash debe calcularse sobre el HTML que se envía al
     // cliente, no sobre el HTML "limpio" pre-watermark. De lo contrario,

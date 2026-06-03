@@ -15,3 +15,21 @@ test("applyFreeTierWatermark conserva el contrato y añade marca + CTA", () => {
   // No invalida el documento (no dice "SIN VALIDEZ" como el demo).
   assert.ok(!out.includes("SIN VALIDEZ"));
 });
+
+test("muestra el % del valor del contrato y el prompt de cuenta cuando hay datos", () => {
+  // Canon 1.000.000 × 12 = 12.000.000; Plus 49.900 → 0,42%.
+  const out = applyFreeTierWatermark("<p>contrato</p>", {
+    totalContractCop: 12_000_000,
+    plusPriceCop: 49_900,
+    promptAccount: true,
+  });
+  assert.ok(out.includes("menos del 0,42%"));
+  assert.ok(out.includes("$12.000.000"));
+  assert.ok(out.includes("crea tu cuenta"));
+});
+
+test("sin datos financieros usa copy genérico y omite el prompt de cuenta", () => {
+  const out = applyFreeTierWatermark("<p>contrato</p>");
+  assert.ok(out.includes("una pequeña fracción"));
+  assert.ok(!out.includes("crea tu cuenta"));
+});

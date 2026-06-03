@@ -2,16 +2,52 @@
  * Marca de agua y CTA para el contrato generado en el **tier gratuito**.
  *
  * A diferencia del modo demo (que invalida el documento), aquí el contrato SÍ
- * es utilizable: solo lleva una marca discreta `arriendoseguro.app` y un llamado
- * a la acción en encabezado y pie que crea la necesidad de pasar a Plus (firma
- * con validez, inventario, soportes y evidencia). El objetivo es que la persona
- * entienda que el papel solo no basta y convierta.
+ * es utilizable: lleva una marca discreta `arriendoseguro.app` y un llamado a la
+ * acción en **encabezado y pie** (para que se imprima con el documento) que crea
+ * la necesidad de continuar en Plus: el costo es una fracción mínima del valor
+ * total del arriendo (canon × meses), y se invita a guardar el contrato con
+ * correo/cuenta para retomarlo.
  */
 
 export const FREE_TIER_WATERMARK_TEXT = "arriendoseguro.app";
 
-/** Encabezado breve (cada impresión recuerda el origen y el siguiente paso). */
-export const FREE_TIER_HEADER_HTML = `
+export type FreeTierCtaOptions = {
+  /** Valor total del contrato = canon mensual × meses (COP). */
+  totalContractCop?: number;
+  /** Precio de referencia de Plus (COP) para calcular el porcentaje. */
+  plusPriceCop?: number;
+  /** Mostrar invitación a dejar correo / crear cuenta (flujo sin sesión). */
+  promptAccount?: boolean;
+};
+
+function formatCop(n: number): string {
+  return `$${Math.round(n).toLocaleString("es-CO")}`;
+}
+
+/** Frase del porcentaje del precio Plus sobre el valor total del contrato. */
+function fractionLine(opts: FreeTierCtaOptions): string {
+  const total = opts.totalContractCop ?? 0;
+  const plus = opts.plusPriceCop ?? 0;
+  if (total <= 0 || plus <= 0) {
+    return "Protégelo por una pequeña fracción de lo que cuesta un mal arriendo.";
+  }
+  const pctNum = (plus / total) * 100;
+  const pct = pctNum >= 0.01 ? pctNum.toFixed(2).replace(".", ",") : "0,01";
+  return `Tu contrato suma <strong>${formatCop(total)}</strong> en todo su plazo. Protegerlo con ArriendoSeguro cuesta <strong>menos del ${pct}%</strong> de ese valor.`;
+}
+
+function accountLine(opts: FreeTierCtaOptions): string {
+  if (!opts.promptAccount) return "";
+  return `<p style="margin:8px 0 0;">Deja tu correo o crea tu cuenta gratis para <strong>guardar este contrato</strong>, retomarlo cuando quieras y pasar a Plus si lo necesitas.</p>`;
+}
+
+/** Encabezado breve que también se imprime (recuerda origen y siguiente paso). */
+function headerHtml(opts: FreeTierCtaOptions): string {
+  const extra =
+    opts.totalContractCop && opts.plusPriceCop
+      ? " · respáldalo por una mínima fracción del valor de tu arriendo"
+      : "";
+  return `
 <div style="
   border-bottom:1px solid #ddd6fe;
   color:#6d28d9;
@@ -22,14 +58,13 @@ export const FREE_TIER_HEADER_HTML = `
   text-align:center;
 ">
   Generado con <strong>arriendoseguro.app</strong> · versión gratuita ·
-  firma con validez, inventario y soportes disponibles en Plus
+  un papel sin firma trazable, inventario ni soportes no te protege ante un conflicto${extra}
 </div>`;
+}
 
-/**
- * Pie con CTA enganchador. Pensado para "crear la necesidad": el contrato es el
- * principio, pero sin evidencia tu palabra vale lo mismo que la de la otra parte.
- */
-export const FREE_TIER_FOOTER_CTA_HTML = `
+/** Pie con CTA enganchador (se imprime con el documento). */
+function footerHtml(opts: FreeTierCtaOptions): string {
+  return `
 <div style="
   margin-top:28px;
   border:2px dashed #7c3aed;
@@ -48,22 +83,24 @@ export const FREE_TIER_FOOTER_CTA_HTML = `
     firma trazable, sin inventario con fotos y sin soportes de pago, tu palabra
     vale lo mismo que la de la otra parte. Un papel firmado, solo, no te protege.
   </p>
-  <p style="margin:0 0 8px;">
+  <p style="margin:0 0 6px;">
     Con <strong>ArriendoSeguro</strong> firmas con validez y evidencia (Ley 527 de
     1999), levantas el inventario del inmueble, registras cada pago y guardas todos
-    los soportes: justo lo que marca la diferencia si las cosas se complican —y por
-    una pequeña fracción de lo que cuesta un mal arriendo.
+    los soportes: justo lo que marca la diferencia si las cosas se complican.
   </p>
-  <p style="margin:0;font-weight:700;color:#5b21b6;">
+  <p style="margin:0 0 6px;">${fractionLine(opts)}</p>
+  ${accountLine(opts)}
+  <p style="margin:8px 0 0;font-weight:700;color:#5b21b6;">
     Protégete antes de entregar las llaves → <span style="text-decoration:underline;">arriendoseguro.app</span>
   </p>
 </div>`;
+}
 
 /**
  * Envuelve el HTML del contrato con la marca discreta y el CTA (encabezado y
  * pie). El documento sigue siendo legible y usable.
  */
-export function applyFreeTierWatermark(html: string): string {
+export function applyFreeTierWatermark(html: string, opts: FreeTierCtaOptions = {}): string {
   return `
 <div style="position:relative;">
   <div style="
@@ -83,8 +120,8 @@ export function applyFreeTierWatermark(html: string): string {
   ">
     ${FREE_TIER_WATERMARK_TEXT}
   </div>
-  ${FREE_TIER_HEADER_HTML}
+  ${headerHtml(opts)}
   ${html}
-  ${FREE_TIER_FOOTER_CTA_HTML}
+  ${footerHtml(opts)}
 </div>`;
 }
