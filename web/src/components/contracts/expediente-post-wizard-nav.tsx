@@ -5,6 +5,15 @@ import { usePathname } from "next/navigation";
 
 const links = [
   {
+    href: (id: string) => `/dashboard/contracts/${id}/adicionales`,
+    label: "Adicionales del contrato",
+    match: (path: string) =>
+      path.includes("/adicionales") ||
+      path.includes("/special-clauses") ||
+      path.includes("/documentos-propiedad") ||
+      path.includes("/pagos-recordatorios"),
+  },
+  {
     href: (id: string) => `/dashboard/contracts/${id}/evidencias`,
     label: "Evidencias del expediente",
     match: (path: string) =>

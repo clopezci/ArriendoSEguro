@@ -241,6 +241,20 @@ export default function ReviewStepPage() {
         </p>
       </div>
 
+      <div className="mt-6 rounded-xl border border-violet-300 bg-violet-50/40 p-4">
+        <p className="text-sm font-semibold text-violet-900">¿Quieres configurar adicionales? (opcional)</p>
+        <p className="mt-1 text-xs text-slate-600">
+          Codeudores, garantía de servicios, cláusulas especiales, método de pago y recordatorios, notaría y documentos
+          de propiedad. Todo a tu elección.
+        </p>
+        <Link
+          href={`/dashboard/contracts/${id}/adicionales`}
+          className="mt-2 inline-flex rounded-lg border border-violet-500 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-100"
+        >
+          Abrir Centro de adicionales →
+        </Link>
+      </div>
+
       <div className="mt-6 flex flex-wrap gap-3">
         <Link
           href={`/dashboard/contracts/${id}/landlord`}
