@@ -322,21 +322,11 @@ export default function PropertyStepPage() {
             oathId="property_ownership_oath"
             contractDraftId={id}
           />
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              disabled
-              title="Próximamente: la carga de soportes requiere Firebase Storage (Bloque 12)."
-              aria-disabled="true"
-              className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <span aria-hidden="true">📎</span>
-              Cargar documento de propiedad o poder
-            </button>
-            <span className="text-[11px] text-amber-700">
-              Próximamente — escritura, certificado de libertad o poder.
-            </span>
-          </div>
+          <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+            <span aria-hidden="true">📎</span> Podrás <strong>cargar la escritura, el certificado de libertad o el
+            poder autenticado</strong> en la sección «Documentos de propiedad / poder» (Evidencias del expediente),
+            después de guardar la versión del contrato.
+          </p>
         </div>
 
         {errors.length > 0 && (

@@ -96,6 +96,13 @@ export type AuditEventName =
   /** Garantía para servicios públicos (Art. 15 Ley 820): aceptada o desactivada. */
   | "utility_guarantee_accepted"
   | "utility_guarantee_disabled"
+  /**
+   * El usuario indicó al iniciar si arrienda como dueño (propietario) o como
+   * apoderado. Si es apoderado, debe subir el poder autenticado al final y
+   * acepta una declaración bajo juramento específica.
+   */
+  | "acting_as_selected"
+  | "proxy_declaration_accepted"
   /** Recorrido /demo (localStorage); no implica expediente real. */
   | "demo_viewed"
   | "demo_step_opened"
@@ -128,6 +135,16 @@ export interface ContractDraft {
    * El valor por defecto al crear nuevos drafts es `"VIVIENDA_URBANA"`.
    */
   contractType?: ContractType;
+  /**
+   * Calidad en que el arrendador celebra el contrato: dueño (propietario) o
+   * apoderado (con poder vigente para arrendar a nombre del propietario).
+   * Si es `proxy`, el flujo le exige subir el poder autenticado en evidencias y
+   * registra una declaración bajo juramento específica. Opcional para
+   * compatibilidad con borradores previos (se asume `owner`).
+   */
+  actingAs?: "owner" | "proxy";
+  /** Marca de tiempo (ISO) de aceptación de la declaración del apoderado. */
+  proxyDeclarationAcceptedAt?: string;
   generatedAt: string;
   status: ContractFlowStatus;
   landlord: PartyDraft;
@@ -543,6 +560,30 @@ export function setContractType(
       { type },
     ),
   );
+}
+
+/**
+ * Registra si el arrendador actúa como dueño o apoderado. Si es apoderado y
+ * acepta la declaración, guarda la marca de tiempo (evidencia) y deja constancia
+ * de que deberá subir el poder autenticado en evidencias.
+ */
+export function setActingAs(
+  draftId: string,
+  actingAs: "owner" | "proxy",
+  proxyAccepted = false,
+): ContractDraft | null {
+  return updateDraft(draftId, (draft) => {
+    const next: ContractDraft = {
+      ...draft,
+      actingAs,
+      proxyDeclarationAcceptedAt:
+        actingAs === "proxy" && proxyAccepted ? new Date().toISOString() : undefined,
+    };
+    const audited = appendAudit(next, "acting_as_selected", { actingAs });
+    return actingAs === "proxy" && proxyAccepted
+      ? appendAudit(audited, "proxy_declaration_accepted")
+      : audited;
+  });
 }
 
 /**

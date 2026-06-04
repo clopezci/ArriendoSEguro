@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import type { ContractType } from "@/domain/contracts/types";
-import { setContractType } from "@/features/contracts/wizard-state";
+import { setActingAs, setContractType } from "@/features/contracts/wizard-state";
 
 interface ContractTypeOption {
   id: ContractType;
@@ -79,12 +79,20 @@ export default function ContractTypeStepPage() {
     label: string;
     reason: string;
   } | null>(null);
+  const [acting, setActing] = useState<"owner" | "proxy">("owner");
+  const [proxyAccepted, setProxyAccepted] = useState(false);
+  const [actingError, setActingError] = useState("");
 
   useEffect(() => {
     if (draft?.contractType) {
       setSelectedType(draft.contractType);
     }
   }, [draft?.contractType]);
+
+  useEffect(() => {
+    if (draft?.actingAs) setActing(draft.actingAs);
+    if (draft?.proxyDeclarationAcceptedAt) setProxyAccepted(true);
+  }, [draft?.actingAs, draft?.proxyDeclarationAcceptedAt]);
 
   if (state !== "ready" || !draft) {
     return <p className="text-sm text-slate-700">Cargando…</p>;
@@ -108,7 +116,13 @@ export default function ContractTypeStepPage() {
   }
 
   function handleContinue() {
+    if (acting === "proxy" && !proxyAccepted) {
+      setActingError("Para continuar como apoderado debes aceptar la declaración bajo juramento.");
+      return;
+    }
+    setActingError("");
     setContractType(id, "VIVIENDA_URBANA");
+    setActingAs(id, acting, proxyAccepted);
     router.push(`/dashboard/contracts/${id}/landlord`);
   }
 
@@ -200,6 +214,56 @@ export default function ContractTypeStepPage() {
           </button>
         </div>
       )}
+
+      <div className="mt-6 rounded-xl border border-violet-300 bg-violet-50/40 p-4">
+        <h2 className="text-sm font-semibold text-violet-900">¿En qué calidad arriendas?</h2>
+        <p className="mt-1 text-xs text-slate-600">
+          Es válido arrendar a nombre de otra persona. Si eres apoderado, al final deberás subir el poder autenticado.
+        </p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Calidad en que arriendas">
+          {([
+            { v: "owner", label: "Soy el dueño (propietario)", desc: "Eres el propietario del inmueble." },
+            { v: "proxy", label: "Soy apoderado", desc: "Arriendas a nombre del propietario con poder vigente." },
+          ] as const).map((o) => (
+            <button
+              key={o.v}
+              type="button"
+              role="radio"
+              aria-checked={acting === o.v}
+              onClick={() => {
+                setActing(o.v);
+                setActingError("");
+              }}
+              className={`flex flex-col gap-1 rounded-lg border p-3 text-left text-sm transition ${
+                acting === o.v
+                  ? "border-violet-500 bg-violet-100/60 text-violet-800"
+                  : "border-slate-300 bg-white/95 text-slate-800 hover:border-violet-500"
+              }`}
+            >
+              <span className="font-semibold">{o.label}</span>
+              <span className="text-xs text-slate-600">{o.desc}</span>
+            </button>
+          ))}
+        </div>
+
+        {acting === "proxy" && (
+          <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-amber-300 bg-amber-100/60 p-3 text-xs leading-relaxed text-amber-900">
+            <input
+              type="checkbox"
+              checked={proxyAccepted}
+              onChange={(e) => setProxyAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-amber-500"
+            />
+            <span>
+              Bajo la gravedad de juramento declaro que cuento con <strong>poder vigente y suficiente</strong> para
+              arrendar este inmueble a nombre de su propietario, que la información es veraz, y me comprometo a{" "}
+              <strong>subir el poder autenticado</strong> en la sección de evidencias del expediente. Asumo la
+              responsabilidad legal y económica por esta declaración.
+            </span>
+          </label>
+        )}
+        {actingError && <p className="mt-2 text-xs text-rose-700">{actingError}</p>}
+      </div>
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Link

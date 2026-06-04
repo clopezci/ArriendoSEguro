@@ -12,6 +12,11 @@ const HUB_ITEMS = [
     description: "Carta laboral, colillas, extractos y otros PDF o imágenes de respaldo económico.",
   },
   {
+    href: (id: string) => `/dashboard/contracts/${id}/documentos-propiedad`,
+    title: "Documentos de propiedad / poder",
+    description: "Escritura, certificado de libertad y tradición o el poder autenticado si actúas como apoderado.",
+  },
+  {
     href: (id: string) => `/dashboard/contracts/${id}/evidencia`,
     title: "Paquete de evidencia (ZIP)",
     description: "Descarga unificada de contrato, firmas, inventario, pagos y soportes cuando estén disponibles.",

@@ -217,6 +217,16 @@ export default function ReviewStepPage() {
         />
       </div>
 
+      {draft.actingAs === "proxy" && (
+        <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          Estás arrendando como <strong>apoderado</strong>. Recuerda subir el <strong>poder autenticado</strong> en{" "}
+          <Link href={`/dashboard/contracts/${id}/documentos-propiedad`} className="underline">
+            Documentos de propiedad / poder
+          </Link>{" "}
+          (evidencias del expediente).
+        </div>
+      )}
+
       <div className="mt-4">
         <LegalComplianceSeal checks={complianceChecks} />
         <p className="mt-2 text-xs text-slate-500">

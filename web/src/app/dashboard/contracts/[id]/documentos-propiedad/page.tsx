@@ -1,0 +1,54 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
+import { PropertyDocumentsPanel } from "@/components/contracts/property-documents-panel";
+import { getDraft } from "@/features/contracts/wizard-state";
+
+export default function DocumentosPropiedadPage() {
+  const id = String(useParams<{ id: string }>().id);
+  const [contractVersionId, setContractVersionId] = useState("");
+  const [isProxy, setIsProxy] = useState(false);
+
+  useEffect(() => {
+    setIsProxy(getDraft(id)?.actingAs === "proxy");
+    void (async () => {
+      try {
+        const res = await fetch(`/api/contracts/latest-version?contractId=${encodeURIComponent(id)}`);
+        const data = await res.json();
+        setContractVersionId(String(data?.version?.id ?? data?.contract?.currentVersionId ?? ""));
+      } catch {
+        /* sin versión aún */
+      }
+    })();
+  }, [id]);
+
+  return (
+    <main className="mx-auto max-w-3xl space-y-6 p-6 text-slate-900">
+      <header className="space-y-2">
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Evidencias</p>
+        <h1 className="text-2xl font-bold">Documentos de propiedad / poder</h1>
+        <p className="text-sm text-slate-600">
+          Adjunta la escritura, el certificado de libertad y tradición o, si actúas como apoderado, el{" "}
+          <strong>poder autenticado</strong>. Solo el arrendador puede subir; las partes pueden ver.
+        </p>
+        <Link href={`/dashboard/contracts/${id}/evidencias`} className="text-sm text-violet-700 underline">
+          ← Evidencias del expediente
+        </Link>
+      </header>
+
+      <ExpedientePostWizardNav contractId={id} />
+
+      {isProxy && (
+        <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          Indicaste que actúas como <strong>apoderado</strong>: recuerda subir aquí el <strong>poder autenticado</strong>{" "}
+          que te faculta para arrendar a nombre del propietario.
+        </p>
+      )}
+
+      <PropertyDocumentsPanel contractId={id} contractVersionId={contractVersionId} highlightPoder={isProxy} />
+    </main>
+  );
+}
