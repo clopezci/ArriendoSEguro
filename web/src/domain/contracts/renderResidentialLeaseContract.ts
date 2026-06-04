@@ -114,6 +114,34 @@ function buildExpedienteNotesBlock(notes: string | undefined): string {
   </section>`;
 }
 
+/**
+ * Cláusula condicional de garantía para servicios públicos (Art. 15 Ley 820 de
+ * 2003). Solo aparece si las partes la habilitaron y pactaron un valor. Deja
+ * claro que es la excepción permitida (exclusiva para servicios), distinta del
+ * depósito general prohibido por el art. 16.
+ */
+export function buildUtilityGuaranteeBlock(input: ResidentialLeaseContractInput): string {
+  const g = input.utilityServicesGuarantee;
+  if (!g || !g.enabled || !(Number(g.agreedAmountCop) > 0)) return "";
+  const agreed = `$${Math.round(Number(g.agreedAmountCop)).toLocaleString("es-CO")}`;
+  const max = `$${Math.round(Number(g.maxAllowedCop)).toLocaleString("es-CO")}`;
+  return `
+  <section>
+    <h2>GARANTÍA PARA SERVICIOS PÚBLICOS (ARTÍCULO 15, LEY 820 DE 2003)</h2>
+    <p>
+      Las partes pactan, de manera exclusiva para garantizar el pago de los servicios públicos domiciliarios del
+      inmueble, una garantía a cargo de EL ARRENDATARIO por valor de ${agreed}, suma que no excede el valor de los
+      dos (2) últimos períodos de facturación de dichos servicios (máximo legal: ${max}).
+    </p>
+    <p>
+      Esta garantía se establece por excepción, al amparo del artículo 15 de la Ley 820 de 2003; se destina únicamente
+      a cubrir obligaciones derivadas de los servicios públicos del inmueble y no constituye depósito en dinero ni
+      caución real prohibida por el artículo 16 de la misma ley. Verificado el pago de dichos servicios a la
+      terminación del contrato, la garantía se devolverá o aplicará conforme a la ley.
+    </p>
+  </section>`;
+}
+
 function withConditionalBlocks(
   template: string,
   input: ResidentialLeaseContractInput,
@@ -131,6 +159,10 @@ function withConditionalBlocks(
     .replaceAll(
       "[OBSERVACIONES_COMPLEMENTARIAS_CONDICIONAL]",
       buildExpedienteNotesBlock(input.expedienteNotes),
+    )
+    .replaceAll(
+      "[GARANTIA_SERVICIOS_PUBLICOS_CONDICIONAL]",
+      buildUtilityGuaranteeBlock(input),
     );
 }
 

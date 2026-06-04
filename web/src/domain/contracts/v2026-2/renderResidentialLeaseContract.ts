@@ -17,6 +17,7 @@ import {
   shouldRenderNotarization,
   shouldRenderSpecialClauses,
 } from "./contractVariables";
+import { buildUtilityGuaranteeBlock } from "../renderResidentialLeaseContract";
 
 /**
  * Aplica los bloques condicionales propios de la versión 2026.2.
@@ -56,6 +57,10 @@ function withConditionalBlocksV2026_2(
     .replaceAll(
       "[CLAUSULA_NOTARIZACION_CONDICIONAL]",
       hasNotarization ? CLAUSULA_NOTARIZACION_V2026_2 : "",
+    )
+    .replaceAll(
+      "[GARANTIA_SERVICIOS_PUBLICOS_CONDICIONAL]",
+      buildUtilityGuaranteeBlock(input),
     );
 }
 

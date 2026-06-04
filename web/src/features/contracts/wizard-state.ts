@@ -708,6 +708,12 @@ export function toContractInput(draft: ContractDraft): ResidentialLeaseContractI
     // sobre el contenido).
     expedienteNotes: draft.expedienteNotes,
     creditCheck: deriveCreditCheckFromDraft(draft),
+    // Garantía de servicios públicos (Art. 15): solo se lleva al contrato si
+    // está habilitada y aceptada (con constancia de IP en el servidor).
+    utilityServicesGuarantee:
+      draft.utilityServicesGuarantee?.enabled && draft.utilityServicesGuarantee.acceptedAt
+        ? draft.utilityServicesGuarantee
+        : undefined,
     generatedAt: draft.generatedAt,
   };
 }

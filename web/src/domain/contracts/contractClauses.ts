@@ -87,6 +87,7 @@ export const CONTRACT_TEMPLATE = `
     Las partes dejan constancia de que no se exige depósito en dinero efectivo ni caución real prohibida para
     garantizar obligaciones del contrato de vivienda urbana.
   </p>
+  [GARANTIA_SERVICIOS_PUBLICOS_CONDICIONAL]
 
   <h2>OCTAVA. ENTREGA DEL INMUEBLE E INVENTARIO</h2>
   <p>

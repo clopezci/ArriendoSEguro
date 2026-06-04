@@ -175,6 +175,20 @@ export interface ResidentialLeaseContractInput {
   notarization?: NotarizationSelection;
   creditCheck?: CreditCheckSelection;
   /**
+   * Garantía para servicios públicos (Art. 15, Ley 820 de 2003). Única garantía
+   * permitida en vivienda urbana, exclusiva para servicios públicos; su valor no
+   * puede exceder la suma de los dos últimos períodos de facturación. Si está
+   * habilitada, se imprime como cláusula en el contrato.
+   */
+  utilityServicesGuarantee?: {
+    enabled: boolean;
+    lastPeriod1Cop: number;
+    lastPeriod2Cop: number;
+    maxAllowedCop: number;
+    agreedAmountCop: number;
+    acceptedAt?: string;
+  };
+  /**
    * Anotaciones especiales del expediente (texto libre acordado por las
    * partes). Se imprimen al final del contrato como sección
    * "Observaciones y acuerdos complementarios" con disclaimer legal

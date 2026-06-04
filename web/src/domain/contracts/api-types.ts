@@ -85,6 +85,16 @@ const payloadSchema = z.object({
   notarization: notarizationSchema.optional(),
   creditCheck: creditCheckSchema.optional(),
   expedienteNotes: z.string().optional(),
+  utilityServicesGuarantee: z
+    .object({
+      enabled: z.boolean(),
+      lastPeriod1Cop: z.number(),
+      lastPeriod2Cop: z.number(),
+      maxAllowedCop: z.number(),
+      agreedAmountCop: z.number(),
+      acceptedAt: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const contractPreviewRequestSchema = z.object({
