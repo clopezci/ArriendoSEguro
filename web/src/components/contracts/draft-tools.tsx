@@ -6,6 +6,7 @@ import {
   getDraft,
   type ContractDraft,
 } from "@/features/contracts/wizard-state";
+import { pullServerDraftsIntoLocal } from "@/features/contracts/draft-server-sync";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -59,7 +60,14 @@ export function useDraftGuard(id: string) {
         // permisos en el backend.
       }
       if (cancelled) return;
-      const found = getDraft(id);
+      let found = getDraft(id);
+      // Deep-link desde otro dispositivo: si no está en localStorage, intenta
+      // traerlo del servidor antes de bloquear.
+      if (!found) {
+        const pulled = await pullServerDraftsIntoLocal();
+        if (cancelled) return;
+        if (pulled !== null) found = getDraft(id);
+      }
       if (!found || found.userId !== user.uid) {
         setState("blocked");
         return;

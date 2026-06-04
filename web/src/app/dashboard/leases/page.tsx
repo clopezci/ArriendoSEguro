@@ -18,6 +18,7 @@ import {
   getAllDrafts,
   logGlobalAudit,
 } from "@/features/contracts/wizard-state";
+import { pullServerDraftsIntoLocal } from "@/features/contracts/draft-server-sync";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -113,6 +114,20 @@ export default function MisArriendosPage() {
   useEffect(() => {
     void loadEntitlements();
   }, [loadEntitlements]);
+
+  // Trae los borradores guardados en el servidor (otros dispositivos) y los
+  // combina con los locales por recencia; luego refresca la lista. Aditivo:
+  // si no hay sesión o red, no afecta lo que ya está en localStorage.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void pullServerDraftsIntoLocal().then((n) => {
+      if (!cancelled && n !== null) setRefreshSeed((v) => v + 1);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const drafts = useMemo(
     () => {

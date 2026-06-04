@@ -455,12 +455,26 @@ export function appendAudit(
   };
 }
 
+/**
+ * Sincroniza el borrador al servidor sin bloquear la UI ni crear ciclos de
+ * importación: el módulo de sync se carga de forma diferida y solo en el
+ * navegador. Cualquier fallo (sin sesión, sin red) se ignora; el borrador
+ * sigue salvo en localStorage.
+ */
+function scheduleServerSync(draft: ContractDraft): void {
+  if (typeof window === "undefined" || draft.isDemo) return;
+  void import("@/features/contracts/draft-server-sync")
+    .then((m) => m.syncDraftToServer(draft))
+    .catch(() => {});
+}
+
 export function saveDraft(draft: ContractDraft): ContractDraft {
   const drafts = getAllDrafts();
   const i = drafts.findIndex((d) => d.id === draft.id);
   if (i >= 0) drafts[i] = draft;
   else drafts.unshift(draft);
   saveAllDrafts(drafts);
+  scheduleServerSync(draft);
   return draft;
 }
 
