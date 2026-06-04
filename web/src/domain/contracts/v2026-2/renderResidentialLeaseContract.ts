@@ -18,6 +18,7 @@ import {
   shouldRenderSpecialClauses,
 } from "./contractVariables";
 import { buildUtilityGuaranteeBlock } from "../renderResidentialLeaseContract";
+import { codebtorCount, repeatCodebtorBlock } from "../codebtorBlocks";
 
 /**
  * Aplica los bloques condicionales propios de la versión 2026.2.
@@ -29,26 +30,26 @@ function withConditionalBlocksV2026_2(
   template: string,
   input: ResidentialLeaseContractInput,
 ): string {
-  const hasCodebtor = input.hasSolidaryCoDebtor;
+  const n = codebtorCount(input);
   const hasSpecial = shouldRenderSpecialClauses(input);
   const hasNotarization = shouldRenderNotarization(input);
 
   return template
     .replaceAll(
       "[COMPARECENCIA_CODEUDOR_CONDICIONAL]",
-      hasCodebtor ? COMPARECENCIA_CODEUDOR_V2026_2 : "",
+      repeatCodebtorBlock(COMPARECENCIA_CODEUDOR_V2026_2, n),
     )
     .replaceAll(
       "[CLAUSULA_CODEUDOR_CONDICIONAL]",
-      hasCodebtor ? CLAUSULA_CODEUDOR_V2026_2 : "",
+      repeatCodebtorBlock(CLAUSULA_CODEUDOR_V2026_2, n),
     )
     .replaceAll(
       "[NOTIFICACION_CODEUDOR_CONDICIONAL]",
-      hasCodebtor ? NOTIFICACION_CODEUDOR_V2026_2 : "",
+      repeatCodebtorBlock(NOTIFICACION_CODEUDOR_V2026_2, n),
     )
     .replaceAll(
       "[FIRMA_CODEUDOR_CONDICIONAL]",
-      hasCodebtor ? FIRMA_CODEUDOR_V2026_2 : "",
+      repeatCodebtorBlock(FIRMA_CODEUDOR_V2026_2, n),
     )
     .replaceAll(
       "[CLAUSULA_ESPECIALES_CONDICIONAL]",

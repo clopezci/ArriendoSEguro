@@ -153,7 +153,17 @@ export interface ContractControl {
 export interface ResidentialLeaseContractInput {
   landlord: PersonParty;
   tenant: PersonParty;
+  /**
+   * Primer codeudor solidario (compatibilidad). Cuando hay varios, el primero
+   * se refleja aquí y la lista completa en `solidaryCoDebtors`.
+   */
   solidaryCoDebtor?: PersonParty;
+  /**
+   * Lista completa de codeudores solidarios (1 o más). Aditivo: si está
+   * presente, manda sobre `solidaryCoDebtor`. Mantener `solidaryCoDebtor` y
+   * `hasSolidaryCoDebtor` asegura compatibilidad con contratos/firmas previos.
+   */
+  solidaryCoDebtors?: PersonParty[];
   property: PropertyData;
   lease: LeaseTerms;
   utilities: UtilitiesData;

@@ -7,6 +7,7 @@ import {
   wrapContractHtml,
 } from "./contractClauses";
 import { buildContractVariables, injectVariables } from "./contractVariables";
+import { codebtorCount, repeatCodebtorBlock } from "./codebtorBlocks";
 import { getContractVersionDescription, withDocumentHash } from "./contractVersioning";
 import {
   getSelectedClauseBodies,
@@ -146,12 +147,12 @@ function withConditionalBlocks(
   template: string,
   input: ResidentialLeaseContractInput,
 ): string {
-  const hasCodebtor = input.hasSolidaryCoDebtor;
+  const n = codebtorCount(input);
   return template
-    .replaceAll("[COMPARECENCIA_CODEUDOR_CONDICIONAL]", hasCodebtor ? COMPARECENCIA_CODEUDOR : "")
-    .replaceAll("[CLAUSULA_CODEUDOR_CONDICIONAL]", hasCodebtor ? CLAUSULA_CODEUDOR : "")
-    .replaceAll("[NOTIFICACION_CODEUDOR_CONDICIONAL]", hasCodebtor ? NOTIFICACION_CODEUDOR : "")
-    .replaceAll("[FIRMA_CODEUDOR_CONDICIONAL]", hasCodebtor ? FIRMA_CODEUDOR : "")
+    .replaceAll("[COMPARECENCIA_CODEUDOR_CONDICIONAL]", repeatCodebtorBlock(COMPARECENCIA_CODEUDOR, n))
+    .replaceAll("[CLAUSULA_CODEUDOR_CONDICIONAL]", repeatCodebtorBlock(CLAUSULA_CODEUDOR, n))
+    .replaceAll("[NOTIFICACION_CODEUDOR_CONDICIONAL]", repeatCodebtorBlock(NOTIFICACION_CODEUDOR, n))
+    .replaceAll("[FIRMA_CODEUDOR_CONDICIONAL]", repeatCodebtorBlock(FIRMA_CODEUDOR, n))
     .replaceAll(
       "[CLAUSULA_ACUERDOS_ESPECIALES_CONDICIONAL]",
       buildSpecialClausesBlock(input.specialClauses),

@@ -42,6 +42,9 @@ const payloadSchema = z.object({
   landlord: personSchema,
   tenant: personSchema,
   solidaryCoDebtor: personSchema.optional(),
+  // Lista completa de codeudores (1 o más). Aditivo y opcional para no romper
+  // payloads previos de un solo codeudor.
+  solidaryCoDebtors: z.array(personSchema).optional(),
   property: z.object({
     address: z.string(),
     city: z.string(),

@@ -1,4 +1,5 @@
 import type { ResidentialLeaseContractInput } from "./types";
+import { codebtorSuffix, resolveCodebtors } from "./codebtorBlocks";
 
 export type ContractVariableMap = Record<string, string>;
 
@@ -86,19 +87,22 @@ export function buildContractVariables(input: ResidentialLeaseContractInput): Co
     FECHA_FIRMA_CODEUDOR: "",
   };
 
-  if (input.hasSolidaryCoDebtor && input.solidaryCoDebtor) {
-    base.NOMBRE_CODEUDOR = escapeHtml(input.solidaryCoDebtor.fullName);
-    base.TIPO_DOCUMENTO_CODEUDOR = escapeHtml(input.solidaryCoDebtor.documentType);
-    base.NUMERO_DOCUMENTO_CODEUDOR = escapeHtml(input.solidaryCoDebtor.documentNumber);
-    base.CIUDAD_CODEUDOR = escapeHtml(input.solidaryCoDebtor.city);
-    base.EMAIL_CODEUDOR = escapeHtml(input.solidaryCoDebtor.email);
-    base.TELEFONO_CODEUDOR = escapeHtml(input.solidaryCoDebtor.phone);
-    base.DIRECCION_NOTIFICACION_CODEUDOR = escapeHtml(input.solidaryCoDebtor.notificationAddress);
-    base.DOCUMENTO_CODEUDOR =
-      `${escapeHtml(input.solidaryCoDebtor.documentType)} ${escapeHtml(input.solidaryCoDebtor.documentNumber)}`;
-    base.FIRMA_CODEUDOR = "Pendiente de evento de firma";
-    base.FECHA_FIRMA_CODEUDOR = "Pendiente";
-  }
+  // Uno o varios codeudores: el primero usa claves sin sufijo (compatibilidad),
+  // los siguientes `_2`, `_3`, … Aditivo: si no hay codeudores, las claves base
+  // quedan vacías como antes.
+  resolveCodebtors(input).forEach((c, i) => {
+    const s = codebtorSuffix(i);
+    base[`NOMBRE_CODEUDOR${s}`] = escapeHtml(c.fullName);
+    base[`TIPO_DOCUMENTO_CODEUDOR${s}`] = escapeHtml(c.documentType);
+    base[`NUMERO_DOCUMENTO_CODEUDOR${s}`] = escapeHtml(c.documentNumber);
+    base[`CIUDAD_CODEUDOR${s}`] = escapeHtml(c.city);
+    base[`EMAIL_CODEUDOR${s}`] = escapeHtml(c.email);
+    base[`TELEFONO_CODEUDOR${s}`] = escapeHtml(c.phone);
+    base[`DIRECCION_NOTIFICACION_CODEUDOR${s}`] = escapeHtml(c.notificationAddress);
+    base[`DOCUMENTO_CODEUDOR${s}`] = `${escapeHtml(c.documentType)} ${escapeHtml(c.documentNumber)}`;
+    base[`FIRMA_CODEUDOR${s}`] = "Pendiente de evento de firma";
+    base[`FECHA_FIRMA_CODEUDOR${s}`] = "Pendiente";
+  });
 
   return base;
 }

@@ -150,6 +150,14 @@ export interface ContractDraft {
   landlord: PartyDraft;
   tenant: PartyDraft;
   solidaryCoDebtor: PartyDraft;
+  /**
+   * Codeudores **adicionales** (más allá del primero `solidaryCoDebtor`).
+   * Aditivo: si está vacío o ausente, el comportamiento es el de un único
+   * codeudor. Cada uno con sus consentimientos asociados en `codebtorConsentsList`.
+   */
+  solidaryCoDebtors?: PartyDraft[];
+  /** Consentimientos de los codeudores adicionales (mismo orden que `solidaryCoDebtors`). */
+  codebtorConsentsList?: CodebtorExtraConsents[];
   codebtorConsents: CodebtorExtraConsents;
   property: Partial<ResidentialLeaseContractInput["property"]> & {
     monthlyRentProposed?: number;
@@ -701,12 +709,19 @@ export function updateDraft(
 
 export function toContractInput(draft: ContractDraft): ResidentialLeaseContractInput {
   const mergedProp = mergePropertyDraftForValidation(draft.property as PropertyDraftWithParts);
+  // Codeudores: el primero vive en `solidaryCoDebtor` (compat); los adicionales
+  // en `draft.solidaryCoDebtors`. La lista completa va en `solidaryCoDebtors`.
+  const extraCodebtors = (draft.solidaryCoDebtors ?? []).map(partyDraftToPersonParty);
+  const allCodebtors = draft.hasSolidaryCoDebtor
+    ? [partyDraftToPersonParty(draft.solidaryCoDebtor), ...extraCodebtors]
+    : [];
   return {
     landlord: partyDraftToPersonParty(draft.landlord),
     tenant: partyDraftToPersonParty(draft.tenant),
     solidaryCoDebtor: draft.hasSolidaryCoDebtor
       ? partyDraftToPersonParty(draft.solidaryCoDebtor)
       : undefined,
+    solidaryCoDebtors: allCodebtors.length > 0 ? allCodebtors : undefined,
     property: {
       address: mergedProp.address ?? "",
       city: mergedProp.city ?? "",

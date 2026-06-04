@@ -22,7 +22,12 @@ export function validateContractData(input: ResidentialLeaseContractInput): Vali
   validateParty("landlord", input.landlord, issues);
   validateParty("tenant", input.tenant, issues);
 
-  if (input.hasSolidaryCoDebtor) {
+  // Codeudores: valida la lista completa si viene; si no, el singular (compat).
+  if (input.solidaryCoDebtors && input.solidaryCoDebtors.length > 0) {
+    input.solidaryCoDebtors.forEach((c, i) => {
+      validateParty(i === 0 ? "solidaryCoDebtor" : `solidaryCoDebtors[${i}]`, c, issues);
+    });
+  } else if (input.hasSolidaryCoDebtor) {
     if (!input.solidaryCoDebtor) {
       issues.push({
         field: "solidaryCoDebtor",
