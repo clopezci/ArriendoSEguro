@@ -126,6 +126,20 @@ export default function AdminPage() {
     { id: string; severity: string; status: string; contractId: string; raterEmail: string; subjectEmail: string; signals: { code: string; detail: string }[]; createdAt: string }[]
   >([]);
   const [repFlagsBusy, setRepFlagsBusy] = useState(false);
+  const [obsConfig, setObsConfig] = useState<{
+    errorAlertEnabled: boolean;
+    errorAlertThreshold: number;
+    errorAlertWindowMinutes: number;
+    errorAlertCooldownMinutes: number;
+  } | null>(null);
+  const [obsThresholdInput, setObsThresholdInput] = useState("");
+  const [incidents, setIncidents] = useState<
+    { id: string; title: string; body: string; severity: string; status: string; createdAt: string }[]
+  >([]);
+  const [incidentTitle, setIncidentTitle] = useState("");
+  const [incidentBody, setIncidentBody] = useState("");
+  const [statusMsg, setStatusMsg] = useState("");
+  const [statusBusy, setStatusBusy] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [grantEmail, setGrantEmail] = useState("");
   const [grantMsg, setGrantMsg] = useState("");
@@ -397,13 +411,105 @@ export default function AdminPage() {
     }
   }
 
+  const loadStatusAdmin = useCallback(async () => {
+    if (!user) return;
+    try {
+      const [cfgRes, incRes] = await Promise.all([
+        fetch("/api/admin/observability-config", { headers: { ...(await buildAuthHeaders(user)) } }),
+        fetch("/api/admin/status-incidents", { headers: { ...(await buildAuthHeaders(user)) } }),
+      ]);
+      const cfgJson = (await cfgRes.json()) as { success?: boolean; config?: typeof obsConfig };
+      if (cfgRes.ok && cfgJson.success && cfgJson.config) {
+        setObsConfig(cfgJson.config);
+        setObsThresholdInput(String(cfgJson.config.errorAlertThreshold));
+      }
+      const incJson = (await incRes.json()) as { success?: boolean; incidents?: typeof incidents };
+      if (incRes.ok && incJson.success && Array.isArray(incJson.incidents)) setIncidents(incJson.incidents);
+    } catch {
+      /* silencioso */
+    }
+  }, [user]);
+
+  async function saveObsConfig(nextEnabled?: boolean) {
+    if (!user) return;
+    setStatusBusy(true);
+    setStatusMsg("");
+    try {
+      const body: Record<string, unknown> = {};
+      if (typeof nextEnabled === "boolean") body.errorAlertEnabled = nextEnabled;
+      const thr = Number(obsThresholdInput.replace(/[^\d]/g, ""));
+      if (Number.isInteger(thr) && thr >= 1) body.errorAlertThreshold = thr;
+      const res = await fetch("/api/admin/observability-config", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json()) as { success?: boolean; config?: typeof obsConfig; errors?: { message?: string }[] };
+      if (!res.ok || !json.success || !json.config) {
+        setStatusMsg(json.errors?.[0]?.message ?? "No se pudo guardar.");
+        return;
+      }
+      setObsConfig(json.config);
+      setObsThresholdInput(String(json.config.errorAlertThreshold));
+      setStatusMsg("Configuración de alertas guardada.");
+    } catch {
+      setStatusMsg("Error de red.");
+    } finally {
+      setStatusBusy(false);
+    }
+  }
+
+  async function createIncident() {
+    if (!user || incidentTitle.trim().length < 3) return;
+    setStatusBusy(true);
+    setStatusMsg("");
+    try {
+      const res = await fetch("/api/admin/status-incidents", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ title: incidentTitle, body: incidentBody }),
+      });
+      const json = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      if (!res.ok || !json.success) {
+        setStatusMsg(json.errors?.[0]?.message ?? "No se pudo crear el incidente.");
+        return;
+      }
+      setIncidentTitle("");
+      setIncidentBody("");
+      setStatusMsg("Incidente publicado.");
+      await loadStatusAdmin();
+    } catch {
+      setStatusMsg("Error de red.");
+    } finally {
+      setStatusBusy(false);
+    }
+  }
+
+  async function updateIncident(id: string, status: "investigating" | "monitoring" | "resolved") {
+    if (!user) return;
+    setStatusBusy(true);
+    try {
+      await fetch("/api/admin/status-incidents", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ id, status }),
+      });
+      await loadStatusAdmin();
+    } catch {
+      /* silencioso */
+    } finally {
+      setStatusBusy(false);
+    }
+  }
+
   useEffect(() => {
     void load();
     void loadObs();
     void loadLegal();
     void loadReferrals();
     void loadRepFlags();
-  }, [load, loadObs, loadLegal, loadReferrals, loadRepFlags]);
+    void loadStatusAdmin();
+  }, [load, loadObs, loadLegal, loadReferrals, loadRepFlags, loadStatusAdmin]);
 
   async function savePlanPlusPricing() {
     if (!user) return;
@@ -1028,6 +1134,120 @@ export default function AdminPage() {
               ))}
             </ul>
           )}
+        </section>
+
+        <section className="mb-6 rounded-xl border border-sky-300 bg-sky-50/40 p-4">
+          <h2 className="text-sm font-semibold text-sky-900">Estado y alertas de errores</h2>
+          <p className="mt-1 text-xs text-slate-600">
+            Aviso por correo cuando hay errores recientes. Umbral mínimo = 1 (alerta desde el primer error). Página
+            pública:{" "}
+            <a href="/estado" className="text-sky-700 underline" target="_blank" rel="noreferrer">
+              /estado
+            </a>
+            .
+          </p>
+
+          <div className="mt-3 flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-medium text-slate-600">Umbral de errores</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={obsThresholdInput}
+                onChange={(e) => setObsThresholdInput(e.target.value)}
+                className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={statusBusy}
+              onClick={() => void saveObsConfig()}
+              className="rounded border border-sky-500 bg-sky-600 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+            >
+              {statusBusy ? "…" : "Guardar umbral"}
+            </button>
+            <button
+              type="button"
+              disabled={statusBusy}
+              onClick={() => void saveObsConfig(!(obsConfig?.errorAlertEnabled ?? true))}
+              className="rounded border border-slate-400 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-800 disabled:opacity-50"
+            >
+              {obsConfig?.errorAlertEnabled ? "Desactivar alertas" : "Activar alertas"}
+            </button>
+            <span className="text-[11px] text-slate-600">
+              {obsConfig
+                ? `${obsConfig.errorAlertEnabled ? "activas" : "inactivas"} · ventana ${obsConfig.errorAlertWindowMinutes} min`
+                : "…"}
+            </span>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-xs font-medium text-slate-700">Publicar incidente</p>
+            <div className="mt-1 flex flex-wrap items-end gap-2">
+              <input
+                type="text"
+                value={incidentTitle}
+                onChange={(e) => setIncidentTitle(e.target.value)}
+                placeholder="Título del incidente"
+                aria-label="Título del incidente"
+                className="min-w-[200px] flex-1 rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+              />
+              <input
+                type="text"
+                value={incidentBody}
+                onChange={(e) => setIncidentBody(e.target.value)}
+                placeholder="Detalle (opcional)"
+                aria-label="Detalle del incidente"
+                className="min-w-[200px] flex-1 rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+              />
+              <button
+                type="button"
+                disabled={statusBusy || incidentTitle.trim().length < 3}
+                onClick={() => void createIncident()}
+                className="rounded border border-sky-500 bg-sky-600 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+              >
+                Publicar
+              </button>
+            </div>
+            {incidents.length > 0 && (
+              <ul className="mt-3 space-y-1">
+                {incidents.map((i) => (
+                  <li
+                    key={i.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-white/80 px-2 py-1.5 text-[11px]"
+                  >
+                    <span className="min-w-0">
+                      <strong className="text-slate-800">{i.title}</strong>
+                      <span className="text-slate-500"> · {i.status}</span>
+                    </span>
+                    <span className="flex gap-1">
+                      {i.status !== "monitoring" && i.status !== "resolved" && (
+                        <button
+                          type="button"
+                          disabled={statusBusy}
+                          onClick={() => void updateIncident(i.id, "monitoring")}
+                          className="rounded border border-slate-400 px-2 py-0.5 text-slate-800 disabled:opacity-50"
+                        >
+                          En seguimiento
+                        </button>
+                      )}
+                      {i.status !== "resolved" && (
+                        <button
+                          type="button"
+                          disabled={statusBusy}
+                          onClick={() => void updateIncident(i.id, "resolved")}
+                          className="rounded border border-emerald-500 px-2 py-0.5 text-emerald-700 disabled:opacity-50"
+                        >
+                          Resolver
+                        </button>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {statusMsg && <p className="mt-2 text-xs text-slate-700">{statusMsg}</p>}
         </section>
 
         {data?.features?.manualGrantPlus && (

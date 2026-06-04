@@ -6,6 +6,7 @@ const LEGAL_LINKS = [
   { href: "/contacto", label: "Contacto" },
   { href: "/calculadoras", label: "Calculadoras" },
   { href: "/reportar", label: "Reportar un problema" },
+  { href: "/estado", label: "Estado del servicio" },
   { href: "/blog", label: "Blog" },
   { href: "/legal/terminos", label: "Términos" },
   { href: "/legal/privacidad", label: "Tratamiento de datos" },

@@ -11,7 +11,8 @@ export type EmailTemplateCode =
   | "contactAckEmail"
   | "contractRenewalReminderEmail"
   | "ipcUpdateReminderEmail"
-  | "reputationLookupRequestEmail";
+  | "reputationLookupRequestEmail"
+  | "errorAlertEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
@@ -46,6 +47,35 @@ export function inviteCounterpartyEmail(input: {
     "Invitación de contraparte",
     `<p>${input.inviterName} te invitó a continuar el expediente <strong>${input.contractLabel}</strong> en ArriendoSeguro.</p>
      <p><a href="${input.invitationUrl}" style="color:#6d28d9;">Abrir invitación</a></p>`,
+  );
+  return { subject, html, text };
+}
+
+export function errorAlertEmail(input: {
+  windowMinutes: number;
+  distinctErrors: number;
+  totalOccurrences: number;
+  samples: { message: string; count: number; lastSeenAt: string }[];
+  adminUrl: string;
+}): CompiledEmailTemplate {
+  const subject = `⚠️ ${input.distinctErrors} error(es) en ArriendoSeguro (últimos ${input.windowMinutes} min)`;
+  const list = input.samples
+    .map((s) => `• [${s.count}] ${s.message} (visto ${s.lastSeenAt})`)
+    .join("\n");
+  const text =
+    `Se detectaron ${input.distinctErrors} error(es) distinto(s) (${input.totalOccurrences} ocurrencias) ` +
+    `en los últimos ${input.windowMinutes} minutos.\n\n${list}\n\nRevisa el panel: ${input.adminUrl}`;
+  const samplesHtml = input.samples
+    .map(
+      (s) =>
+        `<li style="margin-bottom:6px;"><strong>[${s.count}]</strong> ${s.message} <span style="color:#64748b;">(visto ${s.lastSeenAt})</span></li>`,
+    )
+    .join("");
+  const html = baseHtml(
+    "Alerta de errores",
+    `<p>Se detectaron <strong>${input.distinctErrors}</strong> error(es) distinto(s) (${input.totalOccurrences} ocurrencias) en los últimos <strong>${input.windowMinutes} minutos</strong>.</p>
+     <ul style="padding-left:18px;">${samplesHtml}</ul>
+     <p><a href="${input.adminUrl}" style="color:#6d28d9;">Abrir el panel de errores</a></p>`,
   );
   return { subject, html, text };
 }

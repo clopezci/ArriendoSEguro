@@ -13,6 +13,7 @@ const STATIC_PATHS = [
   "/acerca-de",
   "/contacto",
   "/reportar",
+  "/estado",
   "/calculadoras",
   "/calculadoras/reajuste-canon",
   "/calculadoras/canon-maximo",
