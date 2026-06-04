@@ -29,6 +29,11 @@ const ADICIONALES = [
     description: "Mascotas, parqueadero, mobiliario, teletrabajo y otras condiciones pactadas.",
   },
   {
+    href: (id: string) => `/dashboard/contracts/${id}/pagos-recordatorios`,
+    title: "Método de pago y recordatorios",
+    description: "Comparte tu cuenta o QR (con tu autorización) para los recordatorios de pago al inquilino. Opcional.",
+  },
+  {
     href: (id: string) => `/dashboard/contracts/${id}/notarial`,
     title: "Autenticación notarial",
     description: "Constancia y carga del PDF autenticado en notaría (refuerzo a la firma).",
