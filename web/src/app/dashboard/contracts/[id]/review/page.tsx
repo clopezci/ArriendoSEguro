@@ -9,6 +9,9 @@ import {
   SPECIAL_CLAUSE_OTHER_ID,
 } from "@/features/contracts/special-clauses";
 import { appendAudit, updateDraft } from "@/features/contracts/wizard-state";
+import { LegalComplianceSeal } from "@/components/contracts/legal-semaphore";
+import { evaluateLegalCompliance } from "@/domain/contracts/legalCompliance";
+import { IPC_REFERENCE } from "@/lib/domain/rent-law";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
@@ -30,14 +33,25 @@ export default function ReviewStepPage() {
   const cap = Number(draft.property.legalRentCap ?? 0);
   const rent = Number(draft.lease.monthlyRent ?? draft.property.monthlyRentProposed ?? 0);
   const valueUnknown = Boolean(draft.property.commercialValueUnknown);
-  // Solo se considera "tope excedido" cuando hay un valor comercial declarado
-  // y un tope estimado vigente. Si el arrendador aceptó desconocer el valor
-  // comercial, la verificación queda bajo su responsabilidad.
-  const capExceeded = !valueUnknown && cap > 0 && rent > cap;
 
   const contractType = draft.contractType ?? "VIVIENDA_URBANA";
   const contractTypeLabel =
     CONTRACT_TYPE_LABEL[contractType] ?? CONTRACT_TYPE_LABEL.VIVIENDA_URBANA;
+
+  const complianceChecks = evaluateLegalCompliance({
+    property: {
+      commercialValue: Number(draft.property.commercialValue ?? 0),
+      legalRentCap: cap,
+      monthlyRentProposed: Number(draft.property.monthlyRentProposed ?? 0),
+      commercialValueUnknown: valueUnknown,
+    },
+    lease: {
+      monthlyRent: rent,
+      latePaymentMonthsThreshold: Number(draft.lease.latePaymentMonthsThreshold ?? 0),
+    },
+    utilityServicesGuarantee: draft.utilityServicesGuarantee,
+    ipcPercent: IPC_REFERENCE.percent,
+  });
 
   return (
     <WizardShell title="Resumen previo" currentStep={10} contractId={id}>
@@ -203,25 +217,11 @@ export default function ReviewStepPage() {
         />
       </div>
 
-      <div className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4 text-sm text-slate-700">
-        <p className="font-medium text-violet-700">Alertas legales</p>
-        <ul className="mt-2 list-disc space-y-1 pl-5">
-          <li>No se permite depósito en dinero en este flujo de vivienda urbana.</li>
-          <li>Arriendo Seguro no recauda dinero ni garantiza pagos.</li>
-          {valueUnknown ? (
-            <li className="text-amber-800">
-              El arrendador (dueño) declaró desconocer el valor comercial del inmueble y aceptó
-              expresamente la responsabilidad de no superar el 1% del valor real
-              (Ley 820 de 2003). ArriendoSeguro no calcula el tope en este caso.
-            </li>
-          ) : capExceeded ? (
-            <li className="text-rose-700">
-              El canon propuesto supera el máximo estimado. Debes editar inmueble/términos.
-            </li>
-          ) : (
-            <li className="text-emerald-700">Canon dentro del límite legal estimado.</li>
-          )}
-        </ul>
+      <div className="mt-4">
+        <LegalComplianceSeal checks={complianceChecks} />
+        <p className="mt-2 text-xs text-slate-500">
+          ArriendoSeguro no recauda dinero ni garantiza pagos; el respaldo es documental y de evidencia.
+        </p>
       </div>
 
       <div className="mt-6 flex flex-wrap gap-3">

@@ -9,6 +9,7 @@ import {
   parseUrbanAddressFromForm,
 } from "@/domain/colombia/structured-address";
 import { appendAudit, propertySchema, updateDraft } from "@/features/contracts/wizard-state";
+import { LegalSemaphore } from "@/components/contracts/legal-semaphore";
 import { toTitleCaseEs, trimAndCollapse } from "@/lib/text/sanitize";
 import { humanizeZodIssues } from "@/lib/validations/zod-errors-es";
 import { useParams, useRouter } from "next/navigation";
@@ -48,6 +49,7 @@ export default function PropertyStepPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [valueUnknown, setValueUnknown] = useState<boolean>(false);
   const [commercialValuePreview, setCommercialValuePreview] = useState<number>(0);
+  const [rentPreview, setRentPreview] = useState<number>(0);
   const [ownershipOath, setOwnershipOath] = useState<boolean>(false);
   const [noCapAccepted, setNoCapAccepted] = useState<boolean>(false);
 
@@ -57,6 +59,7 @@ export default function PropertyStepPage() {
     if (!draft) return;
     setValueUnknown(Boolean(draft.property.commercialValueUnknown));
     setCommercialValuePreview(Number(draft.property.commercialValue ?? 0));
+    setRentPreview(Number(draft.property.monthlyRentProposed ?? draft.lease.monthlyRent ?? 0));
     setOwnershipOath(Boolean(draft.property.propertyOwnershipOath));
     setNoCapAccepted(Boolean(draft.property.noCapAcknowledgement));
   }, [draft]);
@@ -137,6 +140,28 @@ export default function PropertyStepPage() {
 
   const legacyAddress = !!draft.property.address && !draft.property.addressParts;
   const estimatedCap = valueUnknown ? 0 : Number((commercialValuePreview * 0.01).toFixed(0));
+
+  // Semáforo en vivo del canon vs. tope del 1% (Ley 820, art. 18).
+  const rentSemaphore: { status: "pass" | "fail" | "warn" | "info"; detail: string } = valueUnknown
+    ? {
+        status: "info",
+        detail:
+          "Declaraste no conocer el valor comercial: el tope del 1% queda bajo tu responsabilidad.",
+      }
+    : estimatedCap <= 0 || rentPreview <= 0
+      ? {
+          status: "warn",
+          detail: "Ingresa el valor comercial y el canon para verificar el tope del 1%.",
+        }
+      : rentPreview > estimatedCap
+        ? {
+            status: "fail",
+            detail: `El canon (${formatCOP(rentPreview)}) supera el tope del 1% (${formatCOP(estimatedCap)}).`,
+          }
+        : {
+            status: "pass",
+            detail: `El canon (${formatCOP(rentPreview)}) está dentro del tope del 1% (${formatCOP(estimatedCap)}).`,
+          };
 
   return (
     <WizardShell title="Inmueble a arrendar" currentStep={6} contractId={id}>
@@ -253,8 +278,17 @@ export default function PropertyStepPage() {
           defaultValue={String(
             draft.property.monthlyRentProposed ?? draft.lease.monthlyRent ?? "",
           )}
+          onValueChange={(v) => setRentPreview(Number(v || 0))}
           hint="Valor mensual del arriendo en pesos colombianos."
         />
+
+        <div className="sm:col-span-2">
+          <LegalSemaphore
+            status={rentSemaphore.status}
+            label="Canon vs. tope legal del 1% (Ley 820, art. 18)"
+            detail={rentSemaphore.detail}
+          />
+        </div>
 
         <div className="sm:col-span-2 rounded-xl border border-amber-300 bg-amber-100/60 p-4 text-sm text-amber-800">
           <h3 className="text-sm font-semibold text-amber-800">
