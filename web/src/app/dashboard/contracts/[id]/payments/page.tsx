@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { PAYMENT_REMINDER_TEXT } from "@/domain/payments/paymentRules";
 import { visualPaymentState } from "@/domain/payments/paymentStatus";
+import { PaymentsExportCard } from "@/components/payments/payments-export-card";
 
 type Payment = {
   id: string;
@@ -174,6 +175,8 @@ export default function PaymentsPage() {
           </tbody>
         </table>
       </div>
+
+      <PaymentsExportCard contractId={id} contractVersionId={contractVersionId} payments={payments} />
     </WizardShell>
   );
 }
