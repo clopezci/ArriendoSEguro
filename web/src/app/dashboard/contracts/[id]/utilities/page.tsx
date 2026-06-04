@@ -2,6 +2,7 @@
 
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { UtilityGuaranteeSection } from "@/components/contracts/utility-guarantee-section";
 import { appendAudit, updateDraft, utilitiesSchema } from "@/features/contracts/wizard-state";
 import { sanitizeFreeText } from "@/lib/text/sanitize";
 import { humanizeZodIssues } from "@/lib/validations/zod-errors-es";
@@ -106,6 +107,11 @@ export default function UtilitiesStepPage() {
           </div>
         )}
       </form>
+
+      <div className="mt-5">
+        <UtilityGuaranteeSection contractId={id} initial={draft.utilityServicesGuarantee} />
+      </div>
+
       <StepNav
         backHref={`/dashboard/contracts/${id}/terms`}
         backLabel="Anterior"

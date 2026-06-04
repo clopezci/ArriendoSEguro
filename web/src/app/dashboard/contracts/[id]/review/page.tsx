@@ -90,6 +90,25 @@ export default function ReviewStepPage() {
           <p>Responsable: {draft.utilities.responsibleParty}</p>
           <p>{draft.utilities.details}</p>
         </Card>
+        <Card title="Garantía de servicios públicos (Art. 15)">
+          {draft.utilityServicesGuarantee?.enabled && draft.utilityServicesGuarantee.acceptedAt ? (
+            <>
+              <p>
+                Valor pactado:{" "}
+                <strong>${(draft.utilityServicesGuarantee.agreedAmountCop ?? 0).toLocaleString("es-CO")}</strong>
+              </p>
+              <p className="text-xs text-slate-600">
+                Máximo legal: ${(draft.utilityServicesGuarantee.maxAllowedCop ?? 0).toLocaleString("es-CO")} (suma de
+                los 2 últimos períodos). Aceptada el {draft.utilityServicesGuarantee.acceptedAt} con captura de IP.
+              </p>
+            </>
+          ) : (
+            <p className="text-slate-600">
+              No incluida. Es la única garantía permitida (exclusiva para servicios públicos); puedes activarla en el
+              paso de Servicios.
+            </p>
+          )}
+        </Card>
         <Card title="Cláusulas especiales">
           {draft.specialClauses?.enabled &&
           draft.specialClauses.selected.length > 0 ? (

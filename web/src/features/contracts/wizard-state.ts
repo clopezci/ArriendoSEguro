@@ -11,6 +11,7 @@ import type {
   SpecialClausesSelection,
 } from "@/domain/contracts/types";
 import type { PartyDraft } from "@/features/contracts/draft-types";
+import type { UtilityServicesGuarantee } from "@/domain/contracts/utilityGuarantee";
 
 export type { PartyDraft } from "@/features/contracts/draft-types";
 import {
@@ -92,6 +93,9 @@ export type AuditEventName =
    * plantilla `AS-LEASE-2026.2` cuando esté activa.
    */
   | "notarization_selection_updated"
+  /** Garantía para servicios públicos (Art. 15 Ley 820): aceptada o desactivada. */
+  | "utility_guarantee_accepted"
+  | "utility_guarantee_disabled"
   /** Recorrido /demo (localStorage); no implica expediente real. */
   | "demo_viewed"
   | "demo_step_opened"
@@ -193,6 +197,11 @@ export interface ContractDraft {
    * `contracts` al guardar versión. No forma parte del contrato ni del hash.
    */
   renewalReminderEnabled?: boolean;
+  /**
+   * Garantía para servicios públicos (Art. 15 Ley 820 de 2003). Opcional; se
+   * captura en el paso de Servicios con aceptación y registro de IP en servidor.
+   */
+  utilityServicesGuarantee?: UtilityServicesGuarantee;
   /**
    * Intención de autenticación notarial (Bloque 9). El PDF autenticado
    * cargado por las partes queda en `contract_annexes` y en
