@@ -11,6 +11,7 @@ const navMain = [
   { href: "/dashboard/account", label: "Mi cuenta" },
   { href: "/entiendelo-facil", label: "Cómo funciona" },
   { href: "/dashboard/plans", label: "Planes" },
+  { href: "/dashboard/aliados", label: "Aliados" },
   { href: "/demo", label: "Demo" },
 ] as const;
 

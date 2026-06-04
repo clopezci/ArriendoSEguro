@@ -140,6 +140,25 @@ export default function AdminPage() {
   const [incidentBody, setIncidentBody] = useState("");
   const [statusMsg, setStatusMsg] = useState("");
   const [statusBusy, setStatusBusy] = useState(false);
+  const [partners, setPartners] = useState<
+    { id: string; name: string; category: string; description: string; websiteUrl: string; contactEmails: string[]; active: boolean }[]
+  >([]);
+  const [newPartner, setNewPartner] = useState({ name: "", category: "recaudo", websiteUrl: "", contactEmails: "", description: "" });
+  const [partnerLeads, setPartnerLeads] = useState<
+    {
+      id: string;
+      partnerName: string;
+      clientName: string;
+      userEmail: string;
+      sentAt: string;
+      partnerResponse: string | null;
+      userResponse: string | null;
+      outcome: { code: string; label: string; commissionEligible: boolean; needsReview: boolean };
+      commissionStatus: string;
+    }[]
+  >([]);
+  const [partnerMsg, setPartnerMsg] = useState("");
+  const [partnerBusy, setPartnerBusy] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [grantEmail, setGrantEmail] = useState("");
   const [grantMsg, setGrantMsg] = useState("");
@@ -502,6 +521,112 @@ export default function AdminPage() {
     }
   }
 
+  const loadPartnersAdmin = useCallback(async () => {
+    if (!user) return;
+    try {
+      const [pRes, lRes] = await Promise.all([
+        fetch("/api/admin/partners", { headers: { ...(await buildAuthHeaders(user)) } }),
+        fetch("/api/admin/partner-leads", { headers: { ...(await buildAuthHeaders(user)) } }),
+      ]);
+      const pJson = (await pRes.json()) as { success?: boolean; partners?: typeof partners };
+      if (pRes.ok && pJson.success && Array.isArray(pJson.partners)) setPartners(pJson.partners);
+      const lJson = (await lRes.json()) as { success?: boolean; leads?: typeof partnerLeads };
+      if (lRes.ok && lJson.success && Array.isArray(lJson.leads)) setPartnerLeads(lJson.leads);
+    } catch {
+      /* silencioso */
+    }
+  }, [user]);
+
+  async function createPartner() {
+    if (!user) return;
+    setPartnerBusy(true);
+    setPartnerMsg("");
+    try {
+      const res = await fetch("/api/admin/partners", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ ...newPartner, contactEmails: newPartner.contactEmails, active: true }),
+      });
+      const json = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      if (!res.ok || !json.success) {
+        setPartnerMsg(json.errors?.[0]?.message ?? "No se pudo crear el aliado.");
+        return;
+      }
+      setNewPartner({ name: "", category: "recaudo", websiteUrl: "", contactEmails: "", description: "" });
+      setPartnerMsg("Aliado creado.");
+      await loadPartnersAdmin();
+    } catch {
+      setPartnerMsg("Error de red.");
+    } finally {
+      setPartnerBusy(false);
+    }
+  }
+
+  async function savePartner(p: (typeof partners)[number], patch: Partial<(typeof partners)[number]>) {
+    if (!user) return;
+    setPartnerBusy(true);
+    setPartnerMsg("");
+    try {
+      const merged = { ...p, ...patch };
+      const res = await fetch("/api/admin/partners", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({
+          id: merged.id,
+          name: merged.name,
+          category: merged.category,
+          websiteUrl: merged.websiteUrl,
+          description: merged.description,
+          contactEmails: merged.contactEmails,
+          active: merged.active,
+        }),
+      });
+      const json = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      if (!res.ok || !json.success) {
+        setPartnerMsg(json.errors?.[0]?.message ?? "No se pudo guardar.");
+        return;
+      }
+      await loadPartnersAdmin();
+    } catch {
+      setPartnerMsg("Error de red.");
+    } finally {
+      setPartnerBusy(false);
+    }
+  }
+
+  async function deletePartner(id: string) {
+    if (!user) return;
+    setPartnerBusy(true);
+    try {
+      await fetch(`/api/admin/partners?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: { ...(await buildAuthHeaders(user)) },
+      });
+      await loadPartnersAdmin();
+    } catch {
+      /* silencioso */
+    } finally {
+      setPartnerBusy(false);
+    }
+  }
+
+  async function setLeadCommission(id: string, commissionStatus: "open" | "billed" | "paid" | "void") {
+    if (!user) return;
+    setPartnerBusy(true);
+    try {
+      await fetch("/api/admin/partner-leads", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ id, commissionStatus }),
+      });
+      await loadPartnersAdmin();
+    } catch {
+      /* silencioso */
+    } finally {
+      setPartnerBusy(false);
+    }
+  }
+
   useEffect(() => {
     void load();
     void loadObs();
@@ -509,7 +634,8 @@ export default function AdminPage() {
     void loadReferrals();
     void loadRepFlags();
     void loadStatusAdmin();
-  }, [load, loadObs, loadLegal, loadReferrals, loadRepFlags, loadStatusAdmin]);
+    void loadPartnersAdmin();
+  }, [load, loadObs, loadLegal, loadReferrals, loadRepFlags, loadStatusAdmin, loadPartnersAdmin]);
 
   async function savePlanPlusPricing() {
     if (!user) return;
@@ -1248,6 +1374,165 @@ export default function AdminPage() {
             )}
           </div>
           {statusMsg && <p className="mt-2 text-xs text-slate-700">{statusMsg}</p>}
+        </section>
+
+        <section className="mb-6 rounded-xl border border-violet-300 bg-violet-50/40 p-4">
+          <h2 className="text-sm font-semibold text-violet-900">Aliados (servicios de terceros)</h2>
+          <p className="mt-1 text-xs text-slate-600">
+            Los correos de contacto NO se muestran al usuario; solo se usan para enviarles el lead. Cuando un usuario
+            pulsa «Contactar», el aliado y el usuario reciben enlaces para confirmar si el servicio se tomó (control de
+            comisiones).
+          </p>
+
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <input
+              type="text"
+              value={newPartner.name}
+              onChange={(e) => setNewPartner((s) => ({ ...s, name: e.target.value }))}
+              placeholder="Nombre del aliado"
+              aria-label="Nombre del aliado"
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+            />
+            <select
+              value={newPartner.category}
+              onChange={(e) => setNewPartner((s) => ({ ...s, category: e.target.value }))}
+              aria-label="Categoría del aliado"
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+            >
+              <option value="recaudo">Recaudo del canon</option>
+              <option value="seguro">Seguro de arrendamiento</option>
+              <option value="estudio_credito">Estudio de crédito</option>
+              <option value="mantenimiento">Mantenimiento</option>
+              <option value="juridica">Asesoría jurídica</option>
+              <option value="cobranza">Cobranza</option>
+              <option value="otro">Otro</option>
+            </select>
+            <input
+              type="text"
+              value={newPartner.websiteUrl}
+              onChange={(e) => setNewPartner((s) => ({ ...s, websiteUrl: e.target.value }))}
+              placeholder="https://enlace-del-aliado.com"
+              aria-label="Enlace del aliado"
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+            />
+            <input
+              type="text"
+              value={newPartner.contactEmails}
+              onChange={(e) => setNewPartner((s) => ({ ...s, contactEmails: e.target.value }))}
+              placeholder="correos ocultos (separa con coma)"
+              aria-label="Correos de contacto del aliado"
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+            />
+            <input
+              type="text"
+              value={newPartner.description}
+              onChange={(e) => setNewPartner((s) => ({ ...s, description: e.target.value }))}
+              placeholder="Descripción breve (opcional)"
+              aria-label="Descripción del aliado"
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs sm:col-span-2"
+            />
+          </div>
+          <button
+            type="button"
+            disabled={partnerBusy}
+            onClick={() => void createPartner()}
+            className="mt-2 rounded border border-violet-500 bg-violet-600 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+          >
+            Agregar aliado
+          </button>
+
+          {partners.length > 0 && (
+            <ul className="mt-3 space-y-1">
+              {partners.map((p) => (
+                <li
+                  key={p.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-white/80 px-2 py-1.5 text-[11px]"
+                >
+                  <span className="min-w-0">
+                    <strong className="text-slate-800">{p.name}</strong>
+                    <span className="text-slate-500"> · {p.category}</span>
+                    <span className="text-slate-400"> · {p.contactEmails.join(", ")}</span>
+                  </span>
+                  <span className="flex gap-1">
+                    <button
+                      type="button"
+                      disabled={partnerBusy}
+                      onClick={() => void savePartner(p, { active: !p.active })}
+                      className={`rounded border px-2 py-0.5 disabled:opacity-50 ${p.active ? "border-emerald-500 text-emerald-700" : "border-slate-400 text-slate-600"}`}
+                    >
+                      {p.active ? "Activo" : "Inactivo"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={partnerBusy}
+                      onClick={() => void deletePartner(p.id)}
+                      className="rounded border border-rose-400 px-2 py-0.5 text-rose-700 disabled:opacity-50"
+                    >
+                      Eliminar
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="mt-4">
+            <p className="text-xs font-medium text-slate-700">
+              Referidos a aliados ({partnerLeads.length}) · elegibles comisión:{" "}
+              {partnerLeads.filter((l) => l.outcome.commissionEligible).length} · en disputa:{" "}
+              {partnerLeads.filter((l) => l.outcome.needsReview).length}
+            </p>
+            {partnerLeads.length === 0 ? (
+              <p className="mt-1 text-[11px] text-slate-500">Aún no hay referidos.</p>
+            ) : (
+              <ul className="mt-2 space-y-1">
+                {partnerLeads.map((l) => (
+                  <li
+                    key={l.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-white/80 px-2 py-1.5 text-[11px]"
+                  >
+                    <span className="min-w-0">
+                      <strong className="text-slate-800">{l.partnerName}</strong>
+                      <span className="text-slate-500"> · {l.clientName} ({l.userEmail})</span>
+                      <span
+                        className={`ml-1 ${l.outcome.needsReview ? "text-rose-700" : l.outcome.commissionEligible ? "text-emerald-700" : "text-slate-500"}`}
+                      >
+                        · {l.outcome.label}
+                      </span>
+                      <span className="text-slate-400"> · comisión: {l.commissionStatus}</span>
+                    </span>
+                    <span className="flex gap-1">
+                      <button
+                        type="button"
+                        disabled={partnerBusy}
+                        onClick={() => void setLeadCommission(l.id, "billed")}
+                        className="rounded border border-slate-400 px-2 py-0.5 text-slate-800 disabled:opacity-50"
+                      >
+                        Facturada
+                      </button>
+                      <button
+                        type="button"
+                        disabled={partnerBusy}
+                        onClick={() => void setLeadCommission(l.id, "paid")}
+                        className="rounded border border-emerald-500 px-2 py-0.5 text-emerald-700 disabled:opacity-50"
+                      >
+                        Pagada
+                      </button>
+                      <button
+                        type="button"
+                        disabled={partnerBusy}
+                        onClick={() => void setLeadCommission(l.id, "void")}
+                        className="rounded border border-slate-300 px-2 py-0.5 text-slate-600 disabled:opacity-50"
+                      >
+                        Anular
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {partnerMsg && <p className="mt-2 text-xs text-slate-700">{partnerMsg}</p>}
         </section>
 
         {data?.features?.manualGrantPlus && (

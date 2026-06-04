@@ -12,7 +12,9 @@ export type EmailTemplateCode =
   | "contractRenewalReminderEmail"
   | "ipcUpdateReminderEmail"
   | "reputationLookupRequestEmail"
-  | "errorAlertEmail";
+  | "errorAlertEmail"
+  | "partnerLeadEmail"
+  | "partnerLeadAckEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
@@ -47,6 +49,68 @@ export function inviteCounterpartyEmail(input: {
     "Invitación de contraparte",
     `<p>${input.inviterName} te invitó a continuar el expediente <strong>${input.contractLabel}</strong> en ArriendoSeguro.</p>
      <p><a href="${input.invitationUrl}" style="color:#6d28d9;">Abrir invitación</a></p>`,
+  );
+  return { subject, html, text };
+}
+
+export function partnerLeadEmail(input: {
+  partnerName: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone: string;
+  serviceLabel: string;
+  message: string;
+  takenUrl: string;
+  notTakenUrl: string;
+}): CompiledEmailTemplate {
+  const subject = `Nuevo cliente referido de ArriendoSeguro · ${input.serviceLabel}`;
+  const text =
+    `Te referimos un cliente desde ArriendoSeguro para ${input.serviceLabel}.\n\n` +
+    `Cliente: ${input.clientName}\nCorreo: ${input.clientEmail}\nTeléfono: ${input.clientPhone}\n` +
+    `Mensaje: ${input.message}\n\n` +
+    `Cuando se resuelva, confírmanos para el control de comisiones:\n` +
+    `- Sí tomó el servicio: ${input.takenUrl}\n- No se concretó: ${input.notTakenUrl}`;
+  const html = baseHtml(
+    `Cliente referido · ${input.partnerName}`,
+    `<p>Te referimos un cliente desde <strong>ArriendoSeguro</strong> para <strong>${input.serviceLabel}</strong>.</p>
+     <ul style="padding-left:18px;">
+       <li><strong>Cliente:</strong> ${input.clientName}</li>
+       <li><strong>Correo:</strong> ${input.clientEmail}</li>
+       <li><strong>Teléfono:</strong> ${input.clientPhone}</li>
+       <li><strong>Mensaje:</strong> ${input.message}</li>
+     </ul>
+     <p>Cuando se resuelva, confírmanos (control de comisiones):</p>
+     <p>
+       <a href="${input.takenUrl}" style="display:inline-block;background:#16a34a;color:#fff;padding:8px 14px;border-radius:8px;text-decoration:none;margin-right:8px;">Sí tomó el servicio</a>
+       <a href="${input.notTakenUrl}" style="display:inline-block;background:#e2e8f0;color:#0f172a;padding:8px 14px;border-radius:8px;text-decoration:none;">No se concretó</a>
+     </p>`,
+  );
+  return { subject, html, text };
+}
+
+export function partnerLeadAckEmail(input: {
+  clientName: string;
+  partnerName: string;
+  serviceLabel: string;
+  takenUrl: string;
+  notTakenUrl: string;
+}): CompiledEmailTemplate {
+  const subject = `Te conectamos con ${input.partnerName}`;
+  const text =
+    `Hola ${input.clientName}, compartimos tus datos con ${input.partnerName} para ${input.serviceLabel}. ` +
+    `Ellos te contactarán.\n\n` +
+    `Cuando lo resuelvas, ayúdanos confirmando (1 clic):\n` +
+    `- Sí tomé el servicio: ${input.takenUrl}\n- No lo tomé: ${input.notTakenUrl}\n\n` +
+    `El servicio lo presta y cobra el aliado; ArriendoSeguro solo te conecta.`;
+  const html = baseHtml(
+    "Te conectamos con un aliado",
+    `<p>Hola ${input.clientName}, compartimos tus datos con <strong>${input.partnerName}</strong> para <strong>${input.serviceLabel}</strong>. Ellos te contactarán.</p>
+     <p>Cuando lo resuelvas, ayúdanos confirmando (1 clic):</p>
+     <p>
+       <a href="${input.takenUrl}" style="display:inline-block;background:#16a34a;color:#fff;padding:8px 14px;border-radius:8px;text-decoration:none;margin-right:8px;">Sí tomé el servicio</a>
+       <a href="${input.notTakenUrl}" style="display:inline-block;background:#e2e8f0;color:#0f172a;padding:8px 14px;border-radius:8px;text-decoration:none;">No lo tomé</a>
+     </p>
+     <p style="font-size:12px;color:#475569;">El servicio lo presta y cobra el aliado; ArriendoSeguro solo te conecta.</p>`,
   );
   return { subject, html, text };
 }

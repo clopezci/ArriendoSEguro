@@ -390,13 +390,12 @@ export default function PlansPage() {
           <p className="mt-4 text-xs text-slate-500">
             Los presta y cobra directamente el aliado, bajo sus condiciones. Se habilitan progresivamente.
           </p>
-          <button
-            type="button"
-            disabled
-            className="mt-6 w-full cursor-not-allowed rounded-lg border border-slate-300 px-4 py-3 text-sm text-slate-500"
+          <a
+            href="/dashboard/aliados"
+            className="mt-6 block w-full rounded-lg border border-violet-500 px-4 py-3 text-center text-sm font-semibold text-violet-700 hover:bg-violet-50"
           >
-            Próximamente
-          </button>
+            Ver aliados disponibles
+          </a>
         </article>
       </div>
 
