@@ -67,6 +67,10 @@ export function RentCapCalculator() {
         En vivienda urbana, el canon mensual no puede exceder el 1 % del valor comercial del inmueble (Ley 820 de 2003,
         art. 18). Cálculo orientativo; el valor comercial debe ser real y verificable.
       </div>
+      <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <strong>Verifica los valores aplicados:</strong> tope del 1 % mensual sobre el valor comercial (Ley 820, art. 18).
+        Herramienta orientativa; no sustituye asesoría legal ni un avalúo.
+      </p>
 
       <div className="rounded-xl border border-violet-300 bg-gradient-to-br from-violet-50 to-white p-4">
         <p className="text-sm font-medium text-slate-800">Fija un canon dentro de la ley</p>

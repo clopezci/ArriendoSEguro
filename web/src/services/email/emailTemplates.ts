@@ -9,7 +9,8 @@ export type EmailTemplateCode =
   | "expedienteNovedadEmail"
   | "contactMessageEmail"
   | "contactAckEmail"
-  | "contractRenewalReminderEmail";
+  | "contractRenewalReminderEmail"
+  | "ipcUpdateReminderEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
@@ -238,6 +239,23 @@ export function contractRenewalReminderEmail(input: {
      <p>Recuerda que para terminarlo debes dar un <strong>preaviso de al menos 3 meses</strong> (Ley 820 de 2003, vivienda urbana). Si deseas renovar o terminar, acuerda con la otra parte y deja constancia.</p>
      <p><a href="${link}" style="color:#6d28d9;">Gestionar mi arriendo</a></p>
      <p style="font-size:12px;color:#64748b;">ArriendoSeguro solo te recuerda a tiempo; no decide ni sustituye asesoría legal.</p>`,
+  );
+  return { subject, html, text };
+}
+
+/**
+ * Recordatorio anual (2ª semana de enero) para que el administrador actualice
+ * el IPC del año anterior en el panel. Se deja de enviar cuando confirma.
+ */
+export function ipcUpdateReminderEmail(input: { currentIpcPercent: number; currentIpcYear: number; year: number }): CompiledEmailTemplate {
+  const base = appBaseUrl();
+  const subject = `Actualiza el IPC del arriendo en ArriendoSeguro (${input.year})`;
+  const text = `Hola,\n\nEs momento de actualizar el IPC del año anterior que usa la app para el reajuste del canon.\nValor actual configurado: ${input.currentIpcPercent}% (IPC ${input.currentIpcYear}).\n\nEntra al panel administrativo, verifica la cifra oficial del DANE y guarda/confirma para dejar de recibir este recordatorio: ${base}/admin`;
+  const html = baseHtml(
+    "Actualiza el IPC del año",
+    `<p>Es momento de actualizar el <strong>IPC del año anterior</strong> que usa la app para el reajuste del canon (Ley 820, art. 20).</p>
+     <p>Valor actual configurado: <strong>${input.currentIpcPercent}%</strong> (IPC ${input.currentIpcYear}).</p>
+     <p>Entra al <a href="${base}/admin" style="color:#6d28d9;">panel administrativo</a>, verifica la cifra oficial del DANE y <strong>guarda o confirma</strong> para dejar de recibir este recordatorio.</p>`,
   );
   return { subject, html, text };
 }

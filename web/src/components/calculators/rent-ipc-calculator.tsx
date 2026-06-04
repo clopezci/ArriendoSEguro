@@ -9,12 +9,25 @@ function parseCop(v: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function RentIpcCalculator() {
+export type RentIpcCalculatorProps = {
+  /** IPC vigente (desde la config del admin); por defecto usa IPC_REFERENCE. */
+  ipcPercent?: number;
+  ipcPreviousYear?: number;
+  ipcAppliesToYear?: number;
+  ipcSource?: string;
+};
+
+export function RentIpcCalculator({
+  ipcPercent = IPC_REFERENCE.percent,
+  ipcPreviousYear = IPC_REFERENCE.previousYear,
+  ipcAppliesToYear = IPC_REFERENCE.appliesToYear,
+  ipcSource = IPC_REFERENCE.source,
+}: RentIpcCalculatorProps = {}) {
   const [rent, setRent] = useState("");
   const current = parseCop(rent);
   const { maxNewRent } = useMemo(
-    () => calculateMaxAllowedRentAfterIpc(current, IPC_REFERENCE.percent),
-    [current],
+    () => calculateMaxAllowedRentAfterIpc(current, ipcPercent),
+    [current, ipcPercent],
   );
   const increase = Math.max(0, maxNewRent - current);
 
@@ -32,8 +45,8 @@ export function RentIpcCalculator() {
         />
       </label>
       <p id="ipc-help" className="text-xs text-slate-600">
-        Tope vigente: IPC {IPC_REFERENCE.previousYear} = <strong>{IPC_REFERENCE.percent} %</strong> ({IPC_REFERENCE.source}),
-        aplicable a reajustes durante {IPC_REFERENCE.appliesToYear}.
+        Tope vigente: IPC {ipcPreviousYear} = <strong>{ipcPercent} %</strong> ({ipcSource}), aplicable a reajustes
+        durante {ipcAppliesToYear}.
       </p>
 
       {current > 0 && (
@@ -42,10 +55,15 @@ export function RentIpcCalculator() {
             Nuevo canon máximo: <strong className="text-violet-800">{formatCop(maxNewRent)}</strong>
           </p>
           <p className="mt-1 text-xs text-slate-600">
-            Incremento máximo: {formatCop(increase)} ({IPC_REFERENCE.percent} %).
+            Incremento máximo: {formatCop(increase)} ({ipcPercent} %).
           </p>
         </div>
       )}
+
+      <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <strong>Verifica los valores aplicados:</strong> IPC {ipcPreviousYear} = {ipcPercent} % ({ipcSource}). Esta
+        herramienta es orientativa; confirma que la cifra siga vigente con el DANE antes de aplicar un reajuste.
+      </p>
 
       <div className="rounded-lg border-l-4 border-violet-500 bg-violet-50 px-3 py-2 text-xs leading-relaxed text-violet-950">
         El reajuste solo procede al cumplir 12 meses bajo el mismo precio, hasta el 100 % del IPC del año calendario

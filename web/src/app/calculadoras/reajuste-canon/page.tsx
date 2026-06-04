@@ -3,6 +3,8 @@ import Link from "next/link";
 import { JsonLdScript } from "@/components/blog/json-ld";
 import { absoluteUrl } from "@/content/blog/seo";
 import { RentIpcCalculator } from "@/components/calculators/rent-ipc-calculator";
+import { getLegalConfig } from "@/domain/legal/legalConfig";
+import { getAdminFirestore } from "@/lib/firebase/admin";
 
 export const metadata: Metadata = {
   title: "Calculadora de reajuste del canon de arriendo por IPC",
@@ -12,7 +14,8 @@ export const metadata: Metadata = {
   keywords: ["reajuste canon arrendamiento", "cuánto puede subir el arriendo", "IPC 2025", "Ley 820 artículo 20"],
 };
 
-export default function ReajusteCanonPage() {
+export default async function ReajusteCanonPage() {
+  const legal = await getLegalConfig(getAdminFirestore());
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -44,7 +47,12 @@ export default function ReajusteCanonPage() {
             </p>
           </header>
 
-          <RentIpcCalculator />
+          <RentIpcCalculator
+            ipcPercent={legal.ipcPercent}
+            ipcPreviousYear={legal.ipcPreviousYear}
+            ipcAppliesToYear={legal.ipcAppliesToYear}
+            ipcSource={legal.ipcSource}
+          />
 
           <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 text-sm text-slate-700">
             <h2 className="text-lg font-semibold text-slate-900">Cómo funciona el reajuste</h2>

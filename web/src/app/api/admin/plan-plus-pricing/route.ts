@@ -23,6 +23,12 @@ const patchSchema = z
       .min(PLAN_PLUS_CUSTOM_COP_LIMITS.min)
       .max(PLAN_PLUS_CUSTOM_COP_LIMITS.max)
       .optional(),
+    customListCop: z
+      .number()
+      .int()
+      .min(PLAN_PLUS_CUSTOM_COP_LIMITS.min)
+      .max(PLAN_PLUS_CUSTOM_COP_LIMITS.max)
+      .optional(),
   })
   .superRefine((data, ctx) => {
     if (data.preset === "custom" && data.customCheckoutCop == null) {
@@ -56,6 +62,7 @@ export async function GET(request: Request) {
     stored: snap.exists ? raw : null,
     preset: raw.preset ?? null,
     customCheckoutCop: raw.customCheckoutCop ?? null,
+    customListCop: raw.customListCop ?? null,
     resolved: {
       checkoutCop: resolved.checkoutCop,
       listCompareCop: resolved.listCompareCop,
@@ -101,11 +108,13 @@ export async function PATCH(request: Request) {
   const now = new Date().toISOString();
   const preset = parsed.data.preset as PlanPlusPricingPreset;
   const customCheckoutCop = preset === "custom" ? parsed.data.customCheckoutCop! : null;
+  const customListCop = preset === "custom" ? (parsed.data.customListCop ?? null) : null;
 
   await firestore.collection(PLAN_PLUS_PRICING_COLLECTION).doc(PLAN_PLUS_PRICING_DOC_ID).set(
     {
       preset,
       customCheckoutCop,
+      customListCop,
       updatedAt: now,
       updatedAtServer: FieldValue.serverTimestamp(),
       updatedByEmail: auth.user.email.trim().toLowerCase(),

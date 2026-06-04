@@ -127,6 +127,11 @@ El código ya envía **recordatorios de vencimiento** (terminación/renovación)
       `POST https://arriendoseguro.app/api/contracts/renewal-reminders/send-due`
       con header `Authorization: Bearer <CRON_SECRET>`. Opciones: **Vercel Cron** (añadir `crons` en `vercel.json`), GitHub Actions, o un servicio externo (cron-job.org). Recomendado: 1 vez al día.
 - [ ] (Ya existía) recordatorios de **pago**: `POST /api/payments/reminders/send-due` (mismo esquema de cron).
+- [ ] **Recordatorio anual del IPC** (nuevo): `POST https://arriendoseguro.app/api/legal/ipc-reminder/send-due` con header `Authorization: Bearer <CRON_SECRET>`. Prográmalo **1 vez al día** (mismo esquema que los demás crons). El endpoint solo envía correo a tus correos de admin (`ADMIN_INTERNAL_EMAILS`) **a partir de la segunda semana de enero** (día ≥ 8) si todavía no confirmaste el IPC del año, y como máximo una vez cada 7 días. **Deja de enviarte el correo en cuanto entras a `/admin` → tarjeta "IPC para reajuste del canon" y pulsas "Guardar y marcar actualizado" o "Ya está vigente (confirmar)".**
+
+### Valores que ahora administras tú desde `/admin` (sin tocar código)
+- **IPC para reajuste del canon (Ley 820):** porcentaje del año anterior y año al que aplica. El algoritmo de la calculadora de reajuste lee este valor. Actualízalo cada enero (o si la ley cambia) cuando el DANE publique el IPC.
+- **Precio del Plan Plus:** elige preset (promo $49.900 / lista $89.900) o **"Otro"** con dos campos: **precio vigente (checkout)** y **precio de lista (tachado)** para mostrar el descuento. El precio de lista debe ser ≥ al vigente; si lo dejas vacío se usa el de lista por defecto.
 
 ## 7c. Firma electrónica con proveedor (Firma.dev) — próximo bloque
 

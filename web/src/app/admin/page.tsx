@@ -70,6 +70,21 @@ type ObsPayload = {
   totals?: { reportsNew: number; errorsUnresolved: number };
 };
 
+type LegalConfigState = {
+  success: boolean;
+  currentYear: number;
+  confirmedThisYear: boolean;
+  config: {
+    ipcPercent: number;
+    ipcPreviousYear: number;
+    ipcAppliesToYear: number;
+    ipcSource: string;
+    ipcUpdatedAt: string | null;
+    ipcUpdatedByEmail: string | null;
+    ipcConfirmedForYear: number | null;
+  };
+};
+
 function publicAdminHintEmails(): string[] {
   if (typeof window === "undefined") return [];
   const raw = process.env.NEXT_PUBLIC_ADMIN_INTERNAL_EMAILS ?? "";
@@ -95,6 +110,11 @@ export default function AdminPage() {
   >("resumen");
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [obs, setObs] = useState<ObsPayload | null>(null);
+  const [legal, setLegal] = useState<LegalConfigState | null>(null);
+  const [ipcInput, setIpcInput] = useState("");
+  const [ipcYearInput, setIpcYearInput] = useState("");
+  const [legalMsg, setLegalMsg] = useState("");
+  const [legalBusy, setLegalBusy] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [grantEmail, setGrantEmail] = useState("");
   const [grantMsg, setGrantMsg] = useState("");
@@ -124,6 +144,7 @@ export default function AdminPage() {
 
   const [ppPreset, setPpPreset] = useState<"promo_49900" | "list_89900" | "custom">("promo_49900");
   const [ppCustom, setPpCustom] = useState("");
+  const [ppCustomList, setPpCustomList] = useState("");
   const [ppResolved, setPpResolved] = useState<{ checkoutCop: number; listCompareCop: number } | null>(null);
   const [ppPricingErr, setPpPricingErr] = useState("");
   const [ppPricingMsg, setPpPricingMsg] = useState("");
@@ -162,7 +183,7 @@ export default function AdminPage() {
         type PrJson = {
           success?: boolean;
           resolved?: { checkoutCop: number; listCompareCop: number; preset: "promo_49900" | "list_89900" | "custom" };
-          stored?: { customCheckoutCop?: number | null } | null;
+          stored?: { customCheckoutCop?: number | null; customListCop?: number | null } | null;
           errors?: { message?: string }[];
         };
         const prJson = (await prRes.json()) as PrJson;
@@ -170,6 +191,10 @@ export default function AdminPage() {
           setPpPreset(prJson.resolved.preset);
           const cust = prJson.stored?.customCheckoutCop;
           setPpCustom(String(typeof cust === "number" && Number.isFinite(cust) ? cust : prJson.resolved.checkoutCop));
+          const custList = prJson.stored?.customListCop;
+          setPpCustomList(
+            String(typeof custList === "number" && Number.isFinite(custList) ? custList : prJson.resolved.listCompareCop),
+          );
           setPpResolved({ checkoutCop: prJson.resolved.checkoutCop, listCompareCop: prJson.resolved.listCompareCop });
           setPpPricingErr("");
         } else {
@@ -195,10 +220,65 @@ export default function AdminPage() {
     }
   }, [user]);
 
+  const loadLegal = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await fetch("/api/admin/legal-config", { headers: { ...(await buildAuthHeaders(user)) } });
+      const json = (await res.json()) as LegalConfigState;
+      if (res.ok && json.success) {
+        setLegal(json);
+        setIpcInput(String(json.config.ipcPercent));
+        setIpcYearInput(String(json.config.ipcPreviousYear));
+      }
+    } catch {
+      /* silencioso */
+    }
+  }, [user]);
+
+  async function saveIpc(confirmOnly: boolean) {
+    if (!user) return;
+    setLegalBusy(true);
+    setLegalMsg("");
+    try {
+      const body: Record<string, unknown> = { confirmOnly };
+      if (!confirmOnly) {
+        const pct = Number(ipcInput.replace(",", "."));
+        const yr = Number(ipcYearInput.replace(/[^\d]/g, ""));
+        if (!Number.isFinite(pct) || pct <= 0 || pct > 100) {
+          setLegalMsg("El IPC debe ser un porcentaje entre 0 y 100.");
+          setLegalBusy(false);
+          return;
+        }
+        body.ipcPercent = pct;
+        if (Number.isInteger(yr) && yr >= 2000) {
+          body.ipcPreviousYear = yr;
+          body.ipcAppliesToYear = yr + 1;
+        }
+      }
+      const res = await fetch("/api/admin/legal-config", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json()) as LegalConfigState & { errors?: { message?: string }[] };
+      if (!res.ok || !json.success) {
+        setLegalMsg(json.errors?.[0]?.message ?? "No se pudo guardar.");
+        return;
+      }
+      setLegal(json);
+      setLegalMsg(confirmOnly ? "Confirmado: dejaremos de enviarte el recordatorio este año." : "IPC actualizado y confirmado para este año.");
+    } catch {
+      setLegalMsg("Error de red.");
+    } finally {
+      setLegalBusy(false);
+    }
+  }
+
   useEffect(() => {
     void load();
     void loadObs();
-  }, [load, loadObs]);
+    void loadLegal();
+  }, [load, loadObs, loadLegal]);
 
   async function savePlanPlusPricing() {
     if (!user) return;
@@ -208,8 +288,20 @@ export default function AdminPage() {
     try {
       const digits = ppCustom.replace(/[^\d]/g, "");
       const n = digits === "" ? NaN : Number(digits);
-      const body: { preset: "promo_49900" | "list_89900" | "custom"; customCheckoutCop?: number } =
-        ppPreset === "custom" ? { preset: "custom", customCheckoutCop: n } : { preset: ppPreset };
+      const listDigits = ppCustomList.replace(/[^\d]/g, "");
+      const listN = listDigits === "" ? NaN : Number(listDigits);
+      const body: {
+        preset: "promo_49900" | "list_89900" | "custom";
+        customCheckoutCop?: number;
+        customListCop?: number;
+      } =
+        ppPreset === "custom"
+          ? {
+              preset: "custom",
+              customCheckoutCop: n,
+              ...(Number.isInteger(listN) ? { customListCop: listN } : {}),
+            }
+          : { preset: ppPreset };
       if (
         ppPreset === "custom" &&
         (!Number.isInteger(n) ||
@@ -220,6 +312,20 @@ export default function AdminPage() {
           `El monto personalizado debe ser un entero entre ${PLAN_PLUS_CUSTOM_COP_LIMITS.min.toLocaleString(
             "es-CO",
           )} y ${PLAN_PLUS_CUSTOM_COP_LIMITS.max.toLocaleString("es-CO")} COP.`,
+        );
+        return;
+      }
+      if (
+        ppPreset === "custom" &&
+        Number.isInteger(listN) &&
+        (listN < PLAN_PLUS_CUSTOM_COP_LIMITS.min ||
+          listN > PLAN_PLUS_CUSTOM_COP_LIMITS.max ||
+          listN < n)
+      ) {
+        setPpPricingErr(
+          `El precio de lista (tachado) debe ser un entero entre ${PLAN_PLUS_CUSTOM_COP_LIMITS.min.toLocaleString(
+            "es-CO",
+          )} y ${PLAN_PLUS_CUSTOM_COP_LIMITS.max.toLocaleString("es-CO")} COP, y no menor al precio vigente.`,
         );
         return;
       }
@@ -545,11 +651,11 @@ export default function AdminPage() {
                   onChange={() => setPpPreset("custom")}
                 />
                 <span className="flex flex-wrap items-center gap-2">
-                  Otro monto COP
+                  Otro: precio vigente (checkout) COP
                   <input
                     type="text"
                     inputMode="numeric"
-                    aria-label="Monto COP personalizado"
+                    aria-label="Precio vigente COP personalizado"
                     disabled={ppPreset !== "custom"}
                     value={ppCustom}
                     onChange={(e) => setPpCustom(e.target.value)}
@@ -557,10 +663,24 @@ export default function AdminPage() {
                   />
                 </span>
               </label>
+              {ppPreset === "custom" && (
+                <label className="flex flex-wrap items-center gap-2 pl-6 text-slate-700">
+                  Precio de lista (tachado) COP
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    aria-label="Precio de lista tachado COP personalizado"
+                    value={ppCustomList}
+                    onChange={(e) => setPpCustomList(e.target.value)}
+                    className="w-36 rounded border border-slate-300 px-2 py-1 text-xs"
+                  />
+                </label>
+              )}
             </fieldset>
             <p className="mt-1 text-[11px] text-slate-500">
               Otro: enteros entre {PLAN_PLUS_CUSTOM_COP_LIMITS.min.toLocaleString("es-CO")} y{" "}
-              {PLAN_PLUS_CUSTOM_COP_LIMITS.max.toLocaleString("es-CO")} COP.
+              {PLAN_PLUS_CUSTOM_COP_LIMITS.max.toLocaleString("es-CO")} COP. El precio de lista (tachado) debe ser{" "}
+              mayor o igual al precio vigente; si lo dejas vacío, se usa el de lista por defecto.
             </p>
             <button
               type="button"
@@ -570,6 +690,64 @@ export default function AdminPage() {
             >
               {ppSaveLoading ? "Guardando…" : "Guardar precio"}
             </button>
+          </section>
+        )}
+
+        {legal && (
+          <section className="mb-6 rounded-xl border border-amber-400/50 bg-amber-50/60 p-4">
+            <h2 className="text-sm font-semibold text-slate-900">IPC para reajuste del canon (Ley 820)</h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              Este valor alimenta la calculadora de reajuste. Actualízalo cada año con la cifra oficial del DANE. Cada
+              enero (2ª semana) recibirás un recordatorio por correo hasta que guardes o confirmes aquí.
+            </p>
+            <p className="mt-2 text-xs text-slate-800">
+              Vigente: <strong>{legal.config.ipcPercent}%</strong> (IPC {legal.config.ipcPreviousYear}) ·{" "}
+              {legal.confirmedThisYear ? (
+                <span className="text-emerald-700">confirmado para {legal.currentYear}</span>
+              ) : (
+                <span className="text-amber-800">sin confirmar para {legal.currentYear}</span>
+              )}
+              {legal.config.ipcUpdatedAt ? ` · últ. cambio ${legal.config.ipcUpdatedAt.slice(0, 10)}` : ""}
+            </p>
+            <div className="mt-3 flex flex-wrap items-end gap-2">
+              <label className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-medium text-slate-600">IPC %</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={ipcInput}
+                  onChange={(e) => setIpcInput(e.target.value)}
+                  className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+                />
+              </label>
+              <label className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-medium text-slate-600">Año del IPC</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={ipcYearInput}
+                  onChange={(e) => setIpcYearInput(e.target.value)}
+                  className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={legalBusy}
+                onClick={() => void saveIpc(false)}
+                className="rounded border border-violet-500 bg-violet-600 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+              >
+                {legalBusy ? "…" : "Guardar y marcar actualizado"}
+              </button>
+              <button
+                type="button"
+                disabled={legalBusy}
+                onClick={() => void saveIpc(true)}
+                className="rounded border border-slate-400 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-800 disabled:opacity-50"
+              >
+                Ya está vigente (confirmar {legal.currentYear})
+              </button>
+            </div>
+            {legalMsg && <p className="mt-2 text-xs text-slate-700">{legalMsg}</p>}
           </section>
         )}
 

@@ -19,6 +19,8 @@ export type PlanPlusPricingPreset = "promo_49900" | "list_89900" | "custom";
 const storedSchema = z.object({
   preset: z.enum(["promo_49900", "list_89900", "custom"]),
   customCheckoutCop: z.number().int().positive().max(999_999).nullable().optional(),
+  /** Precio de lista (tachado) personalizado; si falta, se usa el de lista por defecto. */
+  customListCop: z.number().int().positive().max(999_999).nullable().optional(),
   updatedAt: z.string().optional(),
   updatedByEmail: z.string().optional(),
 });
@@ -50,7 +52,7 @@ export function resolvePlanPlusPricingFromFirestoreData(stored: unknown): Resolv
   const parsed = storedSchema.safeParse(stored);
   if (!parsed.success) return getDefaultResolvedPlanPlusPricing();
 
-  const { preset, customCheckoutCop } = parsed.data;
+  const { preset, customCheckoutCop, customListCop } = parsed.data;
   if (preset === "promo_49900") {
     return {
       checkoutCop: CONTRACT_EARLY_BIRD_PRICE_COP,
@@ -70,7 +72,13 @@ export function resolvePlanPlusPricingFromFirestoreData(stored: unknown): Resolv
     return getDefaultResolvedPlanPlusPricing();
   }
   const checkout = clampCustom(raw);
-  const listCompare = checkout < CONTRACT_LIST_PRICE_COP ? CONTRACT_LIST_PRICE_COP : checkout;
+  // Precio de lista (tachado): si el admin definió uno personalizado y es mayor
+  // o igual al precio vigente, se usa; si no, el de lista por defecto.
+  const fallbackList = checkout < CONTRACT_LIST_PRICE_COP ? CONTRACT_LIST_PRICE_COP : checkout;
+  const listCompare =
+    customListCop != null && Number.isInteger(customListCop) && customListCop >= checkout
+      ? clampCustom(customListCop)
+      : fallbackList;
   return { checkoutCop: checkout, listCompareCop: listCompare, preset: "custom" };
 }
 

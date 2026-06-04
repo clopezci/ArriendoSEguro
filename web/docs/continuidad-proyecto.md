@@ -1,7 +1,7 @@
 # Continuidad del proyecto — ArriendoSeguro
 
 > **Documento vivo para agentes y humanos.** Objetivo: que cualquier sesión nueva retome el trabajo sin perder contexto.  
-> **Última actualización:** 2026-06-03 (reglas Firestore/Storage versionadas, rate-limit Upstash, páginas Acerca de / Contacto, dominio canónico `arriendoseguro.app`, banner de consentimiento de cookies con Consent Mode v2 + política de cookies).
+> **Última actualización:** 2026-06-04 (bloque de gobernanza admin: IPC del reajuste editable desde `/admin` y leído por la calculadora, recordatorio anual automático en enero que se apaga al confirmar, precio del Plan Plus con precio vigente + lista tachada editables, notas legales en calculadoras; calculadoras públicas con SEO).
 
 ---
 
@@ -261,6 +261,7 @@ Wizard típico: consentimiento → tipo contrato → partes → inmueble → té
 
 | Fecha | Agente / nota | Resumen | Commit(s) |
 |-------|---------------|---------|-----------|
+| 2026-06-04 | Claude Code | **Bloque de gobernanza admin (sin costo, baja el riesgo legal y da autonomía al fundador):** IPC del reajuste editable desde `/admin` (`app_settings/legal_config`, dominio `legalConfig`) y la calculadora de reajuste lo **lee** (ya no hardcodeado); **recordatorio anual automático** 2ª semana de enero a los correos de admin (cron `api/legal/ipc-reminder/send-due`, plantilla `ipcUpdateReminderEmail`) que **se apaga al confirmar/actualizar** en `/admin`; **precio del Plan Plus** ampliado a precio vigente + **precio de lista (tachado)** personalizable (`customListCop` en dominio/route/UI); notas "verifica los valores aplicados" en las 3 calculadoras. +7 tests de pricing (66/66). Pendiente fundador: programar el nuevo cron (manual §7b). | `(este)` |
 | 2026-06-04 | Claude Code | **Calculadoras públicas** (SEO + conversión, sin costo): `/calculadoras` + reajuste por IPC (5,10 % 2025), canon máximo 1 % y garantía de servicios (Art. 15), reutilizando `rent-law` y `utilityGuarantee`; con metadata, JSON-LD, CTA, sitemap y footer. IPC vigente en `IPC_REFERENCE`. | `(este)` |
 | 2026-06-03 | Claude Code | Cierre modelo gratis/pago: copy **"genera tu contrato gratis"** en landing y `/entiendelo-facil` (gateado), y **demo guiado actualizado** (gratis para generar; firma/posventa Plus; menciona alertas, reputación bidireccional y garantía Art. 15). | `(este)` |
 | 2026-06-03 | Claude Code | **Cláusula de garantía Art. 15 impresa en el contrato** (abogado validó el marco): `utilityServicesGuarantee` en el payload (`types`/`api-types`/`toContractInput`) y `buildUtilityGuaranteeBlock` con placeholder `[GARANTIA_SERVICIOS_PUBLICOS_CONDICIONAL]` en cláusula 7 de ambos templates (MVP y 2026.2). Solo se imprime si está habilitada y aceptada. 59/59. | `(este)` |
