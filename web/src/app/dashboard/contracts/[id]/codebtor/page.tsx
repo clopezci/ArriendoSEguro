@@ -1,6 +1,7 @@
 "use client";
 
 import { CodebtorSupportsPanel } from "@/components/contracts/codebtor-supports-panel";
+import { AdditionalCodebtorsManager } from "@/components/contracts/additional-codebtors-manager";
 import { CreditHistoryGuidanceBlock } from "@/components/contracts/credit-history-guidance-block";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
@@ -273,6 +274,12 @@ export default function CodebtorStepPage() {
             </div>
           )}
         </form>
+      )}
+
+      {decision === "yes" && (
+        <div className="mt-4">
+          <AdditionalCodebtorsManager contractId={id} />
+        </div>
       )}
 
       {/*

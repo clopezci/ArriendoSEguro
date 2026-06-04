@@ -73,11 +73,18 @@ export default function ReviewStepPage() {
           <p>{draft.tenant.documentType} {draft.tenant.documentNumber}</p>
           <p>{draft.tenant.email}</p>
         </Card>
-        <Card title="Codeudor">
+        <Card title="Codeudor(es)">
           {draft.hasSolidaryCoDebtor ? (
             <>
-              <p>{draft.solidaryCoDebtor.fullName}</p>
-              <p>{draft.solidaryCoDebtor.documentType} {draft.solidaryCoDebtor.documentNumber}</p>
+              <p>
+                <strong>Codeudor 1:</strong> {draft.solidaryCoDebtor.fullName} (
+                {draft.solidaryCoDebtor.documentType} {draft.solidaryCoDebtor.documentNumber})
+              </p>
+              {(draft.solidaryCoDebtors ?? []).map((c, i) => (
+                <p key={`${c.documentNumber}-${i}`}>
+                  <strong>Codeudor {i + 2}:</strong> {c.fullName} ({c.documentType} {c.documentNumber})
+                </p>
+              ))}
             </>
           ) : (
             <p>Sin codeudor solidario.</p>
