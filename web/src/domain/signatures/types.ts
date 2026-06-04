@@ -1,4 +1,11 @@
-export type SignaturePartyType = "landlord" | "tenant" | "solidaryCoDebtor";
+export type SignaturePartyType =
+  | "landlord"
+  | "tenant"
+  | "solidaryCoDebtor"
+  | "solidaryCoDebtor_2"
+  | "solidaryCoDebtor_3"
+  | "solidaryCoDebtor_4"
+  | "solidaryCoDebtor_5";
 
 export type SignatureStatus =
   | "pending"

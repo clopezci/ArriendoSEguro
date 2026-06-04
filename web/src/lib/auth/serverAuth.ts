@@ -4,7 +4,14 @@ import { NextResponse } from "next/server";
 import { getAdminAuth } from "@/lib/firebase/admin";
 import type { PersonParty, ResidentialLeaseContractInput } from "@/domain/contracts/types";
 
-export type ContractParticipantRole = "landlord" | "tenant" | "solidaryCoDebtor";
+export type ContractParticipantRole =
+  | "landlord"
+  | "tenant"
+  | "solidaryCoDebtor"
+  | "solidaryCoDebtor_2"
+  | "solidaryCoDebtor_3"
+  | "solidaryCoDebtor_4"
+  | "solidaryCoDebtor_5";
 
 const IDENTITY_BODY_KEYS = ["reportedByUserId", "reportedByEmail", "reportedByRole"] as const;
 
@@ -129,13 +136,25 @@ export function resolveEmailRoleInContract(
   const e = userEmail.trim().toLowerCase();
   const land = contractPayload?.landlord as PersonParty | undefined;
   const ten = contractPayload?.tenant as PersonParty | undefined;
-  const co = contractPayload?.solidaryCoDebtor as PersonParty | undefined;
   const l = (land?.email ?? "").trim().toLowerCase();
   const t = (ten?.email ?? "").trim().toLowerCase();
-  const c = (co?.email ?? "").trim().toLowerCase();
   if (l && e === l) return "landlord";
   if (t && e === t) return "tenant";
-  if (hasSolidaryCoDebtor && c && e === c) return "solidaryCoDebtor";
+
+  // Codeudores: prioriza la lista completa; cae al singular (compat).
+  const list = (contractPayload as { solidaryCoDebtors?: PersonParty[] } | undefined)?.solidaryCoDebtors;
+  const codebtors: PersonParty[] =
+    list && list.length > 0
+      ? list
+      : hasSolidaryCoDebtor && contractPayload?.solidaryCoDebtor
+        ? [contractPayload.solidaryCoDebtor as PersonParty]
+        : [];
+  for (let i = 0; i < codebtors.length; i += 1) {
+    const c = (codebtors[i]?.email ?? "").trim().toLowerCase();
+    if (c && e === c) {
+      return (i === 0 ? "solidaryCoDebtor" : `solidaryCoDebtor_${i + 1}`) as ContractParticipantRole;
+    }
+  }
   return null;
 }
 

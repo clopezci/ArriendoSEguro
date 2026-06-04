@@ -198,7 +198,7 @@ export type StartSignatureResponse =
   | {
       success: true;
       signatures: Array<{
-        partyType: "landlord" | "tenant" | "solidaryCoDebtor";
+        partyType: "landlord" | "tenant" | "solidaryCoDebtor" | "solidaryCoDebtor_2" | "solidaryCoDebtor_3" | "solidaryCoDebtor_4" | "solidaryCoDebtor_5";
         signerEmail: string;
         signatureStatus: "pending" | "sent" | "opened" | "signed" | "expired" | "cancelled" | "failed";
         tokenExpiresAt: string;

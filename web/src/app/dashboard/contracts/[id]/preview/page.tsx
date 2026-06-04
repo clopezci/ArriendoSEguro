@@ -406,8 +406,13 @@ export default function PreviewStepPage() {
         tenant: "Arrendatario (inquilino)",
         solidaryCoDebtor: "Codeudor",
       };
+      const labelForParty = (party: string): string => {
+        if (partyLabel[party]) return partyLabel[party];
+        if (party.startsWith("solidaryCoDebtor_")) return `Codeudor ${party.slice("solidaryCoDebtor_".length)}`;
+        return party;
+      };
       const details = data.signatures.map((s) => {
-        const label = partyLabel[s.partyType] ?? s.partyType;
+        const label = labelForParty(s.partyType);
         const mode = s.emailMode ?? "mock";
         const modeLabel =
           mode === "real"

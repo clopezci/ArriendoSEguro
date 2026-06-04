@@ -142,7 +142,10 @@ export async function POST(request: Request) {
     const contractRef = firestore.collection("contracts").doc(signature.contractId);
     const versionSnap = await versionRef.get();
     const version = versionSnap.data() as {
-      contractPayload?: { hasSolidaryCoDebtor: boolean };
+      contractPayload?: {
+        hasSolidaryCoDebtor: boolean;
+        solidaryCoDebtors?: unknown[];
+      };
       versionNumber?: number;
       documentHash?: string;
     } | undefined;
@@ -155,8 +158,11 @@ export async function POST(request: Request) {
         { status: 422 },
       );
     }
-    const hasCodebtor = Boolean(version?.contractPayload?.hasSolidaryCoDebtor);
-    const fullySigned = allRequiredSignaturesCompleted(signatures, hasCodebtor);
+    // Cantidad de codeudores: prioriza la lista; cae al flag (un codeudor).
+    const codebtorCount =
+      version?.contractPayload?.solidaryCoDebtors?.length ??
+      (version?.contractPayload?.hasSolidaryCoDebtor ? 1 : 0);
+    const fullySigned = allRequiredSignaturesCompleted(signatures, codebtorCount);
 
     if (fullySigned) {
       await Promise.all([

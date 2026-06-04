@@ -18,17 +18,35 @@ export const runtime = "nodejs";
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "application/pdf"]);
 
+/** Índice (0-based) del codeudor a partir del rol, o null si no es codeudor. */
+function codebtorIndexFromRole(role: string): number | null {
+  if (role === "solidaryCoDebtor") return 0;
+  if (role.startsWith("solidaryCoDebtor_")) {
+    const n = Number(role.slice("solidaryCoDebtor_".length));
+    return Number.isFinite(n) ? n - 1 : null;
+  }
+  return null;
+}
+
+function codebtorAt(payload: ResidentialLeaseContractInput | undefined, index: number) {
+  const list = payload?.solidaryCoDebtors;
+  if (list && list.length > 0) return list[index];
+  return index === 0 ? payload?.solidaryCoDebtor : undefined;
+}
+
 function partyLabel(role: string): string {
   if (role === "landlord") return "Arrendador (dueño)";
   if (role === "tenant") return "Arrendatario (inquilino)";
-  if (role === "solidaryCoDebtor") return "Codeudor solidario";
+  const idx = codebtorIndexFromRole(role);
+  if (idx !== null) return idx === 0 ? "Codeudor solidario" : `Codeudor solidario ${idx + 1}`;
   return role;
 }
 
 function authorDisplayName(payload: ResidentialLeaseContractInput | undefined, role: string): string {
   if (role === "landlord") return (payload?.landlord?.fullName ?? "Arrendador").trim() || "Arrendador";
   if (role === "tenant") return (payload?.tenant?.fullName ?? "Arrendatario").trim() || "Arrendatario";
-  if (role === "solidaryCoDebtor") return (payload?.solidaryCoDebtor?.fullName ?? "Codeudor").trim() || "Codeudor";
+  const idx = codebtorIndexFromRole(role);
+  if (idx !== null) return (codebtorAt(payload, idx)?.fullName ?? "Codeudor").trim() || "Codeudor";
   return "Parte del contrato";
 }
 
@@ -208,11 +226,13 @@ export async function POST(request: Request) {
 
     // Aviso por SMS a las otras partes (best-effort; mock si no hay proveedor).
     const authorEmailLc = (participant.user.email ?? "").toLowerCase();
-    const phoneTargets = [
-      payload?.landlord,
-      payload?.tenant,
-      hasCodebtor ? payload?.solidaryCoDebtor : undefined,
-    ]
+    const codebtorPhoneTargets =
+      payload?.solidaryCoDebtors && payload.solidaryCoDebtors.length > 0
+        ? payload.solidaryCoDebtors
+        : hasCodebtor && payload?.solidaryCoDebtor
+          ? [payload.solidaryCoDebtor]
+          : [];
+    const phoneTargets = [payload?.landlord, payload?.tenant, ...codebtorPhoneTargets]
       .filter((p): p is NonNullable<typeof p> => Boolean(p?.phone))
       .filter((p) => (p.email ?? "").toLowerCase() !== authorEmailLc);
     const smsBody = `ArriendoSeguro: ${authorName} registró una novedad (${tipoLabel}) en tu arriendo. Revísala en la plataforma.`;

@@ -44,10 +44,10 @@ export const REPUTATION_CRITERIA: Record<ReputationDirection, ReputationCriterio
 };
 
 /** Dirección que le corresponde a quien califica según su rol en el contrato. */
-export function directionForRaterRole(role: "landlord" | "tenant" | "solidaryCoDebtor"): ReputationDirection | null {
+export function directionForRaterRole(role: string): ReputationDirection | null {
   if (role === "landlord") return "landlord_to_tenant";
   if (role === "tenant") return "tenant_to_landlord";
-  return null; // el codeudor no califica en esta fase
+  return null; // los codeudores (incl. solidaryCoDebtor_2…) no califican en esta fase
 }
 
 export function criteriaKeys(direction: ReputationDirection): string[] {
@@ -59,9 +59,7 @@ export function criteriaKeys(direction: ReputationDirection): string[] {
  * rol. Sirve para el derecho de réplica: el arrendatario es sujeto de la
  * calificación `landlord_to_tenant` y el arrendador de `tenant_to_landlord`.
  */
-export function reviewDirectionAboutRole(
-  role: "landlord" | "tenant" | "solidaryCoDebtor",
-): ReputationDirection | null {
+export function reviewDirectionAboutRole(role: string): ReputationDirection | null {
   if (role === "tenant") return "landlord_to_tenant";
   if (role === "landlord") return "tenant_to_landlord";
   return null;

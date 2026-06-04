@@ -19,21 +19,36 @@ import { freeTierEnabled } from "@/lib/config";
 
 export const runtime = "nodejs";
 
+type PartyPerson = { fullName: string; email: string; documentType: string; documentNumber: string };
 type ContractVersionDoc = {
   contractId: string;
   contractPayload?: {
-    landlord: { fullName: string; email: string; documentType: string; documentNumber: string };
-    tenant: { fullName: string; email: string; documentType: string; documentNumber: string };
-    solidaryCoDebtor?: { fullName: string; email: string; documentType: string; documentNumber: string };
+    landlord: PartyPerson;
+    tenant: PartyPerson;
+    solidaryCoDebtor?: PartyPerson;
+    solidaryCoDebtors?: PartyPerson[];
     hasSolidaryCoDebtor: boolean;
   };
   documentHash?: string;
 };
 
-function personForParty(payload: NonNullable<ContractVersionDoc["contractPayload"]>, party: SignaturePartyType) {
+/** Lista efectiva de codeudores: prioriza la lista; cae al singular. */
+function codebtorsOf(payload: NonNullable<ContractVersionDoc["contractPayload"]>): PartyPerson[] {
+  if (payload.solidaryCoDebtors && payload.solidaryCoDebtors.length > 0) return payload.solidaryCoDebtors;
+  if (payload.hasSolidaryCoDebtor && payload.solidaryCoDebtor) return [payload.solidaryCoDebtor];
+  return [];
+}
+
+function personForParty(
+  payload: NonNullable<ContractVersionDoc["contractPayload"]>,
+  party: SignaturePartyType,
+): PartyPerson | null {
   if (party === "landlord") return payload.landlord;
   if (party === "tenant") return payload.tenant;
-  return payload.solidaryCoDebtor ?? null;
+  const codebtors = codebtorsOf(payload);
+  // "solidaryCoDebtor" → índice 0; "solidaryCoDebtor_N" → índice N-1.
+  const index = party === "solidaryCoDebtor" ? 0 : Number(party.slice("solidaryCoDebtor_".length)) - 1;
+  return index >= 0 && index < codebtors.length ? codebtors[index] : null;
 }
 
 export async function POST(request: Request) {
@@ -133,7 +148,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const parties = requiredParties(version.contractPayload.hasSolidaryCoDebtor);
+    const parties = requiredParties(codebtorsOf(version.contractPayload).length);
     const existingSignatures = await firestore
       .collection("signatures")
       .where("contractId", "==", contractId)
@@ -154,7 +169,7 @@ export async function POST(request: Request) {
 
     auditEvent("signature_round_started", { contractId, contractVersionId, parties: parties.length });
     const signatures: Array<{
-      partyType: "landlord" | "tenant" | "solidaryCoDebtor";
+      partyType: SignaturePartyType;
       signerEmail: string;
       signatureStatus: "sent";
       tokenExpiresAt: string;
