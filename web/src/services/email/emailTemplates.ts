@@ -10,7 +10,8 @@ export type EmailTemplateCode =
   | "contactMessageEmail"
   | "contactAckEmail"
   | "contractRenewalReminderEmail"
-  | "ipcUpdateReminderEmail";
+  | "ipcUpdateReminderEmail"
+  | "reputationLookupRequestEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
@@ -45,6 +46,24 @@ export function inviteCounterpartyEmail(input: {
     "Invitación de contraparte",
     `<p>${input.inviterName} te invitó a continuar el expediente <strong>${input.contractLabel}</strong> en ArriendoSeguro.</p>
      <p><a href="${input.invitationUrl}" style="color:#6d28d9;">Abrir invitación</a></p>`,
+  );
+  return { subject, html, text };
+}
+
+export function reputationLookupRequestEmail(input: {
+  requesterEmail: string;
+  manageUrl: string;
+}): CompiledEmailTemplate {
+  const subject = "Te solicitaron consultar tu reputación de arriendo";
+  const text =
+    `${input.requesterEmail} solicitó ver tu reputación agregada (promedio de estrellas) en ArriendoSeguro.\n\n` +
+    `Tú decides: puedes autorizar o rechazar la consulta. Solo se compartiría tu promedio y el número de contratos, nunca quién te calificó ni el detalle.\n\n` +
+    `Gestiona la solicitud aquí: ${input.manageUrl}`;
+  const html = baseHtml(
+    "Solicitud para consultar tu reputación",
+    `<p><strong>${input.requesterEmail}</strong> solicitó ver tu reputación agregada (promedio de estrellas) en ArriendoSeguro.</p>
+     <p>Tú decides: puedes <strong>autorizar o rechazar</strong> la consulta. Solo se compartiría tu promedio y el número de contratos, <strong>nunca</strong> quién te calificó ni el detalle (Habeas Data, Ley 1581 de 2012).</p>
+     <p><a href="${input.manageUrl}" style="color:#6d28d9;">Gestionar la solicitud</a></p>`,
   );
   return { subject, html, text };
 }

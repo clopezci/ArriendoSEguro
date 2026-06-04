@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { StarRating } from "@/components/reputation/star-rating";
+import { ReputationConsentSections } from "@/components/reputation/consent-sections";
 import { REPUTATION_DIRECTION_LABELS, type ReputationDirection } from "@/domain/reputation/criteria";
 
 type DirSummary = {
@@ -96,6 +97,8 @@ export default function MiReputacionPage() {
             </ul>
           </section>
         ))}
+
+      <ReputationConsentSections />
 
       <p className="text-xs text-slate-500">
         Ver la{" "}

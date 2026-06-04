@@ -122,6 +122,10 @@ export default function AdminPage() {
   >([]);
   const [refMsg, setRefMsg] = useState("");
   const [refBusy, setRefBusy] = useState(false);
+  const [repFlags, setRepFlags] = useState<
+    { id: string; severity: string; status: string; contractId: string; raterEmail: string; subjectEmail: string; signals: { code: string; detail: string }[]; createdAt: string }[]
+  >([]);
+  const [repFlagsBusy, setRepFlagsBusy] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [grantEmail, setGrantEmail] = useState("");
   const [grantMsg, setGrantMsg] = useState("");
@@ -365,12 +369,41 @@ export default function AdminPage() {
     }
   }
 
+  const loadRepFlags = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await fetch("/api/admin/reputation-flags", { headers: { ...(await buildAuthHeaders(user)) } });
+      const json = (await res.json()) as { success?: boolean; flags?: typeof repFlags };
+      if (res.ok && json.success && Array.isArray(json.flags)) setRepFlags(json.flags);
+    } catch {
+      /* silencioso */
+    }
+  }, [user]);
+
+  async function reviewRepFlag(id: string, status: "reviewed" | "dismissed") {
+    if (!user) return;
+    setRepFlagsBusy(true);
+    try {
+      await fetch("/api/admin/reputation-flags", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ id, status }),
+      });
+      await loadRepFlags();
+    } catch {
+      /* silencioso */
+    } finally {
+      setRepFlagsBusy(false);
+    }
+  }
+
   useEffect(() => {
     void load();
     void loadObs();
     void loadLegal();
     void loadReferrals();
-  }, [load, loadObs, loadLegal, loadReferrals]);
+    void loadRepFlags();
+  }, [load, loadObs, loadLegal, loadReferrals, loadRepFlags]);
 
   async function savePlanPlusPricing() {
     if (!user) return;
@@ -939,6 +972,62 @@ export default function AdminPage() {
             )}
           </div>
           {refMsg && <p className="mt-2 text-xs text-slate-700">{refMsg}</p>}
+        </section>
+
+        <section className="mb-6 rounded-xl border border-amber-300 bg-amber-50/40 p-4">
+          <h2 className="text-sm font-semibold text-amber-900">
+            Señales anti-fraude de reputación ({repFlags.filter((f) => f.status === "open").length} abiertas)
+          </h2>
+          <p className="mt-1 text-xs text-slate-600">
+            Patrones para revisión humana (no bloquean automáticamente): mismo par calificándose en varios contratos o
+            ráfagas de calificaciones.
+          </p>
+          {repFlags.length === 0 ? (
+            <p className="mt-2 text-xs text-slate-500">Sin señales registradas.</p>
+          ) : (
+            <ul className="mt-3 space-y-1">
+              {repFlags.map((f) => (
+                <li
+                  key={f.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-white/80 px-2 py-1.5 text-[11px]"
+                >
+                  <span className="min-w-0">
+                    <strong
+                      className={
+                        f.severity === "high" ? "text-rose-700" : f.severity === "medium" ? "text-amber-700" : "text-slate-700"
+                      }
+                    >
+                      {f.severity}
+                    </strong>{" "}
+                    <span className="text-slate-600">
+                      {f.signals.map((s) => s.code).join(", ")} · {f.subjectEmail} ← {f.raterEmail}
+                    </span>
+                    <span className="text-slate-400"> · {f.status}</span>
+                  </span>
+                  {f.status === "open" && (
+                    <span className="flex gap-2">
+                      <button
+                        type="button"
+                        disabled={repFlagsBusy}
+                        onClick={() => void reviewRepFlag(f.id, "reviewed")}
+                        className="rounded border border-slate-400 px-2 py-0.5 text-slate-800 disabled:opacity-50"
+                      >
+                        Revisado
+                      </button>
+                      <button
+                        type="button"
+                        disabled={repFlagsBusy}
+                        onClick={() => void reviewRepFlag(f.id, "dismissed")}
+                        className="rounded border border-slate-300 px-2 py-0.5 text-slate-600 disabled:opacity-50"
+                      >
+                        Descartar
+                      </button>
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         {data?.features?.manualGrantPlus && (

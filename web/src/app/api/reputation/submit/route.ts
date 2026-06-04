@@ -11,6 +11,10 @@ import {
   validateRatings,
   type ReputationDirection,
 } from "@/domain/reputation/criteria";
+import {
+  recomputeAggregateForSubject,
+  runAntifraudOnSubmit,
+} from "@/lib/reputation/aggregate-store";
 
 export const runtime = "nodejs";
 
@@ -136,6 +140,23 @@ export async function POST(request: Request) {
       overall: check.overall,
       updated: existed,
     });
+
+    // Mantener el agregado privado del sujeto y correr anti-fraude (flag-only).
+    // No debe romper el guardado de la calificación si algo falla.
+    if (subjectEmail) {
+      try {
+        await recomputeAggregateForSubject(firestore, subjectEmail);
+        await runAntifraudOnSubmit(firestore, {
+          raterUid: participant.user.uid,
+          raterEmail: participant.user.email,
+          subjectEmail,
+          contractId,
+          createdAt: now,
+        });
+      } catch (aggErr) {
+        await logServerError("reputation/aggregate", aggErr);
+      }
+    }
 
     return NextResponse.json({ success: true, overall: check.overall, updated: existed });
   } catch (err) {
