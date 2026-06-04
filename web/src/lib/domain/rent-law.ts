@@ -7,6 +7,21 @@
 export const URBAN_HOUSING_MONTHLY_RENT_MAX_RATIO = 0.01; // 1% valor comercial / mes
 export const MAX_COMMERCIAL_TO_CADASTRE_RATIO = 2; // tope típico comercial <= 2x avalúo (Ley 820)
 
+/**
+ * IPC del año calendario anterior, certificado por el DANE, que fija el tope
+ * de reajuste del canon (Ley 820, art. 20). Actualizar cada año con la cifra
+ * oficial del DANE. Diciembre 2025: variación anual 5,10 %.
+ */
+export const IPC_REFERENCE = {
+  /** Año cuyo IPC aplica como tope. */
+  previousYear: 2025,
+  /** Año en que se aplican los reajustes con este IPC. */
+  appliesToYear: 2026,
+  /** Variación anual del IPC (%) certificada por el DANE. */
+  percent: 5.1,
+  source: "DANE (variación anual a diciembre de 2025)",
+} as const;
+
 export type EffectiveCommercialValueInput = {
   commercialValue: number;
   /** Avalúo catastral en COP; si se omite, se usa commercialValue */
