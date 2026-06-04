@@ -135,14 +135,26 @@ El código ya envía **recordatorios de vencimiento** (terminación/renovación)
 - **Precio del Plan Plus:** elige preset (promo $49.900 / lista $89.900) o **"Otro"** con dos campos: **precio vigente (checkout)** y **precio de lista (tachado)** para mostrar el descuento. El precio de lista debe ser ≥ al vigente; si lo dejas vacío se usa el de lista por defecto.
 - **Referidos (Invita y gana):** activa/desactiva el programa y fija el **% de descuento** al referido (por defecto **50%**). Cada invitado queda **pendiente** hasta que lo **apruebes** en la tarjeta «Referidos» de `/admin`; al aprobarlo, el referido ve el precio del Plan Plus con el descuento aplicado. Como el cobro hoy es manual (Wompi aparcado), **al conceder el Plan Plus a un referido aprobado, hazle el precio con el descuento** que muestra su pantalla de Planes.
 
-## 7c. Firma electrónica con proveedor (Firma.dev) — próximo bloque
+## 7c. Firma electrónica con proveedor (Firma.dev) — andamiaje LISTO, faltan tus llaves
 
 Hoy la firma es electrónica **simple** (token + OTP por correo + evidencia, Ley 527). Para escalar a una firma con mayor respaldo se evaluará **Firma.dev** (opción asequible para empezar, con posibilidad de escalar; si cubre el crecimiento, queda como definitivo).
 
-- [ ] Crear cuenta en **Firma.dev** y obtener credenciales/API key (sandbox y producción).
-- [ ] Definir plan/costo y límites de firmas según el volumen esperado.
-- [ ] Compartir al agente las llaves para integrarlas (irán como variables de entorno en Vercel, **nunca** en el código).
-- [ ] (El agente) dejará la integración **detrás de una abstracción** para poder cambiar de proveedor a futuro sin reescribir el flujo de firma.
+**Ya está hecho (no requiere nada tuyo):** la integración quedó **detrás de una abstracción** (`web/src/domain/signatures/provider/`): interfaz `SignatureProvider`, proveedor **interno** (el actual) y un **adaptador stub de Firma.dev** listo para implementar, seleccionados por la variable `SIGNATURE_PROVIDER`. Mientras no haya llaves, todo sigue usando el flujo interno; **no cambia nada**.
+
+### Guía para conseguir las llaves de Firma.dev
+
+1. [ ] Entra a **https://firma.dev** y crea una cuenta (idealmente a nombre de la empresa / con el correo del proyecto).
+2. [ ] En el panel del proveedor, busca la sección de **API / Desarrolladores / API Keys**. Genera una **API key de pruebas (sandbox)** primero.
+3. [ ] Revisa **plan y costos**: precio por firma o por paquete, límites mensuales, y si la firma incluye **estampado cronológico / certificado** (lo que da mayor respaldo legal). Anota el costo por firma para el debate de "firma gratis".
+4. [ ] Verifica si ofrecen **webhook** (notificación cuando el documento queda firmado) y si entregan el **PDF firmado** descargable. Guarda la URL base de su API y el **secreto del webhook** si lo hay.
+5. [ ] Cuando tengas la **API key de producción**, compártele al agente (o cárgalas tú) estas variables **en Vercel** (nunca en el código):
+   - `SIGNATURE_PROVIDER=firma_dev`
+   - `FIRMA_DEV_API_KEY=...` (la llave secreta)
+   - `FIRMA_DEV_API_BASE=...` (solo si su API no es `https://api.firma.dev`)
+   - `FIRMA_DEV_WEBHOOK_SECRET=...` (si manejan webhook firmado)
+6. [ ] Avísale al agente para que **implemente las llamadas HTTP** en `firmaDevProvider.ts` (hoy marcadas con `TODO`) y cablee el webhook (`api/signatures/firma-dev/webhook`). Con `SIGNATURE_PROVIDER=firma_dev` + la llave, el sistema cambia solo al proveedor externo; sin la llave, cae al interno automáticamente.
+
+> Consejo: empieza en **sandbox**, prueba un contrato de punta a punta, y solo entonces pon la llave de producción. Así no gastas firmas pagas en pruebas.
 
 ## 8. Pagos (Wompi) — más adelante
 

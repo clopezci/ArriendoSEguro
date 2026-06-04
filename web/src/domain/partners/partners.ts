@@ -150,30 +150,18 @@ export function validatePartnerInput(input: {
 /** Aliados de prueba (se siembran si el directorio está vacío; edítalos en /admin). */
 export function seedTestPartners(fallbackEmail: string): PartnerInput[] {
   const email = EMAIL_RE.test(fallbackEmail) ? fallbackEmail.toLowerCase() : "aliados@arriendoseguro.app";
+  const make = (name: string, category: PartnerCategory, description: string): PartnerInput => ({
+    name,
+    category,
+    description,
+    websiteUrl: "https://arriendoseguro.app",
+    contactEmails: [email],
+    active: true,
+  });
   return [
-    {
-      name: "Aliado de prueba · Recaudo",
-      category: "recaudo",
-      description: "Ejemplo de aliado de recaudo del canon. Edítalo o desactívalo en el panel.",
-      websiteUrl: "https://arriendoseguro.app",
-      contactEmails: [email],
-      active: true,
-    },
-    {
-      name: "Aliado de prueba · Seguro de arrendamiento",
-      category: "seguro",
-      description: "Ejemplo de aliado de seguro de arrendamiento. Edítalo o desactívalo en el panel.",
-      websiteUrl: "https://arriendoseguro.app",
-      contactEmails: [email],
-      active: true,
-    },
-    {
-      name: "Aliado de prueba · Estudio de crédito",
-      category: "estudio_credito",
-      description: "Ejemplo de aliado de estudio de crédito. Edítalo o desactívalo en el panel.",
-      websiteUrl: "https://arriendoseguro.app",
-      contactEmails: [email],
-      active: true,
-    },
+    make("Aliado de prueba · Seguro de arrendamiento", "seguro", "Ejemplo de aliado de seguro de arrendamiento. Edítalo o desactívalo en el panel."),
+    make("Aliado de prueba · Cobranza", "cobranza", "Ejemplo de aliado de cobranza. Edítalo o desactívalo en el panel."),
+    make("Aliado de prueba · Asesoría jurídica (abogado)", "juridica", "Ejemplo de aliado jurídico para cuando se requiera un abogado. Edítalo o desactívalo en el panel."),
+    make("Aliado de prueba · Estudio de crédito", "estudio_credito", "Ejemplo de aliado de estudio de crédito. Edítalo o desactívalo en el panel."),
   ];
 }

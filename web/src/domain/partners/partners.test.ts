@@ -65,9 +65,11 @@ test("isPartnerCategory valida el enum", () => {
   assert.equal(isPartnerCategory("nope"), false);
 });
 
-test("seedTestPartners usa el correo de respaldo y deja 3 activos", () => {
+test("seedTestPartners usa el correo de respaldo y cubre seguro, cobranza, jurídica y estudio de crédito", () => {
   const seed = seedTestPartners("fundador@x.com");
-  assert.equal(seed.length, 3);
+  assert.equal(seed.length, 4);
   assert.ok(seed.every((p) => p.active));
   assert.ok(seed.every((p) => p.contactEmails.includes("fundador@x.com")));
+  const cats = seed.map((p) => p.category).sort();
+  assert.deepEqual(cats, ["cobranza", "estudio_credito", "juridica", "seguro"]);
 });
