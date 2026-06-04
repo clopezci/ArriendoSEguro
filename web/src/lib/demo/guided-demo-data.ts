@@ -54,7 +54,8 @@ export function buildDemoContractSnippet(withCodebtor: boolean): string {
   ${codebtorBlock}
   <p class="mt-2"><strong>PRIMERA. OBJETO.</strong> Inmueble urbano ubicado en ${demoProperty.address}, ${demoProperty.city}.</p>
   <p class="mt-2"><strong>TERCERA. CANON.</strong> Canon mensual de ejemplo ${demoProperty.rent}, sujeto a revisión en Plan Plus.</p>
-  <p class="mt-3 text-[11px] text-slate-500">…cláusulas omitidas a propósito en esta vista…</p>
+  <p class="mt-2"><strong>SÉPTIMA. SERVICIOS.</strong> Garantía para servicios públicos (Art. 15, Ley 820) cuando las partes la pacten, hasta el valor de dos períodos (ejemplo).</p>
+  <p class="mt-3 text-[11px] text-slate-500">…cláusulas omitidas a propósito en esta vista. Generar el contrato es gratis; la firma y el respaldo se activan con Plan Plus…</p>
 </div>`.trim();
 }
 
@@ -81,12 +82,12 @@ export const demoAnnexes = [
 
 export const guidedDemoStepMeta = [
   { id: "expediente", title: "Expediente de arriendo", blurb: "Ficha única con partes e inmueble." },
-  { id: "contrato", title: "Contrato", blurb: "Vista previa con marca de agua." },
-  { id: "firma", title: "Firma electrónica", blurb: "Estado por parte." },
-  { id: "inventario", title: "Inventario guiado", blurb: "Zonas y fotos." },
-  { id: "pagos", title: "Pagos y recordatorios", blurb: "Calendario y soportes." },
+  { id: "contrato", title: "Contrato", blurb: "Generar es gratis; vista con marca de agua." },
+  { id: "firma", title: "Firma electrónica", blurb: "Estado por parte (Plan Plus)." },
+  { id: "inventario", title: "Inventario guiado", blurb: "Zonas y fotos (Plan Plus)." },
+  { id: "pagos", title: "Pagos y recordatorios", blurb: "Calendario y soportes (Plan Plus)." },
   { id: "anexos", title: "Anexos y trazabilidad", blurb: "Documentos ligados al expediente." },
-  { id: "extras", title: "Más en Plan Plus", blurb: "Reputación y seguimiento." },
+  { id: "extras", title: "Más en Plan Plus", blurb: "Reputación, alertas de vencimiento y garantía de servicios." },
 ] as const;
 
 export type GuidedDemoStepId = (typeof guidedDemoStepMeta)[number]["id"];

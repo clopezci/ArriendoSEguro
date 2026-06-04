@@ -433,11 +433,16 @@ function StepExtras() {
     <div className="space-y-3 text-sm text-slate-600">
       <p>Plan Plus también contempla, según tu flujo:</p>
       <ul className="list-inside list-disc space-y-1 text-slate-700">
-        <li>Recordatorios por correo y hitos del expediente.</li>
-        <li>Revisión de borrador y guardado de versión antes de firmar.</li>
-        <li>Evaluación estructurada al cierre del arriendo (reputación).</li>
-        <li>Soporte para anexos adicionales acordados entre partes.</li>
+        <li>Recordatorios de pago por correo y SMS.</li>
+        <li>Alertas de terminación o renovación, con anticipación al preaviso legal de 3 meses.</li>
+        <li>Reportar novedades o daños con aviso por correo y SMS a la otra parte.</li>
+        <li>Calificación de reputación bidireccional por estrellas (con derecho de réplica).</li>
+        <li>Garantía para servicios públicos (Art. 15, Ley 820) con su cálculo y constancia.</li>
+        <li>Soporte para anexos y soportes del codeudor.</li>
       </ul>
+      <p className="rounded-lg border border-emerald-300 bg-emerald-50 p-2 text-xs text-emerald-800">
+        Recuerda: generar el contrato es gratis; estas funciones se activan con Plan Plus.
+      </p>
       <p className="text-xs text-slate-500">
         Los detalles pueden variar; esta lista resume el alcance orientativo del producto.
       </p>
