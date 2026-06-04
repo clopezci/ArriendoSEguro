@@ -5,7 +5,8 @@
  * el mismo origen (p. ej. arriendoseguro.vercel.app), mientras la URL nueva
  * del deploy mostraba el build correcto.
  */
-const CACHE = "as-static-v2";
+const CACHE = "as-static-v3";
+const OFFLINE_URL = "/offline.html";
 
 /** Solo activos que cambian nombre con cada build (seguros para cache-first). */
 function isFingerprintedStatic(req, url) {
@@ -15,7 +16,18 @@ function isFingerprintedStatic(req, url) {
 }
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(self.skipWaiting());
+  event.waitUntil(
+    (async () => {
+      // Precachea la página offline para usarla como fallback de navegación.
+      try {
+        const cache = await caches.open(CACHE);
+        await cache.add(new Request(OFFLINE_URL, { cache: "reload" }));
+      } catch {
+        /* si falla el precache, el SW sigue funcionando igual */
+      }
+      await self.skipWaiting();
+    })(),
+  );
 });
 
 self.addEventListener("activate", (event) => {
@@ -38,9 +50,25 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  /** Nunca cache-first en documentos: siempre servidor actual. */
+  /**
+   * Documentos: network-first (siempre el servidor actual, sin contenido viejo),
+   * pero si la red falla (offline), servimos la página offline precacheada.
+   */
   if (req.mode === "navigate") {
-    event.respondWith(fetch(req));
+    event.respondWith(
+      (async () => {
+        try {
+          return await fetch(req);
+        } catch {
+          const cache = await caches.open(CACHE);
+          const offline = await cache.match(OFFLINE_URL);
+          return (
+            offline ??
+            new Response("Sin conexión", { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } })
+          );
+        }
+      })(),
+    );
     return;
   }
 

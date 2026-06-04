@@ -8,10 +8,17 @@ import { PwaRegister } from "@/components/pwa-register";
 import { AppProviders } from "@/components/providers/app-providers";
 import { ReferralTracker } from "@/components/referrals/referral-tracker";
 import { appConfig } from "@/lib/config";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
+
+export const viewport: Viewport = {
+  themeColor: "#6d28d9",
+  colorScheme: "light",
+  width: "device-width",
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(appConfig.publicUrl),
@@ -21,6 +28,19 @@ export const metadata: Metadata = {
     template: `%s | ${appConfig.name}`,
   },
   description: appConfig.seoDescription,
+  applicationName: appConfig.name,
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: appConfig.name,
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/images/arriendoseguro-social-profile.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/images/arriendoseguro-social-profile.png", sizes: "512x512" }],
+  },
   // Verificación de propiedad en Google Search Console (pega el valor del
   // método "etiqueta HTML" en NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION en Vercel).
   ...(googleSiteVerification ? { verification: { google: googleSiteVerification } } : {}),

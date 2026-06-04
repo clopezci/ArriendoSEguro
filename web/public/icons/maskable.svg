@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ArriendoSeguro">
+  <defs>
+    <linearGradient id="gm" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#6d28d9"/>
+    </linearGradient>
+  </defs>
+  <!-- Fondo a sangre completa (maskable): el contenido vive dentro del 80% central -->
+  <rect width="512" height="512" fill="url(#gm)"/>
+  <!-- Escudo dentro de la zona segura -->
+  <path d="M256 150l92 32v76c0 61-39 103-92 124-53-21-92-63-92-124v-76z"
+        fill="#ffffff" fill-opacity="0.16" stroke="#ffffff" stroke-width="11" stroke-linejoin="round"/>
+  <!-- Casa -->
+  <path d="M256 208l62 52v6h-19v62h-32v-42h-22v42h-32v-62h-19v-6z" fill="#ffffff"/>
+</svg>

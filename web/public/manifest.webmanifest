@@ -1,21 +1,33 @@
 {
+  "id": "/",
   "name": "ArriendoSeguro",
   "short_name": "ArriendoSeguro",
-  "description": "Arriendo entre personas en Colombia: contrato, expediente y firma.",
-  "start_url": "/",
+  "description": "Arriendo entre personas en Colombia: contrato, expediente y firma electrónica.",
+  "lang": "es-CO",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0b0f1a",
-  "theme_color": "#0b0f1a",
+  "orientation": "portrait",
+  "background_color": "#f8fafc",
+  "theme_color": "#6d28d9",
+  "categories": ["business", "productivity", "finance"],
   "icons": [
     {
-      "src": "/images/arriendoseguro-social-profile.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     },
     {
       "src": "/images/arriendoseguro-social-profile.png",
-      "sizes": "192x192",
+      "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     }

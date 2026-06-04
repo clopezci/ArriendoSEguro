@@ -1,11 +1,25 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 type PwaInstallHelpDialogProps = {
   mode: "ios" | "android" | "desktop";
   onClose: () => void;
 };
 
 export function PwaInstallHelpDialog({ mode, onClose }: PwaInstallHelpDialogProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Accesibilidad: cerrar con Escape y llevar el foco al diálogo al abrir.
+  useEffect(() => {
+    panelRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   const title =
     mode === "ios"
       ? "Instalar en iPhone o iPad"
@@ -48,7 +62,11 @@ export function PwaInstallHelpDialog({ mode, onClose }: PwaInstallHelpDialogProp
         className="absolute inset-0 bg-slate-900/50"
         onClick={onClose}
       />
-      <div className="relative z-[101] w-full max-w-md rounded-2xl border border-slate-300 bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.25)]">
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className="relative z-[101] w-full max-w-md rounded-2xl border border-slate-300 bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.25)] focus:outline-none"
+      >
         <h2 id="install-help-title" className="text-lg font-bold text-slate-900">
           {title}
         </h2>
