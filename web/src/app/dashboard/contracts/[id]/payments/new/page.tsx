@@ -21,6 +21,7 @@ export default function NewPaymentPage() {
   const [amountPaid, setAmountPaid] = useState("0");
   const [paymentMethod, setPaymentMethod] = useState("transferencia bancaria");
   const [supportFileUrl, setSupportFileUrl] = useState("");
+  const [supportFile, setSupportFile] = useState<File | null>(null);
   const [supportFileName, setSupportFileName] = useState("");
   const [supportFileType, setSupportFileType] = useState("");
   const [supportFileSize, setSupportFileSize] = useState(0);
@@ -44,10 +45,38 @@ export default function NewPaymentPage() {
 
   if (state !== "ready") return <p className="text-sm text-slate-700">Cargando...</p>;
 
+  async function uploadSupportIfAny(): Promise<string | undefined> {
+    if (!supportFile) return supportFileUrl || undefined;
+    // 1) Pedir URL firmada. 2) Subir el archivo a Storage. 3) Devolver la ruta gs://.
+    const res = await fetch("/api/payments/support/upload-url", {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(await buildAuthHeaders(user ?? null)) },
+      body: JSON.stringify({
+        contractId: id,
+        contractVersionId,
+        filename: supportFile.name,
+        contentType: supportFile.type || "application/octet-stream",
+        sizeBytes: supportFile.size,
+      }),
+    });
+    const data = (await res.json()) as { success?: boolean; uploadUrl?: string; storagePath?: string; errors?: { message?: string }[] };
+    if (!res.ok || !data.success || !data.uploadUrl || !data.storagePath) {
+      throw new Error(data.errors?.[0]?.message ?? "No se pudo preparar la subida del soporte.");
+    }
+    const put = await fetch(data.uploadUrl, {
+      method: "PUT",
+      headers: { "content-type": supportFile.type || "application/octet-stream" },
+      body: supportFile,
+    });
+    if (!put.ok) throw new Error("No se pudo subir el archivo de soporte.");
+    return data.storagePath;
+  }
+
   async function onSubmit() {
     setSaving(true);
     setError("");
     try {
+      const uploadedSupportUrl = await uploadSupportIfAny();
       const res = await fetch("/api/payments/create", {
         method: "POST",
         headers: {
@@ -64,7 +93,7 @@ export default function NewPaymentPage() {
           amountDue: Number(amountDue),
           amountPaid: Number(amountPaid),
           paymentMethod,
-          supportFileUrl: supportFileUrl || undefined,
+          supportFileUrl: uploadedSupportUrl || undefined,
           supportFileName: supportFileName || undefined,
           supportFileType: supportFileType || undefined,
           supportFileSize: supportFileSize || undefined,
@@ -108,7 +137,8 @@ export default function NewPaymentPage() {
             accept=".pdf,.jpg,.jpeg,.png,.webp"
             className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm"
             onChange={(e) => {
-              const file = e.target.files?.[0];
+              const file = e.target.files?.[0] ?? null;
+              setSupportFile(file);
               setSupportFileName(file?.name ?? "");
               setSupportFileType(file?.type ?? "");
               setSupportFileSize(file?.size ?? 0);

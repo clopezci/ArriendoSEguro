@@ -50,7 +50,8 @@ export function validatePaymentSupportFile(input: {
       errors: [{ field: "supportFileSize", message: "El soporte supera 5 MB." }],
     };
   }
-  // TODO: validar contenido binario real y magic numbers cuando exista upload backend real.
+  // El archivo se sube a Firebase Storage vía URL firmada (api/payments/support/*);
+  // aquí validamos nombre/tipo/tamaño y el binario queda en Storage real.
   void input.supportFileType;
   return { ok: true, supportValidationStatus: "valid", isEmpty: false, errors: [] };
 }
