@@ -10,6 +10,11 @@ import {
   formatCopPlain,
   PER_CONTRACT_PAYMENT_NOTICE,
 } from "@/lib/product-pricing";
+import { ReferralPanel } from "@/components/referrals/referral-panel";
+import {
+  referralDiscountedCheckoutCop,
+  type ReferralStatus,
+} from "@/domain/referrals/referrals";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type EntitlementsResponse = {
@@ -31,10 +36,25 @@ export default function PlansPage() {
   const [loading, setLoading] = useState(false);
   const [pricing, setPricing] = useState<ActivePricing | null>(null);
   const [entitlements, setEntitlements] = useState<EntitlementsResponse | null>(null);
+  const [referral, setReferral] = useState<{
+    status: ReferralStatus | null;
+    enabled: boolean;
+    discountPercent: number;
+  } | null>(null);
   const internal = canSeeInternalDashboardTools(user?.email ?? null);
 
-  const checkoutCop = pricing?.checkoutCop ?? CONTRACT_EARLY_BIRD_PRICE_COP;
+  const baseCheckoutCop = pricing?.checkoutCop ?? CONTRACT_EARLY_BIRD_PRICE_COP;
   const listCompareCop = pricing?.listCompareCop ?? CONTRACT_LIST_PRICE_COP;
+
+  // Descuento por referido aprobado (si el programa está habilitado).
+  const referralDiscount = referral
+    ? referralDiscountedCheckoutCop(
+        baseCheckoutCop,
+        { enabled: referral.enabled, discountPercent: referral.discountPercent },
+        referral.status,
+      )
+    : { finalCop: baseCheckoutCop, applied: false, discountPercent: 0 };
+  const checkoutCop = referralDiscount.finalCop;
 
   const pricingLine = useMemo(() => {
     if (checkoutCop < listCompareCop) {
@@ -80,6 +100,30 @@ export default function PlansPage() {
   useEffect(() => {
     void loadAccess();
   }, [loadAccess]);
+
+  // Estado de referido del usuario (para aplicar el descuento si está aprobado).
+  useEffect(() => {
+    if (!user) return;
+    void (async () => {
+      try {
+        const res = await fetch("/api/referrals/me", { headers: { ...(await buildAuthHeaders(user)) } });
+        const j = (await res.json()) as {
+          success?: boolean;
+          myReferralStatus?: ReferralStatus | null;
+          program?: { enabled?: boolean; discountPercent?: number };
+        };
+        if (res.ok && j.success) {
+          setReferral({
+            status: j.myReferralStatus ?? null,
+            enabled: Boolean(j.program?.enabled),
+            discountPercent: Number(j.program?.discountPercent ?? 0),
+          });
+        }
+      } catch {
+        /* sin red: sin descuento */
+      }
+    })();
+  }, [user]);
 
   async function createPlusOrder() {
     if (!user) return;
@@ -221,6 +265,8 @@ export default function PlansPage() {
         </div>
       )}
 
+      <ReferralPanel />
+
       {msg && (
         <p className="rounded border border-emerald-500/40 bg-emerald-900/20 p-2 text-sm text-emerald-700">{msg}</p>
       )}
@@ -253,7 +299,15 @@ export default function PlansPage() {
         <article className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
           <h2 className="text-xl font-semibold text-slate-900">Plan Plus</h2>
           <p className="mt-2 flex flex-wrap items-baseline gap-2">
-            {pricingLine.showStrikethrough ? (
+            {referralDiscount.applied ? (
+              <>
+                <span className="text-sm text-slate-500 line-through">{formatCopPlain(baseCheckoutCop)} COP</span>
+                <span className="text-lg font-semibold text-emerald-700">{formatCopPlain(checkoutCop)} COP</span>
+                <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white">
+                  Referido -{referralDiscount.discountPercent}%
+                </span>
+              </>
+            ) : pricingLine.showStrikethrough ? (
               <>
                 <span className="text-sm text-slate-500 line-through">{formatCopPlain(listCompareCop)} COP</span>
                 <span className="text-lg font-semibold text-violet-700">{formatCopPlain(checkoutCop)} COP</span>
@@ -262,7 +316,11 @@ export default function PlansPage() {
               <span className="text-lg font-semibold text-violet-700">{formatCopPlain(checkoutCop)} COP</span>
             )}
           </p>
-          <p className="mt-1 text-xs font-medium text-violet-800">{pricingLine.subtitle}</p>
+          <p className="mt-1 text-xs font-medium text-violet-800">
+            {referralDiscount.applied
+              ? "Descuento por referido aprobado aplicado a tu Plan Plus."
+              : pricingLine.subtitle}
+          </p>
           <p className="mt-2 text-sm text-slate-600">Pago único por contrato gestionado en la plataforma. Sin mensualidades.</p>
           <p className="mt-2 text-xs leading-relaxed text-slate-600">{PER_CONTRACT_PAYMENT_NOTICE}</p>
           <ul className="mt-4 space-y-2 text-sm text-slate-700">

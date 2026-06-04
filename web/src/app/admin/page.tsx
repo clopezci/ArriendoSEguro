@@ -115,6 +115,13 @@ export default function AdminPage() {
   const [ipcYearInput, setIpcYearInput] = useState("");
   const [legalMsg, setLegalMsg] = useState("");
   const [legalBusy, setLegalBusy] = useState(false);
+  const [refConfig, setRefConfig] = useState<{ enabled: boolean; discountPercent: number } | null>(null);
+  const [refDiscountInput, setRefDiscountInput] = useState("");
+  const [refList, setRefList] = useState<
+    { referredUid: string; referredEmail: string; referrerEmail: string; code: string; status: string; createdAt: string }[]
+  >([]);
+  const [refMsg, setRefMsg] = useState("");
+  const [refBusy, setRefBusy] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [grantEmail, setGrantEmail] = useState("");
   const [grantMsg, setGrantMsg] = useState("");
@@ -274,11 +281,96 @@ export default function AdminPage() {
     }
   }
 
+  const loadReferrals = useCallback(async () => {
+    if (!user) return;
+    try {
+      const [cfgRes, listRes] = await Promise.all([
+        fetch("/api/admin/referral-config", { headers: { ...(await buildAuthHeaders(user)) } }),
+        fetch("/api/admin/referrals", { headers: { ...(await buildAuthHeaders(user)) } }),
+      ]);
+      const cfgJson = (await cfgRes.json()) as {
+        success?: boolean;
+        config?: { enabled: boolean; discountPercent: number };
+      };
+      if (cfgRes.ok && cfgJson.success && cfgJson.config) {
+        setRefConfig(cfgJson.config);
+        setRefDiscountInput(String(cfgJson.config.discountPercent));
+      }
+      const listJson = (await listRes.json()) as {
+        success?: boolean;
+        referrals?: typeof refList;
+      };
+      if (listRes.ok && listJson.success && Array.isArray(listJson.referrals)) {
+        setRefList(listJson.referrals);
+      }
+    } catch {
+      /* silencioso */
+    }
+  }, [user]);
+
+  async function saveReferralConfig(nextEnabled?: boolean) {
+    if (!user) return;
+    setRefBusy(true);
+    setRefMsg("");
+    try {
+      const body: Record<string, unknown> = {};
+      if (typeof nextEnabled === "boolean") body.enabled = nextEnabled;
+      const pct = Number(refDiscountInput.replace(/[^\d]/g, ""));
+      if (Number.isInteger(pct) && pct >= 0 && pct <= 100) body.discountPercent = pct;
+      const res = await fetch("/api/admin/referral-config", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify(body),
+      });
+      const json = (await res.json()) as {
+        success?: boolean;
+        config?: { enabled: boolean; discountPercent: number };
+        errors?: { message?: string }[];
+      };
+      if (!res.ok || !json.success || !json.config) {
+        setRefMsg(json.errors?.[0]?.message ?? "No se pudo guardar la configuración.");
+        return;
+      }
+      setRefConfig(json.config);
+      setRefDiscountInput(String(json.config.discountPercent));
+      setRefMsg("Configuración de referidos guardada.");
+    } catch {
+      setRefMsg("Error de red.");
+    } finally {
+      setRefBusy(false);
+    }
+  }
+
+  async function reviewReferral(referredUid: string, action: "approve" | "reject") {
+    if (!user) return;
+    setRefBusy(true);
+    setRefMsg("");
+    try {
+      const res = await fetch("/api/admin/referrals", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ referredUid, action }),
+      });
+      const json = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      if (!res.ok || !json.success) {
+        setRefMsg(json.errors?.[0]?.message ?? "No se pudo actualizar la referencia.");
+        return;
+      }
+      setRefMsg(action === "approve" ? "Referido aprobado: el descuento queda activo." : "Referido rechazado.");
+      await loadReferrals();
+    } catch {
+      setRefMsg("Error de red.");
+    } finally {
+      setRefBusy(false);
+    }
+  }
+
   useEffect(() => {
     void load();
     void loadObs();
     void loadLegal();
-  }, [load, loadObs, loadLegal]);
+    void loadReferrals();
+  }, [load, loadObs, loadLegal, loadReferrals]);
 
   async function savePlanPlusPricing() {
     if (!user) return;
@@ -750,6 +842,104 @@ export default function AdminPage() {
             {legalMsg && <p className="mt-2 text-xs text-slate-700">{legalMsg}</p>}
           </section>
         )}
+
+        <section className="mb-6 rounded-xl border border-violet-300 bg-violet-50/40 p-4">
+          <h2 className="text-sm font-semibold text-violet-900">Referidos (Invita y gana)</h2>
+          <p className="mt-1 text-xs text-slate-600">
+            Cada usuario tiene un enlace de invitación. Los invitados quedan <strong>pendientes</strong> hasta que los
+            apruebes aquí; al aprobarlos obtienen el descuento configurado en su Plan Plus.
+          </p>
+
+          <div className="mt-3 flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-medium text-slate-600">Descuento al referido (%)</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={refDiscountInput}
+                onChange={(e) => setRefDiscountInput(e.target.value)}
+                className="w-24 rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={refBusy}
+              onClick={() => void saveReferralConfig()}
+              className="rounded border border-violet-500 bg-violet-600 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+            >
+              {refBusy ? "…" : "Guardar descuento"}
+            </button>
+            <button
+              type="button"
+              disabled={refBusy}
+              onClick={() => void saveReferralConfig(!(refConfig?.enabled ?? true))}
+              className="rounded border border-slate-400 bg-white px-3 py-1.5 text-[11px] font-medium text-slate-800 disabled:opacity-50"
+            >
+              {refConfig?.enabled ? "Desactivar programa" : "Activar programa"}
+            </button>
+            <span className="text-[11px] text-slate-600">
+              Estado: {refConfig ? (refConfig.enabled ? `activo · ${refConfig.discountPercent}%` : "inactivo") : "…"}
+            </span>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-xs font-medium text-slate-700">
+              Invitaciones ({refList.length}) · pendientes: {refList.filter((r) => r.status === "pending").length}
+            </p>
+            {refList.length === 0 ? (
+              <p className="mt-1 text-xs text-slate-500">Todavía no hay invitaciones registradas.</p>
+            ) : (
+              <ul className="mt-2 space-y-1">
+                {refList.map((r) => (
+                  <li
+                    key={r.referredUid}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-white/80 px-2 py-1.5 text-[11px]"
+                  >
+                    <span className="min-w-0">
+                      <strong className="text-slate-800">{r.referredEmail || r.referredUid}</strong>
+                      <span className="text-slate-500"> · invitó: {r.referrerEmail || "—"}</span>
+                      <span className="text-slate-400"> · {r.code}</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className={
+                          r.status === "approved"
+                            ? "text-emerald-700"
+                            : r.status === "rejected"
+                              ? "text-rose-700"
+                              : "text-amber-700"
+                        }
+                      >
+                        {r.status}
+                      </span>
+                      {r.status !== "approved" && (
+                        <button
+                          type="button"
+                          disabled={refBusy}
+                          onClick={() => void reviewReferral(r.referredUid, "approve")}
+                          className="rounded border border-emerald-500 px-2 py-0.5 text-emerald-700 disabled:opacity-50"
+                        >
+                          Aprobar
+                        </button>
+                      )}
+                      {r.status !== "rejected" && (
+                        <button
+                          type="button"
+                          disabled={refBusy}
+                          onClick={() => void reviewReferral(r.referredUid, "reject")}
+                          className="rounded border border-rose-400 px-2 py-0.5 text-rose-700 disabled:opacity-50"
+                        >
+                          Rechazar
+                        </button>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {refMsg && <p className="mt-2 text-xs text-slate-700">{refMsg}</p>}
+        </section>
 
         {data?.features?.manualGrantPlus && (
           <section className="mb-6 rounded-xl border border-slate-300 bg-white/95 p-4">

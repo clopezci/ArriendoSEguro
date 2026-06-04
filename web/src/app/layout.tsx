@@ -6,6 +6,7 @@ import { LegalFooter } from "@/components/layout/legal-footer";
 import { PwaInstallSiteBanner } from "@/components/pwa/pwa-install-site-banner";
 import { PwaRegister } from "@/components/pwa-register";
 import { AppProviders } from "@/components/providers/app-providers";
+import { ReferralTracker } from "@/components/referrals/referral-tracker";
 import { appConfig } from "@/lib/config";
 import type { Metadata } from "next";
 import "./globals.css";
@@ -41,6 +42,7 @@ export default function RootLayout({
           Saltar al contenido
         </a>
         <AppProviders>
+          <ReferralTracker />
           <div className="flex min-h-screen flex-col">
             <div id="contenido" tabIndex={-1} className="flex-1">
               {children}

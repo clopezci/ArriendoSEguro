@@ -132,6 +132,7 @@ El código ya envía **recordatorios de vencimiento** (terminación/renovación)
 ### Valores que ahora administras tú desde `/admin` (sin tocar código)
 - **IPC para reajuste del canon (Ley 820):** porcentaje del año anterior y año al que aplica. El algoritmo de la calculadora de reajuste lee este valor. Actualízalo cada enero (o si la ley cambia) cuando el DANE publique el IPC.
 - **Precio del Plan Plus:** elige preset (promo $49.900 / lista $89.900) o **"Otro"** con dos campos: **precio vigente (checkout)** y **precio de lista (tachado)** para mostrar el descuento. El precio de lista debe ser ≥ al vigente; si lo dejas vacío se usa el de lista por defecto.
+- **Referidos (Invita y gana):** activa/desactiva el programa y fija el **% de descuento** al referido (por defecto **50%**). Cada invitado queda **pendiente** hasta que lo **apruebes** en la tarjeta «Referidos» de `/admin`; al aprobarlo, el referido ve el precio del Plan Plus con el descuento aplicado. Como el cobro hoy es manual (Wompi aparcado), **al conceder el Plan Plus a un referido aprobado, hazle el precio con el descuento** que muestra su pantalla de Planes.
 
 ## 7c. Firma electrónica con proveedor (Firma.dev) — próximo bloque
 
