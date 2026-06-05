@@ -11,7 +11,22 @@ export async function POST() {
     if (!firestore) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });
 
     const now = new Date();
-    const all = await firestore.collection("scheduled_payments").where("reminderEnabled", "==", true).get();
+    // Acotamos la lectura a la ventana de fechas relevante (próximos ~3 meses):
+    // un recordatorio solo dispara cuando faltan `reminderDaysBefore` días, así
+    // que su `dueDate` ("YYYY-MM-DD") cae en el futuro cercano. Usamos rango sobre
+    // un único campo (auto-indexado, sin índice compuesto) y filtramos
+    // `reminderEnabled`/estado dentro del bucle.
+    const isoDay = (addDays: number) => {
+      const x = new Date(now);
+      x.setUTCDate(x.getUTCDate() + addDays);
+      return x.toISOString().slice(0, 10);
+    };
+    const all = await firestore
+      .collection("scheduled_payments")
+      .where("dueDate", ">=", isoDay(-1))
+      .where("dueDate", "<=", isoDay(92))
+      .limit(2000)
+      .get();
     let processed = 0;
     for (const doc of all.docs) {
       const row = doc.data() as {
@@ -22,10 +37,12 @@ export async function POST() {
         dueDate: string;
         expectedAmount: number;
         status: string;
+        reminderEnabled?: boolean;
         reminderDaysBefore: number;
         reminderEmailTo: string;
         reminderStatus: string;
       };
+      if (row.reminderEnabled !== true) continue;
       if (row.status === "reported_paid" || row.status === "cancelled") continue;
       if (row.reminderStatus === "disabled") continue;
       const due = new Date(row.dueDate);

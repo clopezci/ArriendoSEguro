@@ -45,8 +45,24 @@ export async function POST(request: Request) {
   let reminders = 0;
   let escalations = 0;
 
+  // Ventana de fechas relevante para los hitos (3 días antes y el día del
+  // vencimiento). `dueDate` se guarda como "YYYY-MM-DD", así que el rango
+  // lexicográfico coincide con el cronológico. Acotamos a [-1, +4] días para
+  // cubrir bordes de zona horaria; el filtro exacto del hito sigue en el bucle.
+  const isoDay = (addDays: number) => {
+    const x = new Date(now);
+    x.setUTCDate(x.getUTCDate() + addDays);
+    return x.toISOString().slice(0, 10);
+  };
+
   // 1) Recordatorios al inquilino (3 días antes y el día del vencimiento).
-  const schedSnap = await firestore.collection("scheduled_payments").get().catch(() => null);
+  const schedSnap = await firestore
+    .collection("scheduled_payments")
+    .where("dueDate", ">=", isoDay(-1))
+    .where("dueDate", "<=", isoDay(4))
+    .limit(1000)
+    .get()
+    .catch(() => null);
   for (const d of schedSnap?.docs ?? []) {
     const row = d.data() as {
       id?: string;
@@ -116,6 +132,7 @@ export async function POST(request: Request) {
     .collection("payments_log")
     .where("uploadedByTenantLink", "==", true)
     .where("ownerConfirmed", "==", false)
+    .limit(500)
     .get()
     .catch(() => null);
   for (const d of pendingSnap?.docs ?? []) {

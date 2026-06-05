@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     }
 
     const now = new Date();
-    const signed = await firestore.collection("contracts").where("status", "==", "signed").get();
+    const signed = await firestore.collection("contracts").where("status", "==", "signed").limit(5000).get();
     let processed = 0;
 
     for (const doc of signed.docs) {
@@ -43,6 +43,8 @@ export async function POST(request: Request) {
       };
       if (c.renewalReminderEnabled === false) continue; // default: activado
       if (!c.currentVersionId) continue;
+      // Si ambos recordatorios ya se enviaron, no hace falta leer la versión.
+      if (c.renewalRemindersSent?.r1 && c.renewalRemindersSent?.r2) continue;
 
       const vSnap = await firestore.collection("contract_versions").doc(c.currentVersionId).get();
       const payload = (vSnap.data() as { contractPayload?: ResidentialLeaseContractInput } | undefined)?.contractPayload;

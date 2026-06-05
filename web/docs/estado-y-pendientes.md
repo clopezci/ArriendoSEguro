@@ -35,7 +35,7 @@ Hallazgos reales (la app usa Admin SDK + reglas deny-all, pero hay endpoints de 
 
 | # | Hallazgo | Archivo | Remediación |
 |---|---|---|---|
-| E1 | **Crons escanean la colección completa** (sin filtro de estado ni `limit`) | `api/payments/reminders/send-due`, `api/payments/tenant-reminders/send-due`, `api/contracts/renewal-reminders/send-due` | Filtrar por estado pendiente + `limit(N)` + marcar procesado; paginar por cursor. A bajo volumen funciona, pero crece el costo de lecturas. |
+| ✅ E1 | **Crons escanean la colección completa** (sin filtro de estado ni `limit`) | `api/payments/reminders/send-due`, `api/payments/tenant-reminders/send-due`, `api/contracts/renewal-reminders/send-due` | **HECHO.** Recordatorios de pago: rango sobre `dueDate` (único campo, auto-indexado, sin índice compuesto) acotado a la ventana de hitos + `limit`. Renovación: `limit(5000)` + se omite la lectura de versión cuando ambos recordatorios ya se enviaron. Escalamiento ya filtraba por igualdad; se añadió `limit`. *Nota:* para volumen muy alto, denormalizar `leaseEndDate` en el doc del contrato permitiría rango también en renovación. |
 | E2 | **Endpoints admin sin paginación** | `api/admin/{referrals,partner-leads,reputation-flags,partners}` | `limit(100)` + paginación por cursor. |
 | E3 | **PDF generado en el request** (bloqueante) | `api/contracts/generate-pdf`, `payments/generate-annex`, `delivery-act/generate` | Medir tiempos; si hay riesgo de timeout (Vercel 10s free), mover a job en background. |
 
