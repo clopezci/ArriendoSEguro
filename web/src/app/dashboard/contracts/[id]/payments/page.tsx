@@ -52,13 +52,14 @@ export default function PaymentsPage() {
       setCanon(Number(latest?.version?.contractPayload?.lease?.monthlyRent ?? 0));
       setPaymentDay(Number(latest?.version?.contractPayload?.lease?.paymentDueDay ?? 1));
       if (!versionId) return;
-      const list = await fetch(`/api/payments/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`).then((r) => r.json());
+      const authH = user ? await buildAuthHeaders(user) : {};
+      const list = await fetch(`/api/payments/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`, { headers: { ...authH } }).then((r) => r.json());
       if (list?.success) setPayments(list.payments ?? []);
       const sch = await fetch(`/api/payments/schedule/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`).then((r) => r.json());
       if (sch?.success) setScheduledPayments(sch.scheduledPayments ?? []);
     };
     void run();
-  }, [id]);
+  }, [id, user]);
 
   const summary = useMemo(() => {
     const today = Date.now();
@@ -143,7 +144,9 @@ export default function PaymentsPage() {
       setError(data?.errors?.[0]?.message ?? "No se pudo generar anexo.");
       return;
     }
-    const list = await fetch(`/api/payments/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(contractVersionId)}`).then((r) => r.json());
+    const list = await fetch(`/api/payments/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(contractVersionId)}`, {
+      headers: { ...(user ? await buildAuthHeaders(user) : {}) },
+    }).then((r) => r.json());
     if (list?.success) setPayments(list.payments ?? []);
   }
 

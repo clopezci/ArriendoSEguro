@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { ExpedienteNav } from "@/components/contracts/expediente-nav";
+import { ContractPdfDownloadLink } from "@/components/contracts/contract-pdf-download";
 
 function notarialAnnexFirestoreId(contractId: string, contractVersionId: string): string {
   return `annex_notarial_auth_${contractId}_${contractVersionId}`;
@@ -218,14 +219,7 @@ export default function NotarialOptionalPage() {
                 <h2 className="text-sm font-semibold text-slate-900">1. Descargas para el trámite</h2>
                 <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700">
                   <li>
-                    <a
-                      className="text-violet-700 underline"
-                      href={`/api/contracts/pdf/${encodeURIComponent(versionId)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      PDF del contrato
-                    </a>
+                    <ContractPdfDownloadLink contractVersionId={versionId} label="PDF del contrato" />
                     <span className="text-slate-500"> — si ya lo generaste en vista previa.</span>
                   </li>
                   <li>

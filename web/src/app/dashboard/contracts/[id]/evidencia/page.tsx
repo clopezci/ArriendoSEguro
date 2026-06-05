@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { ExpedienteNav } from "@/components/contracts/expediente-nav";
+import { ContractPdfDownloadLink } from "@/components/contracts/contract-pdf-download";
 
 type AnnexRow = {
   id?: string;
@@ -207,14 +208,7 @@ export default function EvidenciaExpedientePage() {
                 </p>
                 <ul className="mt-3 list-disc space-y-2 pl-5 text-sm">
                   <li>
-                    <a
-                      className="text-violet-700 underline"
-                      href={`/api/contracts/pdf/${encodeURIComponent(versionId)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      PDF del contrato (versión actual)
-                    </a>
+                    <ContractPdfDownloadLink contractVersionId={versionId} />
                     <span className="text-slate-500"> — solo si ya lo generaste en vista previa.</span>
                   </li>
                 </ul>

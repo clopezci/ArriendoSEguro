@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { requireContractParticipant } from "@/lib/auth/serverAuth";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,9 @@ export async function GET(request: Request) {
     }
     const firestore = getAdminFirestore();
     if (!firestore) return NextResponse.json({ success: true, payments: [] });
+    // Solo partes del contrato pueden ver el registro de pagos.
+    const participant = await requireContractParticipant(request, firestore, contractId, { kind: "by_version", contractVersionId });
+    if (!participant.ok) return participant.response;
     const snap = await firestore
       .collection("payments_log")
       .where("contractId", "==", contractId)

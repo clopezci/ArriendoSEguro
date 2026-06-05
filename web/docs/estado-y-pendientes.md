@@ -22,12 +22,12 @@ Hallazgos reales (la app usa Admin SDK + reglas deny-all, pero hay endpoints de 
 
 | # | Hallazgo | Archivo | Remediación |
 |---|---|---|---|
-| S1 | **GET sin auth que exponen datos por id** | `api/payments/list`, `api/contracts/latest-version`, `api/contracts/pdf/[contractVersionId]`, `api/inventory/detail` | Agregar `requireContractParticipant` + que el cliente envíe `buildAuthHeaders`. Revisar cada llamada cliente. |
-| S2 | **POST sin auth (`TODO(auth)` reales)** | `api/contracts/save-draft-version`, `api/contracts/preview` | `requireAuthenticatedUser` + validar dueño del borrador; actualizar el cliente para enviar token. |
-| S3 | **Endpoints públicos tokenizados sin rate-limit** | `api/payments/upload/{info,sign,submit}`, `api/partners/lead/confirm`, `api/payments/confirm` | Añadir `checkRateLimit` por IP/token. Tokens ya son aleatorios largos (24 bytes). |
-| S4 | **Validación de ruta de Storage por prefijo, no exacta** | `api/payments/upload/submit` | Guardar la ruta esperada en el token y comparar exacta (evita movimiento lateral dentro del mismo contrato). |
+| ✅ S1 | **GET sin auth que exponen datos por id** | `api/payments/list`, `api/contracts/latest-version`, `api/contracts/pdf/[contractVersionId]`, `api/inventory/detail` | **HECHO.** `payments/list` + `pdf/[id]` + `inventory/detail` exigen `requireContractParticipant`; clientes envían `buildAuthHeaders`. `latest-version` se recortó para no exponer PII (solo `status`/`currentVersionId`/`lease` básico). El PDF se descarga por `<ContractPdfDownloadLink>` (fetch autenticado + blob) y se sirve por stream desde Storage (sin redirect a URL firmada, para no romper CORS). |
+| ✅ S2 | **POST sin auth (`TODO(auth)` reales)** | `api/contracts/save-draft-version`, `api/contracts/preview` | **HECHO.** Ambos exigen `requireAuthenticatedUser`; en `save-draft-version` se registra `createdByUid` en CREATE y se valida propietario en UPDATE. Clientes envían el token. |
+| ✅ S3 | **Endpoints públicos tokenizados sin rate-limit** | `api/payments/upload/{info,sign,submit}`, `api/partners/lead/confirm`, `api/payments/confirm` | **HECHO.** `checkRateLimit(clientIp, RATE_LIMIT_RULES.publicToken)` (30/min) en los 5; 429 con `Retry-After`. |
+| ✅ S4 | **Validación de ruta de Storage por prefijo, no exacta** | `api/payments/upload/submit` | **HECHO.** El remanente tras el prefijo esperado se valida como segmento único (sin `/` ni `..`), evitando movimiento lateral. |
 | S5 | **Validación de archivos solo por metadatos** | `domain/payments/supportValidation`, subidas | Verificar **magic bytes** del binario (PDF `%PDF`, JPG `FFD8`, PNG `89504E47`). |
-| S6 | TODO(auth) obsoletos (ya autentican) | `api/contracts/generate-pdf`, `api/signatures/start` | Solo limpiar el comentario; la auth real ya existe (`requireContractParticipant`). |
+| ✅ S6 | TODO(auth) obsoletos (ya autentican) | `api/contracts/generate-pdf`, `api/signatures/start` | **HECHO.** Comentarios limpiados; la auth real ya existía (`requireContractParticipant`). |
 
 **Bien:** reglas Firestore/Storage deny-all ✓; admin por `ADMIN_INTERNAL_EMAILS` server-side ✓; tokens aleatorios ✓; número de cuenta enmascarado en paneles (al inquilino se muestra completo **a propósito y con consentimiento** del dueño) ✓.
 

@@ -5,12 +5,15 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
+import { useAuth } from "@/contexts/auth-context";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 
 export default function InventoryPreviewPage() {
   const id = String(useParams<{ id: string }>().id);
   const qs = useSearchParams();
   const inventoryId = qs.get("inventoryId") ?? "";
   const { state } = useDraftGuard(id);
+  const { user } = useAuth();
   const [html, setHtml] = useState("");
   const [hash, setHash] = useState("");
   const [pdfUrl, setPdfUrl] = useState("");
@@ -18,8 +21,10 @@ export default function InventoryPreviewPage() {
 
   useEffect(() => {
     const run = async () => {
-      if (!inventoryId) return;
-      const res = await fetch(`/api/inventory/detail?inventoryId=${encodeURIComponent(inventoryId)}`);
+      if (!inventoryId || !user) return;
+      const res = await fetch(`/api/inventory/detail?inventoryId=${encodeURIComponent(inventoryId)}`, {
+        headers: { ...(await buildAuthHeaders(user)) },
+      });
       const data = await res.json();
       if (!res.ok || !data.success) {
         setError(data?.errors?.[0]?.message ?? "No se pudo cargar inventario.");
@@ -30,7 +35,7 @@ export default function InventoryPreviewPage() {
       setPdfUrl(data.inventory?.generatedPdfUrl ?? "");
     };
     void run();
-  }, [inventoryId]);
+  }, [inventoryId, user]);
 
   if (state !== "ready") return <p className="text-sm text-slate-700">Cargando...</p>;
   return (

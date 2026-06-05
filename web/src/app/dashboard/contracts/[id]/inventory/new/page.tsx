@@ -43,8 +43,10 @@ export default function InventoryNewPage() {
 
   useEffect(() => {
     const load = async () => {
-      if (!inventoryId) return;
-      const res = await fetch(`/api/inventory/detail?inventoryId=${encodeURIComponent(inventoryId)}`);
+      if (!inventoryId || !user) return;
+      const res = await fetch(`/api/inventory/detail?inventoryId=${encodeURIComponent(inventoryId)}`, {
+        headers: { ...(await buildAuthHeaders(user)) },
+      });
       const data = await res.json();
       if (res.ok && data.success) {
         const zones = (data.selectedZones ?? []) as InventorySelectedZone[];
@@ -70,7 +72,7 @@ export default function InventoryNewPage() {
       }
     };
     void load();
-  }, [inventoryId]);
+  }, [inventoryId, user]);
 
   async function ensureInventory() {
     if (inventoryId) return inventoryId;
@@ -110,7 +112,9 @@ export default function InventoryNewPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data?.errors?.[0]?.message ?? "No se pudo guardar.");
-      const detailRes = await fetch(`/api/inventory/detail?inventoryId=${encodeURIComponent(invId)}`);
+      const detailRes = await fetch(`/api/inventory/detail?inventoryId=${encodeURIComponent(invId)}`, {
+        headers: { ...(user ? await buildAuthHeaders(user) : {}) },
+      });
       const detail = await detailRes.json();
       const rows = (detail?.selectedZones ?? []) as InventorySelectedZone[];
       setSelectedZoneRows(rows.sort((a, b) => a.order - b.order));
@@ -242,7 +246,9 @@ export default function InventoryNewPage() {
       if (!res.ok || !data.success)
         throw new Error(data?.errors?.[0]?.message ?? "No se pudo completar inventario.");
       setOk("Inventario guiado completado.");
-      const detailRes = await fetch(`/api/inventory/detail?inventoryId=${encodeURIComponent(inventoryId)}`);
+      const detailRes = await fetch(`/api/inventory/detail?inventoryId=${encodeURIComponent(inventoryId)}`, {
+        headers: { ...(user ? await buildAuthHeaders(user) : {}) },
+      });
       const detail = await detailRes.json();
       setInventoryReportHtml(detail?.inventory?.generatedHtml ?? "");
       setInventoryReportHash(detail?.inventory?.documentHash ?? "");

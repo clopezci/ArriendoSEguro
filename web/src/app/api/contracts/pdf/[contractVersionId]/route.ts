@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
+import { getStorage } from "firebase-admin/storage";
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { requireContractParticipant } from "@/lib/auth/serverAuth";
 
 export const runtime = "nodejs";
 
 /**
- * Endpoint de descarga local para PDF cuando no se usa bucket.
+ * Descarga del PDF del contrato. Requiere ser **parte del contrato** (el PDF
+ * contiene datos personales). El cliente debe llamar con `Authorization`.
  */
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ contractVersionId: string }> },
 ) {
   try {
@@ -22,12 +25,34 @@ export async function GET(
     if (!versionSnap.exists) {
       return NextResponse.json({ success: false, message: "Versión no encontrada." }, { status: 404 });
     }
-    const data = versionSnap.data() as { pdfStoragePath?: string; pdfUrl?: string } | undefined;
+    const data = versionSnap.data() as { pdfStoragePath?: string; pdfUrl?: string; contractId?: string } | undefined;
+
+    // Autorización: solo partes del contrato.
+    const participant = await requireContractParticipant(request, firestore, data?.contractId ?? "", {
+      kind: "by_version",
+      contractVersionId,
+    });
+    if (!participant.ok) return participant.response;
     if (!data?.pdfStoragePath) {
       return NextResponse.json({ success: false, message: "PDF no generado." }, { status: 404 });
     }
-    if (data.pdfStoragePath.startsWith("gs://") && data.pdfUrl) {
-      return NextResponse.redirect(data.pdfUrl, 302);
+    // Si está en Storage, descargamos los bytes a través de esta ruta autenticada
+    // (no redirigimos a URL firmada: el cliente la pide con `Authorization` y un
+    // redirect cross-origin perdería la cabecera y bloquearía la lectura por CORS).
+    if (data.pdfStoragePath.startsWith("gs://")) {
+      const bucketName = process.env.FIREBASE_STORAGE_BUCKET?.trim();
+      if (!bucketName) {
+        return NextResponse.json({ success: false, message: "Storage no configurado." }, { status: 503 });
+      }
+      const objectPath = data.pdfStoragePath.slice(`gs://${bucketName}/`.length);
+      const [bytes] = await getStorage().bucket(bucketName).file(objectPath).download();
+      return new NextResponse(new Uint8Array(bytes), {
+        status: 200,
+        headers: {
+          "content-type": "application/pdf",
+          "content-disposition": `attachment; filename="contrato-${contractVersionId}.pdf"`,
+        },
+      });
     }
 
     const file = await readFile(data.pdfStoragePath);
