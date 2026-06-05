@@ -41,6 +41,7 @@ export default function PaymentsPage() {
   const [canon, setCanon] = useState<number>(0);
   const [paymentDay, setPaymentDay] = useState<number>(1);
   const [error, setError] = useState("");
+  const [tenantLink, setTenantLink] = useState("");
   const [scheduledPayments, setScheduledPayments] = useState<ScheduledPayment[]>([]);
 
   useEffect(() => {
@@ -84,6 +85,47 @@ export default function PaymentsPage() {
   }, [payments, scheduledPayments]);
 
   if (state !== "ready") return <p className="text-sm text-slate-700">Cargando...</p>;
+
+  async function generateTenantLink() {
+    setError("");
+    if (!contractVersionId) {
+      setError("Primero guarda una versión contractual.");
+      return;
+    }
+    const today = Date.now();
+    const next = scheduledPayments
+      .filter((p) => new Date(p.dueDate).getTime() >= today)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+    const periodLabel = next?.periodLabel ?? new Date().toLocaleDateString("es-CO", { month: "long", year: "numeric" });
+    const dueDate = next?.dueDate ?? new Date().toISOString().slice(0, 10);
+    try {
+      const res = await fetch("/api/payments/upload-link", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user ?? null)) },
+        body: JSON.stringify({
+          contractId: id,
+          contractVersionId,
+          scheduledPaymentId: next?.id,
+          periodLabel,
+          dueDate,
+          expectedAmount: canon,
+        }),
+      });
+      const data = (await res.json()) as { success?: boolean; link?: string; errors?: { message?: string }[] };
+      if (!res.ok || !data.success || !data.link) {
+        setError(data?.errors?.[0]?.message ?? "No se pudo generar el enlace.");
+        return;
+      }
+      setTenantLink(data.link);
+      try {
+        await navigator.clipboard.writeText(data.link);
+      } catch {
+        /* el usuario puede copiar manual */
+      }
+    } catch {
+      setError("Error de red al generar el enlace.");
+    }
+  }
 
   async function generateAnnex() {
     setError("");
@@ -131,7 +173,15 @@ export default function PaymentsPage() {
         <button type="button" className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-800">Recordatorios</button>
         <Link href={`/dashboard/contracts/${id}/payments/new?contractVersionId=${encodeURIComponent(contractVersionId)}`} className="rounded bg-violet-600 px-3 py-2 text-sm text-white">Registrar pago</Link>
         <button type="button" onClick={generateAnnex} className="rounded border border-emerald-500 px-3 py-2 text-sm text-emerald-700">Generar anexo de pagos</button>
+        <button type="button" onClick={generateTenantLink} className="rounded border border-violet-500 px-3 py-2 text-sm text-violet-700">Enlace de pago para el inquilino</button>
       </div>
+      {tenantLink && (
+        <div className="mt-2 rounded border border-violet-200 bg-violet-50/60 p-3 text-xs text-slate-700">
+          <p className="font-medium text-violet-800">Enlace copiado. Compártelo con tu inquilino (WhatsApp, etc.):</p>
+          <p className="mt-1 break-all font-mono text-[11px]">{tenantLink}</p>
+          <p className="mt-1 text-[11px] text-slate-500">Verá cómo pagar y podrá subir su soporte; tú confirmas el pago al recibirlo.</p>
+        </div>
+      )}
       <section className="mt-3 grid gap-3 md:grid-cols-3">
         <Card label="Próximo vencimiento" value={summary.nextDue} />
         <Card label="Pagos próximos (calendario)" value={`${summary.upcomingSchedule}`} />

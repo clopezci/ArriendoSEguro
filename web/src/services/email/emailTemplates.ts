@@ -14,7 +14,8 @@ export type EmailTemplateCode =
   | "reputationLookupRequestEmail"
   | "errorAlertEmail"
   | "partnerLeadEmail"
-  | "partnerLeadAckEmail";
+  | "partnerLeadAckEmail"
+  | "paymentUploadedEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
@@ -49,6 +50,26 @@ export function inviteCounterpartyEmail(input: {
     "Invitación de contraparte",
     `<p>${input.inviterName} te invitó a continuar el expediente <strong>${input.contractLabel}</strong> en ArriendoSeguro.</p>
      <p><a href="${input.invitationUrl}" style="color:#6d28d9;">Abrir invitación</a></p>`,
+  );
+  return { subject, html, text };
+}
+
+export function paymentUploadedEmail(input: {
+  periodLabel: string;
+  amountText: string;
+  confirmUrl: string;
+}): CompiledEmailTemplate {
+  const subject = `Tu inquilino subió un soporte de pago (${input.periodLabel})`;
+  const text =
+    `Tu inquilino registró un pago del periodo ${input.periodLabel} por ${input.amountText} y adjuntó el soporte.\n\n` +
+    `Revísalo y confírmalo en la plataforma: ${input.confirmUrl}\n\n` +
+    `Hasta que confirmes, el pago queda como pendiente de tu verificación.`;
+  const html = baseHtml(
+    "Soporte de pago recibido",
+    `<p>Tu inquilino registró un pago del periodo <strong>${input.periodLabel}</strong> por <strong>${input.amountText}</strong> y adjuntó el soporte.</p>
+     <p>Revísalo y confírmalo en la plataforma:</p>
+     <p><a href="${input.confirmUrl}" style="color:#6d28d9;">Abrir registro de pagos</a></p>
+     <p style="font-size:12px;color:#475569;">Hasta que confirmes, el pago queda como pendiente de tu verificación.</p>`,
   );
   return { subject, html, text };
 }

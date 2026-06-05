@@ -1,0 +1,102 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { FieldValue } from "firebase-admin/firestore";
+import { getAdminFirestore } from "@/lib/firebase/admin";
+import { getUploadToken } from "@/lib/payments/uploadTokenStore";
+import { isTokenUsable, PAYMENT_UPLOAD_TOKENS_COLLECTION } from "@/domain/payments/paymentUploadToken";
+import { auditEvent } from "@/features/contracts/audit-server";
+import { sendEmail } from "@/services/email/sendEmail";
+import { paymentUploadedEmail } from "@/services/email/emailTemplates";
+import { appConfig } from "@/lib/config";
+
+export const runtime = "nodejs";
+
+const schema = z.object({
+  token: z.string().min(8),
+  storagePath: z.string().min(8),
+  amountPaid: z.number().nonnegative(),
+  paidDate: z.string().min(4).max(40),
+  fileName: z.string().max(200).optional(),
+});
+
+/**
+ * El inquilino confirma "ya pagué" y adjunta el soporte. Crea un registro de
+ * pago **pendiente de confirmación del dueño** (no marca el pago como válido por
+ * sí solo) y avisa al arrendador. Marca el token como usado.
+ */
+export async function POST(request: Request) {
+  const firestore = getAdminFirestore();
+  if (!firestore) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });
+
+  const parsed = schema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ success: false, errors: [{ field: "body", message: "Datos inválidos." }] }, { status: 422 });
+
+  const doc = await getUploadToken(firestore, parsed.data.token);
+  if (!isTokenUsable(doc, Date.now()) || !doc) {
+    return NextResponse.json({ success: false, errors: [{ field: "token", message: "El enlace no es válido o expiró." }] }, { status: 410 });
+  }
+
+  const bucketName = process.env.FIREBASE_STORAGE_BUCKET?.trim();
+  const expectedPrefix = `gs://${bucketName}/contracts/${doc.contractId}/payment-supports/`;
+  if (!parsed.data.storagePath.startsWith(expectedPrefix) || parsed.data.storagePath.includes("..")) {
+    return NextResponse.json({ success: false, errors: [{ field: "storagePath", message: "Soporte no válido." }] }, { status: 422 });
+  }
+
+  const now = new Date().toISOString();
+  const ref = firestore.collection("payments_log").doc();
+  await ref.set({
+    id: ref.id,
+    leaseProcessId: doc.contractId,
+    contractId: doc.contractId,
+    contractVersionId: doc.contractVersionId,
+    scheduledPaymentId: doc.scheduledPaymentId ?? null,
+    periodLabel: doc.periodLabel,
+    dueDate: doc.dueDate,
+    paidDate: parsed.data.paidDate,
+    amountDue: doc.expectedAmount,
+    amountPaid: Number(parsed.data.amountPaid) || 0,
+    paymentMethod: "otro",
+    paymentStatus: "reported_paid",
+    supportRequired: true,
+    supportValidationStatus: "pending",
+    supportFileUrl: parsed.data.storagePath,
+    supportFileName: parsed.data.fileName ?? "soporte",
+    supportUploadedAt: now,
+    // Origen: subido por el inquilino vía enlace mágico; pendiente de confirmación del dueño.
+    uploadedByTenantLink: true,
+    ownerConfirmed: false,
+    createdAt: now,
+    updatedAt: now,
+    createdAtServer: FieldValue.serverTimestamp(),
+  });
+
+  // Marca el token como usado (un soporte por periodo; el dueño puede pedir otro).
+  await firestore.collection(PAYMENT_UPLOAD_TOKENS_COLLECTION).doc(parsed.data.token).set({ status: "used", usedAt: now }, { merge: true });
+
+  // Avisa al arrendador para que confirme.
+  try {
+    const vSnap = await firestore.collection("contract_versions").doc(doc.contractVersionId).get();
+    const landlordEmail = ((vSnap.data() as { contractPayload?: { landlord?: { email?: string } } } | undefined)?.contractPayload?.landlord?.email ?? "").trim();
+    if (landlordEmail) {
+      const tpl = paymentUploadedEmail({
+        periodLabel: doc.periodLabel,
+        amountText: `$${(Number(parsed.data.amountPaid) || 0).toLocaleString("es-CO")}`,
+        confirmUrl: `${appConfig.publicUrl.replace(/\/$/, "")}/dashboard/contracts/${doc.contractId}/payments`,
+      });
+      await sendEmail({
+        to: landlordEmail,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
+        templateCode: "paymentUploadedEmail",
+        relatedEntityType: "payment",
+        relatedEntityId: ref.id,
+      });
+    }
+  } catch {
+    /* el aviso es best-effort */
+  }
+
+  auditEvent("payment_uploaded_by_tenant", { contractId: doc.contractId, periodLabel: doc.periodLabel });
+  return NextResponse.json({ success: true });
+}

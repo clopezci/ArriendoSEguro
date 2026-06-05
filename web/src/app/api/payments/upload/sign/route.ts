@@ -1,0 +1,41 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { getStorage } from "firebase-admin/storage";
+import { getAdminFirestore } from "@/lib/firebase/admin";
+import { getUploadToken } from "@/lib/payments/uploadTokenStore";
+import { isTokenUsable } from "@/domain/payments/paymentUploadToken";
+import { validatePaymentSupportFile, sanitizeSupportFileName } from "@/domain/payments/supportValidation";
+
+export const runtime = "nodejs";
+
+const schema = z.object({
+  token: z.string().min(8),
+  filename: z.string().min(1).max(200),
+  contentType: z.string().min(3).max(120),
+  sizeBytes: z.number().int().positive(),
+});
+
+/** URL firmada para que el inquilino suba el soporte (gated por token). */
+export async function POST(request: Request) {
+  const bucketName = process.env.FIREBASE_STORAGE_BUCKET?.trim();
+  if (!bucketName) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Storage no configurado." }] }, { status: 503 });
+  const firestore = getAdminFirestore();
+  if (!firestore) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });
+
+  const parsed = schema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ success: false, errors: [{ field: "body", message: "Datos inválidos." }] }, { status: 422 });
+
+  const doc = await getUploadToken(firestore, parsed.data.token);
+  if (!isTokenUsable(doc, Date.now()) || !doc) {
+    return NextResponse.json({ success: false, errors: [{ field: "token", message: "El enlace no es válido o expiró." }] }, { status: 410 });
+  }
+
+  const v = validatePaymentSupportFile({ supportFileName: parsed.data.filename, supportFileType: parsed.data.contentType, supportFileSize: parsed.data.sizeBytes });
+  if (!v.ok) return NextResponse.json({ success: false, errors: v.errors }, { status: 422 });
+
+  const objectPath = `contracts/${doc.contractId}/payment-supports/${Date.now()}-${sanitizeSupportFileName(parsed.data.filename)}`;
+  const file = getStorage().bucket(bucketName).file(objectPath);
+  const expires = Date.now() + 1000 * 60 * 15;
+  const [uploadUrl] = await file.getSignedUrl({ version: "v4", action: "write", expires, contentType: parsed.data.contentType });
+  return NextResponse.json({ success: true, uploadUrl, storagePath: `gs://${bucketName}/${objectPath}`, expiresAt: new Date(expires).toISOString() });
+}
