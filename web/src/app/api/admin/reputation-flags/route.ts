@@ -25,7 +25,9 @@ export async function GET(request: Request) {
     );
   }
 
-  const snap = await firestore.collection(FLAGS_COLLECTION).get().catch(() => null);
+  const PAGE_LIMIT = 1000;
+  const snap = await firestore.collection(FLAGS_COLLECTION).limit(PAGE_LIMIT).get().catch(() => null);
+  const truncated = (snap?.size ?? 0) === PAGE_LIMIT;
   const flags = (snap?.docs ?? [])
     .map((d) => {
       const x = d.data() as Record<string, unknown>;
@@ -46,7 +48,7 @@ export async function GET(request: Request) {
       return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
     });
 
-  return NextResponse.json({ success: true, flags, openCount: flags.filter((f) => f.status === "open").length });
+  return NextResponse.json({ success: true, flags, openCount: flags.filter((f) => f.status === "open").length, truncated });
 }
 
 const patchSchema = z.object({ id: z.string().min(1), status: z.enum(["open", "reviewed", "dismissed"]) });

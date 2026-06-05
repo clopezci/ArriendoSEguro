@@ -22,7 +22,9 @@ export async function GET(request: Request) {
   const firestore = getAdminFirestore();
   if (!firestore) return firestoreUnavailable();
 
-  const snap = await firestore.collection(REFERRALS_COLLECTION).get();
+  const PAGE_LIMIT = 1000;
+  const snap = await firestore.collection(REFERRALS_COLLECTION).limit(PAGE_LIMIT).get();
+  const truncated = snap.size === PAGE_LIMIT;
   const referrals = snap.docs.map((d) => {
     const x = d.data() as Record<string, unknown>;
     return {
@@ -42,7 +44,7 @@ export async function GET(request: Request) {
     return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
   });
   const pendingCount = referrals.filter((r) => r.status === "pending").length;
-  return NextResponse.json({ success: true, referrals, pendingCount });
+  return NextResponse.json({ success: true, referrals, pendingCount, truncated });
 }
 
 const patchSchema = z.object({

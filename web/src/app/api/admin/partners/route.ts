@@ -25,7 +25,8 @@ export async function GET(request: Request) {
   if (!firestore) return firestoreUnavailable();
 
   const col = firestore.collection(PARTNERS_COLLECTION);
-  let snap = await col.get();
+  const PAGE_LIMIT = 1000;
+  let snap = await col.limit(PAGE_LIMIT).get();
   if (snap.empty) {
     // Siembra aliados de prueba editables, con tu correo como contacto.
     const now = new Date().toISOString();
@@ -35,7 +36,7 @@ export async function GET(request: Request) {
       batch.set(ref, { ...p, isSeed: true, createdAt: now, createdAtServer: FieldValue.serverTimestamp() });
     }
     await batch.commit();
-    snap = await col.get();
+    snap = await col.limit(PAGE_LIMIT).get();
   }
 
   const partners = snap.docs.map((d) => {
