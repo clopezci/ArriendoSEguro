@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
@@ -43,6 +44,7 @@ export async function POST(request: Request) {
   }
 
   const now = new Date().toISOString();
+  const ownerConfirmToken = randomBytes(24).toString("hex");
   const ref = firestore.collection("payments_log").doc();
   await ref.set({
     id: ref.id,
@@ -65,6 +67,8 @@ export async function POST(request: Request) {
     // Origen: subido por el inquilino vía enlace mágico; pendiente de confirmación del dueño.
     uploadedByTenantLink: true,
     ownerConfirmed: false,
+    ownerConfirmToken,
+    ownerConfirmStatus: "pending",
     createdAt: now,
     updatedAt: now,
     createdAtServer: FieldValue.serverTimestamp(),
@@ -78,10 +82,13 @@ export async function POST(request: Request) {
     const vSnap = await firestore.collection("contract_versions").doc(doc.contractVersionId).get();
     const landlordEmail = ((vSnap.data() as { contractPayload?: { landlord?: { email?: string } } } | undefined)?.contractPayload?.landlord?.email ?? "").trim();
     if (landlordEmail) {
+      const base = appConfig.publicUrl.replace(/\/$/, "");
       const tpl = paymentUploadedEmail({
         periodLabel: doc.periodLabel,
         amountText: `$${(Number(parsed.data.amountPaid) || 0).toLocaleString("es-CO")}`,
-        confirmUrl: `${appConfig.publicUrl.replace(/\/$/, "")}/dashboard/contracts/${doc.contractId}/payments`,
+        confirmUrl: `${base}/api/payments/confirm?token=${ownerConfirmToken}&action=confirm`,
+        rejectUrl: `${base}/api/payments/confirm?token=${ownerConfirmToken}&action=reject`,
+        reviewUrl: `${base}/dashboard/contracts/${doc.contractId}/payments`,
       });
       await sendEmail({
         to: landlordEmail,

@@ -7,11 +7,9 @@ import { auditEvent } from "@/features/contracts/audit-server";
 import { sendEmail } from "@/services/email/sendEmail";
 import { reputationLookupRequestEmail } from "@/services/email/emailTemplates";
 import { appConfig } from "@/lib/config";
-import { normalizeEmail, subjectKeyFromEmail } from "@/lib/reputation/aggregate-store";
+import { normalizeEmail, subjectKeyFromEmail, LOOKUP_CONSENTS_COLLECTION } from "@/lib/reputation/aggregate-store";
 
 export const runtime = "nodejs";
-
-export const LOOKUP_CONSENTS_COLLECTION = "reputation_lookup_consents";
 
 const schema = z.object({ subjectEmail: z.string().email() });
 

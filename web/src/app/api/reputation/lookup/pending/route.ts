@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
-import { LOOKUP_CONSENTS_COLLECTION } from "@/app/api/reputation/lookup/request/route";
+import { LOOKUP_CONSENTS_COLLECTION } from "@/lib/reputation/aggregate-store";
 
 export const runtime = "nodejs";
 

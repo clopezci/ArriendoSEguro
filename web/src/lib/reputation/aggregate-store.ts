@@ -12,6 +12,7 @@ import {
 export const REVIEWS_COLLECTION = "reputation_reviews";
 export const AGGREGATES_COLLECTION = "reputation_aggregates";
 export const FLAGS_COLLECTION = "reputation_flags";
+export const LOOKUP_CONSENTS_COLLECTION = "reputation_lookup_consents";
 
 export function normalizeEmail(email: string): string {
   return (email ?? "").trim().toLowerCase();

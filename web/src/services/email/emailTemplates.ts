@@ -15,7 +15,10 @@ export type EmailTemplateCode =
   | "errorAlertEmail"
   | "partnerLeadEmail"
   | "partnerLeadAckEmail"
-  | "paymentUploadedEmail";
+  | "paymentUploadedEmail"
+  | "paymentConfirmedToTenantEmail"
+  | "tenantPaymentReminderEmail"
+  | "ownerConfirmEscalationEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
@@ -58,18 +61,80 @@ export function paymentUploadedEmail(input: {
   periodLabel: string;
   amountText: string;
   confirmUrl: string;
+  rejectUrl: string;
+  reviewUrl: string;
 }): CompiledEmailTemplate {
   const subject = `Tu inquilino subió un soporte de pago (${input.periodLabel})`;
   const text =
     `Tu inquilino registró un pago del periodo ${input.periodLabel} por ${input.amountText} y adjuntó el soporte.\n\n` +
-    `Revísalo y confírmalo en la plataforma: ${input.confirmUrl}\n\n` +
+    `Revisa el soporte: ${input.reviewUrl}\n\n` +
+    `Cuando lo verifiques, confirma con un clic:\n` +
+    `- Sí, recibí el pago: ${input.confirmUrl}\n- No corresponde: ${input.rejectUrl}\n\n` +
     `Hasta que confirmes, el pago queda como pendiente de tu verificación.`;
   const html = baseHtml(
     "Soporte de pago recibido",
     `<p>Tu inquilino registró un pago del periodo <strong>${input.periodLabel}</strong> por <strong>${input.amountText}</strong> y adjuntó el soporte.</p>
-     <p>Revísalo y confírmalo en la plataforma:</p>
-     <p><a href="${input.confirmUrl}" style="color:#6d28d9;">Abrir registro de pagos</a></p>
+     <p><a href="${input.reviewUrl}" style="color:#6d28d9;">Ver el soporte en el registro de pagos</a></p>
+     <p>Cuando lo verifiques, confirma con un clic:</p>
+     <p>
+       <a href="${input.confirmUrl}" style="display:inline-block;background:#16a34a;color:#fff;padding:8px 14px;border-radius:8px;text-decoration:none;margin-right:8px;">Sí, recibí el pago</a>
+       <a href="${input.rejectUrl}" style="display:inline-block;background:#e2e8f0;color:#0f172a;padding:8px 14px;border-radius:8px;text-decoration:none;">No corresponde</a>
+     </p>
      <p style="font-size:12px;color:#475569;">Hasta que confirmes, el pago queda como pendiente de tu verificación.</p>`,
+  );
+  return { subject, html, text };
+}
+
+export function paymentConfirmedToTenantEmail(input: {
+  periodLabel: string;
+  confirmed: boolean;
+}): CompiledEmailTemplate {
+  const subject = input.confirmed
+    ? `Tu pago de ${input.periodLabel} fue confirmado`
+    : `Tu pago de ${input.periodLabel} necesita revisión`;
+  const text = input.confirmed
+    ? `El arrendador confirmó la recepción de tu pago del periodo ${input.periodLabel}. ¡Gracias!`
+    : `El arrendador indicó que el pago del periodo ${input.periodLabel} no corresponde o necesita revisión. Contáctalo para aclararlo.`;
+  const html = baseHtml(input.confirmed ? "Pago confirmado" : "Pago por revisar", `<p>${text}</p>`);
+  return { subject, html, text };
+}
+
+export function tenantPaymentReminderEmail(input: {
+  periodLabel: string;
+  dueDate: string;
+  amountText: string;
+  howToPay: string;
+  payUrl: string;
+  whenLabel: string;
+}): CompiledEmailTemplate {
+  const subject = `Recordatorio de pago de tu arriendo (${input.periodLabel})`;
+  const text =
+    `${input.whenLabel}: el pago del periodo ${input.periodLabel} por ${input.amountText} vence el ${input.dueDate}.\n\n` +
+    `Cómo pagar: ${input.howToPay}\n\n` +
+    `Cuando pagues, sube tu soporte aquí (sin registrarte): ${input.payUrl}`;
+  const html = baseHtml(
+    "Recordatorio de pago",
+    `<p><strong>${input.whenLabel}:</strong> el pago del periodo <strong>${input.periodLabel}</strong> por <strong>${input.amountText}</strong> vence el <strong>${input.dueDate}</strong>.</p>
+     <p>Cómo pagar: ${input.howToPay}</p>
+     <p><a href="${input.payUrl}" style="display:inline-block;background:#6d28d9;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;">Pagar y subir mi soporte</a></p>
+     <p style="font-size:12px;color:#475569;">ArriendoSeguro no recauda ni custodia el dinero; solo te recuerda y guarda la constancia.</p>`,
+  );
+  return { subject, html, text };
+}
+
+export function ownerConfirmEscalationEmail(input: {
+  periodLabel: string;
+  reviewUrl: string;
+}): CompiledEmailTemplate {
+  const subject = `Falta confirmar un pago (${input.periodLabel})`;
+  const text =
+    `Hay un soporte de pago del periodo ${input.periodLabel} pendiente de confirmación del arrendador.\n\n` +
+    `Arrendador: revisa y confirma en ${input.reviewUrl}.\nInquilino: si ya pagaste, espera la confirmación o contacta al arrendador.`;
+  const html = baseHtml(
+    "Pago pendiente de confirmación",
+    `<p>Hay un soporte de pago del periodo <strong>${input.periodLabel}</strong> pendiente de confirmación del arrendador.</p>
+     <p><a href="${input.reviewUrl}" style="color:#6d28d9;">Abrir el registro de pagos</a></p>
+     <p style="font-size:12px;color:#475569;">Arrendador: revisa y confirma. Inquilino: si ya pagaste, espera la confirmación o contacta al arrendador.</p>`,
   );
   return { subject, html, text };
 }

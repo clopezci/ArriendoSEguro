@@ -6,7 +6,7 @@ import {
   normalizeEmail,
   subjectKeyFromEmail,
 } from "@/lib/reputation/aggregate-store";
-import { LOOKUP_CONSENTS_COLLECTION } from "@/app/api/reputation/lookup/request/route";
+import { LOOKUP_CONSENTS_COLLECTION } from "@/lib/reputation/aggregate-store";
 
 export const runtime = "nodejs";
 
