@@ -303,6 +303,11 @@ export default function PreviewStepPage() {
       };
       setSavedVersion(next);
       updateDraft(id, (d) => appendAudit({ ...d, status: "version_saved" }, "contract_draft_saved"));
+      // Marca al usuario como referido "calificado" si vino por referido y usó
+      // la app de verdad (ya generó/guardó un contrato). Best-effort.
+      if (user) {
+        void fetch("/api/referrals/mark-usage", { method: "POST", headers: { ...(await buildAuthHeaders(user)) } }).catch(() => {});
+      }
       return next;
     } catch {
       setRenderErrors([

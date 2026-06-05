@@ -7,7 +7,10 @@ import {
   isValidReferralCodeFormat,
   referralDiscountedCheckoutCop,
   canRegisterReferral,
+  countQualifiedReferrals,
+  signatureUnlockedByReferrals,
   DEFAULT_REFERRAL_DISCOUNT_PERCENT,
+  QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK,
 } from "./referrals";
 
 test("config por defecto: habilitado al 50%", () => {
@@ -48,6 +51,18 @@ test("descuento aplica solo si habilitado y aprobado", () => {
 test("descuento no aplica si el programa está deshabilitado", () => {
   const cfg = resolveReferralConfig({ enabled: false, discountPercent: 50 });
   assert.equal(referralDiscountedCheckoutCop(49900, cfg, "approved").applied, false);
+});
+
+test("solo cuentan los referidos calificados (que usaron la app)", () => {
+  const list = [{ qualified: true }, { qualified: false }, { qualified: true }, {}];
+  assert.equal(countQualifiedReferrals(list), 2);
+});
+
+test("desbloqueo de firma con 3 referidos calificados", () => {
+  assert.equal(QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK, 3);
+  assert.equal(signatureUnlockedByReferrals(2), false);
+  assert.equal(signatureUnlockedByReferrals(3), true);
+  assert.equal(signatureUnlockedByReferrals(5), true);
 });
 
 test("reglas de registro de referencia", () => {

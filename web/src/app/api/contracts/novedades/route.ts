@@ -235,6 +235,8 @@ export async function POST(request: Request) {
     const phoneTargets = [payload?.landlord, payload?.tenant, ...codebtorPhoneTargets]
       .filter((p): p is NonNullable<typeof p> => Boolean(p?.phone))
       .filter((p) => (p.email ?? "").toLowerCase() !== authorEmailLc);
+    // SMS solo para clientes de pago: este endpoint ya exige Plus/demo al actor
+    // (shouldBlockForPlus arriba), por lo que el tier gratis nunca llega aquí.
     const smsBody = `ArriendoSeguro: ${authorName} registró una novedad (${tipoLabel}) en tu arriendo. Revísala en la plataforma.`;
     const seenPhones = new Set<string>();
     for (const p of phoneTargets) {

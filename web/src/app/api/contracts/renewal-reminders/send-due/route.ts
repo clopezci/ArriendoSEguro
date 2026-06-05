@@ -80,6 +80,8 @@ export async function POST(request: Request) {
             relatedEntityId: doc.id,
           });
         }
+        // SMS solo para clientes de pago: el cron solo procesa contratos
+        // `signed`, y firmar exige Plus/demo, así que el tier gratis no llega aquí.
         if (party.phone) {
           await sendSms({
             to: party.phone,

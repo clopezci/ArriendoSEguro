@@ -10,7 +10,10 @@ import {
   REFERRALS_COLLECTION,
   REFERRAL_CONFIG_COLLECTION,
   REFERRAL_CONFIG_DOC_ID,
+  QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK,
+  SIGNATURE_UNLOCK_MICRO_FEE_COP,
   resolveReferralConfig,
+  signatureUnlockedByReferrals,
   type ReferralStatus,
 } from "@/domain/referrals/referrals";
 
@@ -75,10 +78,12 @@ export async function GET(request: Request) {
     .get();
   let approvedCount = 0;
   let pendingCount = 0;
+  let qualifiedCount = 0;
   for (const d of myReferralsSnap.docs) {
-    const s = (d.data() as { status?: ReferralStatus }).status;
-    if (s === "approved") approvedCount += 1;
-    else if (s === "pending") pendingCount += 1;
+    const data = d.data() as { status?: ReferralStatus; qualified?: boolean };
+    if (data.status === "approved") approvedCount += 1;
+    else if (data.status === "pending") pendingCount += 1;
+    if (data.qualified === true) qualifiedCount += 1;
   }
 
   // ¿A mí me refirieron? (doc id = mi uid)
@@ -101,6 +106,13 @@ export async function GET(request: Request) {
     referredCount: myReferralsSnap.size,
     approvedCount,
     pendingCount,
+    qualifiedCount,
+    signatureUnlock: {
+      required: QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK,
+      qualified: qualifiedCount,
+      unlocked: signatureUnlockedByReferrals(qualifiedCount),
+      microFeeCop: SIGNATURE_UNLOCK_MICRO_FEE_COP,
+    },
     myReferralStatus,
     program: { enabled: config.enabled, discountPercent: config.discountPercent },
   });

@@ -11,6 +11,8 @@ type ReferralMe = {
   referredCount?: number;
   approvedCount?: number;
   pendingCount?: number;
+  qualifiedCount?: number;
+  signatureUnlock?: { required: number; qualified: number; unlocked: boolean; microFeeCop: number };
   myReferralStatus?: "pending" | "approved" | "rejected" | null;
   program?: { enabled: boolean; discountPercent: number };
 };
@@ -96,6 +98,42 @@ export function ReferralPanel() {
           <dd className="text-base font-semibold text-amber-700">{data.pendingCount ?? 0}</dd>
         </div>
       </dl>
+
+      {data.signatureUnlock && (
+        <div className="mt-4 rounded-lg border border-violet-200 bg-white/80 p-3">
+          <p className="text-sm font-semibold text-slate-900">Desbloquea la firma certificada</p>
+          {data.signatureUnlock.unlocked ? (
+            <p className="mt-1 text-sm text-emerald-800">
+              🎉 ¡Desbloqueada! Lograste {data.signatureUnlock.required} referidos que usaron la app.
+            </p>
+          ) : (
+            <>
+              <p className="mt-1 text-xs text-slate-600">
+                Refiere a <strong>{data.signatureUnlock.required} personas que usen la app</strong> (que generen su
+                contrato), o paga una sola vez <strong>${data.signatureUnlock.microFeeCop.toLocaleString("es-CO")}</strong>.
+              </p>
+              <div className="mt-2">
+                <div className="flex items-center justify-between text-xs text-slate-600">
+                  <span>Referidos que usaron la app</span>
+                  <span>
+                    {data.signatureUnlock.qualified}/{data.signatureUnlock.required}
+                  </span>
+                </div>
+                <div className="mt-1 h-2 rounded bg-slate-200">
+                  <div
+                    className="h-2 rounded bg-violet-500 transition-all"
+                    style={{ width: `${Math.min(100, Math.round((data.signatureUnlock.qualified / data.signatureUnlock.required) * 100))}%` }}
+                  />
+                </div>
+              </div>
+              <p className="mt-2 text-[11px] text-slate-500">
+                Solo cuentan los referidos que <strong>de verdad usan</strong> la app (generan un contrato), no los que
+                solo se registran.
+              </p>
+            </>
+          )}
+        </div>
+      )}
 
       {data.myReferralStatus === "approved" && (
         <p className="mt-3 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">

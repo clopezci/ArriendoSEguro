@@ -25,6 +25,22 @@ export const REFERRALS_COLLECTION = "referrals";
 export const DEFAULT_REFERRAL_DISCOUNT_PERCENT = 50;
 export const MAX_REFERRAL_DISCOUNT_PERCENT = 100;
 
+/** Referidos **calificados** (que usaron la app de verdad) para desbloquear la firma certificada. */
+export const QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK = 3;
+
+/** Micropago alternativo (COP) para desbloquear la firma certificada. */
+export const SIGNATURE_UNLOCK_MICRO_FEE_COP = 10_000;
+
+/** Un referido "califica" cuando el referido usó la app de verdad (generó un contrato). */
+export function countQualifiedReferrals(referrals: { qualified?: boolean }[]): number {
+  return referrals.filter((r) => r.qualified === true).length;
+}
+
+/** ¿El usuario desbloqueó la firma certificada por referidos calificados? */
+export function signatureUnlockedByReferrals(qualifiedCount: number): boolean {
+  return qualifiedCount >= QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK;
+}
+
 export type ReferralStatus = "pending" | "approved" | "rejected";
 
 export interface ReferralConfig {
