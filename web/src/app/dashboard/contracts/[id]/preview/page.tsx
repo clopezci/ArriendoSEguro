@@ -652,14 +652,6 @@ export default function PreviewStepPage() {
         >
           {startingSignatures ? "Iniciando firma…" : "Iniciar firma"}
         </button>
-        <button
-          type="button"
-          disabled
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-600"
-          title="Próximamente"
-        >
-          Continuar a firma (Próximamente)
-        </button>
       </div>
       {saveMessage && <p className="mt-3 text-sm text-emerald-700">{saveMessage}</p>}
       {pdfFeedback && (
