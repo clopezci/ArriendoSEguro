@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
+import { getStorage } from "firebase-admin/storage";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getUploadToken } from "@/lib/payments/uploadTokenStore";
+import { isAllowedSupportMagic } from "@/domain/payments/supportValidation";
 import { isTokenUsable, PAYMENT_UPLOAD_TOKENS_COLLECTION } from "@/domain/payments/paymentUploadToken";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { sendEmail } from "@/services/email/sendEmail";
@@ -53,6 +55,32 @@ export async function POST(request: Request) {
     : null;
   if (!remainder || remainder.includes("/") || remainder.includes("..")) {
     return NextResponse.json({ success: false, errors: [{ field: "storagePath", message: "Soporte no válido." }] }, { status: 422 });
+  }
+
+  // Verificación de **magic bytes**: descargamos la cabecera real del objeto y
+  // confirmamos que es PDF/JPG/PNG/WEBP. La extensión y el content-type que
+  // declara el cliente no bastan (se pueden falsear). Si no coincide, borramos
+  // el objeto subido y rechazamos.
+  if (bucketName) {
+    try {
+      const objectPath = `contracts/${doc.contractId}/payment-supports/${remainder}`;
+      const fileRef = getStorage().bucket(bucketName).file(objectPath);
+      const [head] = await fileRef.download({ start: 0, end: 15 });
+      if (!isAllowedSupportMagic(new Uint8Array(head))) {
+        await fileRef.delete().catch(() => {});
+        return NextResponse.json(
+          { success: false, errors: [{ field: "storagePath", message: "El archivo no es un soporte válido (PDF/JPG/PNG/WEBP)." }] },
+          { status: 422 },
+        );
+      }
+    } catch {
+      // Si no se pudo leer el objeto (no existe / Storage caído), no creamos el
+      // registro: el soporte no es verificable.
+      return NextResponse.json(
+        { success: false, errors: [{ field: "storagePath", message: "No se pudo verificar el soporte subido." }] },
+        { status: 422 },
+      );
+    }
   }
 
   const now = new Date().toISOString();
