@@ -19,6 +19,10 @@ import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/pla
 import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
 
 export const runtime = "nodejs";
+// El PDF se renderiza con pdf-lib (JS puro, sin navegador headless): es rápido
+// (milisegundos para un contrato de texto). Damos headroom por si el contrato es
+// muy largo o la subida a Storage tarda; muy por debajo del riesgo de timeout.
+export const maxDuration = 60;
 const MAX_JSON_BYTES = 16_000;
 
 type ContractVersionDoc = {
@@ -135,6 +139,7 @@ export async function POST(request: Request) {
     }
 
     const generatedAt = new Date().toISOString();
+    const renderStartedAt = Date.now();
     const pdfBytes = await renderContractPdfFromHtml({
       html: htmlForPdf,
       contractId,
@@ -143,6 +148,7 @@ export async function POST(request: Request) {
       documentHash: version.documentHash,
       generatedAt,
     });
+    const renderMs = Date.now() - renderStartedAt;
 
     let pdfUrl = "";
     let pdfStoragePath = "";
@@ -189,7 +195,7 @@ export async function POST(request: Request) {
       { merge: true },
     );
 
-    auditEvent("contract_pdf_generated", { contractId, contractVersionId });
+    auditEvent("contract_pdf_generated", { contractId, contractVersionId, renderMs, pdfBytes: pdfBytes.length });
     return NextResponse.json<GenerateContractPdfResponse>({
       success: true,
       pdfUrl,

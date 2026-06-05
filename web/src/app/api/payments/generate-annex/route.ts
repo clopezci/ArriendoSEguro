@@ -16,6 +16,8 @@ import {
 import { logPaymentAudit } from "@/features/payments/paymentAuditLog";
 
 export const runtime = "nodejs";
+// PDF con pdf-lib (JS puro); headroom por contrato largo / subida a Storage.
+export const maxDuration = 60;
 
 const schema = z.object({
   contractId: z.string().min(3),

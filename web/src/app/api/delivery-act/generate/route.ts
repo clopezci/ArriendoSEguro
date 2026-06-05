@@ -11,6 +11,8 @@ import { auditEvent } from "@/features/contracts/audit-server";
 import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
 
 export const runtime = "nodejs";
+// PDF con pdf-lib (JS puro); headroom por inventario extenso / subida a Storage.
+export const maxDuration = 60;
 const schema = z.object({
   inventoryId: z.string().min(3),
   contractId: z.string().min(3),
