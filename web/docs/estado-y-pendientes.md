@@ -71,4 +71,25 @@ Ver `analisis-rentabilidad-planes.md` (con datos reales de Firma.dev/Wompi/Nucli
 
 ---
 
-**Conclusión:** la app está **funcional y sin nada roto**, lista para pruebas. Para un lanzamiento público en serio quedan, en orden: (1) endurecer seguridad §2, (2) revisión legal §4 + datos del responsable, (3) conectar proveedores §5, (4) optimizar escalabilidad §3 cuando crezca el volumen.
+## 8. Lo que falta (resumen al 2026-06-05, 2.ª jornada)
+
+**Cerrado en código esta jornada:** todo el §2 Seguridad (S1–S6), todo el §3
+Escalabilidad (E1–E3) y los puntos legales en código del §4 (L2, L6). Build ✓ ·
+160/160 tests ✓.
+
+**Ya NO queda nada por programar en esta fase.** Lo pendiente es **tuyo** (manual)
+o de **terceros**:
+
+1. **Acciones manuales del fundador** (§6 y `acciones-manuales-fundador.md`):
+   programar crons, desplegar reglas Firebase, definir env vars en Vercel,
+   Search Console.
+2. **Revisión con abogado** (L3, L5): flujo de consulta de reputación / Habeas
+   Data y suficiencia del consentimiento de codeudores adicionales.
+3. **Dato del responsable del tratamiento** (L4): publicar NIT/razón social en el
+   aviso de privacidad (no se rellena por código para no inventar datos legales).
+4. **Conexión de proveedores** (§5): Wompi, firma certificada (validar proveedor
+   CO), AdSense, Twilio. Dependen de llaves/aprobaciones externas.
+
+**Conclusión:** la app está **funcional, endurecida y sin nada roto**, lista para
+**pruebas**. El siguiente paso es ejecutar tus acciones manuales y luego probar
+de punta a punta.
