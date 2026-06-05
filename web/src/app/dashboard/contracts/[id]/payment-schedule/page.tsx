@@ -137,7 +137,7 @@ export default function PaymentSchedulePage() {
   }
 
   return (
-    <WizardShell title="Calendario de pagos" currentStep={11} contractId={id}>
+    <WizardShell title="Calendario de pagos" currentStep={11} contractId={id} variant="extra">
       {error && <p className="mb-3 text-sm text-rose-700">{error}</p>}
       <div className="grid gap-3 md:grid-cols-5">
         <Info label="Canon mensual" value={`$${leaseData.monthlyRent.toLocaleString("es-CO")}`} />

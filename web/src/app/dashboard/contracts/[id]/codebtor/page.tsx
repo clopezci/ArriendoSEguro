@@ -171,7 +171,7 @@ export default function CodebtorStepPage() {
   }
 
   return (
-    <WizardShell title="Codeudor solidario" currentStep={5} contractId={id}>
+    <WizardShell title="Codeudor solidario" currentStep={4} contractId={id}>
       <div className="space-y-4">
         <p className="text-sm text-slate-700">
           ¿El contrato tendrá codeudor solidario?

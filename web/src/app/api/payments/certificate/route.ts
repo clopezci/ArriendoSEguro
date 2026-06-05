@@ -30,6 +30,8 @@ function toCertifiable(p: PaymentLog): CertifiablePayment {
     paymentMethod: p.paymentMethod,
     paymentStatus: p.paymentStatus,
     notes: p.notes,
+    uploadedByTenantLink: (p as { uploadedByTenantLink?: boolean }).uploadedByTenantLink,
+    ownerConfirmed: (p as { ownerConfirmed?: boolean }).ownerConfirmed,
   };
 }
 

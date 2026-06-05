@@ -78,7 +78,7 @@ export default function TenantStepPage() {
   return (
     <WizardShell
       title="Datos del arrendatario (inquilino)"
-      currentStep={4}
+      currentStep={3}
       contractId={id}
     >
       <form

@@ -3,8 +3,13 @@
 import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
 
+/**
+ * Pasos del **Bloque 1** (asistente mínimo para generar el contrato). Lo
+ * opcional (cláusulas, garantía, codeudores adicionales, método de pago) y la
+ * posventa (evidencias, pagos, inventario, novedades) viven fuera del progreso
+ * lineal y usan `variant="extra"`.
+ */
 export const WIZARD_STEPS = [
-  "Acceso",
   "Tipo de contrato",
   "Arrendador (dueño)",
   "Arrendatario (inquilino)",
@@ -12,11 +17,8 @@ export const WIZARD_STEPS = [
   "Inmueble a arrendar",
   "Términos",
   "Servicios",
-  "Cláusulas especiales",
   "Resumen",
   "Vista previa",
-  "Evidencias del expediente",
-  "Novedades del arriendo",
 ] as const;
 
 const steps = WIZARD_STEPS;
@@ -26,13 +28,41 @@ export function WizardShell({
   currentStep,
   contractId,
   children,
+  variant = "wizard",
 }: {
   title: string;
   currentStep: number;
   contractId: string;
   children: ReactNode;
+  /** "wizard" muestra el progreso del Bloque 1; "extra" es adicionales/posventa. */
+  variant?: "wizard" | "extra";
 }) {
-  const progress = useMemo(() => Math.round((currentStep / steps.length) * 100), [currentStep]);
+  const clamped = Math.min(Math.max(currentStep, 1), steps.length);
+  const progress = useMemo(() => Math.round((clamped / steps.length) * 100), [clamped]);
+
+  if (variant === "extra") {
+    return (
+      <div className="space-y-5">
+        <div className="rounded-2xl border border-slate-300 bg-white/95 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.2)]">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
+            <Link
+              href={`/dashboard/contracts/${contractId}/adicionales`}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 hover:border-violet-500 hover:text-violet-700"
+            >
+              Centro de adicionales
+            </Link>
+          </div>
+          <p className="mt-2 text-xs text-slate-600">
+            Configuración adicional y posventa del expediente (no forma parte del asistente principal).
+          </p>
+        </div>
+        <div className="rounded-2xl border border-slate-300 bg-white p-5 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
@@ -49,7 +79,7 @@ export function WizardShell({
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between text-xs text-slate-700">
             <span>
-              Paso {currentStep} de {steps.length}
+              Paso {clamped} de {steps.length}
             </span>
             <span>{progress}%</span>
           </div>
@@ -59,11 +89,11 @@ export function WizardShell({
               style={{ width: `${progress}%` }}
             />
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-1 text-[11px] text-slate-600 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-13">
+          <div className="mt-3 grid grid-cols-3 gap-1 text-[11px] text-slate-600 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9">
             {steps.map((s, idx) => (
               <span
                 key={s}
-                className={idx + 1 <= currentStep ? "font-medium text-violet-700" : ""}
+                className={idx + 1 <= clamped ? "font-medium text-violet-700" : ""}
               >
                 {idx + 1}. {s}
               </span>

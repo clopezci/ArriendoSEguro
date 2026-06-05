@@ -164,7 +164,7 @@ export default function PropertyStepPage() {
           };
 
   return (
-    <WizardShell title="Inmueble a arrendar" currentStep={6} contractId={id}>
+    <WizardShell title="Inmueble a arrendar" currentStep={5} contractId={id}>
       <form
         id="wizard-form"
         className="grid gap-3 sm:grid-cols-2"

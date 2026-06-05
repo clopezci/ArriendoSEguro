@@ -102,6 +102,7 @@ export default function SpecialClausesStepPage() {
       title="Cláusulas especiales"
       currentStep={9}
       contractId={id}
+      variant="extra"
     >
       <p className="text-sm text-slate-700">
         Aquí puedes incluir <strong>cláusulas especiales</strong> para que

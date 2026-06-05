@@ -30,6 +30,16 @@ test("sin año incluye todos los pagados", () => {
   assert.equal(filterPaymentsForCertificate(SAMPLE).length, 3);
 });
 
+test("excluye pagos subidos por el inquilino aún no confirmados por el dueño", () => {
+  const payments: CertifiablePayment[] = [
+    { periodLabel: "Abr 2025", dueDate: "2025-04-05", paidDate: "2025-04-05", amountDue: 1000000, amountPaid: 1000000, paymentStatus: "reported_paid", uploadedByTenantLink: true, ownerConfirmed: false },
+    { periodLabel: "May 2025", dueDate: "2025-05-05", paidDate: "2025-05-05", amountDue: 1000000, amountPaid: 1000000, paymentStatus: "reported_paid", uploadedByTenantLink: true, ownerConfirmed: true },
+    { periodLabel: "Jun 2025", dueDate: "2025-06-05", paidDate: "2025-06-05", amountDue: 1000000, amountPaid: 1000000, paymentStatus: "reported_paid" }, // registrado directo
+  ];
+  const filtered = filterPaymentsForCertificate(payments, 2025);
+  assert.deepEqual(filtered.map((p) => p.periodLabel), ["May 2025", "Jun 2025"]); // el de abril (sin confirmar) se excluye
+});
+
 test("resumen suma lo pagado", () => {
   const s = summarizeCertificate(filterPaymentsForCertificate(SAMPLE, 2025));
   assert.equal(s.count, 2);

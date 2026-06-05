@@ -54,7 +54,7 @@ export default function ReviewStepPage() {
   });
 
   return (
-    <WizardShell title="Resumen previo" currentStep={10} contractId={id}>
+    <WizardShell title="Resumen previo" currentStep={8} contractId={id}>
       <div className="grid gap-4 md:grid-cols-2">
         <Card title="Tipo de contrato">
           <p className="text-violet-700">{contractTypeLabel}</p>

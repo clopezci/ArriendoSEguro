@@ -148,7 +148,7 @@ export default function PaymentsPage() {
   }
 
   return (
-    <WizardShell title="Registro de pagos" currentStep={11} contractId={id}>
+    <WizardShell title="Registro de pagos" currentStep={11} contractId={id} variant="extra">
       <p className="rounded border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">{PAYMENT_REMINDER_TEXT.noCollection}</p>
       <p className="mt-2 rounded border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">{PAYMENT_REMINDER_TEXT.supportHint}</p>
       {error && <p className="mt-3 text-sm text-rose-700">{error}</p>}

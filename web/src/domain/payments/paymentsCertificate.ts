@@ -16,6 +16,22 @@ export interface CertifiablePayment {
   paymentMethod?: string;
   paymentStatus: string;
   notes?: string;
+  /** Subido por el inquilino vía enlace mágico (pendiente de confirmación del dueño). */
+  uploadedByTenantLink?: boolean;
+  /** Confirmado por el dueño. */
+  ownerConfirmed?: boolean;
+}
+
+/**
+ * Un pago "cuenta" para el certificado si tiene valor pagado y NO está pendiente
+ * de confirmación: los subidos por el inquilino solo cuentan cuando el dueño los
+ * confirma. Los registrados directamente (sin `uploadedByTenantLink`) cuentan
+ * como antes.
+ */
+export function isCountablePayment(p: CertifiablePayment): boolean {
+  if (!(p.amountPaid > 0)) return false;
+  if (p.uploadedByTenantLink && p.ownerConfirmed !== true) return false;
+  return true;
 }
 
 function yearOf(iso: string | undefined): number | null {
@@ -33,7 +49,7 @@ export function paymentYear(p: CertifiablePayment): number | null {
 export function availablePaymentYears(payments: CertifiablePayment[]): number[] {
   const set = new Set<number>();
   for (const p of payments) {
-    if (p.amountPaid > 0) {
+    if (isCountablePayment(p)) {
       const y = paymentYear(p);
       if (y != null) set.add(y);
     }
@@ -51,7 +67,7 @@ export function filterPaymentsForCertificate(
   year?: number,
 ): CertifiablePayment[] {
   return payments
-    .filter((p) => p.amountPaid > 0 && (year == null || paymentYear(p) === year))
+    .filter((p) => isCountablePayment(p) && (year == null || paymentYear(p) === year))
     .sort((a, b) => (a.paidDate ?? a.dueDate ?? "").localeCompare(b.paidDate ?? b.dueDate ?? ""));
 }
 

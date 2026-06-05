@@ -129,7 +129,7 @@ export default function ContractTypeStepPage() {
   return (
     <WizardShell
       title="¿Qué tipo de contrato vas a generar?"
-      currentStep={2}
+      currentStep={1}
       contractId={id}
     >
       <p className="text-sm text-slate-700">

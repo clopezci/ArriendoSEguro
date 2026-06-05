@@ -108,6 +108,7 @@ export default function NovedadesExpedientePage() {
         title="Registrar novedades y solicitudes del arrendamiento"
         currentStep={13}
         contractId={id}
+        variant="extra"
       >
         <p
           className="mb-4 text-sm text-slate-700"

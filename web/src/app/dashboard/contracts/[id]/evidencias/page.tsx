@@ -43,7 +43,7 @@ export default function EvidenciasHubPage() {
 
   return (
     <div className="mx-auto max-w-3xl p-4 sm:p-6">
-      <WizardShell title="Evidencias del expediente" currentStep={12} contractId={id}>
+      <WizardShell title="Evidencias del expediente" currentStep={12} contractId={id} variant="extra">
         <p className="mb-4 text-sm text-slate-700">
           Aquí concentras contrato firmado, soportes del codeudor, paquete ZIP, notaría, pagos e inventario. No sustituye
           asesoría legal ni cobranza; es tu respaldo documental del arriendo.

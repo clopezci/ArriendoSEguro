@@ -48,7 +48,7 @@ export default function UtilitiesStepPage() {
   }
 
   return (
-    <WizardShell title="Servicios públicos y administración" currentStep={8} contractId={id}>
+    <WizardShell title="Servicios públicos y administración" currentStep={7} contractId={id}>
       <form
         id="wizard-form"
         className="space-y-3"
