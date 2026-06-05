@@ -29,9 +29,7 @@ type ContractVersionDoc = {
   pdfUrl?: string;
 };
 
-/**
- * TODO(auth): validar sesión server-side y permisos por expediente.
- */
+/** Autenticación: valida participante del contrato (`requireContractParticipant`) más abajo. */
 export async function POST(request: Request) {
   try {
     auditEvent("contract_pdf_generation_requested");

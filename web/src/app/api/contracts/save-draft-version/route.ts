@@ -7,16 +7,28 @@ import {
 } from "@/domain/contracts/api-types";
 import { validateContractData } from "@/domain/contracts/validateContractData";
 import { generateDocumentHash } from "@/domain/contracts/hash";
+import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 
 export const runtime = "nodejs";
 const MAX_JSON_BYTES = 256_000;
 
-/**
- * TODO(auth): validar sesión del usuario y dueño/participante del expediente.
- * TODO(access): validar paid/demo server-side.
- */
+/** Emails de las partes del payload (minúscula), para validar pertenencia. */
+function payloadPartyEmails(payload: {
+  landlord?: { email?: string };
+  tenant?: { email?: string };
+  solidaryCoDebtor?: { email?: string };
+  solidaryCoDebtors?: { email?: string }[];
+}): string[] {
+  const list = [payload?.landlord?.email, payload?.tenant?.email, payload?.solidaryCoDebtor?.email];
+  for (const c of payload?.solidaryCoDebtors ?? []) list.push(c?.email);
+  return list.map((e) => (e ?? "").trim().toLowerCase()).filter(Boolean);
+}
+
 export async function POST(request: Request) {
   try {
+    // Autenticación: solo usuarios con sesión válida pueden guardar versiones.
+    const auth = await requireAuthenticatedUser(request);
+    if (!auth.ok) return auth.response;
     const len = Number(request.headers.get("content-length") ?? "0");
     if (Number.isFinite(len) && len > MAX_JSON_BYTES) {
       return NextResponse.json<SaveDraftVersionResponse>(
@@ -85,6 +97,7 @@ export async function POST(request: Request) {
     }
 
     const now = new Date().toISOString();
+    const userEmail = auth.user.email.trim().toLowerCase();
     const contractRef = firestore.collection("contracts").doc(body.contractDraftId);
     const contractSnap = await contractRef.get();
 
@@ -93,18 +106,34 @@ export async function POST(request: Request) {
     const contractVersionRef = firestore.collection("contract_versions").doc();
 
     if (!contractSnap.exists) {
+      // Crear: cualquier usuario autenticado crea SU expediente; queda registrado
+      // como dueño (`createdByUid`) para proteger futuras actualizaciones. No se
+      // exige coincidencia de correo aquí (cubre apoderado/demo donde el correo
+      // del creador puede no ser el del arrendador del contrato).
       await contractRef.set({
         draftId: body.contractDraftId,
         status: "draft",
         hasSolidaryCoDebtor: body.hasSolidaryCoDebtor,
         currentVersionId: contractVersionRef.id,
         renewalReminderEnabled: body.renewalReminderEnabled ?? true,
+        createdByUid: auth.user.uid,
+        createdByEmail: userEmail,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
         generatedAt: body.generatedAt,
       });
     } else {
-      const data = contractSnap.data() as { currentVersionNumber?: number } | undefined;
+      // Actualizar: solo el creador (o, en expedientes legados sin creador
+      // registrado, una parte del contrato) puede guardar una nueva versión.
+      const data = contractSnap.data() as { currentVersionNumber?: number; createdByUid?: string } | undefined;
+      const isCreator = data?.createdByUid && data.createdByUid === auth.user.uid;
+      const isLegacyParticipant = !data?.createdByUid && payloadPartyEmails(body.contractPayload).includes(userEmail);
+      if (!isCreator && !isLegacyParticipant) {
+        return NextResponse.json<SaveDraftVersionResponse>(
+          { success: false, errors: [{ field: "auth", message: "No autorizado para modificar este expediente." }] },
+          { status: 403 },
+        );
+      }
       versionNumber = (data?.currentVersionNumber ?? 0) + 1;
     }
 

@@ -209,7 +209,7 @@ export default function PreviewStepPage() {
     try {
       const res = await fetch("/api/contracts/preview", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({
           contractPayload: toContractInput(activeDraft),
           isDemo: Boolean(activeDraft.isDemo),
@@ -273,7 +273,7 @@ export default function PreviewStepPage() {
     try {
       const res = await fetch("/api/contracts/save-draft-version", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({
           contractDraftId: id,
           contractPayload: toContractInput(activeDraft),

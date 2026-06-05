@@ -149,6 +149,8 @@ export const RATE_LIMIT_RULES = {
   reports: { limit: 6, windowSeconds: 60 * 10, prefix: "reports" } satisfies RateLimitRule,
   /** Captura automática de errores de cliente: tolera ráfagas pero acota por IP. */
   clientError: { limit: 40, windowSeconds: 60, prefix: "cli-err" } satisfies RateLimitRule,
+  /** Endpoints públicos con token (pago del inquilino, confirmaciones 1-clic): frena fuerza bruta de tokens por IP. */
+  publicToken: { limit: 30, windowSeconds: 60, prefix: "pub-tok" } satisfies RateLimitRule,
 } as const;
 
 /** Respuesta estándar 429 con `Retry-After`. */

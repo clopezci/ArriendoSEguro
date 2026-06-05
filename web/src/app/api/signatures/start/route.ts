@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // TODO(auth): validar sesión y permisos por expediente.
+    // Autenticación: se valida participante del contrato con requireContractParticipant más abajo.
     const { contractId, contractVersionId } = parsed.data;
     const firestore = getAdminFirestore();
     if (!firestore) {

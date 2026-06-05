@@ -5,6 +5,7 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getUploadToken } from "@/lib/payments/uploadTokenStore";
 import { isTokenUsable } from "@/domain/payments/paymentUploadToken";
 import { validatePaymentSupportFile, sanitizeSupportFileName } from "@/domain/payments/supportValidation";
+import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequest } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,11 @@ const schema = z.object({
 
 /** URL firmada para que el inquilino suba el soporte (gated por token). */
 export async function POST(request: Request) {
+  const rl = await checkRateLimit(clientIpFromRequest(request), RATE_LIMIT_RULES.publicToken);
+  if (!rl.ok) {
+    const t = tooManyRequestsJson(rl.retryAfterSeconds);
+    return NextResponse.json(t.body, { status: 429, headers: t.headers });
+  }
   const bucketName = process.env.FIREBASE_STORAGE_BUCKET?.trim();
   if (!bucketName) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Storage no configurado." }] }, { status: 503 });
   const firestore = getAdminFirestore();

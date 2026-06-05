@@ -3,6 +3,7 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { sendEmail } from "@/services/email/sendEmail";
 import { paymentConfirmedToTenantEmail } from "@/services/email/emailTemplates";
+import { checkRateLimit, RATE_LIMIT_RULES, clientIpFromRequest } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -23,6 +24,9 @@ function page(title: string, body: string, ok: boolean): Response {
  * revisar. Notifica al inquilino. El token está en el registro de pago.
  */
 export async function GET(request: Request) {
+  const rl = await checkRateLimit(clientIpFromRequest(request), RATE_LIMIT_RULES.publicToken);
+  if (!rl.ok) return page("Demasiadas solicitudes", "Espera un momento e inténtalo de nuevo.", false);
+
   const url = new URL(request.url);
   const token = url.searchParams.get("token") ?? "";
   const action = url.searchParams.get("action") ?? "";

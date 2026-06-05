@@ -9,6 +9,7 @@ import { auditEvent } from "@/features/contracts/audit-server";
 import { sendEmail } from "@/services/email/sendEmail";
 import { paymentUploadedEmail } from "@/services/email/emailTemplates";
 import { appConfig } from "@/lib/config";
+import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequest } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,12 @@ const schema = z.object({
  * sí solo) y avisa al arrendador. Marca el token como usado.
  */
 export async function POST(request: Request) {
+  const rl = await checkRateLimit(clientIpFromRequest(request), RATE_LIMIT_RULES.publicToken);
+  if (!rl.ok) {
+    const t = tooManyRequestsJson(rl.retryAfterSeconds);
+    return NextResponse.json(t.body, { status: 429, headers: t.headers });
+  }
+
   const firestore = getAdminFirestore();
   if (!firestore) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });
 
@@ -37,9 +44,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, errors: [{ field: "token", message: "El enlace no es válido o expiró." }] }, { status: 410 });
   }
 
+  // La ruta debe estar **directamente** en la carpeta de soportes de ESTE contrato
+  // (un solo segmento tras el prefijo, sin subrutas ni traversal).
   const bucketName = process.env.FIREBASE_STORAGE_BUCKET?.trim();
   const expectedPrefix = `gs://${bucketName}/contracts/${doc.contractId}/payment-supports/`;
-  if (!parsed.data.storagePath.startsWith(expectedPrefix) || parsed.data.storagePath.includes("..")) {
+  const remainder = parsed.data.storagePath.startsWith(expectedPrefix)
+    ? parsed.data.storagePath.slice(expectedPrefix.length)
+    : null;
+  if (!remainder || remainder.includes("/") || remainder.includes("..")) {
     return NextResponse.json({ success: false, errors: [{ field: "storagePath", message: "Soporte no válido." }] }, { status: 422 });
   }
 

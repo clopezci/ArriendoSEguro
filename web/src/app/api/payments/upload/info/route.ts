@@ -4,6 +4,7 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getUploadToken } from "@/lib/payments/uploadTokenStore";
 import { tokenStateLabel } from "@/domain/payments/paymentUploadToken";
 import { PAYMENT_SETTINGS_COLLECTION, type PaymentSettings } from "@/domain/payments/paymentSettings";
+import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequest } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +14,11 @@ export const dynamic = "force-dynamic";
  * suba su soporte. No expone datos sensibles del contrato, solo lo necesario.
  */
 export async function GET(request: Request) {
+  const rl = await checkRateLimit(clientIpFromRequest(request), RATE_LIMIT_RULES.publicToken);
+  if (!rl.ok) {
+    const t = tooManyRequestsJson(rl.retryAfterSeconds);
+    return NextResponse.json(t.body, { status: 429, headers: t.headers });
+  }
   const firestore = getAdminFirestore();
   if (!firestore) return NextResponse.json({ success: false, error: "unavailable" }, { status: 503 });
 

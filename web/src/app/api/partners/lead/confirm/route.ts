@@ -2,6 +2,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { PARTNER_LEADS_COLLECTION, deriveLeadOutcome, type LeadResponse } from "@/domain/partners/partners";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { checkRateLimit, RATE_LIMIT_RULES, clientIpFromRequest } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -23,6 +24,9 @@ function page(title: string, body: string, ok: boolean): Response {
  * para el control de comisiones.
  */
 export async function GET(request: Request) {
+  const rl = await checkRateLimit(clientIpFromRequest(request), RATE_LIMIT_RULES.publicToken);
+  if (!rl.ok) return page("Demasiadas solicitudes", "Espera un momento e inténtalo de nuevo.", false);
+
   const url = new URL(request.url);
   const tok = url.searchParams.get("token") ?? "";
   const outcomeRaw = url.searchParams.get("outcome") ?? "";

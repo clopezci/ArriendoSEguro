@@ -11,16 +11,16 @@ import { generateDocumentHash } from "@/domain/contracts/hash";
 import { freeTierEnabled } from "@/lib/config";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/plan-plus-pricing";
+import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 
 export const runtime = "nodejs";
 const MAX_JSON_BYTES = 128_000;
 
-/**
- * TODO(auth): validar sesión del usuario antes de permitir preview.
- * TODO(access): validar accessStatus = "paid" o "demo" server-side.
- */
 export async function POST(request: Request) {
   try {
+    // Render del contrato: requiere sesión (evita uso anónimo del motor de cómputo).
+    const auth = await requireAuthenticatedUser(request);
+    if (!auth.ok) return auth.response;
     const len = Number(request.headers.get("content-length") ?? "0");
     if (Number.isFinite(len) && len > MAX_JSON_BYTES) {
       return NextResponse.json<ContractPreviewResponse>(
