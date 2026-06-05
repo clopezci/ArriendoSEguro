@@ -56,7 +56,7 @@ export function UtilityGuaranteeCalculator() {
       </div>
       <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
         <strong>Verifica los valores aplicados:</strong> máximo = suma de los dos últimos períodos (Ley 820, art. 15).
-        Usa el valor real de tus facturas; herramienta orientativa.
+        Usa el valor real de tus facturas. Herramienta orientativa; no constituye asesoría jurídica.
       </p>
 
       <div className="rounded-xl border border-violet-300 bg-gradient-to-br from-violet-50 to-white p-4">

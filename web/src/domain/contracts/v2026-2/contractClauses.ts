@@ -179,9 +179,12 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
 
   <h2>DÉCIMA SEXTA. FIRMA ELECTRÓNICA REFORZADA Y MENSAJE DE DATOS</h2>
   <p>
-    Las partes aceptan firmar el presente contrato mediante firma electrónica, conforme a la Ley 527 de 1999. Para
-    asegurar identidad, integridad y trazabilidad de cada firma, la plataforma Arriendo Seguro implementará, sin costo
-    para las partes en la fase inicial, los siguientes mecanismos:
+    Las partes aceptan firmar el presente contrato mediante firma electrónica, conforme a la Ley 527 de 1999 y el
+    Decreto 2364 de 2012. Reconocen que, por el principio de equivalencia funcional, dicha firma tiene plena validez y
+    fuerza probatoria y surte los mismos efectos jurídicos que la firma manuscrita cuando permite identificar al
+    firmante e indicar que aprueba el contenido del mensaje de datos. Para asegurar identidad, integridad y trazabilidad
+    de cada firma, la plataforma Arriendo Seguro implementará, sin costo para las partes en la fase inicial, los
+    siguientes mecanismos:
   </p>
   <ol>
     <li>Verificación por código único de un solo uso (OTP) enviado al correo electrónico de cada firmante.</li>
@@ -193,6 +196,11 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
   <p>
     El conjunto de registros mencionados constituye un mensaje de datos y, junto con el contrato firmado, hace prueba
     del consentimiento expresado por cada parte.
+  </p>
+  <p>
+    La plataforma podrá ofrecer, de forma opcional, un nivel adicional de firma electrónica certificada emitida por un
+    tercero de confianza. Su uso es voluntario y no disminuye la validez de la firma electrónica aquí pactada;
+    constituye únicamente una capa probatoria reforzada.
   </p>
 
   <h2>DÉCIMA SÉPTIMA. TRATAMIENTO DE DATOS PERSONALES</h2>

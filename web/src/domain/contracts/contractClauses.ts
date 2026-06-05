@@ -128,9 +128,22 @@ export const CONTRACT_TEMPLATE = `
 
   <h2>DÉCIMA SEGUNDA. FIRMA ELECTRÓNICA</h2>
   <p>
-    Las partes aceptan que el presente contrato pueda ser firmado mediante mecanismos de firma electrónica simple,
-    siempre que permitan identificar al firmante, evidenciar su aprobación del contenido y conservar trazabilidad del
-    evento de firma.
+    Las partes acuerdan firmar el presente contrato mediante <strong>firma electrónica</strong> en los términos de la
+    Ley 527 de 1999 y el Decreto 2364 de 2012. Reconocen que dicha firma tiene plena validez y fuerza probatoria y que,
+    conforme al principio de equivalencia funcional, surte los mismos efectos jurídicos que la firma manuscrita cuando
+    permite identificar al firmante e indicar que aprueba el contenido del mensaje de datos.
+  </p>
+  <p>
+    El mecanismo de firma electrónica simple de la plataforma identifica a cada firmante y conserva evidencia del evento
+    de firma —incluyendo la aceptación expresa, la fecha y hora, la dirección IP, el agente de usuario y el resumen
+    criptográfico (hash) del documento firmado—, garantizando su integridad e inalterabilidad posterior. Cuando se
+    utilice un código de verificación de un solo uso (OTP) enviado al firmante, este también queda registrado como
+    factor de autenticación.
+  </p>
+  <p>
+    La plataforma podrá ofrecer, de forma opcional, un nivel adicional de <strong>firma electrónica certificada</strong>
+    emitida por un tercero de confianza. Su uso es voluntario y no disminuye la validez de la firma electrónica simple
+    aquí pactada; constituye únicamente una capa probatoria reforzada.
   </p>
 
   <h2>DÉCIMA TERCERA. TRATAMIENTO DE DATOS PERSONALES</h2>

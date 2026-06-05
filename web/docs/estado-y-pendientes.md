@@ -46,11 +46,11 @@ Hallazgos reales (la app usa Admin SDK + reglas deny-all, pero hay endpoints de 
 | # | Tema | Estado |
 |---|---|---|
 | L1 | Ley 820 (tope 1%, garantía Art.15, prohibición depósito, IPC, mora) | **CUMPLE** (motor `rent-law`/`legalCompliance` correcto). |
-| L2 | Firma electrónica Ley 527 (token+OTP+IP+UA+hash+consentimientos) | **CUMPLE**; reforzar redacción de la cláusula "firma simple vs certificada". |
+| ✅ L2 | Firma electrónica Ley 527 (token+OTP+IP+UA+hash+consentimientos) | **CUMPLE + REFORZADO.** Cláusula de firma (plantilla v1 y v2026-2) ahora cita **Ley 527/1999 + Decreto 2364/2012**, el **principio de equivalencia funcional** (mismos efectos que firma manuscrita), detalla la evidencia capturada y aclara que la **firma certificada** opcional es una capa probatoria que no disminuye la validez de la simple. |
 | L3 | Habeas Data — consulta de reputación con consentimiento | Evidencia (IP/UA/fecha) **SÍ se captura** en `lookup/respond`. Igual **revisar con abogado** el flujo completo (ya anotado). Solo agregados, sin detalle, con derecho de réplica ✓. |
 | L4 | **Identificación del responsable del tratamiento** (NIT/razón social) | **GAP — acción del fundador:** publicar en `aviso-privacidad` antes de producción. |
 | L5 | Consentimiento de codeudores adicionales | El 1er codeudor tiene consentimientos explícitos; los adicionales tienen casilla de tratamiento+firma. Verificar suficiencia con abogado. |
-| L6 | Disclaimers menores (calculadora garantía; datos de terceros/menores en cargas) | Agregar avisos breves. |
+| ✅ L6 | Disclaimers menores (calculadora garantía; datos de terceros/menores en cargas) | **HECHO.** Calculadora de garantía: nota "orientativa; **no constituye asesoría jurídica**". Subida de documentos de propiedad/poder: aviso de **privacidad** (no subir datos de terceros/menores sin autorización; Ley 1581/2012 + enlace al aviso). |
 
 ## 5. Conexión de proveedores — PRÓXIMAS SESIONES (dependencias externas)
 
