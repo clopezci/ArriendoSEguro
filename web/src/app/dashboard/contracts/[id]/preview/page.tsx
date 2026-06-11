@@ -595,64 +595,114 @@ export default function PreviewStepPage() {
           <p>Generado: {new Date(versionInfo.generatedAt).toLocaleString("es-CO")}</p>
         </div>
       )}
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link
-          href={`/dashboard/contracts/${id}/review`}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:border-violet-500"
-        >
-          Volver a editar
-        </Link>
-        <button
-          type="button"
-          onClick={() => void saveDraftVersion()}
-          disabled={savingVersion || !previewHtml || Boolean(savedVersion)}
-          title={
-            !previewHtml
-              ? "Espera a que termine de generarse la vista previa."
-              : savedVersion
-                ? "Versión ya guardada. Continúa con generar el PDF o iniciar firma."
-                : undefined
-          }
-          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {savingVersion
-            ? "Guardando versión…"
-            : savedVersion
-              ? "Versión guardada ✓"
-              : "Guardar versión"}
-        </button>
-        <button
-          type="button"
-          onClick={() => void generatePdf()}
-          disabled={generatingPdf || savingVersion || !previewHtml}
-          title={
-            !previewHtml
-              ? "Genera primero la vista previa del contrato."
-              : "Guarda la versión automáticamente si aún no lo hiciste y genera el PDF."
-          }
-          className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {generatingPdf ? "Generando PDF…" : savingVersion ? "Guardando versión…" : "Generar PDF"}
-        </button>
-        {pdfInfo && (
-          <a
-            href={pdfInfo.pdfUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-lg border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-700"
+      {/* ¿Qué sigue? — flujo lineal guiado: Guarda → Firma (Plus) → PDF */}
+      <section className="mt-6 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-bold text-slate-900">¿Qué sigue?</h3>
+          <p className="text-xs font-medium text-slate-600">Guarda → Firma (Plan Plus) → PDF</p>
+        </div>
+
+        {/* Paso 1 · Guardar */}
+        <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+          <p className="text-sm font-semibold text-slate-900">Paso 1 · Guarda tu contrato</p>
+          <p className="mt-0.5 text-xs text-slate-600">
+            {savedVersion
+              ? "Listo: tu contrato quedó registrado. Ya puedes firmar, descargar el PDF y usar la posventa."
+              : "Deja registrada esta versión para poder firmar, descargar el PDF y habilitar la posventa (pagos, novedades, documentos)."}
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void saveDraftVersion()}
+              disabled={savingVersion || !previewHtml || Boolean(savedVersion)}
+              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {savingVersion
+                ? "Guardando…"
+                : savedVersion
+                  ? `Guardado ✓${versionInfo ? ` (v${versionInfo.versionNumber})` : ""}`
+                  : "Guardar mi contrato"}
+            </button>
+            {!previewHtml && !savedVersion && (
+              <span className="text-xs text-slate-500">Espera a que termine la vista previa (se genera sola).</span>
+            )}
+          </div>
+        </div>
+
+        {/* Paso 2 · Firmar (Plan Plus) */}
+        <div className="mt-2 rounded-lg border border-slate-200 bg-white p-3">
+          <p className="text-sm font-semibold text-slate-900">
+            Paso 2 · Firma electrónica <span className="text-violet-700">(Plan Plus)</span>
+          </p>
+          {!plusActive ? (
+            <>
+              <p className="mt-0.5 text-xs text-slate-600">
+                La firma con respaldo legal (código OTP + evidencia de IP/fecha/hash, Ley 527) es parte del Plan Plus.
+                Puedes generar el contrato gratis y firmarlo cuando actives Plus.
+              </p>
+              <Link
+                href="/dashboard/plans"
+                className="mt-2 inline-flex rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700"
+              >
+                Activar Plan Plus
+              </Link>
+            </>
+          ) : (
+            <>
+              <p className="mt-0.5 text-xs text-slate-600">
+                {savedVersion
+                  ? "Enviaremos la solicitud de firma por correo a cada parte (arrendador, arrendatario y codeudores)."
+                  : "Primero completa el Paso 1 (guardar tu contrato)."}
+              </p>
+              <button
+                type="button"
+                onClick={startSignatureRound}
+                disabled={startingSignatures || !savedVersion}
+                className="mt-2 rounded-lg border border-sky-500 px-4 py-2 text-sm font-medium text-sky-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {startingSignatures ? "Iniciando firma…" : "Iniciar firma"}
+              </button>
+            </>
+          )}
+        </div>
+
+        {/* Paso 3 · PDF (disponible para todos; gratis sale con marca de agua) */}
+        <div className="mt-2 rounded-lg border border-slate-200 bg-white p-3">
+          <p className="text-sm font-semibold text-slate-900">Paso 3 · Descarga el PDF</p>
+          <p className="mt-0.5 text-xs text-slate-600">
+            Genera el PDF de tu contrato. Si aún no lo guardaste, lo hacemos por ti automáticamente.
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void generatePdf()}
+              disabled={generatingPdf || savingVersion || !previewHtml}
+              className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {generatingPdf ? "Generando PDF…" : savingVersion ? "Guardando…" : "Generar PDF"}
+            </button>
+            {pdfInfo && (
+              <a
+                href={pdfInfo.pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-700"
+              >
+                Descargar PDF
+              </a>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-3">
+          <Link
+            href={`/dashboard/contracts/${id}/review`}
+            className="text-xs text-slate-600 underline hover:text-violet-700"
           >
-            Descargar PDF
-          </a>
-        )}
-        <button
-          type="button"
-          onClick={startSignatureRound}
-          disabled={startingSignatures || !savedVersion}
-          className="rounded-lg border border-sky-500 px-4 py-2 text-sm font-medium text-sky-800 disabled:opacity-60"
-        >
-          {startingSignatures ? "Iniciando firma…" : "Iniciar firma"}
-        </button>
-      </div>
+            ← Volver a editar los datos del contrato
+          </Link>
+        </div>
+      </section>
       {saveMessage && <p className="mt-3 text-sm text-emerald-700">{saveMessage}</p>}
       {pdfFeedback && (
         <p className="mt-2 text-sm text-violet-800" role="status">
