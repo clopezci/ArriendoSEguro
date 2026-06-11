@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
 import { useSavedContract } from "@/components/contracts/requires-saved-contract";
+import { JourneyProgress } from "@/components/contracts/journey-progress";
 
 /**
  * Centro de adicionales (Bloque 2).
@@ -104,6 +105,9 @@ export default function AdicionalesHubPage() {
           Lo esencial para tu contrato ya lo capturaste en el asistente. Aquí lo enriqueces a tu medida y, una vez
           guardado, habilitas la posventa.
         </p>
+        <div className="pt-1">
+          <JourneyProgress id={id} activePhase="robustecer" />
+        </div>
       </header>
 
       <ExpedientePostWizardNav contractId={id} />

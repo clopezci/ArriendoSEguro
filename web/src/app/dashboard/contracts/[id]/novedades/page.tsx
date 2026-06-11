@@ -110,6 +110,7 @@ export default function NovedadesExpedientePage() {
         currentStep={13}
         contractId={id}
         variant="extra"
+        phase="posventa"
       >
         <p
           className="mb-4 text-sm text-slate-700"

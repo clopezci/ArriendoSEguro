@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
+import { JourneyProgress } from "./journey-progress";
+import type { ContractPhase } from "@/features/contracts/journey";
 
 /**
  * Pasos del **Bloque 1** (asistente mínimo para generar el contrato). Lo
@@ -29,6 +31,7 @@ export function WizardShell({
   contractId,
   children,
   variant = "wizard",
+  phase,
 }: {
   title: string;
   currentStep: number;
@@ -36,9 +39,12 @@ export function WizardShell({
   children: ReactNode;
   /** "wizard" muestra el progreso del Bloque 1; "extra" es adicionales/posventa. */
   variant?: "wizard" | "extra";
+  /** Fase global a resaltar en la franja de progreso. Por defecto se infiere de `variant`. */
+  phase?: ContractPhase;
 }) {
   const clamped = Math.min(Math.max(currentStep, 1), steps.length);
   const progress = useMemo(() => Math.round((clamped / steps.length) * 100), [clamped]);
+  const activePhase: ContractPhase = phase ?? (variant === "extra" ? "robustecer" : "datos");
 
   if (variant === "extra") {
     return (
@@ -56,6 +62,9 @@ export function WizardShell({
           <p className="mt-2 text-xs text-slate-600">
             Configuración adicional y posventa del expediente (no forma parte del asistente principal).
           </p>
+          <div className="mt-3">
+            <JourneyProgress id={contractId} activePhase={activePhase} />
+          </div>
         </div>
         <div className="rounded-2xl border border-slate-300 bg-white p-5 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
           {children}
@@ -69,12 +78,23 @@ export function WizardShell({
       <div className="rounded-2xl border border-slate-300 bg-white/95 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.2)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
-          <Link
-            href={`/dashboard/contracts/${contractId}/review`}
-            className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 hover:border-violet-500 hover:text-violet-700"
-          >
-            Ir a resumen
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/dashboard/contracts/${contractId}/adicionales`}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 hover:border-violet-500 hover:text-violet-700"
+            >
+              Centro de adicionales
+            </Link>
+            <Link
+              href={`/dashboard/contracts/${contractId}/review`}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 hover:border-violet-500 hover:text-violet-700"
+            >
+              Ir a resumen
+            </Link>
+          </div>
+        </div>
+        <div className="mt-3">
+          <JourneyProgress id={contractId} activePhase={activePhase} />
         </div>
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between text-xs text-slate-700">
