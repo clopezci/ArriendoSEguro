@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
+import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
 import type { PaymentMethodKind, AccountType } from "@/domain/payments/paymentSettings";
 
 export default function PagosRecordatoriosPage() {
@@ -138,6 +139,7 @@ export default function PagosRecordatoriosPage() {
 
       <ExpedientePostWizardNav contractId={id} />
 
+      <RequiresSavedContract id={id}>
       <section className="rounded-xl border border-slate-300 bg-white/95 p-4">
         <fieldset>
           <legend className="text-sm font-semibold text-slate-900">¿Cómo te paga el inquilino?</legend>
@@ -219,6 +221,7 @@ export default function PagosRecordatoriosPage() {
         En la próxima etapa, estos datos se incluirán en los recordatorios al inquilino (3 días antes y el día del
         vencimiento) junto a un enlace para que cargue su soporte de pago.
       </p>
+      </RequiresSavedContract>
     </main>
   );
 }

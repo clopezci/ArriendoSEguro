@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
@@ -152,6 +153,7 @@ export default function PaymentsPage() {
 
   return (
     <WizardShell title="Registro de pagos" currentStep={11} contractId={id} variant="extra">
+      <RequiresSavedContract id={id}>
       <p className="rounded border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">{PAYMENT_REMINDER_TEXT.noCollection}</p>
       <p className="mt-2 rounded border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">{PAYMENT_REMINDER_TEXT.supportHint}</p>
       {error && <p className="mt-3 text-sm text-rose-700">{error}</p>}
@@ -230,6 +232,7 @@ export default function PaymentsPage() {
       </div>
 
       <PaymentsExportCard contractId={id} contractVersionId={contractVersionId} payments={payments} />
+      </RequiresSavedContract>
     </WizardShell>
   );
 }

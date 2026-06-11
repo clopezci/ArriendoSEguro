@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
 import { PropertyDocumentsPanel } from "@/components/contracts/property-documents-panel";
+import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
 import { getDraft } from "@/features/contracts/wizard-state";
 
 export default function DocumentosPropiedadPage() {
@@ -59,7 +60,9 @@ export default function DocumentosPropiedadPage() {
         .
       </p>
 
-      <PropertyDocumentsPanel contractId={id} contractVersionId={contractVersionId} highlightPoder={isProxy} />
+      <RequiresSavedContract id={id}>
+        <PropertyDocumentsPanel contractId={id} contractVersionId={contractVersionId} highlightPoder={isProxy} />
+      </RequiresSavedContract>
     </main>
   );
 }

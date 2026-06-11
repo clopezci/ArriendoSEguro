@@ -2,6 +2,7 @@
 
 import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
 import { NOVEDAD_TIPO_IDS, NOVEDAD_TIPO_LABELS, type NovedadTipoId } from "@/domain/contracts/novedades/types";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
@@ -121,6 +122,7 @@ export default function NovedadesExpedientePage() {
 
         <ExpedientePostWizardNav contractId={id} />
 
+        <RequiresSavedContract id={id}>
         {!user && (
           <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             Inicia sesión para ver y registrar novedades.
@@ -247,6 +249,7 @@ export default function NovedadesExpedientePage() {
             Vista previa del contrato
           </Link>
         </p>
+        </RequiresSavedContract>
       </WizardShell>
     </div>
   );

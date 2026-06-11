@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { ExpedienteNav } from "@/components/contracts/expediente-nav";
 import { ContractPdfDownloadLink } from "@/components/contracts/contract-pdf-download";
+import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
 
 function notarialAnnexFirestoreId(contractId: string, contractVersionId: string): string {
   return `annex_notarial_auth_${contractId}_${contractVersionId}`;
@@ -180,6 +181,7 @@ export default function NotarialOptionalPage() {
 
       <ExpedienteNav contractId={id} />
 
+      <RequiresSavedContract id={id}>
       {loading && <p className="text-sm text-slate-600">Cargando…</p>}
       {error && (
         <p className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800" role="alert">
@@ -295,6 +297,7 @@ export default function NotarialOptionalPage() {
           )}
         </div>
       )}
+      </RequiresSavedContract>
     </main>
   );
 }
