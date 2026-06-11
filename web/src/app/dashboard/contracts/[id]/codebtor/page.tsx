@@ -174,7 +174,10 @@ export default function CodebtorStepPage() {
     <WizardShell title="Codeudor solidario" currentStep={4} contractId={id}>
       <div className="space-y-4">
         <p className="text-sm text-slate-700">
-          ¿El contrato tendrá codeudor solidario?
+          ¿El contrato tendrá codeudor solidario? <span className="text-slate-500">(opcional)</span>
+        </p>
+        <p className="text-xs text-slate-500">
+          ¿Sin codeudor? No hay problema: elige «Continuar sin codeudor» y sigues con el inmueble.
         </p>
         <p className="rounded-lg border border-slate-300 bg-white/95 p-3 text-sm text-slate-700">
           Un codeudor solidario es una persona que acepta respaldar las obligaciones del

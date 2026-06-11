@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { ContractOnboarding } from "@/components/contracts/contract-onboarding";
 import type { ContractType } from "@/domain/contracts/types";
 import { setActingAs, setContractType } from "@/features/contracts/wizard-state";
 
@@ -132,6 +133,9 @@ export default function ContractTypeStepPage() {
       currentStep={1}
       contractId={id}
     >
+      <div className="mb-4">
+        <ContractOnboarding />
+      </div>
       <p className="text-sm text-slate-700">
         Hoy ArriendoSeguro genera el contrato de{" "}
         <strong className="text-violet-700">vivienda urbana</strong>, que es el

@@ -106,7 +106,12 @@ export type AuditEventName =
   /** Recorrido /demo (localStorage); no implica expediente real. */
   | "demo_viewed"
   | "demo_step_opened"
-  | "demo_plus_cta_clicked";
+  | "demo_plus_cta_clicked"
+  /** Onboarding del flujo real (tarjeta de bienvenida y tour guiado). */
+  | "onboarding_welcome_shown"
+  | "onboarding_welcome_dismissed"
+  | "onboarding_tour_opened"
+  | "onboarding_tour_completed";
 
 export interface AuditEvent {
   event: AuditEventName;
