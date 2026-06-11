@@ -11,27 +11,26 @@ Marca cada casilla a medida que avances. Orden recomendado de arriba hacia abajo
 
 ---
 
-## 1. Desplegar las reglas de seguridad de Firebase ⚠️ (lo más importante)
+## 1. Desplegar las reglas de seguridad de Firebase ✅ HECHO (2026-06-05)
 
 Hoy el código trae reglas que **bloquean todo acceso directo del cliente** a Firestore y Storage
-(es seguro porque la app solo accede desde el servidor con Admin SDK). Falta **publicarlas**.
+(es seguro porque la app solo accede desde el servidor con Admin SDK). Ya quedaron **publicadas**.
 
-- [ ] Instala Firebase CLI si no la tienes: `npm install -g firebase-tools`
-- [ ] Inicia sesión: `firebase login`
-- [ ] Selecciona el proyecto correcto: `firebase use --add` (elige el proyecto de ArriendoSeguro)
-- [ ] Despliega las reglas:
+- [x] Firebase CLI instalada y sesión iniciada (`firebase login`).
+- [x] Proyecto asociado: se creó `web/.firebaserc` → **`arriendoseguro-c5602`** (alias `default`).
+      *(El comando interactivo es `firebase use --add`; aquí se hizo creando el `.firebaserc`.)*
+- [x] Plan **Blaze** activado con **presupuesto de alerta ~$5.000 COP (~US$1)**.
+- [x] **Storage habilitado** (ubicación sin costo **US-EAST1**). Bucket creado:
+      **`arriendoseguro-c5602.firebasestorage.app`**.
+- [x] Reglas desplegadas:
   ```bash
   cd web
-  firebase deploy --only firestore:rules,storage:rules
+  firebase deploy --only firestore:rules   # ✓ released
+  firebase deploy --only storage           # ✓ released  (nota: para Storage es "--only storage", no "storage:rules")
   ```
-- [ ] Verifica en la consola de Firebase → **Firestore → Reglas** y **Storage → Reglas** que el
-      contenido coincide con `web/firestore.rules` y `web/storage.rules`.
-- [ ] Prueba la app en producción: crear contrato, firmar, subir soporte. Todo debe seguir
+- [ ] **(Tú, al probar en producción)** crear contrato, firmar, subir soporte: todo debe seguir
       funcionando (usa el servidor, no el cliente). Si algo falla, avísale al agente **antes** de
-      revertir.
-
-> Si habilitaste Storage por primera vez, confirma que el bucket existe (Firebase → Storage →
-> Comenzar) y que `FIREBASE_STORAGE_BUCKET` está configurada (ver paso 2).
+      revertir. → Requiere primero `FIREBASE_STORAGE_BUCKET` en Vercel (paso 2).
 
 ---
 
@@ -42,7 +41,7 @@ Entra a **Vercel → Proyecto ArriendoSeguro → Settings → Environment Variab
 
 - [ ] `NEXT_PUBLIC_APP_URL` = `https://arriendoseguro.app`
 - [ ] `FIREBASE_SERVICE_ACCOUNT_KEY` = (JSON de la cuenta de servicio, ya debería estar)
-- [ ] `FIREBASE_STORAGE_BUCKET` = `tu-proyecto.firebasestorage.app` (el bucket real)
+- [ ] `FIREBASE_STORAGE_BUCKET` = `arriendoseguro-c5602.firebasestorage.app` ← **bucket real ya creado** (sin `gs://`)
 - [ ] `CONTACT_INBOX_EMAIL` = el correo donde quieres recibir los mensajes del formulario `/contacto`
 - [ ] `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN` (ver paso 3)
 - [ ] `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` (ver paso 5)
