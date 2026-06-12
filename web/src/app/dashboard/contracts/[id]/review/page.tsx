@@ -255,33 +255,42 @@ export default function ReviewStepPage() {
         </Link>
       </div>
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Link
-          href={`/dashboard/contracts/${id}/landlord`}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:border-violet-500"
-        >
-          Editar datos
-        </Link>
-        <button
-          type="button"
-          onClick={() => {
-            updateDraft(id, (d) => appendAudit(d, "contract_draft_saved"));
-            router.push(`/dashboard/contracts/${id}/preview`);
-          }}
-          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white"
-        >
-          Generar vista previa
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            updateDraft(id, (d) => appendAudit(d, "contract_draft_saved"));
-            alert("Borrador guardado.");
-          }}
-          className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700"
-        >
-          Guardar borrador
-        </button>
+      <div className="mt-6 space-y-3">
+        <div className="rounded-xl border border-violet-400 bg-violet-50/60 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Siguiente paso</p>
+          <p className="mt-1 text-sm text-slate-700">
+            Genera la vista previa para revisar tu contrato y, desde ahí, <strong>guardarlo, firmarlo y descargar el
+            PDF</strong>.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              updateDraft(id, (d) => appendAudit(d, "contract_draft_saved"));
+              router.push(`/dashboard/contracts/${id}/preview`);
+            }}
+            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] hover:bg-violet-500"
+          >
+            Continuar a la vista previa →
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`/dashboard/contracts/${id}/landlord`}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:border-violet-500"
+          >
+            Editar datos
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              updateDraft(id, (d) => appendAudit(d, "contract_draft_saved"));
+              alert("Borrador guardado.");
+            }}
+            className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700"
+          >
+            Guardar borrador
+          </button>
+        </div>
       </div>
     </WizardShell>
   );

@@ -68,7 +68,10 @@ function htmlToText(html: string): string {
   return html
     .replaceAll(/<style[\s\S]*?<\/style>/gi, " ")
     .replaceAll(/<script[\s\S]*?<\/script>/gi, " ")
-    .replaceAll(/<\/(h1|h2|h3|p|li|ol|ul|article|div)>/gi, "\n")
+    // Bloques (títulos, párrafos): separación de párrafo = línea en blanco.
+    .replaceAll(/<\/(h1|h2|h3|h4|p|article|div|section)>/gi, "\n\n")
+    // Ítems de lista: un salto simple (no doble) para que la lista quede compacta.
+    .replaceAll(/<\/(li|ol|ul)>/gi, "\n")
     .replaceAll(/<br\s*\/?>/gi, "\n")
     .replaceAll(/<[^>]+>/g, " ")
     .replaceAll(/&nbsp;/g, " ")
@@ -89,7 +92,7 @@ function htmlToText(html: string): string {
     .trim();
 }
 
-function wrapText(input: string, maxChars = 98): string[] {
+function wrapText(input: string, maxChars = 92): string[] {
   const lines: string[] = [];
   const paragraphs = input.split("\n");
   for (const paragraph of paragraphs) {
@@ -154,13 +157,15 @@ export async function renderContractPdfFromHtml(params: {
     }
     const isHeader = i < headerLines.length - 1;
     try {
+      // Sin `maxWidth`: el ajuste de línea ya lo hace `wrapText` por palabras.
+      // Dejar que pdf-lib re-envuelva aquí causaba cortes a mitad de frase y
+      // líneas superpuestas (porque la posición vertical la controlamos nosotros).
       page.drawText(line, {
         x: margin,
         y,
         size: isHeader ? 10 : 9,
         font: isHeader ? fontBold : font,
         color: rgb(0.08, 0.11, 0.15),
-        maxWidth: pageWidth - margin * 2,
       });
     } catch (drawError) {
       // Defensa adicional: si pdf-lib aún no logra codificar la línea
@@ -176,7 +181,6 @@ export async function renderContractPdfFromHtml(params: {
         size: isHeader ? 10 : 9,
         font: isHeader ? fontBold : font,
         color: rgb(0.08, 0.11, 0.15),
-        maxWidth: pageWidth - margin * 2,
       });
     }
     y -= lineHeight;

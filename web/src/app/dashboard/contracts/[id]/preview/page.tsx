@@ -77,6 +77,8 @@ export default function PreviewStepPage() {
   const { user } = useAuth();
   // Estado Plus: define si el contrato lleva marca de agua + CTA del tier gratis.
   const [plusActive, setPlusActive] = useState(false);
+  // Demo también habilita firmar/posventa (sin ser Plus de pago).
+  const [demoActive, setDemoActive] = useState(false);
   const [entitlementsLoaded, setEntitlementsLoaded] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [savingVersion, setSavingVersion] = useState(false);
@@ -167,8 +169,11 @@ export default function PreviewStepPage() {
         const res = await fetch("/api/access/entitlements/me", {
           headers: { ...(await buildAuthHeaders(user)) },
         });
-        const data = (await res.json()) as { success?: boolean; plusActive?: boolean };
-        if (!cancelled) setPlusActive(Boolean(res.ok && data.success && data.plusActive));
+        const data = (await res.json()) as { success?: boolean; plusActive?: boolean; demoActive?: boolean };
+        if (!cancelled) {
+          setPlusActive(Boolean(res.ok && data.success && data.plusActive));
+          setDemoActive(Boolean(res.ok && data.success && data.demoActive));
+        }
       } catch {
         /* si falla, asumimos no-Plus (tier gratis con marca de agua) */
       } finally {
@@ -444,6 +449,11 @@ export default function PreviewStepPage() {
         details,
         footer,
       });
+      // El resultado aparece más abajo en la página; lo traemos a la vista para
+      // que el usuario vea que SÍ pasó algo al pulsar "Iniciar firma".
+      setTimeout(() => {
+        document.getElementById("firma-resultado")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 150);
     } catch {
       setRenderErrors([
         "No pudimos conectar con el servidor para iniciar la firma. Inténtalo nuevamente.",
@@ -634,7 +644,7 @@ export default function PreviewStepPage() {
           <p className="text-sm font-semibold text-slate-900">
             Paso 2 · Firma electrónica <span className="text-violet-700">(Plan Plus)</span>
           </p>
-          {!plusActive ? (
+          {!(plusActive || demoActive) ? (
             <>
               <p className="mt-0.5 text-xs text-slate-600">
                 La firma con respaldo legal (código OTP + evidencia de IP/fecha/hash, Ley 527) es parte del Plan Plus.
@@ -662,6 +672,11 @@ export default function PreviewStepPage() {
               >
                 {startingSignatures ? "Iniciando firma…" : "Iniciar firma"}
               </button>
+              {!startingSignatures && signatureRows.length > 0 && (
+                <p className="mt-1 text-xs font-medium text-emerald-700">
+                  ✓ Ronda de firmas iniciada. Revisa el detalle de firmas más abajo ↓
+                </p>
+              )}
             </>
           )}
         </div>
@@ -711,37 +726,44 @@ export default function PreviewStepPage() {
       )}
       {contractStatus && <p className="text-xs text-slate-600">Estado contractual: {contractStatus}</p>}
 
-      <section className="mt-8 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50/90 to-white p-5 shadow-[0_8px_28px_rgba(139,92,246,0.14)]">
-        <h3 className="text-base font-bold text-slate-900">Durante el arriendo</h3>
-        <p className="mt-1 text-xs text-slate-600">
-          Después de firmar, usa estos módulos para respaldos documentales y comunicación entre partes.
-        </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <Link
-            href={`/dashboard/contracts/${id}/evidencias`}
-            className="rounded-xl border border-violet-300 bg-white p-4 shadow-sm transition hover:border-violet-500 hover:shadow-md"
-          >
-            <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Paso 12</p>
-            <p className="mt-1 text-sm font-bold text-slate-900">Evidencias del expediente</p>
-            <p className="mt-2 text-xs leading-relaxed text-slate-600">
-              Soportes del codeudor, paquete ZIP, notaría, pagos e inventario en un solo lugar.
-            </p>
-          </Link>
-          <Link
-            href={`/dashboard/contracts/${id}/novedades`}
-            title="Ejemplos: mora en el canon, daños o reparaciones, convivencia, solicitudes entre arrendador y arrendatario, acuerdos documentados."
-            className="rounded-xl border border-violet-300 bg-white p-4 shadow-sm transition hover:border-violet-500 hover:shadow-md"
-          >
-            <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Paso 13</p>
-            <p className="mt-1 text-sm font-bold text-slate-900">
-              Registrar novedades y solicitudes del arrendamiento
-            </p>
-            <p className="mt-2 text-xs leading-relaxed text-slate-600">
-              Incumplimientos, reparaciones, convivencia u otras situaciones con historial y notificación por correo.
-            </p>
-          </Link>
-        </div>
-      </section>
+      {savedVersion && (
+        <section className="mt-8 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50/90 to-white p-5 shadow-[0_8px_28px_rgba(139,92,246,0.14)]">
+          <h3 className="text-base font-bold text-slate-900">Posventa: durante el arriendo</h3>
+          <p className="mt-1 text-xs text-slate-600">
+            Tu contrato ya está guardado, así que estos módulos quedaron <strong>desbloqueados</strong>. También puedes
+            volver al{" "}
+            <Link href={`/dashboard/contracts/${id}/adicionales`} className="text-violet-700 underline">
+              Centro de adicionales
+            </Link>{" "}
+            para el método de pago, recordatorios y documentos.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Link
+              href={`/dashboard/contracts/${id}/evidencias`}
+              className="rounded-xl border border-violet-300 bg-white p-4 shadow-sm transition hover:border-violet-500 hover:shadow-md"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Posventa</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">Evidencias del expediente</p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                Soportes del codeudor, paquete ZIP, notaría, pagos e inventario en un solo lugar.
+              </p>
+            </Link>
+            <Link
+              href={`/dashboard/contracts/${id}/novedades`}
+              title="Ejemplos: mora en el canon, daños o reparaciones, convivencia, solicitudes entre arrendador y arrendatario, acuerdos documentados."
+              className="rounded-xl border border-violet-300 bg-white p-4 shadow-sm transition hover:border-violet-500 hover:shadow-md"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Posventa</p>
+              <p className="mt-1 text-sm font-bold text-slate-900">
+                Registrar novedades y solicitudes del arrendamiento
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                Incumplimientos, reparaciones, convivencia u otras situaciones con historial y notificación por correo.
+              </p>
+            </Link>
+          </div>
+        </section>
+      )}
 
       {savedVersion && (
         <section className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4">
@@ -782,6 +804,7 @@ export default function PreviewStepPage() {
       )}
       {signatureRoundMessage && (
         <div
+          id="firma-resultado"
           role="status"
           className={`mt-3 rounded-lg border p-3 text-xs ${
             signatureRoundMessage.tone === "info"

@@ -70,7 +70,7 @@ export const SPECIAL_CLAUSE_OPTIONS: SpecialClauseOption[] = [
     id: SPECIAL_CLAUSE_OTHER_ID,
     label: "Otra cláusula especial",
     description:
-      "Escribe en tus palabras la cláusula adicional que necesitas que quede registrada.",
+      "Escríbela en tus palabras. Ten en cuenta: las cláusulas de pago y otras que requieran ajuste a la ley las revisa nuestro equipo jurídico y pueden tener costo (te avisamos antes de generar el contrato).",
   },
 ];
 
@@ -94,8 +94,10 @@ export function getSpecialClauseLabel(id: string): string {
 export const SPECIAL_CLAUSES_COST_NOTICE =
   "La opción «Otra» implica redacción personalizada por parte del equipo " +
   "de ArriendoSeguro y revisión para que se ajuste a la normatividad " +
-  "colombiana. Por eso puede tener un costo adicional, el cual te será " +
-  "notificado antes de generar el contrato definitivo.";
+  "colombiana. En particular, las cláusulas relacionadas con pagos, multas, " +
+  "intereses o penalidades deben ser revisadas por un abogado. Por eso puede " +
+  "tener un costo adicional, el cual te será notificado antes de generar el " +
+  "contrato definitivo.";
 
 /**
  * Aviso informativo (sin costo) que se muestra cuando hay cláusulas
