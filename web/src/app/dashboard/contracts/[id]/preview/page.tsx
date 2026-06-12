@@ -442,10 +442,10 @@ export default function PreviewStepPage() {
       if (anyFailed) footer = "send_failed";
       else if (!anyReal) footer = "mock";
       setSignatureRoundMessage({
-        tone: anyFailed || !anyReal ? "warning" : "info",
+        tone: anyFailed ? "warning" : "info",
         title: anyReal
-          ? "Iniciamos la ronda de firmas y enviamos los correos a las partes."
-          : "Iniciamos la ronda de firmas en modo demo. Cuando configures el proveedor de correo, las invitaciones se enviarán automáticamente.",
+          ? "Enviamos la solicitud de firma por correo a cada parte."
+          : "Preparamos la ronda de firmas para todas las partes.",
         details,
         footer,
       });
@@ -728,78 +728,65 @@ export default function PreviewStepPage() {
 
       {savedVersion && (
         <section className="mt-8 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50/90 to-white p-5 shadow-[0_8px_28px_rgba(139,92,246,0.14)]">
-          <h3 className="text-base font-bold text-slate-900">Posventa: durante el arriendo</h3>
-          <p className="mt-1 text-xs text-slate-600">
-            Tu contrato ya está guardado, así que estos módulos quedaron <strong>desbloqueados</strong>. También puedes
-            volver al{" "}
-            <Link href={`/dashboard/contracts/${id}/adicionales`} className="text-violet-700 underline">
-              Centro de adicionales
-            </Link>{" "}
-            para el método de pago, recordatorios y documentos.
-          </p>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <Link
-              href={`/dashboard/contracts/${id}/evidencias`}
-              className="rounded-xl border border-violet-300 bg-white p-4 shadow-sm transition hover:border-violet-500 hover:shadow-md"
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Posventa</p>
-              <p className="mt-1 text-sm font-bold text-slate-900">Evidencias del expediente</p>
-              <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                Soportes del codeudor, paquete ZIP, notaría, pagos e inventario en un solo lugar.
+          <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Siguiente paso</p>
+          {plusActive || demoActive ? (
+            <>
+              <h3 className="mt-1 text-base font-bold text-slate-900">Sube tus documentos de respaldo</h3>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                Con tu contrato guardado, lo siguiente es subir los documentos que respaldan el arriendo:{" "}
+                <strong>escritura o certificado de libertad</strong> (o el <strong>poder autenticado</strong> si actúas
+                como apoderado) y los soportes de las partes. Después podrás hacer el inventario de entrega y la posventa.
               </p>
-            </Link>
-            <Link
-              href={`/dashboard/contracts/${id}/novedades`}
-              title="Ejemplos: mora en el canon, daños o reparaciones, convivencia, solicitudes entre arrendador y arrendatario, acuerdos documentados."
-              className="rounded-xl border border-violet-300 bg-white p-4 shadow-sm transition hover:border-violet-500 hover:shadow-md"
-            >
-              <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Posventa</p>
-              <p className="mt-1 text-sm font-bold text-slate-900">
-                Registrar novedades y solicitudes del arrendamiento
+              <Link
+                href={`/dashboard/contracts/${id}/documentos-propiedad`}
+                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] hover:bg-violet-500"
+              >
+                Subir documentos de respaldo →
+              </Link>
+              <p className="mt-4 text-xs font-medium text-slate-600">Y luego, en el expediente:</p>
+              <div className="mt-1 flex flex-wrap gap-2 text-xs">
+                <Link href={`/dashboard/contracts/${id}/adicionales`} className="rounded border border-violet-400 px-3 py-1.5 text-violet-700">
+                  Centro de adicionales
+                </Link>
+                <Link href={`/dashboard/contracts/${id}/inventory`} className="rounded border border-slate-300 px-3 py-1.5 text-slate-800">
+                  Inventario de entrega
+                </Link>
+                <Link href={`/dashboard/contracts/${id}/payments`} className="rounded border border-slate-300 px-3 py-1.5 text-slate-800">
+                  Registro de pagos
+                </Link>
+                <Link href={`/dashboard/contracts/${id}/novedades`} className="rounded border border-slate-300 px-3 py-1.5 text-slate-800">
+                  Novedades
+                </Link>
+                <Link href={`/dashboard/contracts/${id}/evidencias`} className="rounded border border-slate-300 px-3 py-1.5 text-slate-800">
+                  Evidencias
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <h3 className="mt-1 text-base font-bold text-slate-900">
+                Tu contrato está listo. ¿Quieres el respaldo completo del arriendo?
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                Lo generaste y guardaste <strong>gratis</strong>. El acompañamiento <strong>durante el arriendo</strong>{" "}
+                es parte del <strong>Plan Plus</strong>:
               </p>
-              <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                Incumplimientos, reparaciones, convivencia u otras situaciones con historial y notificación por correo.
-              </p>
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {savedVersion && (
-        <section className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4">
-          <h3 className="text-sm font-semibold text-slate-900">Inventario y entrega</h3>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <Link
-              href={`/dashboard/contracts/${id}/evidencias`}
-              className="rounded border border-violet-600 px-3 py-2 text-xs font-medium text-violet-800"
-            >
-              Ir a evidencias del expediente
-            </Link>
-            <Link
-              href={`/dashboard/contracts/${id}/inventory`}
-              className="rounded border border-slate-300 px-3 py-2 text-xs text-slate-800"
-            >
-              Crear inventario inicial
-            </Link>
-            <Link
-              href={`/dashboard/contracts/${id}/inventory/new?contractVersionId=${encodeURIComponent(savedVersion.contractVersionId)}`}
-              className="rounded border border-violet-500 px-3 py-2 text-xs text-violet-700"
-            >
-              Continuar inventario
-            </Link>
-            <Link
-              href={`/dashboard/contracts/${id}/delivery-act?contractVersionId=${encodeURIComponent(savedVersion.contractVersionId)}`}
-              className="rounded border border-sky-500 px-3 py-2 text-xs text-sky-800"
-            >
-              Generar acta de entrega
-            </Link>
-            <Link
-              href={`/dashboard/contracts/${id}/payments`}
-              className="rounded border border-emerald-500 px-3 py-2 text-xs text-emerald-700"
-            >
-              Registro de pagos
-            </Link>
-          </div>
+              <ul className="mt-2 grid gap-1 text-xs text-slate-700 sm:grid-cols-2">
+                <li>• Inventario y acta de entrega</li>
+                <li>• Alertas de vencimiento y renovación</li>
+                <li>• Recordatorios y notificaciones</li>
+                <li>• Registro de pagos y soportes</li>
+                <li>• Registro de novedades y mantenimientos</li>
+                <li>• Calificación de la experiencia</li>
+              </ul>
+              <Link
+                href="/dashboard/plans"
+                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] hover:bg-violet-500"
+              >
+                Activar Plan Plus →
+              </Link>
+            </>
+          )}
         </section>
       )}
       {signatureRoundMessage && (
@@ -820,10 +807,24 @@ export default function PreviewStepPage() {
               ))}
             </ul>
           )}
+          <div className="mt-2 rounded border border-slate-200 bg-white/70 p-2 text-slate-700">
+            <p className="font-semibold text-slate-900">¿Qué hace cada parte ahora?</p>
+            <ol className="mt-1 list-decimal space-y-0.5 pl-5">
+              <li>Recibe un correo con su <strong>enlace de firma</strong> y lo abre.</li>
+              <li>Verifica su identidad con un <strong>código (OTP)</strong> que le llega al correo.</li>
+              <li>Lee el contrato, acepta los consentimientos y <strong>firma</strong>.</li>
+            </ol>
+            <p className="mt-1">
+              Cuando <strong>todas las partes</strong> hayan firmado, el contrato queda <strong>firmado</strong> y podrás
+              descargar la versión final con su evidencia (fecha, IP y hash). Mientras tanto, puedes continuar con los
+              siguientes pasos más abajo.
+            </p>
+          </div>
           {signatureRoundMessage.footer === "mock" && (
             <p className="mt-2">
-              Aún no hay envío real de correo: falta configurar el proveedor en el servidor (clave de API y remitente)
-              o estás en modo simulado. Las firmas quedan en el expediente; al activar el proveedor, las invitaciones
+              Nota: el <strong>envío automático de correos</strong> se activará cuando se configure el proveedor de
+              correo (Resend) en el servidor. Por ahora las firmas quedan registradas en el expediente; al activarlo, las
+              invitaciones
               saldrán automáticamente.
             </p>
           )}

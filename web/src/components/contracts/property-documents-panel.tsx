@@ -131,35 +131,43 @@ export function PropertyDocumentsPanel({
       )}
 
       {contractVersionId && (
-        <div className="mt-3 flex flex-wrap items-end gap-2">
-          <label className="text-xs text-slate-700">
-            Tipo
-            <select
-              value={docType}
-              onChange={(e) => setDocType(e.target.value as PropertyDocType)}
-              className="ml-1 rounded border border-slate-300 bg-white px-2 py-1 text-xs"
-            >
-              {PROPERTY_DOC_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {PROPERTY_DOC_TYPE_LABELS[t]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <input
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.webp"
-            aria-label="Archivo de documento de propiedad"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-            className="text-xs"
-          />
+        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-xs font-medium text-slate-700">
+              1. ¿Qué documento es?
+              <select
+                value={docType}
+                onChange={(e) => setDocType(e.target.value as PropertyDocType)}
+                className="mt-1 block w-full rounded border border-slate-300 bg-white px-2 py-1.5 text-sm"
+              >
+                {PROPERTY_DOC_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {PROPERTY_DOC_TYPE_LABELS[t]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-xs font-medium text-slate-700">
+              2. Elige el archivo
+              <input
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                aria-label="Archivo de documento de propiedad"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="mt-1 block w-full text-xs file:mr-2 file:rounded file:border-0 file:bg-violet-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-violet-800"
+              />
+              <span className="mt-1 block text-[11px] font-normal text-slate-500">
+                PDF, JPG, PNG o WEBP. {file ? `Seleccionado: ${file.name}` : "Aún no has elegido archivo."}
+              </span>
+            </label>
+          </div>
           <button
             type="button"
             disabled={busy || !file}
             onClick={() => void upload()}
-            className="rounded bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+            className="mt-3 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {busy ? "Subiendo…" : "Subir"}
+            {busy ? "Subiendo…" : "3. Subir documento"}
           </button>
         </div>
       )}
