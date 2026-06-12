@@ -25,7 +25,20 @@ export type LegalConfig = {
   ipcConfirmedForYear: number | null;
   /** Último envío del recordatorio anual (para no repetir a diario). */
   ipcReminderLastSentAt: string | null;
+  /**
+   * Cobro adicional (COP) de la cláusula especial libre («Otra»), que el equipo
+   * jurídico revisa. Administrable desde `/admin`. Por defecto $50.000.
+   */
+  specialClausePriceCop: number;
+  /**
+   * Correo(s) del aliado jurídico que recibe la solicitud de revisión cuando un
+   * usuario elige la cláusula «Otra». Administrable desde `/admin`.
+   */
+  legalPartnerEmails: string[];
 };
+
+/** Precio por defecto de la cláusula especial si el admin no lo ha fijado. */
+export const DEFAULT_SPECIAL_CLAUSE_PRICE_COP = 50_000;
 
 const schema = z.object({
   ipcPercent: z.number().positive().max(100).optional(),
@@ -36,6 +49,8 @@ const schema = z.object({
   ipcUpdatedByEmail: z.string().nullable().optional(),
   ipcConfirmedForYear: z.number().int().nullable().optional(),
   ipcReminderLastSentAt: z.string().nullable().optional(),
+  specialClausePriceCop: z.number().int().nonnegative().max(100_000_000).optional(),
+  legalPartnerEmails: z.array(z.string().email()).max(20).optional(),
 });
 
 export function defaultLegalConfig(): LegalConfig {
@@ -48,6 +63,8 @@ export function defaultLegalConfig(): LegalConfig {
     ipcUpdatedByEmail: null,
     ipcConfirmedForYear: null,
     ipcReminderLastSentAt: null,
+    specialClausePriceCop: DEFAULT_SPECIAL_CLAUSE_PRICE_COP,
+    legalPartnerEmails: [],
   };
 }
 
@@ -65,6 +82,8 @@ export function resolveLegalConfig(stored: unknown): LegalConfig {
     ipcUpdatedByEmail: s.ipcUpdatedByEmail ?? d.ipcUpdatedByEmail,
     ipcConfirmedForYear: s.ipcConfirmedForYear ?? d.ipcConfirmedForYear,
     ipcReminderLastSentAt: s.ipcReminderLastSentAt ?? d.ipcReminderLastSentAt,
+    specialClausePriceCop: s.specialClausePriceCop ?? d.specialClausePriceCop,
+    legalPartnerEmails: s.legalPartnerEmails ?? d.legalPartnerEmails,
   };
 }
 

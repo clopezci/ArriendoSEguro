@@ -82,6 +82,8 @@ type LegalConfigState = {
     ipcUpdatedAt: string | null;
     ipcUpdatedByEmail: string | null;
     ipcConfirmedForYear: number | null;
+    specialClausePriceCop?: number;
+    legalPartnerEmails?: string[];
   };
 };
 
@@ -115,6 +117,10 @@ export default function AdminPage() {
   const [ipcYearInput, setIpcYearInput] = useState("");
   const [legalMsg, setLegalMsg] = useState("");
   const [legalBusy, setLegalBusy] = useState(false);
+  const [specialPriceInput, setSpecialPriceInput] = useState("");
+  const [legalEmailsInput, setLegalEmailsInput] = useState("");
+  const [specialMsg, setSpecialMsg] = useState("");
+  const [specialBusy, setSpecialBusy] = useState(false);
   const [refConfig, setRefConfig] = useState<{ enabled: boolean; discountPercent: number } | null>(null);
   const [refDiscountInput, setRefDiscountInput] = useState("");
   const [refList, setRefList] = useState<
@@ -273,11 +279,47 @@ export default function AdminPage() {
         setLegal(json);
         setIpcInput(String(json.config.ipcPercent));
         setIpcYearInput(String(json.config.ipcPreviousYear));
+        setSpecialPriceInput(String(json.config.specialClausePriceCop ?? 50000));
+        setLegalEmailsInput((json.config.legalPartnerEmails ?? []).join(", "));
       }
     } catch {
       /* silencioso */
     }
   }, [user]);
+
+  async function saveSpecialClauseConfig() {
+    if (!user) return;
+    setSpecialBusy(true);
+    setSpecialMsg("");
+    try {
+      const price = Number(specialPriceInput.replace(/[^\d]/g, ""));
+      if (!Number.isFinite(price) || price < 0) {
+        setSpecialMsg("El precio debe ser un número en pesos (sin puntos ni símbolos).");
+        setSpecialBusy(false);
+        return;
+      }
+      const emails = legalEmailsInput
+        .split(/[,;\s]+/)
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
+      const res = await fetch("/api/admin/legal-config", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ specialClausePriceCop: price, legalPartnerEmails: emails }),
+      });
+      const json = (await res.json()) as LegalConfigState & { errors?: { message?: string }[] };
+      if (!res.ok || !json.success) {
+        setSpecialMsg(json.errors?.[0]?.message ?? "No se pudo guardar (revisa que los correos sean válidos).");
+        return;
+      }
+      setLegal(json);
+      setSpecialMsg("Guardado: precio de cláusula especial y correos del aliado jurídico.");
+    } catch {
+      setSpecialMsg("Error de red.");
+    } finally {
+      setSpecialBusy(false);
+    }
+  }
 
   async function saveIpc(confirmOnly: boolean) {
     if (!user) return;
@@ -1105,6 +1147,51 @@ export default function AdminPage() {
               </button>
             </div>
             {legalMsg && <p className="mt-2 text-xs text-slate-700">{legalMsg}</p>}
+          </section>
+        )}
+
+        {legal && (
+          <section className="mb-6 rounded-xl border border-violet-300 bg-violet-50/40 p-4">
+            <h2 className="text-sm font-semibold text-violet-900">Cláusula especial y aliado jurídico</h2>
+            <p className="mt-1 text-xs text-slate-600">
+              Cuando un usuario elige la cláusula «Otra» (texto libre), se le informa que tiene un cobro adicional y se
+              envía una solicitud de revisión a tu aliado jurídico.
+            </p>
+            <div className="mt-3 flex flex-wrap items-end gap-3">
+              <label className="text-[11px] font-medium text-slate-700">
+                Precio de la cláusula especial (COP)
+                <input
+                  inputMode="numeric"
+                  value={specialPriceInput}
+                  onChange={(e) => setSpecialPriceInput(e.target.value)}
+                  placeholder="50000"
+                  className="mt-1 block w-40 rounded border border-slate-300 px-2 py-1.5 text-xs"
+                />
+              </label>
+              <label className="min-w-[16rem] flex-1 text-[11px] font-medium text-slate-700">
+                Correo(s) del aliado jurídico (separados por coma)
+                <input
+                  value={legalEmailsInput}
+                  onChange={(e) => setLegalEmailsInput(e.target.value)}
+                  placeholder="abogado@firma.com, legal@firma.com"
+                  className="mt-1 block w-full rounded border border-slate-300 px-2 py-1.5 text-xs"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={specialBusy}
+                onClick={() => void saveSpecialClauseConfig()}
+                className="rounded border border-violet-500 bg-violet-600 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+              >
+                {specialBusy ? "…" : "Guardar"}
+              </button>
+            </div>
+            {(legal.config.legalPartnerEmails?.length ?? 0) === 0 && (
+              <p className="mt-2 text-xs text-amber-700">
+                Sin correo de aliado jurídico configurado: las solicitudes de revisión de cláusula «Otra» no se enviarán.
+              </p>
+            )}
+            {specialMsg && <p className="mt-2 text-xs text-slate-700">{specialMsg}</p>}
           </section>
         )}
 

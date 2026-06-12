@@ -70,7 +70,7 @@ export const SPECIAL_CLAUSE_OPTIONS: SpecialClauseOption[] = [
     id: SPECIAL_CLAUSE_OTHER_ID,
     label: "Otra cláusula especial",
     description:
-      "Escríbela en tus palabras. Ten en cuenta: las cláusulas de pago y otras que requieran ajuste a la ley las revisa nuestro equipo jurídico y pueden tener costo (te avisamos antes de generar el contrato).",
+      "Escríbela en tus palabras. Tiene un cobro adicional porque la revisa nuestro equipo jurídico (especialmente cláusulas de pago, multas o penalidades). Te mostramos el valor al elegirla.",
   },
 ];
 

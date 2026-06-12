@@ -129,18 +129,29 @@ export default function TermsStepPage() {
           hint="Meses de canon impago acumulados a partir de los cuales el arrendador (dueño) puede iniciar gestiones de cobro o terminación del contrato. La ley colombiana exige al menos 2 meses; puedes pactar más, nunca menos."
         />
 
-        <label className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-violet-200 bg-violet-50/50 p-3 text-sm text-slate-800">
-          <input
-            type="checkbox"
-            name="renewalReminderEnabled"
-            defaultChecked={draft.renewalReminderEnabled ?? true}
-            className="mt-0.5 h-4 w-4 accent-violet-600"
-          />
-          <span>
-            Quiero recibir <strong>recordatorios de terminación o renovación</strong> de este contrato (por correo y
-            SMS), con anticipación al preaviso legal de 3 meses. Podrás cambiarlo luego en «Alertas» del expediente.
-          </span>
-        </label>
+        {draft.isDemo || draft.accessStatusSnapshot === "paid" ? (
+          <label className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-violet-200 bg-violet-50/50 p-3 text-sm text-slate-800">
+            <input
+              type="checkbox"
+              name="renewalReminderEnabled"
+              defaultChecked={draft.renewalReminderEnabled ?? true}
+              className="mt-0.5 h-4 w-4 accent-violet-600"
+            />
+            <span>
+              Quiero recibir <strong>recordatorios de terminación o renovación</strong> de este contrato (por correo y
+              SMS), con anticipación al preaviso legal de 3 meses. Podrás cambiarlo luego en «Alertas» del expediente.
+            </span>
+          </label>
+        ) : (
+          <div className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
+            <input type="checkbox" disabled aria-disabled="true" className="mt-0.5 h-4 w-4" />
+            <span>
+              <strong>Recordatorios de terminación o renovación</strong> (por correo y SMS, antes del preaviso legal de
+              3 meses).{" "}
+              <span className="font-semibold text-violet-700">Disponible en Plan Plus.</span>
+            </span>
+          </div>
+        )}
 
         {errors.length > 0 && (
           <div

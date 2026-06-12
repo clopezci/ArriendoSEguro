@@ -34,6 +34,9 @@ const patchSchema = z.object({
   ipcPreviousYear: z.number().int().min(2000).max(2100).optional(),
   ipcAppliesToYear: z.number().int().min(2000).max(2100).optional(),
   ipcSource: z.string().max(200).optional(),
+  // Cláusula especial (no tocan la confirmación del IPC).
+  specialClausePriceCop: z.number().int().nonnegative().max(100_000_000).optional(),
+  legalPartnerEmails: z.array(z.string().email()).max(20).optional(),
 });
 
 export async function PATCH(request: Request) {
@@ -58,20 +61,35 @@ export async function PATCH(request: Request) {
   const currentYear = now.getUTCFullYear();
   const nowIso = now.toISOString();
 
-  // Tanto guardar un nuevo valor como "confirmar que sigue vigente" marcan el
-  // año como atendido → corta el recordatorio anual.
   const update: Record<string, unknown> = {
-    ipcConfirmedForYear: currentYear,
-    ipcUpdatedAt: nowIso,
-    ipcUpdatedByEmail: gate.user.email,
     updatedAtServer: FieldValue.serverTimestamp(),
   };
-  if (!parsed.data.confirmOnly) {
-    if (parsed.data.ipcPercent != null) update.ipcPercent = parsed.data.ipcPercent;
-    if (parsed.data.ipcPreviousYear != null) update.ipcPreviousYear = parsed.data.ipcPreviousYear;
-    if (parsed.data.ipcAppliesToYear != null) update.ipcAppliesToYear = parsed.data.ipcAppliesToYear;
-    if (parsed.data.ipcSource != null) update.ipcSource = parsed.data.ipcSource;
+
+  // ¿Esta solicitud toca el IPC? Solo entonces marcamos el año como atendido
+  // (eso corta el recordatorio anual). Guardar el precio de cláusula o los
+  // correos del aliado jurídico NO debe confirmar el IPC.
+  const touchesIpc =
+    Boolean(parsed.data.confirmOnly) ||
+    parsed.data.ipcPercent != null ||
+    parsed.data.ipcPreviousYear != null ||
+    parsed.data.ipcAppliesToYear != null ||
+    parsed.data.ipcSource != null;
+
+  if (touchesIpc) {
+    update.ipcConfirmedForYear = currentYear;
+    update.ipcUpdatedAt = nowIso;
+    update.ipcUpdatedByEmail = gate.user.email;
+    if (!parsed.data.confirmOnly) {
+      if (parsed.data.ipcPercent != null) update.ipcPercent = parsed.data.ipcPercent;
+      if (parsed.data.ipcPreviousYear != null) update.ipcPreviousYear = parsed.data.ipcPreviousYear;
+      if (parsed.data.ipcAppliesToYear != null) update.ipcAppliesToYear = parsed.data.ipcAppliesToYear;
+      if (parsed.data.ipcSource != null) update.ipcSource = parsed.data.ipcSource;
+    }
   }
+
+  // Cláusula especial (independiente del IPC).
+  if (parsed.data.specialClausePriceCop != null) update.specialClausePriceCop = parsed.data.specialClausePriceCop;
+  if (parsed.data.legalPartnerEmails != null) update.legalPartnerEmails = parsed.data.legalPartnerEmails;
 
   await firestore.collection(LEGAL_CONFIG_COLLECTION).doc(LEGAL_CONFIG_DOC_ID).set(update, { merge: true });
   auditEvent("legal_config_updated", {

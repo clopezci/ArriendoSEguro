@@ -18,7 +18,8 @@ export type EmailTemplateCode =
   | "paymentUploadedEmail"
   | "paymentConfirmedToTenantEmail"
   | "tenantPaymentReminderEmail"
-  | "ownerConfirmEscalationEmail";
+  | "ownerConfirmEscalationEmail"
+  | "specialClauseReviewEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
@@ -40,6 +41,35 @@ function baseHtml(title: string, body: string) {
       </p>
     </div>
   `.trim();
+}
+
+export function specialClauseReviewEmail(input: {
+  contractId: string;
+  requesterEmail: string;
+  clauseText: string;
+  priceCop: number;
+}): CompiledEmailTemplate {
+  const priceText = `$${input.priceCop.toLocaleString("es-CO")}`;
+  const subject = `Revisión de cláusula especial · Expediente ${input.contractId}`;
+  const text =
+    `Un usuario de ArriendoSeguro (${input.requesterEmail}) solicitó incluir una cláusula especial ("Otra") ` +
+    `en el expediente ${input.contractId}, que requiere tu revisión jurídica.\n\n` +
+    `Cobro adicional informado al usuario: ${priceText}.\n\n` +
+    `Texto de la cláusula propuesta:\n"${input.clauseText}"\n\n` +
+    `Revisa que se ajuste a la normatividad colombiana (Ley 820 de 2003 y demás aplicables) y responde con tu concepto.`;
+  const html = baseHtml(
+    "Solicitud de revisión de cláusula especial",
+    `<p>Un usuario de ArriendoSeguro (<strong>${input.requesterEmail}</strong>) solicitó incluir una cláusula especial
+      («Otra») en el expediente <strong>${input.contractId}</strong>, que requiere tu revisión jurídica.</p>
+     <p>Cobro adicional informado al usuario: <strong>${priceText}</strong>.</p>
+     <p style="margin:12px 0 4px;">Texto de la cláusula propuesta:</p>
+     <blockquote style="background:#f1f5f9;padding:12px;border-left:4px solid #6d28d9;margin:0;">
+       ${input.clauseText.replace(/[<>]/g, (c) => (c === "<" ? "&lt;" : "&gt;")).replace(/\n/g, "<br/>")}
+     </blockquote>
+     <p style="margin-top:12px;">Revisa que se ajuste a la normatividad colombiana (Ley 820 de 2003 y demás aplicables)
+      y responde con tu concepto.</p>`,
+  );
+  return { subject, html, text };
 }
 
 export function inviteCounterpartyEmail(input: {

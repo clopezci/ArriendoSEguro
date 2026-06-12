@@ -10,12 +10,15 @@ import {
   SPECIAL_CLAUSE_OPTIONS,
   SPECIAL_CLAUSE_OTHER_ID,
 } from "@/features/contracts/special-clauses";
+import { useAuth } from "@/contexts/auth-context";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { useParams, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function SpecialClausesStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
+  const { user } = useAuth();
   const router = useRouter();
 
   const initial = draft?.specialClauses ?? {
@@ -29,11 +32,30 @@ export default function SpecialClausesStepPage() {
   const [selectedIds, setSelectedIds] = useState<string[]>(initial.selected);
   const [freeText, setFreeText] = useState<string>(initial.freeText ?? "");
   const [errors, setErrors] = useState<string[]>([]);
+  const [priceCop, setPriceCop] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/contracts/special-clause");
+        const j = (await res.json()) as { success?: boolean; priceCop?: number };
+        if (!cancelled && res.ok && j.success && typeof j.priceCop === "number") setPriceCop(j.priceCop);
+      } catch {
+        /* sin precio: mostramos el aviso genérico */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const otherSelected = useMemo(
     () => selectedIds.includes(SPECIAL_CLAUSE_OTHER_ID),
     [selectedIds],
   );
+
+  const priceText = priceCop != null ? `$${priceCop.toLocaleString("es-CO")}` : null;
 
   if (state !== "ready" || !draft) {
     return <p className="text-sm text-slate-700">Cargando…</p>;
@@ -92,6 +114,23 @@ export default function SpecialClausesStepPage() {
       freeText: otherSelected ? freeText.trim() : undefined,
       costNotified: true,
     });
+
+    // Si eligió la cláusula libre «Otra», avisamos al aliado jurídico (best-effort,
+    // no bloquea el flujo; el servidor evita duplicados por expediente).
+    if (otherSelected && freeText.trim().length >= 10 && user) {
+      void (async () => {
+        try {
+          await fetch("/api/contracts/special-clause", {
+            method: "POST",
+            headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+            body: JSON.stringify({ contractDraftId: id, clauseText: freeText.trim() }),
+          });
+        } catch {
+          /* el aviso no es bloqueante */
+        }
+      })();
+    }
+
     router.push(`/dashboard/contracts/${id}/review`);
   }
 
@@ -169,9 +208,15 @@ export default function SpecialClausesStepPage() {
                 className="rounded-lg border border-amber-300 bg-amber-100/60 p-4 text-sm text-amber-800"
               >
                 <p className="font-semibold">
-                  Aviso de costo adicional para la cláusula libre
+                  {priceText
+                    ? `Esta cláusula tiene un cobro adicional de ${priceText}`
+                    : "Esta cláusula tiene un cobro adicional"}
                 </p>
                 <p className="mt-1">{SPECIAL_CLAUSES_COST_NOTICE}</p>
+                <p className="mt-1 text-xs">
+                  Al guardar, enviaremos tu solicitud a nuestro equipo jurídico para revisarla. Te confirmaremos el
+                  valor antes de generar el contrato definitivo.
+                </p>
               </div>
             )}
 
