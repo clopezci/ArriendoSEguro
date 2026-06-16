@@ -315,22 +315,13 @@ export default function CodebtorStepPage() {
         )}
 
         {decision === "yes" && (
-          <>
-            <button
-              form="wizard-form"
-              type="submit"
-              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)]"
-            >
-              Guardar codeudor y continuar
-            </button>
-            <Link
-              href={`/dashboard/contracts/${id}/property`}
-              className="rounded-lg border border-violet-400 px-4 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50"
-              title="Sigue ahora y completa los datos del/los codeudor(es) en el Centro de adicionales."
-            >
-              Configurar codeudores luego →
-            </Link>
-          </>
+          <button
+            form="wizard-form"
+            type="submit"
+            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)]"
+          >
+            Guardar codeudor y continuar
+          </button>
         )}
       </div>
     </WizardShell>

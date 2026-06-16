@@ -22,10 +22,19 @@ export async function GET(request: Request) {
     const safeContract = { currentVersionId: contract?.currentVersionId ?? null, status: contract?.status ?? null };
     if (!contract?.currentVersionId) return NextResponse.json({ success: true, contract: safeContract, version: null });
     const versionSnap = await firestore.collection("contract_versions").doc(contract.currentVersionId).get();
-    const v = versionSnap.data() as { contractId?: string; status?: string; contractPayload?: { lease?: unknown } } | undefined;
-    // Solo el bloque `lease` (canon, fechas, día de pago); nunca partes/inmueble/HTML.
+    const v = versionSnap.data() as
+      | { contractId?: string; status?: string; hasSolidaryCoDebtor?: boolean; contractPayload?: { lease?: unknown } }
+      | undefined;
+    // Solo el bloque `lease` (canon, fechas, día de pago) + el booleano
+    // `hasSolidaryCoDebtor` (no es PII); nunca partes/inmueble/HTML.
     const safeVersion = versionSnap.exists
-      ? { id: versionSnap.id, contractId: v?.contractId ?? null, status: v?.status ?? null, contractPayload: { lease: v?.contractPayload?.lease ?? null } }
+      ? {
+          id: versionSnap.id,
+          contractId: v?.contractId ?? null,
+          status: v?.status ?? null,
+          hasSolidaryCoDebtor: Boolean(v?.hasSolidaryCoDebtor),
+          contractPayload: { lease: v?.contractPayload?.lease ?? null },
+        }
       : null;
     return NextResponse.json({ success: true, contract: safeContract, version: safeVersion });
   } catch {

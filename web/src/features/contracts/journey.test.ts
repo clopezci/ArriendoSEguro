@@ -5,7 +5,6 @@ import { deriveJourneyState, CONTRACT_PHASES, isSignedStatus } from "./journey";
 test("sin versión guardada: solo 'datos' activa, resto bloqueado", () => {
   const s = deriveJourneyState(null);
   assert.equal(s.datos, "active");
-  assert.equal(s.robustecer, "locked");
   assert.equal(s.firmar, "locked");
   assert.equal(s.pdf, "locked");
   assert.equal(s.posventa, "locked");
@@ -14,7 +13,6 @@ test("sin versión guardada: solo 'datos' activa, resto bloqueado", () => {
 test("con versión guardada (no firmado): datos hecha, firmar activa, posventa bloqueada", () => {
   const s = deriveJourneyState({ currentVersionId: "v1", contractStatus: "draft" });
   assert.equal(s.datos, "done");
-  assert.equal(s.robustecer, "todo");
   assert.equal(s.firmar, "active");
   assert.equal(s.pdf, "todo");
   assert.equal(s.posventa, "locked");
@@ -31,10 +29,10 @@ test("firmado: firmar hecha, posventa disponible", () => {
   assert.equal(s.posventa, "todo");
 });
 
-test("hay 5 fases en orden", () => {
+test("hay 4 fases en orden", () => {
   assert.deepEqual(
     CONTRACT_PHASES.map((p) => p.key),
-    ["datos", "robustecer", "firmar", "pdf", "posventa"],
+    ["datos", "firmar", "pdf", "posventa"],
   );
 });
 

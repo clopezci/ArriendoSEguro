@@ -54,7 +54,7 @@ export default function ReviewStepPage() {
   });
 
   return (
-    <WizardShell title="Resumen previo" currentStep={8} contractId={id}>
+    <WizardShell title="Resumen previo" currentStep={9} contractId={id}>
       <div className="grid gap-4 md:grid-cols-2">
         <Card title="Tipo de contrato">
           <p className="text-violet-700">{contractTypeLabel}</p>
@@ -226,11 +226,9 @@ export default function ReviewStepPage() {
 
       {draft.actingAs === "proxy" && (
         <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-          Estás arrendando como <strong>apoderado</strong>. Recuerda subir el <strong>poder autenticado</strong> en{" "}
-          <Link href={`/dashboard/contracts/${id}/documentos-propiedad`} className="underline">
-            Documentos de propiedad / poder
-          </Link>{" "}
-          (evidencias del expediente).
+          Estás arrendando como <strong>apoderado</strong>. Después de guardar tu contrato, recuerda subir el{" "}
+          <strong>poder autenticado</strong> en «Documentos de propiedad / poder» (te lo indicaremos en el siguiente
+          paso).
         </div>
       )}
 
@@ -239,20 +237,6 @@ export default function ReviewStepPage() {
         <p className="mt-2 text-xs text-slate-500">
           ArriendoSeguro no recauda dinero ni garantiza pagos; el respaldo es documental y de evidencia.
         </p>
-      </div>
-
-      <div className="mt-6 rounded-xl border border-violet-300 bg-violet-50/40 p-4">
-        <p className="text-sm font-semibold text-violet-900">¿Quieres configurar adicionales? (opcional)</p>
-        <p className="mt-1 text-xs text-slate-600">
-          Codeudores, garantía de servicios, cláusulas especiales, método de pago y recordatorios, notaría y documentos
-          de propiedad. Todo a tu elección.
-        </p>
-        <Link
-          href={`/dashboard/contracts/${id}/adicionales`}
-          className="mt-2 inline-flex rounded-lg border border-violet-500 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-100"
-        >
-          Abrir Centro de adicionales →
-        </Link>
       </div>
 
       <div className="mt-6 space-y-3">

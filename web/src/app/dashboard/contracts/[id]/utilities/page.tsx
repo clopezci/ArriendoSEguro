@@ -42,9 +42,8 @@ export default function UtilitiesStepPage() {
         "utilities_saved",
       ),
     );
-    // Bloque 1 termina en el resumen; las cláusulas especiales son opcionales y
-    // se configuran desde el Centro de adicionales (Bloque 2).
-    router.push(`/dashboard/contracts/${id}/review`);
+    // Siguiente paso de la línea: cláusulas especiales (opcional, con «No»).
+    router.push(`/dashboard/contracts/${id}/special-clauses`);
   }
 
   return (
@@ -117,8 +116,8 @@ export default function UtilitiesStepPage() {
       <StepNav
         backHref={`/dashboard/contracts/${id}/terms`}
         backLabel="Anterior"
-        nextHref={`/dashboard/contracts/${id}/review`}
-        nextLabel="Continuar al resumen"
+        nextHref={`/dashboard/contracts/${id}/special-clauses`}
+        nextLabel="Continuar a cláusulas especiales"
       />
     </WizardShell>
   );

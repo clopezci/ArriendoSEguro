@@ -19,6 +19,7 @@ export const WIZARD_STEPS = [
   "Inmueble a arrendar",
   "Términos",
   "Servicios",
+  "Cláusulas especiales",
   "Resumen",
   "Vista previa",
 ] as const;
@@ -44,7 +45,7 @@ export function WizardShell({
 }) {
   const clamped = Math.min(Math.max(currentStep, 1), steps.length);
   const progress = useMemo(() => Math.round((clamped / steps.length) * 100), [clamped]);
-  const activePhase: ContractPhase = phase ?? (variant === "extra" ? "robustecer" : "datos");
+  const activePhase: ContractPhase = phase ?? (variant === "extra" ? "posventa" : "datos");
 
   if (variant === "extra") {
     return (
@@ -76,23 +77,7 @@ export function WizardShell({
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-slate-300 bg-white/95 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.2)]">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href={`/dashboard/contracts/${contractId}/adicionales`}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 hover:border-violet-500 hover:text-violet-700"
-            >
-              Centro de adicionales
-            </Link>
-            <Link
-              href={`/dashboard/contracts/${contractId}/review`}
-              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 hover:border-violet-500 hover:text-violet-700"
-            >
-              Ir a resumen
-            </Link>
-          </div>
-        </div>
+        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
         <div className="mt-3">
           <JourneyProgress id={contractId} activePhase={activePhase} />
         </div>

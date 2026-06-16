@@ -139,9 +139,9 @@ export default function SpecialClausesStepPage() {
   return (
     <WizardShell
       title="Cláusulas especiales"
-      currentStep={9}
+      currentStep={8}
       contractId={id}
-      variant="extra"
+      variant="wizard"
     >
       <p className="text-sm text-slate-700">
         Aquí puedes incluir <strong>cláusulas especiales</strong> para que

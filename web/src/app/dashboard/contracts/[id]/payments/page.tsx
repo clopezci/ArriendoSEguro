@@ -8,7 +8,6 @@ import { RequiresSavedContract } from "@/components/contracts/requires-saved-con
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
-import { PAYMENT_REMINDER_TEXT } from "@/domain/payments/paymentRules";
 import { visualPaymentState } from "@/domain/payments/paymentStatus";
 import { PaymentsExportCard } from "@/components/payments/payments-export-card";
 
@@ -154,31 +153,63 @@ export default function PaymentsPage() {
   return (
     <WizardShell title="Registro de pagos" currentStep={11} contractId={id} variant="extra" phase="posventa">
       <RequiresSavedContract id={id}>
-      <p className="rounded border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">{PAYMENT_REMINDER_TEXT.noCollection}</p>
-      <p className="mt-2 rounded border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">{PAYMENT_REMINDER_TEXT.supportHint}</p>
+      {/* Cómo funciona (para que no se pierda) */}
+      <div className="rounded-lg border border-violet-200 bg-violet-50/50 p-3 text-xs leading-relaxed text-slate-700">
+        <p className="text-sm font-bold text-slate-900">Cómo funciona</p>
+        <ol className="mt-1 list-decimal space-y-0.5 pl-5">
+          <li>
+            Genera el <strong>calendario de pagos</strong> con las fechas de tu contrato (botón «Calendario y
+            recordatorios»). Se crean los vencimientos de todo el plazo.
+          </li>
+          <li>
+            El inquilino recibe <strong>recordatorios automáticos</strong> 3 días antes y el día del vencimiento, con un
+            enlace para subir su soporte.
+          </li>
+          <li>
+            Cuando recibas el pago, lo <strong>confirmas</strong> aquí (o registras el pago tú mismo). ArriendoSeguro no
+            recauda ni custodia tu dinero.
+          </li>
+        </ol>
+      </div>
       {error && <p className="mt-3 text-sm text-rose-700">{error}</p>}
 
       <section className="mt-4 grid gap-3 md:grid-cols-3">
         <Card label="Canon mensual" value={`$${canon.toLocaleString("es-CO")}`} />
         <Card label="Día de pago" value={`${paymentDay}`} />
-        <Card label="Próximo pago esperado" value={summary.nextDue} />
-      </section>
-      <section className="mt-3 grid gap-3 md:grid-cols-5">
-        <Card label="Pagos pendientes" value={`${summary.pending}`} />
-        <Card label="Pagos vencidos" value={`${summary.overdue}`} />
-        <Card label="Pagos parciales" value={`${summary.partial}`} />
-        <Card label="Pagos disputados" value={`${summary.disputed}`} />
-        <Card label="Estado general" value={summary.allGood ? "Al día" : "Revisar"} />
+        <Card label="Próximo vencimiento" value={summary.nextDue} />
       </section>
 
+      {scheduledPayments.length === 0 ? (
+        <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+          Aún no has generado el calendario de pagos. Genéralo en{" "}
+          <Link href={`/dashboard/contracts/${id}/payment-schedule`} className="font-semibold underline">
+            Calendario y recordatorios
+          </Link>{" "}
+          para activar los recordatorios automáticos al inquilino.
+        </div>
+      ) : (
+        <section className="mt-3 grid gap-3 md:grid-cols-5">
+          <Card label="Pagos pendientes" value={`${summary.pending}`} />
+          <Card label="Pagos vencidos" value={`${summary.overdue}`} />
+          <Card label="Pagos parciales" value={`${summary.partial}`} />
+          <Card label="Pagos disputados" value={`${summary.disputed}`} />
+          <Card label="Estado general" value={summary.allGood ? "Al día" : "Revisar"} />
+        </section>
+      )}
+
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link href={`/dashboard/contracts/${id}/payment-schedule`} className="rounded border border-sky-500 px-3 py-2 text-sm text-sky-800">Calendario</Link>
-        <button type="button" className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-800">Pagos registrados</button>
-        <button type="button" className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-800">Soportes</button>
-        <button type="button" className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-800">Recordatorios</button>
-        <Link href={`/dashboard/contracts/${id}/payments/new?contractVersionId=${encodeURIComponent(contractVersionId)}`} className="rounded bg-violet-600 px-3 py-2 text-sm text-white">Registrar pago</Link>
-        <button type="button" onClick={generateAnnex} className="rounded border border-emerald-500 px-3 py-2 text-sm text-emerald-700">Generar anexo de pagos</button>
-        <button type="button" onClick={generateTenantLink} className="rounded border border-violet-500 px-3 py-2 text-sm text-violet-700">Enlace de pago para el inquilino</button>
+        <Link href={`/dashboard/contracts/${id}/payment-schedule`} className="rounded bg-violet-600 px-3 py-2 text-sm font-semibold text-white">
+          Calendario y recordatorios
+        </Link>
+        <Link href={`/dashboard/contracts/${id}/payments/new?contractVersionId=${encodeURIComponent(contractVersionId)}`} className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-800">
+          Registrar un pago
+        </Link>
+        <button type="button" onClick={generateAnnex} className="rounded border border-emerald-500 px-3 py-2 text-sm text-emerald-700">
+          Generar anexo (PDF)
+        </button>
+        <button type="button" onClick={generateTenantLink} className="rounded border border-violet-500 px-3 py-2 text-sm text-violet-700">
+          Enlace para el inquilino
+        </button>
       </div>
       {tenantLink && (
         <div className="mt-2 rounded border border-violet-200 bg-violet-50/60 p-3 text-xs text-slate-700">
@@ -187,11 +218,6 @@ export default function PaymentsPage() {
           <p className="mt-1 text-[11px] text-slate-500">Verá cómo pagar y podrá subir su soporte; tú confirmas el pago al recibirlo.</p>
         </div>
       )}
-      <section className="mt-3 grid gap-3 md:grid-cols-3">
-        <Card label="Próximo vencimiento" value={summary.nextDue} />
-        <Card label="Pagos próximos (calendario)" value={`${summary.upcomingSchedule}`} />
-        <Card label="Estado calendario" value={`${summary.calendarState} / Vencidos: ${summary.overdueSchedule}`} />
-      </section>
 
       <div className="mt-4 overflow-auto rounded border border-slate-300">
         <table className="min-w-full text-xs text-slate-700">
