@@ -29,7 +29,7 @@ function fractionLine(opts: FreeTierCtaOptions): string {
   const total = opts.totalContractCop ?? 0;
   const plus = opts.plusPriceCop ?? 0;
   if (total <= 0 || plus <= 0) {
-    return "Protégelo por una pequeña fracción de lo que cuesta un mal arriendo.";
+    return "Protégelo por una pequeña fracción de lo que cuesta tu arriendo.";
   }
   const pctNum = (plus / total) * 100;
   const pct = pctNum >= 0.01 ? pctNum.toFixed(2).replace(".", ",") : "0,01";

@@ -57,7 +57,7 @@ export default async function Home() {
               <p className="rounded-xl border border-emerald-400 bg-emerald-50 px-4 py-3 text-center text-base font-bold leading-snug text-emerald-800 shadow-[0_6px_24px_rgba(16,185,129,0.16)] sm:text-lg lg:text-left">
                 Genera tu contrato de arrendamiento <span className="underline">gratis</span>. La firma
                 electrónica, el inventario y todo el respaldo se activan con Plan Plus, por una fracción
-                de lo que cuesta un mal arriendo.
+                de lo que cuesta tu arriendo.
               </p>
             )}
 

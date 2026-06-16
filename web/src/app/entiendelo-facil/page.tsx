@@ -214,7 +214,7 @@ export default async function EntiendeloFacilPage() {
             <p className="mt-3 rounded-lg border border-emerald-400 bg-emerald-50 px-4 py-3 font-semibold text-emerald-800">
               Generar tu contrato de arrendamiento es <span className="underline">gratis</span>. La firma
               electrónica con validez, el inventario, el registro de pagos y todo el respaldo se activan con
-              Plan Plus (pago único por contrato), por una fracción de lo que cuesta un mal arriendo.
+              Plan Plus (pago único por contrato), por una fracción de lo que cuesta tu arriendo.
             </p>
           )}
           <p className="mt-3 text-slate-700">
