@@ -1,67 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
-const links = [
-  {
-    href: (id: string) => `/dashboard/contracts/${id}/adicionales`,
-    label: "Adicionales del contrato",
-    match: (path: string) =>
-      path.includes("/adicionales") ||
-      path.includes("/special-clauses") ||
-      path.includes("/documentos-propiedad") ||
-      path.includes("/pagos-recordatorios"),
-  },
-  {
-    href: (id: string) => `/dashboard/contracts/${id}/evidencias`,
-    label: "Evidencias del expediente",
-    match: (path: string) =>
-      path.includes("/evidencias") ||
-      path.includes("/evidencia") ||
-      path.includes("/soportes-codeudor") ||
-      path.includes("/notarial") ||
-      path.includes("/payments"),
-  },
-  {
-    href: (id: string) => `/dashboard/contracts/${id}/novedades`,
-    label: "Novedades del arriendo",
-    match: (path: string) => path.includes("/novedades"),
-  },
-  {
-    href: (id: string) => `/dashboard/contracts/${id}/reputacion`,
-    label: "Calificar (reputación)",
-    match: (path: string) => path.includes("/reputacion"),
-  },
-  {
-    href: (id: string) => `/dashboard/contracts/${id}/alertas`,
-    label: "Alertas (vencimiento)",
-    match: (path: string) => path.includes("/alertas"),
-  },
-] as const;
-
-/** Navegación post-firma / durante el arriendo (pasos 12 y 13). */
+/**
+ * Navegación de posventa: un único enlace de regreso al **centro de control**
+ * (la posventa del contrato), para no dispersar al usuario con muchas pestañas.
+ * El listado y el estado de cada paso viven en ese hub.
+ */
 export function ExpedientePostWizardNav({ contractId }: { contractId: string }) {
-  const pathname = usePathname() ?? "";
   return (
-    <nav className="mb-6 flex flex-wrap gap-2 border-b border-slate-200 pb-3 text-sm">
-      {links.map((item) => {
-        const href = item.href(contractId);
-        const active = item.match(pathname);
-        return (
-          <Link
-            key={item.label}
-            href={href}
-            className={`rounded-full border px-3 py-1.5 font-medium ${
-              active
-                ? "border-violet-500 bg-violet-50 text-violet-900"
-                : "border-slate-200 text-slate-700 hover:border-violet-300"
-            }`}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
+    <nav className="mb-6 border-b border-slate-200 pb-3 text-sm">
+      <Link
+        href={`/dashboard/contracts/${contractId}/adicionales`}
+        className="inline-flex items-center gap-1 font-medium text-violet-700 hover:text-violet-900"
+      >
+        ← Volver a la posventa del contrato
+      </Link>
     </nav>
   );
 }

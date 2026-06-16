@@ -731,36 +731,18 @@ export default function PreviewStepPage() {
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Siguiente paso</p>
           {plusActive || demoActive ? (
             <>
-              <h3 className="mt-1 text-base font-bold text-slate-900">Sube tus documentos de respaldo</h3>
+              <h3 className="mt-1 text-base font-bold text-slate-900">Continúa con la posventa, paso a paso</h3>
               <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                Con tu contrato guardado, lo siguiente es subir los documentos que respaldan el arriendo:{" "}
-                <strong>escritura o certificado de libertad</strong> (o el <strong>poder autenticado</strong> si actúas
-                como apoderado) y los soportes de las partes. Después podrás hacer el inventario de entrega y la posventa.
+                Con tu contrato guardado, te llevamos a un <strong>centro de control</strong> donde haces, en orden y
+                viendo qué falta: documentos de respaldo, método de pago, calendario de pagos, inventario de entrega y
+                más.
               </p>
               <Link
-                href={`/dashboard/contracts/${id}/documentos-propiedad`}
+                href={`/dashboard/contracts/${id}/adicionales`}
                 className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] hover:bg-violet-500"
               >
-                Subir documentos de respaldo →
+                Ir a la posventa →
               </Link>
-              <p className="mt-4 text-xs font-medium text-slate-600">Y luego, en el expediente:</p>
-              <div className="mt-1 flex flex-wrap gap-2 text-xs">
-                <Link href={`/dashboard/contracts/${id}/adicionales`} className="rounded border border-violet-400 px-3 py-1.5 text-violet-700">
-                  Centro de adicionales
-                </Link>
-                <Link href={`/dashboard/contracts/${id}/inventory`} className="rounded border border-slate-300 px-3 py-1.5 text-slate-800">
-                  Inventario de entrega
-                </Link>
-                <Link href={`/dashboard/contracts/${id}/payments`} className="rounded border border-slate-300 px-3 py-1.5 text-slate-800">
-                  Registro de pagos
-                </Link>
-                <Link href={`/dashboard/contracts/${id}/novedades`} className="rounded border border-slate-300 px-3 py-1.5 text-slate-800">
-                  Novedades
-                </Link>
-                <Link href={`/dashboard/contracts/${id}/evidencias`} className="rounded border border-slate-300 px-3 py-1.5 text-slate-800">
-                  Evidencias
-                </Link>
-              </div>
             </>
           ) : (
             <>

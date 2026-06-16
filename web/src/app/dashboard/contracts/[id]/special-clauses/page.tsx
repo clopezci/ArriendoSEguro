@@ -202,24 +202,6 @@ export default function SpecialClausesStepPage() {
               <p className="mt-1">{SPECIAL_CLAUSES_FREE_NOTICE}</p>
             </div>
 
-            {otherSelected && (
-              <div
-                role="note"
-                className="rounded-lg border border-amber-300 bg-amber-100/60 p-4 text-sm text-amber-800"
-              >
-                <p className="font-semibold">
-                  {priceText
-                    ? `Esta cláusula tiene un cobro adicional de ${priceText}`
-                    : "Esta cláusula tiene un cobro adicional"}
-                </p>
-                <p className="mt-1">{SPECIAL_CLAUSES_COST_NOTICE}</p>
-                <p className="mt-1 text-xs">
-                  Al guardar, enviaremos tu solicitud a nuestro equipo jurídico para revisarla. Te confirmaremos el
-                  valor antes de generar el contrato definitivo.
-                </p>
-              </div>
-            )}
-
             <fieldset className="rounded-xl border border-slate-300 bg-white/95 p-4">
               <legend className="px-1 text-sm font-medium text-slate-800">
                 Selecciona las cláusulas que aplican
@@ -255,6 +237,24 @@ export default function SpecialClausesStepPage() {
                 })}
               </ul>
             </fieldset>
+
+            {otherSelected && (
+              <div
+                role="note"
+                className="rounded-lg border-2 border-amber-400 bg-amber-100/70 p-4 text-sm text-amber-900"
+              >
+                <p className="text-base font-bold">
+                  {priceText
+                    ? `Cláusula «Otra»: cobro adicional de ${priceText}`
+                    : "Cláusula «Otra»: tiene un cobro adicional"}
+                </p>
+                <p className="mt-1">{SPECIAL_CLAUSES_COST_NOTICE}</p>
+                <p className="mt-1 text-xs">
+                  Al guardar, enviaremos tu solicitud al equipo jurídico. Te confirmaremos el valor antes de generar el
+                  contrato definitivo.
+                </p>
+              </div>
+            )}
 
             {otherSelected && (
               <label className="block">
