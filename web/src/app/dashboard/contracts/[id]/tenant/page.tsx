@@ -2,6 +2,7 @@
 
 import { CreditHistoryGuidanceBlock } from "@/components/contracts/credit-history-guidance-block";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
+import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import {
@@ -10,18 +11,31 @@ import {
 } from "@/domain/colombia/structured-address";
 import { appendAudit, tenantSchema, updateDraft } from "@/features/contracts/wizard-state";
 import { sanitizePartyFromForm, PARTY_FIELD_LABELS } from "@/features/contracts/party-sanitize";
+import type { PartyDraft } from "@/features/contracts/draft-types";
 import { humanizeZodIssues } from "@/lib/validations/zod-errors-es";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function TenantStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
   const router = useRouter();
   const [errors, setErrors] = useState<string[]>([]);
+  const [party, setParty] = useState<PartyDraft>(draft?.tenant ?? {});
+  const [formKey, setFormKey] = useState(0);
+
+  useEffect(() => {
+    if (draft?.tenant) setParty(draft.tenant);
+  }, [draft?.tenant]);
 
   if (state !== "ready" || !draft) {
     return <p className="text-sm text-slate-700">Cargando…</p>;
+  }
+
+  function importParty(p: PartyDraft) {
+    setParty({ ...p, truthfulnessOathAccepted: false });
+    updateDraft(id, (d) => ({ ...d, tenant: { ...p, truthfulnessOathAccepted: false } }));
+    setFormKey((k) => k + 1);
   }
 
   function onSubmit(formData: FormData) {
@@ -81,6 +95,13 @@ export default function TenantStepPage() {
       currentStep={3}
       contractId={id}
     >
+      <PartyInvitePanel
+        contractDraftId={id}
+        role="tenant"
+        roleLabel="Inquilino"
+        inviterName={draft.landlord?.fullName ?? ""}
+        onImport={importParty}
+      />
       <form
         id="wizard-form"
         className="grid gap-3 sm:grid-cols-2"
@@ -90,9 +111,10 @@ export default function TenantStepPage() {
         }}
       >
         <PartyDataFields
-          party={draft.tenant}
+          key={formKey}
+          party={party}
           legacyFreeTextAddressMessage={
-            !!draft.tenant.notificationAddress && !draft.tenant.notificationAddressParts
+            !!party.notificationAddress && !party.notificationAddressParts
           }
           oathId="tenant_truthfulness_oath"
           contractDraftId={id}

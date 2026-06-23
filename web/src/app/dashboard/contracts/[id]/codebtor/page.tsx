@@ -4,6 +4,8 @@ import { CodebtorSupportsPanel } from "@/components/contracts/codebtor-supports-
 import { AdditionalCodebtorsManager } from "@/components/contracts/additional-codebtors-manager";
 import { CreditHistoryGuidanceBlock } from "@/components/contracts/credit-history-guidance-block";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
+import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
+import type { PartyDraft } from "@/features/contracts/draft-types";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
@@ -57,14 +59,26 @@ export default function CodebtorStepPage() {
   const router = useRouter();
   const [errors, setErrors] = useState<string[]>([]);
   const [decision, setDecision] = useState<CodebtorDecision>("pending");
+  const [party, setParty] = useState<PartyDraft>(draft?.solidaryCoDebtor ?? {});
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     if (!draft) return;
     setDecision(deriveInitialDecision(draft.hasSolidaryCoDebtor, draft.auditTrail));
   }, [draft]);
 
+  useEffect(() => {
+    if (draft?.solidaryCoDebtor) setParty(draft.solidaryCoDebtor);
+  }, [draft?.solidaryCoDebtor]);
+
   if (state !== "ready" || !draft) {
     return <p className="text-sm text-slate-700">Cargando…</p>;
+  }
+
+  function importParty(p: PartyDraft) {
+    setParty({ ...p, truthfulnessOathAccepted: false });
+    updateDraft(id, (d) => ({ ...d, solidaryCoDebtor: { ...p, truthfulnessOathAccepted: false } }));
+    setFormKey((k) => k + 1);
   }
 
   function onToggle(has: boolean) {
@@ -211,6 +225,16 @@ export default function CodebtorStepPage() {
       </div>
 
       {decision === "yes" && (
+        <PartyInvitePanel
+          contractDraftId={id}
+          role="solidaryCoDebtor"
+          roleLabel="Codeudor"
+          inviterName={draft.landlord?.fullName ?? ""}
+          onImport={importParty}
+        />
+      )}
+
+      {decision === "yes" && (
         <form
           id="wizard-form"
           className="mt-5 grid gap-3 sm:grid-cols-2"
@@ -220,10 +244,11 @@ export default function CodebtorStepPage() {
           }}
         >
           <PartyDataFields
-            party={draft.solidaryCoDebtor}
+            key={formKey}
+            party={party}
             legacyFreeTextAddressMessage={
-              !!draft.solidaryCoDebtor.notificationAddress &&
-              !draft.solidaryCoDebtor.notificationAddressParts
+              !!party.notificationAddress &&
+              !party.notificationAddressParts
             }
             oathId="codebtor_truthfulness_oath"
             contractDraftId={id}
