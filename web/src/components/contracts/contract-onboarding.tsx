@@ -8,24 +8,24 @@ const TOUR_KEY = "as_tour_done_v1";
 
 const TOUR_STEPS: { title: string; body: string }[] = [
   {
-    title: "1. Datos mínimos (gratis)",
-    body: "Completa el asistente paso a paso: tipo de contrato, partes, inmueble y términos. Es gratis y toma pocos minutos.",
+    title: "1. Tus datos y el inmueble",
+    body: "Tus datos como dueño (puedes guardarlos y reutilizarlos), los del inquilino y codeudor (los llenas tú o les envías un enlace), y el inmueble. La validación crediticia del inquilino es opcional.",
   },
   {
-    title: "2. Guarda tu contrato",
-    body: "En la Vista previa pulsa «Guardar mi contrato». Ese paso es la llave: habilita firmar, descargar el PDF y toda la posventa.",
+    title: "2. Condiciones del contrato",
+    body: "Términos (canon, fechas, día de pago), servicios y garantía del Art. 15, y cláusulas especiales. Todo en una sola línea.",
   },
   {
-    title: "3. Robustécelo (opcional)",
-    body: "En el «Centro de adicionales» puedes agregar codeudores, la garantía de servicios públicos o cláusulas especiales.",
+    title: "3. Revisa, guarda y firma",
+    body: "Revisa el resumen, en la Vista previa pulsa «Guardar mi contrato», descarga el PDF y, con Plan Plus, fírmalo con respaldo legal (OTP + evidencia, Ley 527).",
   },
   {
-    title: "4. Firma y PDF",
-    body: "Genera el PDF (gratis, con marca de agua) y, con el Plan Plus, fírmalo con respaldo legal (código OTP + evidencia, Ley 527).",
+    title: "4. Pagos (casi automático)",
+    body: "El calendario de pagos se arma solo con las fechas del contrato. Tú solo eliges tu método de pago (cuenta/QR) y con cuántos días de anticipación avisar al inquilino.",
   },
   {
-    title: "5. Posventa",
-    body: "Una vez guardado: comparte tu método de pago/QR, envía recordatorios al inquilino, registra pagos y novedades.",
+    title: "5. Alertas, documentos e inventario",
+    body: "Activa alertas de terminación/renovación, sube tus documentos (cada uno con su botón «Adjuntar») y haz el inventario con fotos (ahora o el día de la entrega).",
   },
 ];
 

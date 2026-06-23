@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
 import { JourneyProgress } from "./journey-progress";
+import { StepGuide } from "./step-guide";
 import type { ContractPhase } from "@/features/contracts/journey";
 
 /**
@@ -66,6 +67,9 @@ export function WizardShell({
           <div className="mt-3">
             <JourneyProgress id={contractId} activePhase={activePhase} />
           </div>
+          <div className="mt-2">
+            <StepGuide currentStep={clamped} variant="extra" />
+          </div>
         </div>
         <div className="rounded-2xl border border-slate-300 bg-white p-5 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
           {children}
@@ -80,6 +84,9 @@ export function WizardShell({
         <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
         <div className="mt-3">
           <JourneyProgress id={contractId} activePhase={activePhase} />
+        </div>
+        <div className="mt-2">
+          <StepGuide currentStep={clamped} variant="wizard" />
         </div>
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between text-xs text-slate-700">
