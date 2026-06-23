@@ -19,6 +19,8 @@ export default function PagosRecordatoriosPage() {
   const [qrStoragePath, setQrStoragePath] = useState("");
   const [qrPreview, setQrPreview] = useState("");
   const [consent, setConsent] = useState(false);
+  const [daysBefore, setDaysBefore] = useState(3);
+  const [versionId, setVersionId] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -54,6 +56,18 @@ export default function PagosRecordatoriosPage() {
           void loadQrPreview(String(s.qrStoragePath));
         }
       }
+    } catch {
+      /* noop */
+    }
+    // Versión actual (para auto-generar el calendario) y días de aviso vigentes.
+    try {
+      const lv = await fetch(`/api/contracts/latest-version?contractId=${encodeURIComponent(id)}`).then((r) => r.json());
+      setVersionId(String(lv?.version?.id ?? lv?.contract?.currentVersionId ?? ""));
+      const sch = await fetch(
+        `/api/payments/schedule/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(lv?.version?.id ?? lv?.contract?.currentVersionId ?? "")}`,
+      ).then((r) => r.json());
+      const d = Number(sch?.reminderSettings?.defaultDaysBefore);
+      if (Number.isFinite(d) && d > 0) setDaysBefore(d);
     } catch {
       /* noop */
     }
@@ -115,7 +129,26 @@ export default function PagosRecordatoriosPage() {
         setMsg(j.errors?.[0]?.message ?? "No se pudo guardar.");
         return;
       }
-      setMsg("Configuración guardada.");
+
+      // Auto-generar el calendario de pagos con las fechas del contrato + los
+      // días de aviso. Así el dueño no tiene que generarlo a mano.
+      if (versionId) {
+        try {
+          await fetch("/api/payments/schedule/generate", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              leaseProcessId: id,
+              contractId: id,
+              contractVersionId: versionId,
+              reminderSettings: { enabled: true, defaultDaysBefore: daysBefore },
+            }),
+          });
+        } catch {
+          /* el calendario se puede generar luego; no bloquea */
+        }
+      }
+      setMsg("Listo. Guardamos tu método de pago y activamos los recordatorios automáticos al inquilino.");
     } catch {
       setMsg("Error de red.");
     } finally {
@@ -127,10 +160,11 @@ export default function PagosRecordatoriosPage() {
     <main className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6 text-slate-900">
       <header className="space-y-2">
         <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Adicionales</p>
-        <h1 className="text-2xl font-bold">Método de pago y recordatorios</h1>
+        <h1 className="text-2xl font-bold">Pagos y recordatorios</h1>
         <p className="text-sm text-slate-600">
-          Opcional. Comparte cómo te paga el inquilino para incluirlo en los recordatorios. ArriendoSeguro{" "}
-          <strong>no recauda ni custodia tu dinero</strong>: solo te recuerda y guarda la constancia.
+          El <strong>calendario de pagos se arma solo</strong> con las fechas de tu contrato. Aquí solo eliges{" "}
+          <strong>cómo te paga el inquilino</strong> y con <strong>cuántos días de anticipación</strong> avisarle.
+          ArriendoSeguro <strong>no recauda ni custodia tu dinero</strong>: solo recuerda y guarda la constancia.
         </p>
         <Link href={`/dashboard/contracts/${id}/adicionales`} className="text-sm text-violet-700 underline">
           ← Centro de adicionales
@@ -206,21 +240,37 @@ export default function PagosRecordatoriosPage() {
           </label>
         )}
 
+        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <label className="text-sm font-medium text-slate-800">
+            Avisar al inquilino con cuántos días de anticipación
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                max={30}
+                value={daysBefore}
+                onChange={(e) => setDaysBefore(Math.max(1, Math.min(30, Number(e.target.value) || 3)))}
+                className="w-24 rounded border border-slate-300 bg-white px-3 py-1.5 text-sm"
+              />
+              <span className="text-xs text-slate-600">días antes de cada vencimiento (por defecto 3).</span>
+            </div>
+          </label>
+          <p className="mt-2 text-xs text-slate-500">
+            Al guardar, el inquilino recibirá recordatorios automáticos (esos días antes y el día del vencimiento) con
+            tu método de pago y un enlace para subir su soporte; tú confirmas cuando recibas el pago.
+          </p>
+        </div>
+
         <button
           type="button"
           disabled={busy}
           onClick={() => void save()}
-          className="mt-4 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="mt-4 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
         >
-          {busy ? "Guardando…" : "Guardar"}
+          {busy ? "Guardando…" : "Guardar y activar recordatorios"}
         </button>
-        {msg && <p className="mt-2 text-xs text-slate-700">{msg}</p>}
+        {msg && <p className="mt-2 text-xs text-emerald-700">{msg}</p>}
       </section>
-
-      <p className="text-xs text-slate-500">
-        En la próxima etapa, estos datos se incluirán en los recordatorios al inquilino (3 días antes y el día del
-        vencimiento) junto a un enlace para que cargue su soporte de pago.
-      </p>
       </RequiresSavedContract>
     </main>
   );

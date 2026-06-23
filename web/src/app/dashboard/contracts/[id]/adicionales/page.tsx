@@ -35,15 +35,15 @@ const CHECKLIST: ChecklistItem[] = [
   {
     key: "pago",
     slug: "pagos-recordatorios",
-    title: "Método de pago y recordatorios",
-    description: "Comparte tu cuenta o QR para que el inquilino sepa cómo pagar. Opcional.",
-    optional: true,
+    title: "Pagos y recordatorios",
+    description: "Elige tu método (cuenta/QR) y los días de aviso. El calendario se arma solo.",
   },
   {
     key: "calendario",
     slug: "payment-schedule",
-    title: "Calendario de pagos",
-    description: "Genera los vencimientos del plazo para activar los recordatorios automáticos.",
+    title: "Ver calendario de pagos",
+    description: "Se genera automáticamente al configurar tus pagos. Aquí puedes verlo.",
+    optional: true,
   },
   {
     key: "inventario",
