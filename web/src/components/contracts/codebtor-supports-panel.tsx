@@ -43,7 +43,6 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
   const [hasCodebtor, setHasCodebtor] = useState(false);
   const [supports, setSupports] = useState<ListRow[]>([]);
   const [viewerRole, setViewerRole] = useState<string | null>(null);
-  const [uploadType, setUploadType] = useState<CodebtorSupportType>("carta_laboral");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -110,7 +109,7 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
     void load();
   }, [load]);
 
-  async function onPickFile(file: File | null) {
+  async function onPickFile(file: File | null, uploadType: CodebtorSupportType) {
     setMsg("");
     if (!file || !user || !versionId) return;
     if (file.size <= 0 || file.size > CODEBTOR_SUPPORT_MAX_BYTES) {
@@ -300,40 +299,45 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
           {viewerRole === "landlord" && (
             <section className="rounded-lg border border-violet-200 bg-white p-3 shadow-sm">
               <p className="text-xs text-slate-600">
-                Hasta {CODEBTOR_SUPPORT_MAX_PER_TYPE} archivos por tipo; máximo{" "}
-                {CODEBTOR_SUPPORT_MAX_BYTES / 1024 / 1024} MB cada uno (PDF, JPG o PNG).
+                Adjunta cada soporte con su botón. Hasta {CODEBTOR_SUPPORT_MAX_PER_TYPE} por tipo; máx.{" "}
+                {CODEBTOR_SUPPORT_MAX_BYTES / 1024 / 1024} MB (PDF, JPG o PNG).
               </p>
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-                <label className="text-sm text-slate-700">
-                  Tipo
-                  <select
-                    className="ml-2 rounded border border-slate-300 bg-white px-2 py-1 text-sm"
-                    value={uploadType}
-                    onChange={(e) => setUploadType(e.target.value as CodebtorSupportType)}
-                    disabled={busy}
-                  >
-                    {CODEBTOR_SUPPORT_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {SUPPORT_LABELS[t]} ({countsByType.get(t) ?? 0}/{CODEBTOR_SUPPORT_MAX_PER_TYPE})
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:border-violet-500">
-                  <input
-                    type="file"
-                    accept="application/pdf,image/png,image/jpeg"
-                    className="hidden"
-                    disabled={busy}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0] ?? null;
-                      e.target.value = "";
-                      void onPickFile(f);
-                    }}
-                  />
-                  {busy ? "Procesando…" : "Seleccionar archivo"}
-                </label>
-              </div>
+              <ul className="mt-3 space-y-2">
+                {CODEBTOR_SUPPORT_TYPES.map((t) => {
+                  const n = countsByType.get(t) ?? 0;
+                  const done = n > 0;
+                  return (
+                    <li
+                      key={t}
+                      className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 ${done ? "border-emerald-300 bg-emerald-50/40" : "border-slate-200 bg-white"}`}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                        <span aria-hidden="true">📄</span>
+                        {SUPPORT_LABELS[t]}
+                        {done ? (
+                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">✓ {n} cargado(s)</span>
+                        ) : (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Pendiente</span>
+                        )}
+                      </span>
+                      <label className="cursor-pointer rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-500">
+                        {done ? "Adjuntar otro" : "Adjuntar"}
+                        <input
+                          type="file"
+                          accept="application/pdf,image/png,image/jpeg"
+                          className="sr-only"
+                          disabled={busy}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0] ?? null;
+                            e.target.value = "";
+                            void onPickFile(f, t);
+                          }}
+                        />
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
             </section>
           )}
 
