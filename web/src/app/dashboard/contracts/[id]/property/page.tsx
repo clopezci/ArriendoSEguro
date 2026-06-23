@@ -12,6 +12,10 @@ import { appendAudit, propertySchema, updateDraft } from "@/features/contracts/w
 import { LegalSemaphore } from "@/components/contracts/legal-semaphore";
 import { toTitleCaseEs, trimAndCollapse } from "@/lib/text/sanitize";
 import { humanizeZodIssues } from "@/lib/validations/zod-errors-es";
+import { useAuth } from "@/contexts/auth-context";
+import { listMyProperties, saveMyProperty } from "@/features/contracts/saved-entities-client";
+import type { SavedProperty } from "@/domain/saved-entities/savedEntities";
+import type { PropertyDraftWithParts } from "@/features/contracts/party-normalize";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -45,6 +49,7 @@ function formatCOP(value: number): string {
 export default function PropertyStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
+  const { user } = useAuth();
   const router = useRouter();
   const [errors, setErrors] = useState<string[]>([]);
   const [valueUnknown, setValueUnknown] = useState<boolean>(false);
@@ -52,17 +57,50 @@ export default function PropertyStepPage() {
   const [rentPreview, setRentPreview] = useState<number>(0);
   const [ownershipOath, setOwnershipOath] = useState<boolean>(false);
   const [noCapAccepted, setNoCapAccepted] = useState<boolean>(false);
+  // Fuente de los valores por defecto del formulario (inputs no controlados);
+  // remontamos con `formKey` para prellenar al elegir un inmueble guardado.
+  const [prop, setProp] = useState<PropertyDraftWithParts>(draft?.property ?? {});
+  const [formKey, setFormKey] = useState(0);
+  const [savedProps, setSavedProps] = useState<SavedProperty[]>([]);
+  const [propLabel, setPropLabel] = useState("");
+  const [saveForReuse, setSaveForReuse] = useState(true);
 
   // Sincroniza el estado local con el draft cuando se carga por primera
   // vez (o cuando se navega de vuelta al paso con datos persistidos).
   useEffect(() => {
     if (!draft) return;
+    setProp(draft.property);
     setValueUnknown(Boolean(draft.property.commercialValueUnknown));
     setCommercialValuePreview(Number(draft.property.commercialValue ?? 0));
     setRentPreview(Number(draft.property.monthlyRentProposed ?? draft.lease.monthlyRent ?? 0));
     setOwnershipOath(Boolean(draft.property.propertyOwnershipOath));
     setNoCapAccepted(Boolean(draft.property.noCapAcknowledgement));
   }, [draft]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (!user) return;
+      const list = await listMyProperties(user);
+      if (!cancelled) setSavedProps(list);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  function applySavedProperty(saved: SavedProperty) {
+    const p = saved.property ?? {};
+    // El oath NO se prellena (se re-acepta en cada contrato).
+    setProp(p as PropertyDraftWithParts);
+    setValueUnknown(false);
+    setCommercialValuePreview(Number(p.commercialValue ?? 0));
+    setRentPreview(Number(p.monthlyRentProposed ?? 0));
+    setOwnershipOath(false);
+    setNoCapAccepted(false);
+    setPropLabel(saved.label ?? "");
+    setFormKey((k) => k + 1);
+  }
 
   if (state !== "ready" || !draft) {
     return <p className="text-sm text-slate-700">Cargando…</p>;
@@ -135,10 +173,28 @@ export default function PropertyStepPage() {
     } else {
       updateDraft(id, (d) => appendAudit(d, "rent_cap_validation_passed"));
     }
+
+    // Guardar el inmueble para reutilizarlo (best-effort; no bloquea el flujo).
+    if (saveForReuse && user) {
+      void saveMyProperty(user, {
+        label: propLabel,
+        property: {
+          address,
+          city: parsed.data.city,
+          department: parsed.data.department,
+          type: parsed.data.type,
+          registryNumber: parsed.data.registryNumber,
+          commercialValue: parsed.data.commercialValue,
+          monthlyRentProposed: parsed.data.monthlyRentProposed,
+          addressParts: addrParsed.data,
+        },
+      });
+    }
+
     router.push(`/dashboard/contracts/${id}/terms`);
   }
 
-  const legacyAddress = !!draft.property.address && !draft.property.addressParts;
+  const legacyAddress = !!prop.address && !prop.addressParts;
   const estimatedCap = valueUnknown ? 0 : Number((commercialValuePreview * 0.01).toFixed(0));
 
   // Semáforo en vivo del canon vs. tope del 1% (Ley 820, art. 18).
@@ -165,7 +221,27 @@ export default function PropertyStepPage() {
 
   return (
     <WizardShell title="Inmueble a arrendar" currentStep={5} contractId={id}>
+      {savedProps.length > 0 && (
+        <div className="mb-4 rounded-lg border border-violet-300 bg-violet-50/60 p-3 text-sm">
+          <p className="font-medium text-slate-800">Usar una propiedad guardada</p>
+          <p className="mt-0.5 text-xs text-slate-600">Elige uno de tus inmuebles para prellenar los datos.</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {savedProps.map((sp) => (
+              <button
+                key={sp.id}
+                type="button"
+                onClick={() => applySavedProperty(sp)}
+                title={sp.property?.address ?? ""}
+                className="rounded-lg border border-violet-400 bg-white px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-100"
+              >
+                {sp.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <form
+        key={formKey}
         id="wizard-form"
         className="grid gap-3 sm:grid-cols-2"
         onSubmit={(e) => {
@@ -175,21 +251,21 @@ export default function PropertyStepPage() {
       >
         <UrbanAddressFields
           prefix="propAddr"
-          parts={draft.property.addressParts}
+          parts={prop.addressParts}
           variant="inmueble"
           legacyFreeTextAddress={legacyAddress}
         />
-        <Input name="city" label="Ciudad" defaultValue={draft.property.city} />
+        <Input name="city" label="Ciudad" defaultValue={prop.city} />
         <Input
           name="department"
           label="Departamento"
-          defaultValue={draft.property.department}
+          defaultValue={prop.department}
         />
-        <Input name="type" label="Tipo de inmueble" defaultValue={draft.property.type} />
+        <Input name="type" label="Tipo de inmueble" defaultValue={prop.type} />
         <Input
           name="registryNumber"
           label="Matrícula / registro"
-          defaultValue={draft.property.registryNumber}
+          defaultValue={prop.registryNumber}
         />
 
         <div className="sm:col-span-2 rounded-xl border border-violet-300 bg-violet-50 p-4">
@@ -209,7 +285,7 @@ export default function PropertyStepPage() {
                 name="commercialValue"
                 type="number"
                 label="Valor comercial (COP)"
-                defaultValue={String(draft.property.commercialValue ?? "")}
+                defaultValue={String(prop.commercialValue ?? "")}
                 onValueChange={(v) => setCommercialValuePreview(Number(v || 0))}
                 hint="Avalúo comercial estimado del inmueble."
               />
@@ -276,7 +352,7 @@ export default function PropertyStepPage() {
           type="number"
           label="Canon mensual propuesto (COP)"
           defaultValue={String(
-            draft.property.monthlyRentProposed ?? draft.lease.monthlyRent ?? "",
+            prop.monthlyRentProposed ?? draft.lease.monthlyRent ?? "",
           )}
           onValueChange={(v) => setRentPreview(Number(v || 0))}
           hint="Valor mensual del arriendo en pesos colombianos."
@@ -327,6 +403,31 @@ export default function PropertyStepPage() {
             poder autenticado</strong> en la sección «Documentos de propiedad / poder» (Evidencias del expediente),
             después de guardar la versión del contrato.
           </p>
+        </div>
+
+        <div className="sm:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+          <label className="flex items-start gap-2">
+            <input
+              type="checkbox"
+              checked={saveForReuse}
+              onChange={(e) => setSaveForReuse(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-violet-600"
+            />
+            <span>
+              <strong>Guardar este inmueble para reutilizarlo</strong> en futuros contratos (solo tú lo ves).
+            </span>
+          </label>
+          {saveForReuse && (
+            <label className="mt-2 block text-xs">
+              <span className="mb-1 block text-slate-700">Nombre para identificarlo (opcional)</span>
+              <input
+                value={propLabel}
+                onChange={(e) => setPropLabel(e.target.value)}
+                placeholder="Ej.: Apto 502 Chapinero"
+                className="w-full max-w-sm rounded border border-slate-300 bg-white px-3 py-1.5 text-sm"
+              />
+            </label>
+          )}
         </div>
 
         {errors.length > 0 && (

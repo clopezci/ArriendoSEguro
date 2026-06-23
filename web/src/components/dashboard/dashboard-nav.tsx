@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 const navMain = [
   { href: "/dashboard", label: "Inicio" },
   { href: "/dashboard/leases", label: "Mis arriendos" },
+  { href: "/dashboard/mis-propiedades", label: "Mis propiedades" },
   { href: "/dashboard/account", label: "Mi cuenta" },
   { href: "/entiendelo-facil", label: "Cómo funciona" },
   { href: "/dashboard/plans", label: "Planes" },
