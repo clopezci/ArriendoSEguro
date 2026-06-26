@@ -10,7 +10,6 @@ import {
   etiquetaModalidad,
   etiquetaPagos,
   estadoExpedienteResumen,
-  isExpedienteCompleto,
 } from "@/lib/dashboard/expediente-ui";
 import { canSeeInternalDashboardTools } from "@/lib/dashboard/internal-tools";
 import { freeTierEnabled } from "@/lib/config";
@@ -267,12 +266,6 @@ export default function MisArriendosPage() {
         ) : (
           <ul className="space-y-4">
             {drafts.map((d) => {
-              const completo = isExpedienteCompleto(d);
-              const continuarLabel = completo ? "Continuar" : "Continuar expediente";
-              const continuarHref = completo
-                ? `/dashboard/contracts/${d.id}/review`
-                : `/dashboard/contracts/${d.id}/landlord`;
-
               return (
                 <li
                   key={d.id}
@@ -323,31 +316,30 @@ export default function MisArriendosPage() {
                         </div>
                       </dl>
                     </div>
-                    <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap lg:flex-col lg:items-end">
-                      <Link
-                        href={continuarHref}
-                        className="inline-flex justify-center rounded-lg bg-violet-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-violet-500"
-                      >
-                        {continuarLabel}
-                      </Link>
-                      <Link
-                        href={`/dashboard/contracts/${d.id}/preview`}
-                        className="inline-flex justify-center rounded-lg border border-slate-300 px-3 py-2 text-center text-sm text-slate-900 hover:border-violet-500"
-                      >
-                        Ver contrato
-                      </Link>
-                      <Link
-                        href={`/dashboard/contracts/${d.id}/inventory`}
-                        className="inline-flex justify-center rounded-lg border border-slate-300 px-3 py-2 text-center text-sm text-slate-900 hover:border-violet-500"
-                      >
-                        Ver inventario
-                      </Link>
-                      <Link
-                        href={`/dashboard/contracts/${d.id}/payments`}
-                        className="inline-flex justify-center rounded-lg border border-slate-300 px-3 py-2 text-center text-sm text-slate-900 hover:border-violet-500"
-                      >
-                        Ver pagos
-                      </Link>
+                    <div className="flex shrink-0 flex-col gap-2 lg:items-end">
+                      <p className="text-[11px] text-slate-500 lg:text-right">
+                        Tú eliges: ve directo al final para verlo/firmar, o edítalo desde el inicio.
+                      </p>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:flex-col lg:items-end">
+                        <Link
+                          href={`/dashboard/contracts/${d.id}/preview`}
+                          className="inline-flex justify-center rounded-lg bg-violet-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-violet-500"
+                        >
+                          Ver / ir al final
+                        </Link>
+                        <Link
+                          href={`/dashboard/contracts/${d.id}/contract-type`}
+                          className="inline-flex justify-center rounded-lg border border-violet-400 px-3 py-2 text-center text-sm font-medium text-violet-700 hover:bg-violet-50"
+                        >
+                          Editar desde el inicio
+                        </Link>
+                        <Link
+                          href={`/dashboard/contracts/${d.id}/adicionales`}
+                          className="inline-flex justify-center rounded-lg border border-slate-300 px-3 py-2 text-center text-sm text-slate-900 hover:border-violet-500"
+                        >
+                          Posventa
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </li>
