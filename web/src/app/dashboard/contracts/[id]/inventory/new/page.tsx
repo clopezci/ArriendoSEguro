@@ -3,6 +3,7 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { InventoryZonePhotos } from "@/components/contracts/inventory-zone-photos";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import {
   FALLBACK_GUIDED_ITEMS,
@@ -515,38 +516,33 @@ export default function InventoryNewPage() {
                   }
                 />
               </label>
-              <label className="mt-2 block text-xs text-slate-700">
-                URLs de fotos (separadas por coma) - placeholder mientras se conecta storage
-                <input
-                  className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm"
-                  value={(zoneDetails[activeZone.id]?.photoUrls ?? []).join(", ")}
-                  onChange={(e) =>
-                    setZoneDetails((prev) => ({
-                      ...prev,
-                      [activeZone.id]: {
-                        ...(prev[activeZone.id] ??
-                          ({
-                            id: "",
-                            inventoryId,
-                            selectedZoneId: activeZone.id,
-                            generalCondition: "Bueno",
-                            cleanlinessStatus: "Limpio",
-                            observations: "",
-                            damageDescription: "",
-                            recommendations: "",
-                            photoUrls: [],
-                            createdAt: "",
-                            updatedAt: "",
-                          } as InventoryZoneDetail)),
-                        photoUrls: e.target.value
-                          .split(",")
-                          .map((x) => x.trim())
-                          .filter(Boolean),
-                      },
-                    }))
-                  }
-                />
-              </label>
+              <InventoryZonePhotos
+                inventoryId={inventoryId}
+                zoneId={activeZone.id}
+                photoUrls={zoneDetails[activeZone.id]?.photoUrls ?? []}
+                onChange={(next) =>
+                  setZoneDetails((prev) => ({
+                    ...prev,
+                    [activeZone.id]: {
+                      ...(prev[activeZone.id] ??
+                        ({
+                          id: "",
+                          inventoryId,
+                          selectedZoneId: activeZone.id,
+                          generalCondition: "Bueno",
+                          cleanlinessStatus: "Limpio",
+                          observations: "",
+                          damageDescription: "",
+                          recommendations: "",
+                          photoUrls: [],
+                          createdAt: "",
+                          updatedAt: "",
+                        } as InventoryZoneDetail)),
+                      photoUrls: next,
+                    },
+                  }))
+                }
+              />
 
               <h4 className="mt-4 text-sm font-semibold text-slate-900">Elementos relevantes (opcional)</h4>
               <p className="text-xs text-slate-600">
