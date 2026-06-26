@@ -56,24 +56,24 @@ export default function ReviewStepPage() {
   return (
     <WizardShell title="Resumen previo" currentStep={9} contractId={id}>
       <div className="grid gap-4 md:grid-cols-2">
-        <Card title="Tipo de contrato">
+        <Card title="Tipo de contrato" editHref={`/dashboard/contracts/${id}/contract-type`}>
           <p className="text-violet-700">{contractTypeLabel}</p>
           <p className="text-xs text-slate-600">
             Si necesitas otra modalidad, deberás crear un nuevo expediente
             cuando esté disponible.
           </p>
         </Card>
-        <Card title="Arrendador (dueño del inmueble)">
+        <Card title="Arrendador (dueño del inmueble)" editHref={`/dashboard/contracts/${id}/landlord`}>
           <p>{draft.landlord.fullName}</p>
           <p>{draft.landlord.documentType} {draft.landlord.documentNumber}</p>
           <p>{draft.landlord.email}</p>
         </Card>
-        <Card title="Arrendatario (inquilino)">
+        <Card title="Arrendatario (inquilino)" editHref={`/dashboard/contracts/${id}/tenant`}>
           <p>{draft.tenant.fullName}</p>
           <p>{draft.tenant.documentType} {draft.tenant.documentNumber}</p>
           <p>{draft.tenant.email}</p>
         </Card>
-        <Card title="Codeudor(es)">
+        <Card title="Codeudor(es)" editHref={`/dashboard/contracts/${id}/codebtor`}>
           {draft.hasSolidaryCoDebtor ? (
             <>
               <p>
@@ -90,7 +90,7 @@ export default function ReviewStepPage() {
             <p>Sin codeudor solidario.</p>
           )}
         </Card>
-        <Card title="Inmueble y canon">
+        <Card title="Inmueble y canon" editHref={`/dashboard/contracts/${id}/property`}>
           <p>{draft.property.address}</p>
           <p>Canon propuesto: ${rent.toLocaleString("es-CO")}</p>
           {valueUnknown ? (
@@ -102,16 +102,16 @@ export default function ReviewStepPage() {
             <p>Canon máximo estimado (1%): ${cap.toLocaleString("es-CO")}</p>
           )}
         </Card>
-        <Card title="Términos">
+        <Card title="Términos" editHref={`/dashboard/contracts/${id}/terms`}>
           <p>Duración: {draft.lease.termMonths} meses</p>
           <p>Pago: {draft.lease.paymentMethod}</p>
           <p>Día de pago: {draft.lease.paymentDueDay}</p>
         </Card>
-        <Card title="Servicios">
+        <Card title="Servicios" editHref={`/dashboard/contracts/${id}/utilities`}>
           <p>Responsable: {draft.utilities.responsibleParty}</p>
           <p>{draft.utilities.details}</p>
         </Card>
-        <Card title="Garantía de servicios públicos (Art. 15)">
+        <Card title="Garantía de servicios públicos (Art. 15)" editHref={`/dashboard/contracts/${id}/utilities`}>
           {draft.utilityServicesGuarantee?.enabled && draft.utilityServicesGuarantee.acceptedAt ? (
             <>
               <p>
@@ -130,7 +130,7 @@ export default function ReviewStepPage() {
             </p>
           )}
         </Card>
-        <Card title="Cláusulas especiales">
+        <Card title="Cláusulas especiales" editHref={`/dashboard/contracts/${id}/special-clauses`}>
           {draft.specialClauses?.enabled &&
           draft.specialClauses.selected.length > 0 ? (
             <>
@@ -280,10 +280,17 @@ export default function ReviewStepPage() {
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({ title, children, editHref }: { title: string; children: React.ReactNode; editHref?: string }) {
   return (
     <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
-      <h3 className="mb-2 text-sm font-semibold text-violet-700">{title}</h3>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-violet-700">{title}</h3>
+        {editHref && (
+          <Link href={editHref} className="shrink-0 text-xs font-medium text-violet-700 underline hover:text-violet-900">
+            Editar
+          </Link>
+        )}
+      </div>
       <div className="space-y-1 text-sm text-slate-700">{children}</div>
     </div>
   );
