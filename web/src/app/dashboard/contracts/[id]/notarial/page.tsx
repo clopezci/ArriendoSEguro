@@ -192,11 +192,34 @@ export default function NotarialOptionalPage() {
       {!loading && !error && (
         <div className="space-y-6">
           <section className="rounded-xl border border-slate-200 bg-violet-50/50 p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-violet-950">Próximamente: notariado digital</h2>
+            <h2 className="text-sm font-semibold text-violet-950">Autenticación / notariado digital</h2>
             <p className="mt-1 text-xs text-violet-900/90">
-              Estamos evaluando aliados para ofrecer notariado digital con costos y alcance claros. Mientras tanto,
-              el flujo es manual: imprimes o llevas el PDF, autenticas según te indique el notario y cargas el PDF
-              final aquí.
+              El flujo manual sigue siendo válido: imprimes o llevas el PDF, lo autenticas según te indique el notario y
+              cargas el PDF final aquí. Como alternativa en línea, el Estado colombiano ofrece firma y autenticación
+              digital a través de la <strong>Agencia Nacional Digital</strong> (Decreto 620 de 2020). Allí puedes
+              registrar tu firma electrónica y autenticar documentos sin desplazarte; cada quien gestiona la suya.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a
+                href="https://firmaautenticaciondigital.and.gov.co/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white hover:bg-violet-500"
+              >
+                Ir a Firma y Autenticación Digital (Agencia Nacional Digital)
+              </a>
+              <a
+                href="https://www.supernotariado.gov.co/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:border-violet-500 hover:text-violet-800"
+              >
+                Superintendencia de Notariado y Registro
+              </a>
+            </div>
+            <p className="mt-2 text-[11px] text-slate-500">
+              Enlaces oficiales del Estado. ArriendoSeguro no es notaría ni cobra por estos trámites; valida costos y
+              requisitos directamente con la entidad.
             </p>
           </section>
 

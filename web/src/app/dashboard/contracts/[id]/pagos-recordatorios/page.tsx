@@ -167,7 +167,7 @@ export default function PagosRecordatoriosPage() {
           ArriendoSeguro <strong>no recauda ni custodia tu dinero</strong>: solo recuerda y guarda la constancia.
         </p>
         <Link href={`/dashboard/contracts/${id}/adicionales`} className="text-sm text-violet-700 underline">
-          ← Centro de adicionales
+          ← Volver a la posventa
         </Link>
       </header>
 

@@ -209,22 +209,22 @@ export default function PosventaHubPage() {
             })}
           </ol>
 
-          <section className="space-y-2 pt-2">
-            <h2 className="text-sm font-bold text-slate-900">Durante el arriendo</h2>
-            <ul className="grid gap-2 sm:grid-cols-2">
+          {/* Menú aparte (no es parte del checklist de setup): gestión continua. */}
+          <nav className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-3" aria-label="Gestión del arriendo">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Gestión del arriendo</p>
+            <div className="mt-2 flex flex-wrap gap-2">
               {SECONDARY.map((item) => (
-                <li key={item.slug}>
-                  <Link
-                    href={`/dashboard/contracts/${id}/${item.slug}`}
-                    className="flex h-full flex-col rounded-lg border border-slate-200 bg-white p-3 transition hover:border-violet-400"
-                  >
-                    <span className="text-sm font-semibold text-violet-900">{item.title}</span>
-                    <span className="mt-1 text-xs text-slate-600">{item.description}</span>
-                  </Link>
-                </li>
+                <Link
+                  key={item.slug}
+                  href={`/dashboard/contracts/${id}/${item.slug}`}
+                  title={item.description}
+                  className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-violet-400 hover:text-violet-700"
+                >
+                  {item.title}
+                </Link>
               ))}
-            </ul>
-          </section>
+            </div>
+          </nav>
         </>
       )}
 

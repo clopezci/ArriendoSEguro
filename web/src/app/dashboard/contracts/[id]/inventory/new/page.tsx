@@ -807,10 +807,10 @@ export default function InventoryNewPage() {
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => router.push(`/dashboard/contracts/${id}/preview`)}
+              onClick={() => router.push(`/dashboard/contracts/${id}/adicionales`)}
               className="rounded-lg bg-violet-600 px-4 py-2 text-xs font-medium text-white"
             >
-              Volver al expediente del contrato
+              Regresar a la posventa
             </button>
             <button
               type="button"
@@ -852,10 +852,10 @@ export default function InventoryNewPage() {
       <div className="mt-6 border-t border-slate-200 pt-3">
         <button
           type="button"
-          onClick={() => router.push(`/dashboard/contracts/${id}/preview`)}
+          onClick={() => router.push(`/dashboard/contracts/${id}/adicionales`)}
           className="rounded-lg border border-slate-300 px-4 py-2 text-xs text-slate-800 hover:border-violet-500"
         >
-          ← Volver al expediente del contrato
+          ← Regresar a la posventa
         </button>
       </div>
 
