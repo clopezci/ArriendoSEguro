@@ -31,6 +31,11 @@ const tools = [
     title: "Garantía de servicios públicos",
     desc: "El máximo que se puede pedir como garantía de servicios (art. 15).",
   },
+  {
+    href: "/calculadoras/preaviso",
+    title: "Preaviso de 3 meses",
+    desc: "La fecha límite para avisar la terminación y evitar la renovación (art. 22).",
+  },
 ] as const;
 
 export default function CalculadorasIndexPage() {

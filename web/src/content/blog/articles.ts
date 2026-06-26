@@ -588,6 +588,73 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     ],
   },
   {
+    slug: "firma-digital-gratis-agencia-nacional-digital-arriendo",
+    title: "Firma digital gratis del Estado: cómo usar la Agencia Nacional Digital en tu arriendo",
+    description:
+      "El Estado colombiano ofrece firma y autenticación digital gratuita a través de la Agencia Nacional Digital (Decreto 620 de 2020). Cómo funciona y cómo firmar un contrato de arriendo entre varias partes.",
+    datePublished: "2026-06-26",
+    dateModified: "2026-06-26",
+    category: "firma",
+    categoryLabel: BLOG_CATEGORIES.firma.label,
+    keywords: [
+      "firma digital gratis Colombia",
+      "Agencia Nacional Digital",
+      "autenticación digital Decreto 620 de 2020",
+      "firmar contrato arriendo en línea",
+      "servicios ciudadanos digitales",
+    ],
+    blocks: [
+      {
+        type: "p",
+        text: "Tu contrato de arriendo puede firmarse en línea con firma electrónica simple (Ley 527 de 1999), que ya tiene efectos jurídicos. Pero si las partes quieren además un respaldo del Estado sin pagar nada, Colombia ofrece firma y autenticación digital gratuita a través de la Agencia Nacional Digital (AND), en el marco de los servicios ciudadanos digitales del Decreto 620 de 2020.",
+      },
+      {
+        type: "h2",
+        text: "¿Qué es la firma de la Agencia Nacional Digital?",
+      },
+      {
+        type: "p",
+        text: "Es un servicio público que permite a un ciudadano firmar y autenticar documentos electrónicos validando su identidad y confirmando con un código de un solo uso (OTP) enviado a su correo. Al ser un servicio del Estado, aporta un respaldo de identidad adicional al de una firma electrónica simple. Es opcional y se gestiona por fuera de la plataforma: cada persona firma con su propia cuenta.",
+      },
+      {
+        type: "h2",
+        text: "Cómo firmar un contrato entre varias partes (paso a paso)",
+      },
+      {
+        type: "ol",
+        items: [
+          "Descarga el PDF del contrato (en ArriendoSeguro, desde la vista previa o la sección de notaría).",
+          "La primera persona entra al portal de la AND, se registra, sube el PDF, confirma con el código (OTP) que llega a su correo y descarga el documento ya firmado.",
+          "Esa misma persona le envía el PDF firmado a la siguiente parte, que repite el proceso firmando sobre el mismo archivo.",
+          "Se continúa uno por uno (arrendador, arrendatario y codeudor si lo hay) hasta el último firmante.",
+          "El último guarda el PDF con todas las firmas. En ArriendoSeguro puede subirlo en la sección de autenticación notarial para dejarlo archivado como evidencia del expediente.",
+        ],
+      },
+      {
+        type: "note",
+        text: "Todas las partes deben firmar el mismo archivo, en orden. No firmen copias distintas por separado. Al firmar, el archivo cambia respecto al original: es normal, porque la firma queda incrustada en el PDF.",
+      },
+      {
+        type: "h2",
+        text: "¿Reemplaza a la notaría?",
+      },
+      {
+        type: "p",
+        text: "No necesariamente. El arrendamiento de vivienda urbana puede constar por documento privado y no exige notaría. La firma digital del Estado es una capa de respaldo de identidad; algunos actos sí requieren escritura pública o autenticación notarial. Valida los costos, requisitos y el alcance directamente en el portal oficial y, si tu caso lo amerita, con un abogado.",
+      },
+      {
+        type: "sources",
+        items: [
+          { label: "Agencia Nacional Digital — Firma y Autenticación Digital", href: "https://firmaautenticaciondigital.and.gov.co/" },
+          { label: "Agencia Nacional Digital (AND)", href: "https://www.and.gov.co/" },
+          { label: "Decreto 620 de 2020 (servicios ciudadanos digitales) — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=153053" },
+          { label: "Ley 527 de 1999 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=4276" },
+        ],
+      },
+      ctaIngresar,
+    ],
+  },
+  {
     slug: "historial-crediticio-habeas-data-arrendar",
     title: "Historial crediticio al arrendar: cómo consultarlo sin violar el Habeas Data",
     description:
@@ -784,6 +851,118 @@ export const BLOG_ARTICLES: BlogArticle[] = [
         items: [
           { label: "Ley 820 de 2003 (texto completo) — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
           { label: "Ley 820 de 2003 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0820_2003.html" },
+        ],
+      },
+      ctaIngresar,
+    ],
+  },
+  {
+    slug: "subarriendo-cesion-contrato-arriendo-ley-820",
+    title: "Subarriendo y cesión del contrato de arriendo: qué permite la Ley 820",
+    description:
+      "El artículo 17 de la Ley 820 de 2003 prohíbe subarrendar o ceder el contrato sin autorización expresa del arrendador. Qué pasa si se incumple y cómo autorizarlo bien.",
+    datePublished: "2026-06-26",
+    dateModified: "2026-06-26",
+    category: "contrato",
+    categoryLabel: BLOG_CATEGORIES.contrato.label,
+    keywords: [
+      "subarriendo Colombia",
+      "cesión contrato arriendo",
+      "Ley 820 artículo 17",
+      "subarrendar sin autorización",
+    ],
+    blocks: [
+      {
+        type: "p",
+        text: "Subarrendar es entregar a un tercero, total o parcialmente, el inmueble que se tiene en arriendo. Ceder el contrato es traspasar la posición de arrendatario a otra persona. La Ley 820 de 2003 regula ambas figuras y, por regla general, las condiciona a la autorización del arrendador.",
+      },
+      {
+        type: "h2",
+        text: "Lo que dice el artículo 17",
+      },
+      {
+        type: "p",
+        text: "El arrendatario no tiene la facultad de ceder el arriendo ni de subarrendar, a menos que medie autorización expresa del arrendador. Si se subarrienda o cede sin esa autorización, el arrendador puede dar por terminado el contrato y exigir la entrega del inmueble, o celebrar un nuevo contrato con quienes lo estén ocupando, quedando sin efecto el contrato anterior.",
+      },
+      {
+        type: "h2",
+        text: "Si vas a autorizarlo, hazlo por escrito",
+      },
+      {
+        type: "ul",
+        items: [
+          "Deja la autorización por escrito, idealmente como anexo o cláusula del contrato.",
+          "Identifica al subarrendatario o cesionario y el alcance (total o parcial, por qué tiempo).",
+          "Aclara que el arrendatario original sigue respondiendo, salvo que se pacte algo distinto en la cesión.",
+        ],
+      },
+      {
+        type: "note",
+        text: "Sin autorización expresa, el subarriendo o la cesión exponen al arrendatario a la terminación del contrato. Ante la duda, pídela siempre por escrito.",
+      },
+      {
+        type: "sources",
+        items: [
+          { label: "Ley 820 de 2003, art. 17 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
+          { label: "Ley 820 de 2003 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0820_2003.html" },
+        ],
+      },
+      ctaIngresar,
+    ],
+  },
+  {
+    slug: "reparaciones-arriendo-arrendador-arrendatario",
+    title: "Reparaciones en el arriendo: ¿qué le toca al arrendador y qué al arrendatario?",
+    description:
+      "Cómo se reparten las reparaciones en un arriendo de vivienda urbana según la Ley 820 de 2003 y el Código Civil: necesarias a cargo del arrendador y locativas a cargo del arrendatario.",
+    datePublished: "2026-06-26",
+    dateModified: "2026-06-26",
+    category: "guia",
+    categoryLabel: BLOG_CATEGORIES.guia.label,
+    keywords: [
+      "reparaciones arriendo",
+      "reparaciones locativas",
+      "obligaciones arrendador Ley 820",
+      "quién paga arreglos arriendo",
+    ],
+    blocks: [
+      {
+        type: "p",
+        text: "Una de las discusiones más comunes en un arriendo es quién paga los arreglos. La regla general combina la Ley 820 de 2003 con el Código Civil: el arrendador debe mantener el inmueble en estado de servir para lo arrendado, y el arrendatario responde por el cuidado y las reparaciones derivadas del uso normal.",
+      },
+      {
+        type: "h2",
+        text: "A cargo del arrendador (reparaciones necesarias)",
+      },
+      {
+        type: "ul",
+        items: [
+          "Entregar el inmueble en buen estado y mantenerlo apto para habitar (Ley 820, art. 9).",
+          "Reparaciones necesarias que no provengan del uso normal: estructura, redes, daños no imputables al arrendatario.",
+          "Responder por los daños y vicios del inmueble que impidan su goce.",
+        ],
+      },
+      {
+        type: "h2",
+        text: "A cargo del arrendatario (reparaciones locativas)",
+      },
+      {
+        type: "ul",
+        items: [
+          "Cuidar el inmueble como un buen padre de familia y usarlo según lo pactado (Ley 820, art. 22).",
+          "Reparaciones locativas: las que provienen del uso y goce normal (chapas, vidrios, pequeñas filtraciones por uso, etc.).",
+          "Devolver el inmueble en el estado en que lo recibió, salvo el deterioro natural por el tiempo y el uso legítimo.",
+        ],
+      },
+      {
+        type: "note",
+        text: "Por eso el inventario inicial es clave: documenta el estado de entrega para distinguir el deterioro normal del daño imputable. Pacta en el contrato cómo se manejan las reparaciones urgentes.",
+      },
+      {
+        type: "sources",
+        items: [
+          { label: "Ley 820 de 2003, arts. 9 y 22 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
+          { label: "Código Civil colombiano (arrendamiento, reparaciones) — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/codigo_civil.html" },
         ],
       },
       ctaIngresar,

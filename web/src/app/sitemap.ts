@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { BLOG_ARTICLES } from "@/content/blog/articles";
 import { absoluteUrl } from "@/content/blog/seo";
+import { getAllTemplateSlugs } from "@/content/templates/templates";
 
 /** Rutas públicas relevantes para SEO (sin panel ni tokens dinámicos). */
 const STATIC_PATHS = [
@@ -10,6 +11,8 @@ const STATIC_PATHS = [
   "/ingresar",
   "/crear-cuenta",
   "/entiendelo-facil",
+  "/herramientas",
+  "/plantillas",
   "/acerca-de",
   "/contacto",
   "/reportar",
@@ -18,6 +21,7 @@ const STATIC_PATHS = [
   "/calculadoras/reajuste-canon",
   "/calculadoras/canon-maximo",
   "/calculadoras/garantia-servicios",
+  "/calculadoras/preaviso",
   "/legal/terminos",
   "/legal/privacidad",
   "/legal/aviso-privacidad",
@@ -47,5 +51,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.75,
   }));
 
-  return [...staticEntries, ...blogPosts];
+  const templates: MetadataRoute.Sitemap = getAllTemplateSlugs().map((slug) => ({
+    url: absoluteUrl(`/plantillas/${slug}`),
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
+
+  return [...staticEntries, ...blogPosts, ...templates];
 }

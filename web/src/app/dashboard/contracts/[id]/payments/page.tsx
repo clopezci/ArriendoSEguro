@@ -42,6 +42,7 @@ export default function PaymentsPage() {
   const [paymentDay, setPaymentDay] = useState<number>(1);
   const [error, setError] = useState("");
   const [tenantLink, setTenantLink] = useState("");
+  const [tenantLinkQr, setTenantLinkQr] = useState("");
   const [scheduledPayments, setScheduledPayments] = useState<ScheduledPayment[]>([]);
 
   useEffect(() => {
@@ -122,6 +123,14 @@ export default function PaymentsPage() {
         await navigator.clipboard.writeText(data.link);
       } catch {
         /* el usuario puede copiar manual */
+      }
+      // Generamos el QR del enlace en el navegador (sin enviarlo a terceros).
+      try {
+        const QRCode = (await import("qrcode")).default;
+        const dataUrl = await QRCode.toDataURL(data.link, { margin: 1, width: 240 });
+        setTenantLinkQr(dataUrl);
+      } catch {
+        setTenantLinkQr("");
       }
     } catch {
       setError("Error de red al generar el enlace.");
@@ -215,7 +224,38 @@ export default function PaymentsPage() {
         <div className="mt-2 rounded border border-violet-200 bg-violet-50/60 p-3 text-xs text-slate-700">
           <p className="font-medium text-violet-800">Enlace copiado. Compártelo con tu inquilino (WhatsApp, etc.):</p>
           <p className="mt-1 break-all font-mono text-[11px]">{tenantLink}</p>
-          <p className="mt-1 text-[11px] text-slate-500">Verá cómo pagar y podrá subir su soporte; tú confirmas el pago al recibirlo.</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Hola, para tu pago del arriendo usa este enlace seguro: ${tenantLink}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded border border-emerald-500 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50"
+            >
+              Enviar por WhatsApp
+            </a>
+            <button
+              type="button"
+              onClick={() => void navigator.clipboard?.writeText(tenantLink)}
+              className="rounded border border-slate-300 px-2.5 py-1 text-[11px] text-slate-700 hover:bg-slate-50"
+            >
+              Copiar de nuevo
+            </button>
+          </div>
+          {tenantLinkQr && (
+            <div className="mt-3 flex flex-col items-center gap-1 rounded-lg border border-slate-200 bg-white p-3 sm:w-fit">
+              <p className="text-[11px] font-medium text-slate-700">O que escanee este QR:</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={tenantLinkQr} alt="Código QR del enlace de pago" className="h-40 w-40" />
+              <a
+                href={tenantLinkQr}
+                download={`qr-pago-${id}.png`}
+                className="text-[11px] font-medium text-violet-700 underline"
+              >
+                Descargar QR (para imprimir)
+              </a>
+            </div>
+          )}
+          <p className="mt-2 text-[11px] text-slate-500">Verá cómo pagar y podrá subir su soporte; tú confirmas el pago al recibirlo.</p>
         </div>
       )}
 

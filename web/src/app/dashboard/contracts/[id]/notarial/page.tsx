@@ -191,14 +191,42 @@ export default function NotarialOptionalPage() {
 
       {!loading && !error && (
         <div className="space-y-6">
-          <section className="rounded-xl border border-slate-200 bg-violet-50/50 p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-violet-950">Autenticación / notariado digital</h2>
-            <p className="mt-1 text-xs text-violet-900/90">
-              El flujo manual sigue siendo válido: imprimes o llevas el PDF, lo autenticas según te indique el notario y
-              cargas el PDF final aquí. Como alternativa en línea, el Estado colombiano ofrece firma y autenticación
-              digital a través de la <strong>Agencia Nacional Digital</strong> (Decreto 620 de 2020). Allí puedes
-              registrar tu firma electrónica y autenticar documentos sin desplazarte; cada quien gestiona la suya.
+          <section className="rounded-xl border border-emerald-300 bg-emerald-50/70 p-4 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-semibold text-white">GRATIS</span>
+              <h2 className="text-sm font-semibold text-emerald-950">Firma digital del Estado (Agencia Nacional Digital)</h2>
+            </div>
+            <p className="mt-2 text-xs text-emerald-900/90">
+              Tu contrato ya queda firmado dentro de ArriendoSeguro (válido por la Ley 527). Si además quieren el{" "}
+              <strong>respaldo del Estado sin costo</strong>, el Estado colombiano ofrece firma y autenticación digital
+              gratuita a través de la <strong>Agencia Nacional Digital</strong> (Decreto 620 de 2020). Es{" "}
+              <strong>opcional</strong> y se hace por fuera de la app: cada parte firma su copia y la pasa a la siguiente.
             </p>
+
+            <div className="mt-3 rounded-lg border border-emerald-300 bg-white/70 p-3">
+              <p className="text-xs font-semibold text-emerald-950">Cómo firmar entre todas las partes (paso a paso):</p>
+              <ol className="mt-2 space-y-1.5 pl-5 text-xs text-slate-700 [list-style:decimal]">
+                <li>Descarga el <strong>PDF del contrato</strong> (botón de abajo, sección «Descargas para el trámite»).</li>
+                <li>
+                  La <strong>primera persona</strong> entra a la Agencia Nacional Digital, se registra, sube el PDF,
+                  confirma con el <strong>código (OTP) que llega a su correo</strong> y descarga el PDF ya firmado.
+                </li>
+                <li>
+                  Esa persona <strong>le envía ese mismo PDF firmado a la siguiente</strong>, que repite el proceso
+                  firmando sobre el mismo archivo. Y así, <strong>uno por uno</strong>, hasta el último firmante
+                  (arrendador, arrendatario y codeudor si lo hay).
+                </li>
+                <li>
+                  El <strong>último</strong> en firmar <strong>vuelve aquí y sube el PDF final</strong> (con todas las
+                  firmas) en la sección «Subir el PDF firmado» de más abajo. Eso lo deja archivado en el expediente.
+                </li>
+              </ol>
+              <p className="mt-2 text-[11px] text-emerald-900/80">
+                Importante: todas las partes deben firmar <strong>el mismo archivo</strong>, en orden. No firmen copias
+                distintas por separado.
+              </p>
+            </div>
+
             <div className="mt-3 flex flex-wrap gap-2">
               <a
                 href="https://firmaautenticaciondigital.and.gov.co/"
@@ -264,10 +292,19 @@ export default function NotarialOptionalPage() {
               </section>
 
               <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <h2 className="text-sm font-semibold text-slate-900">2. Subir el PDF autenticado</h2>
+                <h2 className="text-sm font-semibold text-slate-900">2. Subir el PDF firmado (ANND) o autenticado</h2>
                 <p className="mt-1 text-xs text-slate-600">
-                  Solo quien figure como parte del contrato (correo de la cuenta coincide con arrendador, arrendatario o
-                  codeudor) puede subir el archivo. Tamaño máximo: 15 MB. Formato: PDF.
+                  Aquí sube el <strong>último firmante</strong> el PDF final: el que ya tiene todas las firmas de la
+                  Agencia Nacional Digital, o el autenticado en notaría. Queda archivado como evidencia del expediente.
+                </p>
+                <ul className="mt-2 space-y-0.5 rounded-lg bg-slate-50 p-3 text-[11px] text-slate-600">
+                  <li>✓ Solo lo sube una <strong>parte del contrato</strong> (tu correo debe coincidir con arrendador, arrendatario o codeudor).</li>
+                  <li>✓ Verificamos que sea un <strong>PDF real</strong> y que pese menos de 15 MB.</li>
+                  <li>✓ Lo dejamos <strong>vinculado a esta versión</strong> del contrato, con autor y fecha, dentro del paquete de evidencia.</li>
+                </ul>
+                <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900">
+                  Nota: al firmar, el archivo cambia respecto al original (es normal). Por eso no comparamos byte a byte;
+                  la validez de la firma la respalda la propia Agencia Nacional Digital dentro del PDF.
                 </p>
                 {hasNotarialAnnex && (
                   <p className="mt-2 text-xs text-slate-700">

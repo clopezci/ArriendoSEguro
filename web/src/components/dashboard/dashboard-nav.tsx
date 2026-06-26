@@ -17,6 +17,10 @@ const ACCOUNT_ITEMS: Item[] = [
 ];
 
 const RESOURCES_ITEMS: Item[] = [
+  { href: "/herramientas", label: "Herramientas gratis" },
+  { href: "/calculadoras", label: "Calculadoras" },
+  { href: "/plantillas", label: "Plantillas y descargas" },
+  { href: "/blog", label: "Blog" },
   { href: "/entiendelo-facil", label: "Cómo funciona" },
   { href: "/dashboard/aliados", label: "Aliados" },
   { href: "/demo", label: "Demo" },

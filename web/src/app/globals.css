@@ -84,6 +84,27 @@ summary:focus-visible,
   top: 0.5rem;
 }
 
+/*
+ * Impresión de plantillas (/plantillas/[slug]).
+ * Al imprimir, ocultamos la navegación y la cromática de la app y dejamos
+ * solo la hoja del documento, sin bordes ni sombras, ocupando la página.
+ */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+  }
+  .print-sheet {
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+}
+
 /* Respeta la preferencia de reducir movimiento. */
 @media (prefers-reduced-motion: reduce) {
   *,
