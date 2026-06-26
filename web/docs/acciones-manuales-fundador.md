@@ -34,6 +34,31 @@ Hoy el código trae reglas que **bloquean todo acceso directo del cliente** a Fi
 
 ---
 
+## 1b. CORS del bucket de Storage ⚠️ (necesario para subir archivos desde el navegador)
+
+Las subidas de archivos (foto de inventario, QR de pago, documentos, soportes) se hacen con
+**URLs firmadas**: el navegador hace `PUT` directo al bucket. Si el bucket **no tiene CORS**
+configurado para tu dominio, el navegador bloquea la subida y verás un genérico **«error de red»**
+(el archivo se queda «Subiendo…» y falla). Storage recién habilitado **no trae CORS**, hay que
+ponerlo una vez.
+
+- [ ] Abre **Google Cloud Shell** (https://console.cloud.google.com → ícono `>_` arriba a la
+      derecha) — ya viene con `gsutil`/`gcloud` y tu sesión.
+- [ ] Sube o pega el archivo `web/storage.cors.json` de este repo (sus orígenes ya incluyen
+      `https://arriendoseguro.app` y `http://localhost:3000`).
+- [ ] Ejecuta (ajusta el bucket si cambió):
+  ```bash
+  gcloud storage buckets update gs://arriendoseguro-c5602.firebasestorage.app --cors-file=storage.cors.json
+  # alternativa equivalente:
+  # gsutil cors set storage.cors.json gs://arriendoseguro-c5602.firebasestorage.app
+  ```
+- [ ] Verifica: `gcloud storage buckets describe gs://arriendoseguro-c5602.firebasestorage.app --format="default(cors_config)"`
+- [ ] Vuelve a la app y prueba subir una foto de inventario: ya no debe dar «error de red».
+
+> Si cambias de dominio, agrega el nuevo origen en `storage.cors.json` y vuelve a aplicar.
+
+---
+
 ## 2. Variables de entorno en Vercel
 
 Entra a **Vercel → Proyecto ArriendoSeguro → Settings → Environment Variables** (entorno

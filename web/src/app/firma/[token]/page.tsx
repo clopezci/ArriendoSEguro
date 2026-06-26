@@ -1,6 +1,6 @@
 "use client";
 
-import { SIGNING_CONSENT_TEXTS } from "@/domain/signatures/signingConsentTexts";
+import { SIGNING_CONSENT_TEXTS, SIGNING_DATA_CONFIRMATION_TEXT } from "@/domain/signatures/signingConsentTexts";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -28,6 +28,7 @@ export default function SignatureTokenPage() {
   const [info, setInfo] = useState<TokenInfoOk | null>(null);
   const [consentA, setConsentA] = useState(false);
   const [consentB, setConsentB] = useState(false);
+  const [consentData, setConsentData] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [okMsg, setOkMsg] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -112,8 +113,8 @@ export default function SignatureTokenPage() {
   }
 
   async function onSign() {
-    if (!consentA || !consentB) {
-      setError("Debes aceptar ambas declaraciones para firmar.");
+    if (!consentA || !consentB || !consentData) {
+      setError("Debes aceptar las declaraciones para firmar.");
       return;
     }
     setSubmitting(true);
@@ -126,6 +127,7 @@ export default function SignatureTokenPage() {
           token,
           consentAccepted: true,
           electronicSignatureAccepted: true,
+          dataConfirmationAccepted: true,
         }),
       });
       const data = (await res.json()) as
@@ -253,6 +255,10 @@ export default function SignatureTokenPage() {
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" checked={consentB} onChange={(e) => setConsentB(e.target.checked)} />
                 <span>{SIGNING_CONSENT_TEXTS.electronicSignatureAcceptance}</span>
+              </label>
+              <label className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900">
+                <input type="checkbox" checked={consentData} onChange={(e) => setConsentData(e.target.checked)} className="mt-0.5" />
+                <span>{SIGNING_DATA_CONFIRMATION_TEXT}</span>
               </label>
               <button
                 type="button"

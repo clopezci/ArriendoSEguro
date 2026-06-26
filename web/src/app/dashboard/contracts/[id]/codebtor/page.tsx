@@ -252,6 +252,7 @@ export default function CodebtorStepPage() {
             }
             oathId="codebtor_truthfulness_oath"
             contractDraftId={id}
+            thirdPartyAuthorization
           />
           <CodebtorCheckWithEvidence
             name="dataProcessingConsent"

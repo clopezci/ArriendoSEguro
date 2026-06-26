@@ -78,10 +78,13 @@ export function inviteCounterpartyEmail(input: {
   invitationUrl: string;
 }): CompiledEmailTemplate {
   const subject = "Invitación para continuar tu expediente de arriendo";
-  const text = `${input.inviterName} te invitó a continuar el expediente "${input.contractLabel}" en ArriendoSeguro.\n\nIngresa aquí: ${input.invitationUrl}`;
+  const verifyLine =
+    "Importante: revisa que tus datos personales sean correctos. Al firmar deberás confirmarlos bajo gravedad de juramento.";
+  const text = `${input.inviterName} te invitó a continuar el expediente "${input.contractLabel}" en ArriendoSeguro.\n\n${verifyLine}\n\nIngresa aquí: ${input.invitationUrl}`;
   const html = baseHtml(
     "Invitación de contraparte",
     `<p>${input.inviterName} te invitó a continuar el expediente <strong>${input.contractLabel}</strong> en ArriendoSeguro.</p>
+     <p>${verifyLine}</p>
      <p><a href="${input.invitationUrl}" style="color:#6d28d9;">Abrir invitación</a></p>`,
   );
   return { subject, html, text };

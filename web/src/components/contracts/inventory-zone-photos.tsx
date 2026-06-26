@@ -86,12 +86,12 @@ export function InventoryZonePhotos({
     <div className="mt-2">
       <p className="text-xs font-medium text-slate-700">Fotos de la zona</p>
       <div className="mt-1 flex flex-wrap items-center gap-2">
+        {/* Sin `capture`: en móvil el sistema ofrece Cámara o Galería; en escritorio, elegir archivo. */}
         <label className="cursor-pointer rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-500">
-          {busy ? "Subiendo…" : "📷 Tomar / elegir foto"}
+          {busy ? "Subiendo…" : "📷 Tomar o elegir foto"}
           <input
             type="file"
             accept="image/*"
-            capture="environment"
             className="sr-only"
             disabled={busy}
             onChange={(e) => {

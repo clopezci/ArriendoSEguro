@@ -16,6 +16,7 @@ export function PartyDataFields({
   legacyFreeTextAddressMessage,
   oathId,
   contractDraftId,
+  thirdPartyAuthorization = false,
 }: {
   party: PartyDraft;
   /** Si hay texto viejo sin partes, invitamos a reemplazar usando el formato nuevo. */
@@ -27,6 +28,12 @@ export function PartyDataFields({
    */
   oathId?: string;
   contractDraftId?: string;
+  /**
+   * `true` cuando quien llena el formulario NO es el titular de los datos (p. ej.
+   * el dueño ingresando los datos del inquilino o codeudor). Exige declarar que
+   * se cuenta con la autorización del titular (Habeas Data, Ley 1581 de 2012).
+   */
+  thirdPartyAuthorization?: boolean;
 }) {
   const [docType, setDocType] = useState(
     party.documentType === "TI" ? "CC" : String(party.documentType ?? "CC"),
@@ -39,6 +46,7 @@ export function PartyDataFields({
   const [oathChecked, setOathChecked] = useState<boolean>(
     Boolean(party.truthfulnessOathAccepted),
   );
+  const [authChecked, setAuthChecked] = useState<boolean>(false);
 
   const hint = useMemo(() => {
     return DOCUMENT_TYPE_OPTIONS.find((o) => o.value === docType)?.hint ?? "";
@@ -132,6 +140,32 @@ export function PartyDataFields({
         variant="notificacion"
         legacyFreeTextAddress={!!legacyFreeTextAddressMessage && !!party.notificationAddress}
       />
+
+      {thirdPartyAuthorization && (
+        <div className="sm:col-span-2 rounded-xl border border-amber-500/40 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
+          <label className="flex cursor-pointer items-start gap-2">
+            <input
+              type="checkbox"
+              name="thirdPartyAuthorizationOath"
+              required
+              checked={authChecked}
+              onChange={(e) => setAuthChecked(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-amber-300"
+            />
+            <span>
+              <strong>Autorización del titular de los datos.</strong> Declaro que <strong>cuento con la autorización
+              expresa del titular</strong> de estos datos personales para registrarlos en este contrato y que se lo
+              comunicaré, conforme a la Ley 1581 de 2012 (Habeas Data). El titular podrá confirmarlos y ejercer sus
+              derechos al momento de firmar.
+            </span>
+          </label>
+          <OathEvidenceBadge
+            active={authChecked}
+            oathId={`${oathId ?? "party"}_third_party_authorization`}
+            contractDraftId={contractDraftId}
+          />
+        </div>
+      )}
 
       <div className="sm:col-span-2 rounded-xl border border-amber-500/30 bg-amber-50 p-3 text-xs leading-relaxed text-amber-800">
         <label className="flex cursor-pointer items-start gap-2">

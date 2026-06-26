@@ -58,7 +58,7 @@ export function WizardShell({
               href={`/dashboard/contracts/${contractId}/adicionales`}
               className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 hover:border-violet-500 hover:text-violet-700"
             >
-              Centro de adicionales
+              ← Volver a la posventa
             </Link>
           </div>
           <p className="mt-2 text-xs text-slate-600">

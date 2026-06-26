@@ -151,14 +151,17 @@ export default function PaymentSchedulePage() {
         <Info label="Vencidos" value={`${summary.late}`} />
         <Info label="Estado" value={summary.late > 0 ? "Con vencidos" : "Al día"} />
       </div>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" onClick={generate} disabled={saving || !contractVersionId} className="rounded bg-violet-600 px-3 py-2 text-sm text-white">
-          {saving ? "Generando..." : "Generar pagos programados"}
-        </button>
-        <button type="button" onClick={async () => {
-          await fetch("/api/payments/reminders/send-due", { method: "POST" });
-        }} className="rounded border border-sky-500 px-3 py-2 text-sm text-sky-800">
-          Enviar recordatorios pendientes (manual)
+      <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+        El calendario se genera <strong>automáticamente</strong> al configurar tus pagos en{" "}
+        <a href={`/dashboard/contracts/${id}/pagos-recordatorios`} className="font-semibold text-violet-700 underline">
+          Pagos y recordatorios
+        </a>
+        . Aquí puedes verlo y, si lo necesitas, regenerarlo. Los recordatorios al inquilino se envían solos los días que
+        configuraste.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" onClick={generate} disabled={saving || !contractVersionId} className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-800">
+          {saving ? "Generando..." : "Regenerar calendario"}
         </button>
       </div>
 

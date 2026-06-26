@@ -121,6 +121,8 @@ export async function POST(request: Request) {
         signatureStatus: "signed",
         consentAccepted: true,
         consentAcceptedAt: signedAt,
+        // El titular confirma que sus datos son correctos (Habeas Data, Ley 1581).
+        dataConfirmationAccepted: Boolean(parsedBody.data.dataConfirmationAccepted),
         signedAt,
         ipAddress,
         userAgent,

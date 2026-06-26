@@ -118,6 +118,7 @@ export default function TenantStepPage() {
           }
           oathId="tenant_truthfulness_oath"
           contractDraftId={id}
+          thirdPartyAuthorization
         />
         <CreditHistoryGuidanceBlock
           variant="tenant"

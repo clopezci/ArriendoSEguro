@@ -213,6 +213,8 @@ export const completeSignatureRequestSchema = z.object({
   token: z.string().min(20),
   consentAccepted: z.literal(true),
   electronicSignatureAccepted: z.literal(true),
+  /** El titular confirma que sus datos en el contrato son correctos (Habeas Data). */
+  dataConfirmationAccepted: z.boolean().optional(),
 });
 
 export const signatureRequestOtpSchema = z.object({
