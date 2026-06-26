@@ -34,28 +34,20 @@ Hoy el código trae reglas que **bloquean todo acceso directo del cliente** a Fi
 
 ---
 
-## 1b. CORS del bucket de Storage ⚠️ (necesario para subir archivos desde el navegador)
+## 1b. CORS del bucket de Storage ✅ HECHO (2026-06-05)
 
 Las subidas de archivos (foto de inventario, QR de pago, documentos, soportes) se hacen con
-**URLs firmadas**: el navegador hace `PUT` directo al bucket. Si el bucket **no tiene CORS**
-configurado para tu dominio, el navegador bloquea la subida y verás un genérico **«error de red»**
-(el archivo se queda «Subiendo…» y falla). Storage recién habilitado **no trae CORS**, hay que
-ponerlo una vez.
+**URLs firmadas**: el navegador hace `PUT` directo al bucket. Sin CORS, el navegador bloquea la
+subida y sale «error de red». **Ya quedó aplicado** al bucket
+`arriendoseguro-c5602.firebasestorage.app` (orígenes: `https://arriendoseguro.app`,
+`https://www.arriendoseguro.app`, `http://localhost:3000`; métodos GET/PUT/POST/HEAD), usando la
+credencial local `serviceAccountKey.json`.
 
-- [ ] Abre **Google Cloud Shell** (https://console.cloud.google.com → ícono `>_` arriba a la
-      derecha) — ya viene con `gsutil`/`gcloud` y tu sesión.
-- [ ] Sube o pega el archivo `web/storage.cors.json` de este repo (sus orígenes ya incluyen
-      `https://arriendoseguro.app` y `http://localhost:3000`).
-- [ ] Ejecuta (ajusta el bucket si cambió):
-  ```bash
-  gcloud storage buckets update gs://arriendoseguro-c5602.firebasestorage.app --cors-file=storage.cors.json
-  # alternativa equivalente:
-  # gsutil cors set storage.cors.json gs://arriendoseguro-c5602.firebasestorage.app
-  ```
-- [ ] Verifica: `gcloud storage buckets describe gs://arriendoseguro-c5602.firebasestorage.app --format="default(cors_config)"`
-- [ ] Vuelve a la app y prueba subir una foto de inventario: ya no debe dar «error de red».
-
-> Si cambias de dominio, agrega el nuevo origen en `storage.cors.json` y vuelve a aplicar.
+> **Si cambias de dominio**, edita `web/storage.cors.json` (agrega el nuevo origen) y reaplica.
+> Sin `gcloud`, se puede reaplicar con un script Node y `@google-cloud/storage`
+> (`bucket.setCorsConfiguration(cors)`) usando `serviceAccountKey.json`; pídeselo al agente.
+> Con `gcloud`/Cloud Shell:
+> `gcloud storage buckets update gs://arriendoseguro-c5602.firebasestorage.app --cors-file=storage.cors.json`
 
 ---
 
