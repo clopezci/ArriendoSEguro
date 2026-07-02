@@ -11,13 +11,11 @@ export default function DashboardLayout({
   return (
     <RequireAuth>
       <div className="min-h-screen bg-slate-50 text-slate-900">
-        <header className="border-b border-slate-300 bg-slate-100/90 shadow-[0_8px_28px_rgba(139,92,246,0.18)]">
-          <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <Link href="/dashboard" className="text-lg font-semibold tracking-tight text-violet-700">
-                <BrandLockup />
-              </Link>
-            </div>
+        <header className="sticky top-0 z-40 border-b border-slate-300 bg-slate-100/95 shadow-[0_4px_18px_rgba(139,92,246,0.14)] backdrop-blur">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
+            <Link href="/dashboard" className="text-lg font-semibold tracking-tight text-violet-700">
+              <BrandLockup />
+            </Link>
             <DashboardNav />
           </div>
         </header>

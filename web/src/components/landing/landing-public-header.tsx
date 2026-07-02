@@ -8,28 +8,16 @@ export function LandingPublicHeader() {
         <Link href="/" className="text-sm font-semibold tracking-tight text-violet-700 sm:text-base">
           <BrandLockup />
         </Link>
-        <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-          <Link
-            href="/herramientas"
-            className="rounded-md border border-emerald-400 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 transition hover:border-emerald-500 hover:bg-emerald-100 sm:px-2.5 sm:text-xs"
-          >
-            Herramientas gratis
-          </Link>
-          <Link
-            href="/blog"
-            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-800 transition hover:border-violet-500 hover:text-slate-900 sm:px-2.5 sm:text-sm"
-          >
-            Blog
-          </Link>
+        <div className="flex items-center justify-end gap-2">
           <Link
             href="/ingresar"
-            className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium text-slate-800 transition hover:border-violet-500 hover:text-slate-900 sm:px-2.5 sm:text-sm"
+            className="rounded-md px-2.5 py-1.5 text-sm font-medium text-slate-700 transition hover:text-violet-700"
           >
             Acceder
           </Link>
           <Link
             href="/crear-cuenta"
-            className="rounded-md border border-violet-500 bg-violet-600 px-2.5 py-1 text-xs font-semibold text-white shadow-[0_0_12px_rgba(139,92,246,0.25)] transition hover:bg-violet-700 sm:px-3 sm:text-sm"
+            className="rounded-lg border border-violet-500 bg-violet-600 px-3.5 py-1.5 text-sm font-semibold text-white shadow-[0_0_12px_rgba(139,92,246,0.25)] transition hover:bg-violet-700"
           >
             Crear cuenta
           </Link>
