@@ -105,7 +105,7 @@ export function OathEvidenceBadge({
         const res = await fetch("/api/oath-evidence/capture", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ oathId, contractDraftId }),
+          body: JSON.stringify({ oathId, contractDraftId, userAgent, language, timeZone, screen, clientNow }),
         });
         const data = (await res.json()) as
           | {
@@ -182,72 +182,23 @@ export function OathEvidenceBadge({
   if (!active) return null;
   if (loading && !evidence) {
     return (
-      <p className={`mt-2 text-[11px] text-slate-500 ${className ?? ""}`}>
-        Registrando la evidencia de tu aceptación…
+      <p className={`mt-1 text-[11px] text-slate-500 ${className ?? ""}`}>
+        Registrando evidencia…
       </p>
     );
   }
   if (!evidence) return null;
 
+  // UX simple: solo confirmamos que la evidencia quedó guardada. El detalle
+  // técnico (IP, dispositivo, fecha/hora, ubicación aproximada, etc.) se
+  // conserva en la base de datos y puede exportarse desde la posventa
+  // («Evidencias / exportar contrato con evidencias») si el usuario lo requiere.
   return (
-    <div
-      className={`mt-2 rounded-md border border-slate-300 bg-white/95 p-2 text-[11px] leading-snug text-slate-700 ${className ?? ""}`}
+    <p
+      className={`mt-1 inline-flex items-center gap-1 text-[11px] font-medium ${error ? "text-amber-700" : "text-emerald-700"} ${className ?? ""}`}
+      title="Guardamos fecha/hora, IP, dispositivo y ubicación aproximada como soporte. Puedes exportarlo desde Evidencias."
     >
-      <p className="font-semibold text-slate-900">Evidencia de aceptación</p>
-      <p className="text-slate-600">
-        Estos datos quedan en el expediente como soporte de quién y desde
-        dónde aceptaste esta declaración.
-      </p>
-      <ul className="mt-1 space-y-0.5">
-        <li>
-          <strong>Fecha y hora (servidor):</strong>{" "}
-          {new Date(evidence.serverNow).toLocaleString("es-CO")}
-        </li>
-        <li>
-          <strong>Fecha y hora (tu equipo):</strong>{" "}
-          {new Date(evidence.clientNow).toLocaleString("es-CO")}
-        </li>
-        {evidence.serverIp && (
-          <li>
-            <strong>IP detectada:</strong> {evidence.serverIp}
-          </li>
-        )}
-        {(evidence.serverCity || evidence.serverCountry) && (
-          <li>
-            <strong>Ubicación aproximada:</strong>{" "}
-            {[evidence.serverCity, evidence.serverRegion, evidence.serverCountry]
-              .filter(Boolean)
-              .join(", ")}
-          </li>
-        )}
-        {evidence.timeZone && (
-          <li>
-            <strong>Zona horaria:</strong> {evidence.timeZone}
-          </li>
-        )}
-        {evidence.language && (
-          <li>
-            <strong>Idioma del navegador:</strong> {evidence.language}
-          </li>
-        )}
-        {evidence.userAgent && (
-          <li>
-            <strong>Dispositivo / navegador:</strong>{" "}
-            <span className="break-all">{evidence.userAgent}</span>
-          </li>
-        )}
-        {evidence.screen && (
-          <li>
-            <strong>Pantalla:</strong> {evidence.screen}
-          </li>
-        )}
-      </ul>
-      {error && (
-        <p className="mt-1 text-[11px] text-amber-700">
-          {error} Si necesitas más detalle, comunícate con soporte y citaremos
-          el evento de auditoría asociado.
-        </p>
-      )}
-    </div>
+      <span aria-hidden="true">✓</span> {error ? "Evidencia guardada (parcial)" : "Evidencia guardada"}
+    </p>
   );
 }

@@ -24,6 +24,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { getAdminFirestore } from "@/lib/firebase/admin";
 
 export const runtime = "nodejs";
 
@@ -35,6 +36,12 @@ const requestSchema = z.object({
    */
   oathId: z.string().min(2).max(80),
   contractDraftId: z.string().min(1).max(100).optional(),
+  // Datos del cliente (opcionales) para conservar la evidencia completa en BD.
+  userAgent: z.string().max(500).optional(),
+  language: z.string().max(40).optional(),
+  timeZone: z.string().max(80).optional(),
+  screen: z.string().max(40).optional(),
+  clientNow: z.string().max(40).optional(),
 });
 
 function pickIp(headers: Headers): string {
@@ -79,6 +86,32 @@ export async function POST(request: Request) {
       region: region || null,
       city: city || null,
     });
+
+    // Persistencia formal en BD: guardamos el documento de evidencia completo
+    // (servidor + cliente) para poder exportarlo si el usuario lo requiere.
+    // Best-effort: si Firestore no está o falla, no rompemos el flujo del check.
+    try {
+      const firestore = getAdminFirestore();
+      if (firestore) {
+        await firestore.collection("oath_evidence").add({
+          oathId: parsed.data.oathId,
+          contractDraftId: parsed.data.contractDraftId ?? null,
+          ip: ip || null,
+          country: country || null,
+          region: region || null,
+          city: city ? decodeURIComponent(city) : null,
+          serverNow,
+          userAgent: parsed.data.userAgent ?? null,
+          language: parsed.data.language ?? null,
+          timeZone: parsed.data.timeZone ?? null,
+          screen: parsed.data.screen ?? null,
+          clientNow: parsed.data.clientNow ?? null,
+          createdAt: serverNow,
+        });
+      }
+    } catch (persistErr) {
+      if (process.env.NODE_ENV !== "production") console.error("oath-evidence persist", persistErr);
+    }
 
     return NextResponse.json({
       success: true,
