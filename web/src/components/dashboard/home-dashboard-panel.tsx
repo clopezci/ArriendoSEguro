@@ -8,6 +8,7 @@ import {
   tieneTerminosContrato,
 } from "@/lib/dashboard/expediente-ui";
 import { getAllDrafts, type ContractDraft } from "@/features/contracts/wizard-state";
+import { freeTierEnabled } from "@/lib/config";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
@@ -119,6 +120,9 @@ export function HomeDashboardPanel() {
   const plusActive = !!entitlements?.plusActive;
   const demoActive = !!entitlements?.demoActive;
   const interactive = plusActive || demoActive;
+  // Crear el contrato es GRATIS con el tier gratis activo; la firma, el
+  // inventario y la posventa siguen siendo Plus (interactive).
+  const canCreate = interactive || freeTierEnabled;
   const loadingEnt = entitlements === null;
 
   const id = primaryDraft?.id;
@@ -164,39 +168,30 @@ export function HomeDashboardPanel() {
           </div>
         ) : (
           <div className="mt-3 space-y-3">
-            <p className="font-medium text-slate-900">
-              Para crear un contrato real debes activar el Plan Plus.
+            <p className="font-medium text-emerald-700">
+              Puedes crear tu contrato de arriendo <strong>gratis</strong>.
             </p>
             <p className="text-sm text-slate-600">
-              De todos modos puedes ver abajo cómo es el recorrido completo y por qué cada paso te
-              ahorra tiempo y malos entendidos.
+              Genera y descarga el contrato sin costo. La <strong>firma digital, el inventario y la posventa</strong>{" "}
+              (pagos, recordatorios) se activan con Plan Plus, por una fracción de lo que cuesta tu arriendo.
             </p>
-            <Link
-              href="/dashboard/plans"
-              className="inline-flex rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_18px_rgba(139,92,246,0.35)] hover:bg-violet-500"
-            >
-              Ver planes
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/dashboard/contracts/new"
+                className="inline-flex rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_18px_rgba(139,92,246,0.35)] hover:bg-violet-500"
+              >
+                Crear mi contrato gratis
+              </Link>
+              <Link
+                href="/dashboard/plans"
+                className="inline-flex rounded-lg border border-violet-400 px-4 py-2 text-sm font-medium text-violet-700 hover:bg-violet-50"
+              >
+                Ver planes
+              </Link>
+            </div>
           </div>
         )}
       </section>
-
-      {!interactive && !loadingEnt && (
-        <div className="flex flex-wrap gap-3 rounded-xl border border-slate-300 bg-slate-100/60 p-4">
-          <Link
-            href="/dashboard/plans"
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500"
-          >
-            Ver planes y activar Plus
-          </Link>
-          <Link
-            href="/demo"
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:border-violet-500"
-          >
-            Ver demo guiado
-          </Link>
-        </div>
-      )}
 
       <section aria-labelledby="flow-steps">
         <h2 id="flow-steps" className="sr-only">
@@ -207,10 +202,10 @@ export function HomeDashboardPanel() {
             step={1}
             title="Crear expediente de arriendo"
             description="Registra los datos básicos del arriendo y de las partes."
-            beneficioIlustrativo={!interactive ? BENEFICIOS[1] : undefined}
-            status={!interactive ? "locked" : id ? "available" : "available"}
+            beneficioIlustrativo={!canCreate ? BENEFICIOS[1] : undefined}
+            status={!canCreate ? "locked" : "available"}
           >
-            {!interactive ? (
+            {!canCreate ? (
               <p className="text-xs text-slate-500">Activa Plus o demo para crear un expediente.</p>
             ) : !id ? (
               <Link
@@ -245,10 +240,10 @@ export function HomeDashboardPanel() {
             step={2}
             title="Crear contrato"
             description="Genera el contrato de arrendamiento con o sin codeudor."
-            beneficioIlustrativo={!interactive ? BENEFICIOS[2] : undefined}
-            status={!interactive ? "locked" : id ? "available" : "locked"}
+            beneficioIlustrativo={!canCreate ? BENEFICIOS[2] : undefined}
+            status={!canCreate ? "locked" : id ? "available" : "locked"}
           >
-            {!interactive ? (
+            {!canCreate ? (
               <p className="text-xs text-slate-500">Incluido cuando tengas expediente activo.</p>
             ) : !id ? (
               <p className="text-sm text-slate-500">Bloqueado: primero crea el expediente.</p>
