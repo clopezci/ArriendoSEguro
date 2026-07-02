@@ -84,6 +84,7 @@ export default function ContractTypeStepPage() {
   const [acting, setActing] = useState<"owner" | "proxy">("owner");
   const [proxyAccepted, setProxyAccepted] = useState(false);
   const [actingError, setActingError] = useState("");
+  const [showOthers, setShowOthers] = useState(false);
 
   useEffect(() => {
     if (draft?.contractType) {
@@ -128,6 +129,47 @@ export default function ContractTypeStepPage() {
     flashSaved(() => router.push(`/dashboard/contracts/${id}/landlord`));
   }
 
+  const availableOptions = CONTRACT_TYPE_OPTIONS.filter((o) => o.available);
+  const otherOptions = CONTRACT_TYPE_OPTIONS.filter((o) => !o.available);
+
+  function renderOption(option: ContractTypeOption) {
+    const isSelected = option.available && selectedType === option.id;
+    return (
+      <li key={option.id}>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={isSelected}
+          onClick={() => (option.available ? handleSelectAvailable(option) : handleAttemptUnavailable(option))}
+          className={[
+            "flex h-full w-full flex-col gap-2 rounded-xl border p-4 text-left transition",
+            option.available
+              ? isSelected
+                ? "border-violet-500 bg-violet-100/60 text-violet-800 shadow-[0_0_18px_rgba(139,92,246,0.35)]"
+                : "border-slate-300 bg-white/95 text-slate-800 hover:border-violet-500 hover:text-violet-800"
+              : "cursor-not-allowed border-slate-300 bg-white/80 text-slate-600",
+          ].join(" ")}
+        >
+          <span className="flex items-center justify-between">
+            <span className="flex items-center gap-2 text-base font-semibold">
+              <span aria-hidden>{option.icon}</span>
+              <span>{option.label}</span>
+            </span>
+            <span
+              className={[
+                "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                option.available ? "bg-emerald-500/20 text-emerald-700" : "bg-slate-200/70 text-slate-700",
+              ].join(" ")}
+            >
+              {option.available ? "Disponible" : "Próximamente"}
+            </span>
+          </span>
+          <span className="text-xs leading-snug text-slate-700">{option.description}</span>
+        </button>
+      </li>
+    );
+  }
+
   return (
     <WizardShell
       title="¿Qué tipo de contrato vas a generar?"
@@ -160,57 +202,28 @@ export default function ContractTypeStepPage() {
         más vamos a apoyarte.
       </p>
 
-      <ul
-        className="mt-4 grid gap-3 sm:grid-cols-2"
-        role="radiogroup"
-        aria-label="Tipo de contrato"
-      >
-        {CONTRACT_TYPE_OPTIONS.map((option) => {
-          const isSelected = option.available && selectedType === option.id;
-          return (
-            <li key={option.id}>
-              <button
-                type="button"
-                role="radio"
-                aria-checked={isSelected}
-                onClick={() =>
-                  option.available
-                    ? handleSelectAvailable(option)
-                    : handleAttemptUnavailable(option)
-                }
-                className={[
-                  "flex h-full w-full flex-col gap-2 rounded-xl border p-4 text-left transition",
-                  option.available
-                    ? isSelected
-                      ? "border-violet-500 bg-violet-100/60 text-violet-800 shadow-[0_0_18px_rgba(139,92,246,0.35)]"
-                      : "border-slate-300 bg-white/95 text-slate-800 hover:border-violet-500 hover:text-violet-800"
-                    : "cursor-not-allowed border-slate-300 bg-white/80 text-slate-600",
-                ].join(" ")}
-              >
-                <span className="flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-base font-semibold">
-                    <span aria-hidden>{option.icon}</span>
-                    <span>{option.label}</span>
-                  </span>
-                  <span
-                    className={[
-                      "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                      option.available
-                        ? "bg-emerald-500/20 text-emerald-700"
-                        : "bg-slate-200/70 text-slate-700",
-                    ].join(" ")}
-                  >
-                    {option.available ? "Disponible" : "Próximamente"}
-                  </span>
-                </span>
-                <span className="text-xs leading-snug text-slate-700">
-                  {option.description}
-                </span>
-              </button>
-            </li>
-          );
-        })}
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Tipo de contrato disponible">
+        {availableOptions.map((option) => renderOption(option))}
       </ul>
+
+      {otherOptions.length > 0 && (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setShowOthers((v) => !v)}
+            aria-expanded={showOthers}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-violet-500 hover:text-violet-800"
+          >
+            {showOthers ? "Ocultar otras modalidades" : `Ver otras modalidades (${otherOptions.length}, próximamente)`}
+            <span aria-hidden="true">{showOthers ? "▲" : "▼"}</span>
+          </button>
+          {showOthers && (
+            <ul className="mt-3 grid gap-3 sm:grid-cols-2" aria-label="Otras modalidades (próximamente)">
+              {otherOptions.map((option) => renderOption(option))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {unavailableNotice && (
         <div

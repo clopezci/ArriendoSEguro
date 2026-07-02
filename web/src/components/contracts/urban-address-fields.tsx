@@ -57,6 +57,7 @@ export function UrbanAddressFields({
   }, [parts?.viaTipo]);
 
   const isOtro = viaTipo === "OTRO";
+  const isVeredal = viaTipo === "VEREDAL";
   const c = COPY[variant];
 
   return (
@@ -86,109 +87,153 @@ export function UrbanAddressFields({
           </select>
         </label>
 
-        <label className={`text-sm sm:col-span-2 ${!isOtro ? "opacity-50" : ""}`}>
-          <span className="mb-1 block text-slate-700">
-            Nombre de la vía (solo si elegiste «Otro (especificar)»)
-          </span>
-          <input
-            key={`${prefix}-viaOtro-${viaTipo}`}
-            name={`${prefix}ViaTipoOtro`}
-            disabled={!isOtro}
-            defaultValue={parts?.viaTipo === "OTRO" ? (parts.viaTipoOtro ?? "") : ""}
-            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900 disabled:cursor-not-allowed disabled:bg-white/95"
-            placeholder={isOtro ? "Ej. Autopista Norte, Transversal del peatonal…" : "No aplica: elige un tipo de vía de la lista."}
-            autoComplete="off"
-          />
-          <span className="mt-1 block text-[10px] text-slate-500">
-            Este campo solo se usa cuando el tipo de vía es «Otro»; si no, queda deshabilitado a propósito.
-          </span>
-        </label>
+        {isOtro && (
+          <label className="text-sm sm:col-span-2">
+            <span className="mb-1 block text-slate-700">Nombre de la vía («Otro»)</span>
+            <input
+              key={`${prefix}-viaOtro-${viaTipo}`}
+              name={`${prefix}ViaTipoOtro`}
+              defaultValue={parts?.viaTipo === "OTRO" ? (parts.viaTipoOtro ?? "") : ""}
+              className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+              placeholder="Ej. Autopista Norte, Transversal del peatonal…"
+              autoComplete="off"
+            />
+          </label>
+        )}
 
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-700">Número de la vía</span>
-          <input
-            name={`${prefix}ViaNumero`}
-            required
-            defaultValue={parts?.viaNumero ?? ""}
-            inputMode="numeric"
-            pattern="[0-9]{1,3}"
-            title="Solo números, 1 a 3 dígitos"
-            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
-            placeholder="Ej. 72"
-          />
-          <span className="mt-1 block text-[10px] text-slate-500">Solo dígitos (sin letras). Ejemplo: 72</span>
-        </label>
+        {!isVeredal && (
+          <>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-700">Número de la vía</span>
+              <input
+                name={`${prefix}ViaNumero`}
+                required
+                defaultValue={parts?.viaNumero ?? ""}
+                inputMode="numeric"
+                pattern="[0-9]{1,3}"
+                title="Solo números, 1 a 3 dígitos"
+                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+                placeholder="Ej. 72"
+              />
+            </label>
 
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-700">Letra de la vía (opcional)</span>
-          <input
-            name={`${prefix}ViaLetra`}
-            maxLength={2}
-            defaultValue={parts?.viaLetra ?? ""}
-            pattern="[A-Za-z]{0,2}"
-            title="Solo letras, máximo 2"
-            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
-            placeholder="A, B…"
-          />
-          <span className="mt-1 block text-[10px] text-slate-500">
-            Opcional. Solo letras (sin números). Se une al número de vía en el texto final (ej. 72A).
-          </span>
-        </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-700">Letra de la vía (opcional)</span>
+              <input
+                name={`${prefix}ViaLetra`}
+                maxLength={2}
+                defaultValue={parts?.viaLetra ?? ""}
+                pattern="[A-Za-z]{0,2}"
+                title="Solo letras, máximo 2"
+                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+                placeholder="A, B…"
+              />
+            </label>
 
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-700">Número de cruce (después de #)</span>
-          <input
-            name={`${prefix}CruceNumero`}
-            required
-            defaultValue={parts?.cruceNumero ?? ""}
-            inputMode="numeric"
-            pattern="[0-9]{1,3}"
-            title="Solo números"
-            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
-            placeholder="Ej. 10"
-          />
-          <span className="mt-1 block text-[10px] text-slate-500">Solo dígitos. Es el primer número del par cruce-placa.</span>
-        </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-700">Número de cruce (después de #)</span>
+              <input
+                name={`${prefix}CruceNumero`}
+                required
+                defaultValue={parts?.cruceNumero ?? ""}
+                inputMode="numeric"
+                pattern="[0-9]{1,3}"
+                title="Solo números"
+                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+                placeholder="Ej. 10"
+              />
+            </label>
 
-        <label className="text-sm">
-          <span className="mb-1 block text-slate-700">Placa / número local</span>
-          <input
-            name={`${prefix}Placa`}
-            required
-            defaultValue={parts?.placa ?? ""}
-            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
-            placeholder="Ej. 34 o 34B"
-          />
-          <span className="mt-1 block text-[10px] text-slate-500">
-            Segundo tramo del par (puede incluir letras o guion, según tu dirección real).
-          </span>
-        </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-700">Placa / número local</span>
+              <input
+                name={`${prefix}Placa`}
+                required
+                defaultValue={parts?.placa ?? ""}
+                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+                placeholder="Ej. 34 o 34B"
+              />
+            </label>
 
-        <label className="text-sm sm:col-span-2">
-          <span className="mb-1 block text-slate-700">Complemento (opcional)</span>
-          <input
-            name={`${prefix}Complemento`}
-            defaultValue={parts?.complemento ?? ""}
-            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
-            placeholder="Apto, interior, conjunto…"
-          />
-        </label>
+            <label className="text-sm sm:col-span-2">
+              <span className="mb-1 block text-slate-700">Complemento (opcional)</span>
+              <input
+                name={`${prefix}Complemento`}
+                defaultValue={parts?.complemento ?? ""}
+                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+                placeholder="Apto, interior, conjunto…"
+              />
+            </label>
 
-        <label className="text-sm sm:col-span-2">
-          <span className="mb-1 block text-slate-700">Barrio o localidad del predio</span>
-          <input
-            name={`${prefix}Barrio`}
-            required
-            minLength={2}
-            maxLength={80}
-            defaultValue={parts?.barrio ?? ""}
-            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
-            placeholder="Nombre del barrio"
-          />
-          <span className="mt-1 block text-[10px] text-slate-500">
-            No confundir con ciudad: la ciudad la cargas en el campo correspondiente del formulario.
-          </span>
-        </label>
+            <label className="text-sm sm:col-span-2">
+              <span className="mb-1 block text-slate-700">Barrio o localidad del predio</span>
+              <input
+                name={`${prefix}Barrio`}
+                required
+                minLength={2}
+                maxLength={80}
+                defaultValue={parts?.barrio ?? ""}
+                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+                placeholder="Nombre del barrio"
+              />
+            </label>
+          </>
+        )}
+
+        {isVeredal && (
+          <>
+            <p className="sm:col-span-2 rounded-lg border border-emerald-300 bg-emerald-50 p-2 text-[11px] text-emerald-900">
+              Dirección <strong>veredal / rural</strong>: completa lo que aplique. Los campos urbanos no se piden.
+            </p>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-700">Vereda</span>
+              <input
+                name={`${prefix}Vereda`}
+                required
+                defaultValue={parts?.vereda ?? ""}
+                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+                placeholder="Ej. La Aurora"
+              />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-700">Vía (opcional)</span>
+              <input
+                name={`${prefix}ViaRural`}
+                defaultValue={parts?.viaRural ?? ""}
+                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+                placeholder="Ej. Vía a La Calera km 5"
+              />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-700">Parcelación / finca / lote (opcional)</span>
+              <input
+                name={`${prefix}Parcelacion`}
+                defaultValue={parts?.parcelacion ?? ""}
+                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+                placeholder="Ej. Parcelación El Roble, lote 7"
+              />
+            </label>
+            <label className="text-sm">
+              <span className="mb-1 block text-slate-700">Tipo de predio (opcional)</span>
+              <input
+                name={`${prefix}TipoPredio`}
+                defaultValue={parts?.tipoPredio ?? ""}
+                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+                placeholder="Casa campestre, finca, lote…"
+              />
+            </label>
+            <label className="text-sm sm:col-span-2">
+              <span className="mb-1 block text-slate-700">Observaciones para ubicar el predio (opcional)</span>
+              <textarea
+                name={`${prefix}ObsRurales`}
+                defaultValue={parts?.obsRurales ?? ""}
+                rows={2}
+                className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+                placeholder="Referencias, linderos, cómo llegar…"
+              />
+            </label>
+          </>
+        )}
       </div>
     </div>
   );

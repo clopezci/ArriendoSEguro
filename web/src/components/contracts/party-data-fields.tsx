@@ -145,10 +145,14 @@ export function PartyDataFields({
               className="mt-0.5 h-4 w-4 accent-amber-300"
             />
             <span>
-              <strong>Autorización del titular de los datos.</strong> Declaro que <strong>cuento con la autorización
-              expresa del titular</strong> de estos datos personales para registrarlos en este contrato y que se lo
-              comunicaré, conforme a la Ley 1581 de 2012 (Habeas Data). El titular podrá confirmarlos y ejercer sus
-              derechos al momento de firmar.
+              <strong>Autorización del titular de los datos.</strong>
+              {!authChecked && (
+                <>
+                  {" "}Declaro que <strong>cuento con la autorización expresa del titular</strong> de estos datos
+                  personales para registrarlos en este contrato y que se lo comunicaré, conforme a la Ley 1581 de 2012
+                  (Habeas Data). El titular podrá confirmarlos y ejercer sus derechos al momento de firmar.
+                </>
+              )}
             </span>
           </label>
           <OathEvidenceBadge
@@ -170,14 +174,16 @@ export function PartyDataFields({
             className="mt-0.5 h-4 w-4 accent-amber-300"
           />
           <span>
-            <strong>Declaración bajo gravedad de juramento.</strong> Manifiesto
-            que la información aquí consignada (nombres, documento, contacto,
-            dirección y demás datos) es verídica, completa y actualizada.
-            Conozco que entregar información falsa puede acarrear sanciones
-            civiles, comerciales y penales (artículos 442 y 443 del Código
-            Penal colombiano sobre falso testimonio y fraude procesal, y
-            demás normas aplicables), y autorizo a la contraparte a
-            verificarla por los medios legales disponibles.
+            <strong>Declaración bajo gravedad de juramento.</strong>
+            {!oathChecked && (
+              <>
+                {" "}Manifiesto que la información aquí consignada (nombres, documento, contacto, dirección y demás
+                datos) es verídica, completa y actualizada. Conozco que entregar información falsa puede acarrear
+                sanciones civiles, comerciales y penales (artículos 442 y 443 del Código Penal colombiano sobre falso
+                testimonio y fraude procesal, y demás normas aplicables), y autorizo a la contraparte a verificarla por
+                los medios legales disponibles.
+              </>
+            )}
           </span>
         </label>
         <OathEvidenceBadge
