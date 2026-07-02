@@ -1,12 +1,8 @@
 import { BlogTopicLinks } from "@/components/landing/blog-topic-links";
 import { freeTierEnabled } from "@/lib/config";
-import { formatCopPlain, PER_CONTRACT_PAYMENT_NOTICE } from "@/lib/product-pricing";
-import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/plan-plus-pricing";
-import { getAdminFirestore } from "@/lib/firebase/admin";
 import { LandingPublicHeader } from "@/components/landing/landing-public-header";
 import { LandingInstallApp } from "@/components/landing/landing-install-app";
 import { LandingStepsSection } from "@/components/landing/landing-steps-section";
-import { SurveyFloatingCta } from "@/components/landing/survey-floating-cta";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -34,12 +30,34 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function Home() {
-  const firestore = getAdminFirestore();
-  const pricing = await getPlanPlusPricingForPublicPages(firestore);
+export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <LandingPublicHeader />
+
+      {/* Acceso: lo primero es registrarse / entrar */}
+      <div className="border-b border-violet-200 bg-gradient-to-br from-violet-50 to-white">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-3 px-4 py-4 sm:flex-row sm:justify-between sm:px-6">
+          <p className="text-center text-base font-semibold text-slate-800 sm:text-left">
+            Crea tu contrato de arriendo <span className="text-emerald-700">gratis</span>. Regístrate y empieza en
+            minutos.
+          </p>
+          <div className="flex w-full flex-wrap justify-center gap-2 sm:w-auto">
+            <Link
+              href="/crear-cuenta"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:bg-violet-700"
+            >
+              Crear cuenta gratis
+            </Link>
+            <Link
+              href="/ingresar"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-violet-500 px-5 py-2.5 text-sm font-semibold text-violet-700 hover:bg-violet-50"
+            >
+              Ya tengo cuenta — Acceder
+            </Link>
+          </div>
+        </div>
+      </div>
 
       <main className="relative mx-auto max-w-5xl px-4 pb-24 pt-5 sm:px-6 sm:pb-28 sm:pt-6">
         <div className="flex flex-col gap-5 sm:gap-6">
@@ -124,51 +142,26 @@ export default async function Home() {
             </span>
           </p>
 
-          <section className="space-y-2 rounded-lg border border-slate-300 bg-white p-4 shadow-[0_4px_18px_rgba(15,23,42,0.06)] sm:p-4">
-            <h2 className="text-center text-sm font-semibold text-slate-900 sm:text-base lg:text-left">
-              Ayúdanos a construir una solución útil para arrendar mejor
+          <section className="space-y-3 rounded-xl border border-violet-300 bg-gradient-to-br from-violet-50 to-white p-5 shadow-[0_8px_28px_rgba(139,92,246,0.14)]">
+            <h2 className="text-center text-base font-bold text-slate-900 sm:text-lg lg:text-left">
+              Empieza ahora, sin costo
             </h2>
-            <p className="text-center text-xs leading-relaxed text-slate-600 lg:text-left">
-              Estamos validando ArriendoSeguro con propietarios y arrendatarios reales. Tu opinión define
-              qué priorizamos en la fase inicial.
+            <p className="text-center text-sm leading-relaxed text-slate-700 lg:text-left">
+              Crea tu cuenta y genera tu contrato de arriendo gratis. La firma, el inventario y la posventa se activan
+              con Plan Plus cuando los necesites.
             </p>
-            <p className="flex flex-wrap items-center justify-center gap-2 rounded-lg border border-violet-300 bg-violet-50 px-3 py-2 text-xs leading-snug text-violet-800 lg:justify-start">
-              <span className="inline-flex items-center rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm shadow-violet-500/40">
-                ¡Cupos limitados!
-              </span>
-              <span>
-                {pricing.checkoutCop < pricing.listCompareCop ? (
-                  <>
-                    Los primeros en inscribirse en la encuesta acceden a{" "}
-                    <strong className="font-semibold text-slate-900">
-                      {formatCopPlain(pricing.checkoutCop)}
-                    </strong>{" "}
-                    por contrato gestionado en la plataforma (precio de lista{" "}
-                    <strong className="font-semibold text-slate-900">
-                      {formatCopPlain(pricing.listCompareCop)}
-                    </strong>
-                    ), mientras dure la promoción de lanzamiento.
-                  </>
-                ) : (
-                  <>
-                    Precio vigente por contrato gestionado en la plataforma:{" "}
-                    <strong className="font-semibold text-slate-900">
-                      {formatCopPlain(pricing.checkoutCop)}
-                    </strong>
-                    .
-                  </>
-                )}
-              </span>
-            </p>
-            <p className="text-center text-[11px] leading-snug text-slate-600 lg:text-left">
-              {PER_CONTRACT_PAYMENT_NOTICE}
-            </p>
-            <div className="flex justify-center pt-1 lg:justify-start">
+            <div className="flex flex-wrap justify-center gap-2 lg:justify-start">
               <Link
-                href="/encuesta"
-                className="inline-flex rounded-lg border border-violet-500 bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_6px_20px_rgba(124,58,237,0.35)] transition hover:bg-violet-700"
+                href="/crear-cuenta"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_6px_20px_rgba(124,58,237,0.35)] hover:bg-violet-700"
               >
-                Responder encuesta y reservar beneficio
+                Crear cuenta gratis
+              </Link>
+              <Link
+                href="/herramientas"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-400 bg-emerald-50 px-5 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+              >
+                Ver herramientas gratis
               </Link>
             </div>
           </section>
@@ -183,8 +176,6 @@ export default async function Home() {
           </p>
         </footer>
       </main>
-
-      <SurveyFloatingCta />
     </div>
   );
 }

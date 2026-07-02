@@ -22,6 +22,15 @@
   --font-mono: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
 }
 
+/*
+ * Accesibilidad: base tipográfica un poco más grande (17px en vez de 16px) para
+ * que personas mayores lean cómodo. Como Tailwind usa `rem`, todo escala de
+ * forma uniforme y proporcional.
+ */
+html {
+  font-size: 17px;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
