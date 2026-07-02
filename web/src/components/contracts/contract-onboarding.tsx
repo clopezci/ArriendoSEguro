@@ -8,24 +8,24 @@ const TOUR_KEY = "as_tour_done_v1";
 
 const TOUR_STEPS: { title: string; body: string }[] = [
   {
-    title: "1. Tus datos y el inmueble",
-    body: "Tus datos como dueño (puedes guardarlos y reutilizarlos), los del inquilino y codeudor (los llenas tú o les envías un enlace), y el inmueble. La validación crediticia del inquilino es opcional.",
+    title: "1. Arma tu expediente",
+    body: "Eliges quién diligencia (dueño o apoderado) y llenas los datos del dueño, el inmueble, el inquilino y el codeudor. Al inquilino y codeudor puedes llenarlos tú o enviarles un enlace.",
   },
   {
     title: "2. Condiciones del contrato",
-    body: "Términos (canon, fechas, día de pago), servicios y garantía del Art. 15, y cláusulas especiales. Todo en una sola línea.",
+    body: "Canon con su tope legal, método de pago, fechas, servicios y anticipo, cláusulas especiales y documentos de soporte. Todo en una sola línea.",
   },
   {
-    title: "3. Revisa, guarda y firma",
-    body: "Revisa el resumen, en la Vista previa pulsa «Guardar mi contrato», descarga el PDF y, con Plan Plus, fírmalo con respaldo legal (OTP + evidencia, Ley 527).",
+    title: "3. Revisión y vista previa",
+    body: "Revisas todos los datos y ves el contrato completo antes de firmar.",
   },
   {
-    title: "4. Pagos (casi automático)",
-    body: "El calendario de pagos se arma solo con las fechas del contrato. Tú solo eliges tu método de pago (cuenta/QR) y con cuántos días de anticipación avisar al inquilino.",
+    title: "4. Firma de las partes",
+    body: "Con Plan Plus, cada parte firma con respaldo legal (OTP + evidencia, Ley 527).",
   },
   {
-    title: "5. Alertas, documentos e inventario",
-    body: "Activa alertas de terminación/renovación, sube tus documentos (cada uno con su botón «Adjuntar») y haz el inventario con fotos (ahora o el día de la entrega).",
+    title: "5. Acta de entrega e inventario",
+    body: "Inventario con fotos por zonas y acta de entrega que se envía a ambas partes. Después, gestionas el arriendo: pagos, novedades, renovación y calificación.",
   },
 ];
 
@@ -90,11 +90,11 @@ export function ContractOnboarding() {
           role="note"
           className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5 shadow-[0_10px_28px_rgba(139,92,246,0.16)]"
         >
-          <h2 className="text-base font-bold text-slate-900">Te guiamos en 2 fases</h2>
+          <h2 className="text-base font-bold text-slate-900">Te guiamos en 5 pasos</h2>
           <p className="mt-1 text-sm leading-relaxed text-slate-700">
-            <strong>1) Crea tu contrato gratis</strong> con los datos mínimos. <strong>2) Robustécelo</strong> (codeudores,
-            garantía, cláusulas), <strong>fírmalo</strong> con respaldo legal y <strong>descárgalo en PDF</strong>. Después
-            tienes la posventa (pagos, recordatorios y novedades).
+            <strong>1)</strong> Arma tu expediente · <strong>2)</strong> Condiciones · <strong>3)</strong> Revisión ·
+            <strong> 4)</strong> Firma · <strong>5)</strong> Acta e inventario. Crear el contrato es <strong>gratis</strong>;
+            la firma, el inventario y la posventa se activan con Plan Plus.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button

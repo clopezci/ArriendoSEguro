@@ -44,9 +44,12 @@ export default function Home() {
             ¿Vas a arrendar?
             <span className="mt-1 block">¿Necesitas hacer tu contrato de arrendamiento?</span>
           </h1>
-          <p className="text-pretty text-[15px] leading-relaxed text-slate-600">
-            Créalo <span className="font-semibold text-emerald-700">gratis</span>, sin inmobiliaria y sin dejarlo
-            informal.
+          <p className="text-pretty text-[15px] font-semibold leading-relaxed text-slate-700">
+            Crea tu <span className="text-emerald-700">primer contrato gratis</span>.
+          </p>
+          <p className="text-pretty text-[13px] leading-relaxed text-slate-500">
+            Accede a múltiples beneficios con un plan por una <strong className="font-semibold text-slate-700">mínima
+            fracción del valor de tu arriendo</strong> — pago único por contrato.
           </p>
         </div>
 
