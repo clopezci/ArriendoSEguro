@@ -89,8 +89,8 @@ export function DashboardNav() {
 
   return (
     <>
-      {/* ── Escritorio ── */}
-      <nav className="hidden items-center gap-1 text-sm sm:flex" aria-label="Principal">
+      {/* ── Escritorio ancho ── */}
+      <nav className="hidden items-center gap-1 text-sm lg:flex" aria-label="Principal">
         <Link
           href="/dashboard"
           className={`rounded-md px-2.5 py-1.5 transition-colors ${topActive("/dashboard") ? "bg-violet-600/20 text-violet-800" : "text-slate-700 hover:bg-slate-200"}`}
@@ -125,24 +125,25 @@ export function DashboardNav() {
         </button>
       </nav>
 
-      {/* ── Móvil: botón hamburguesa ── */}
+      {/* ── Móvil / tablet: botón "Menú" ── */}
       <button
         type="button"
         onClick={() => setMobileOpen(true)}
         aria-label="Abrir menú"
         aria-expanded={mobileOpen}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 sm:hidden"
+        className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 hover:border-violet-500 lg:hidden"
       >
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <line x1="3" y1="6" x2="21" y2="6" />
           <line x1="3" y1="12" x2="21" y2="12" />
           <line x1="3" y1="18" x2="21" y2="18" />
         </svg>
+        Menú
       </button>
 
-      {/* ── Móvil: panel lateral ── */}
+      {/* ── Móvil / tablet: panel lateral ── */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 sm:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-slate-900/50" onClick={() => setMobileOpen(false)} aria-hidden="true" />
           <div className="absolute right-0 top-0 flex h-full w-[82%] max-w-xs flex-col overflow-y-auto bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">

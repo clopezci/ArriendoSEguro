@@ -153,7 +153,7 @@ export function HomeDashboardPanel() {
             </span>
             <div>
               <p className="text-sm font-bold text-slate-900">Gestiona tu arriendo</p>
-              <p className="mt-0.5 text-xs text-slate-600">Pagos, novedades, renovación y calificación (después, sin pasos).</p>
+              <p className="mt-0.5 text-xs text-slate-600">Pagos, novedades, renovación y calificación.</p>
             </div>
           </li>
         </ol>
