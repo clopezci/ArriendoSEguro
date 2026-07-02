@@ -13,8 +13,8 @@ export const CONTRACT_TEMPLATE = `
   <h2>PRIMERA. OBJETO</h2>
   <p>
     EL ARRENDADOR entrega a título de arrendamiento a EL ARRENDATARIO, y este recibe en tal calidad, el inmueble
-    urbano destinado exclusivamente a vivienda, ubicado en [DIRECCION_INMUEBLE], ciudad de [CIUDAD_INMUEBLE],
-    departamento de [DEPARTAMENTO_INMUEBLE], identificado, si aplica, con matrícula inmobiliaria No.
+    urbano destinado exclusivamente a vivienda, ubicado en <span class="dato">[DIRECCION_INMUEBLE]</span>, ciudad de
+    [CIUDAD_INMUEBLE], departamento de [DEPARTAMENTO_INMUEBLE], identificado, si aplica, con matrícula inmobiliaria No.
     [MATRICULA_INMOBILIARIA].
   </p>
   <p>[NOTA_DIRECCION_URBANA_Y_CATASTRO]</p>
@@ -30,8 +30,9 @@ export const CONTRACT_TEMPLATE = `
   <h2>TERCERA. CANON DE ARRENDAMIENTO</h2>
   <p>
     EL ARRENDATARIO pagará a EL ARRENDADOR, por concepto de canon de arrendamiento, la suma mensual de
-    [CANON_MENSUAL_LETRAS] ($[CANON_MENSUAL]), pagadera dentro de los primeros [DIA_PAGO] días de cada mes,
-    mediante [METODO_PAGO], o por el medio que las partes acuerden por escrito.
+    <span class="dato">[CANON_MENSUAL_LETRAS] ($[CANON_MENSUAL])</span>, pagadera dentro de los primeros
+    <span class="dato">[DIA_PAGO]</span> días de cada mes, mediante [METODO_PAGO], o por el medio que las partes
+    acuerden por escrito.
   </p>
   <p>
     Las partes declaran que el canon pactado ha sido revisado frente al valor comercial informado del inmueble y que
@@ -40,8 +41,8 @@ export const CONTRACT_TEMPLATE = `
 
   <h2>CUARTA. DURACIÓN</h2>
   <p>
-    El término de duración del presente contrato será de [DURACION_MESES] meses, contados a partir del día
-    [FECHA_INICIO] y hasta el día [FECHA_FIN].
+    El término de duración del presente contrato será de <span class="dato">[DURACION_MESES] meses</span>, contados a
+    partir del día <span class="dato">[FECHA_INICIO]</span> y hasta el día <span class="dato">[FECHA_FIN]</span>.
   </p>
   <p>
     Si las partes desean renovar el contrato, podrán hacerlo conforme a la ley y dejando constancia escrita o
@@ -271,15 +272,65 @@ export function wrapContractHtml(content: string, title: string): string {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>${title}</title>
     <style>
-      body { font-family: Arial, sans-serif; color: #0f172a; line-height: 1.5; margin: 24px; }
-      article { max-width: 900px; margin: 0 auto; }
-      h1 { font-size: 20px; margin-bottom: 12px; }
-      h2 { font-size: 15px; margin-top: 20px; margin-bottom: 8px; }
-      p, li { font-size: 13px; margin: 6px 0; white-space: pre-wrap; }
-      ol { padding-left: 18px; }
+      @page { margin: 2cm; }
+      /* Estilos DEL DOCUMENTO, acotados a .contract-doc para no filtrarse a la app
+         cuando el HTML se inyecta en la vista previa. Sirven igual en el PDF. */
+      .contract-doc {
+        font-family: Georgia, "Times New Roman", serif;
+        color: #1e293b;
+        line-height: 1.6;
+        max-width: 820px;
+        margin: 0 auto;
+        padding: 8px 6px 24px;
+        font-size: 13.5px;
+        text-align: justify;
+      }
+      .contract-doc h1 {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 20px;
+        font-weight: 800;
+        text-align: center;
+        color: #0f172a;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        margin: 0 0 6px;
+      }
+      .contract-doc article > p:first-of-type,
+      .contract-doc > article > p:first-of-type { text-align: center; }
+      .contract-doc h2 {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 13.5px;
+        font-weight: 800;
+        color: #5b21b6;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin: 24px 0 8px;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #ddd6fe;
+      }
+      .contract-doc h3 {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: #334155;
+        margin: 16px 0 6px;
+      }
+      .contract-doc p, .contract-doc li { margin: 7px 0; white-space: pre-wrap; }
+      .contract-doc ol { padding-left: 22px; }
+      .contract-doc ol li { margin: 4px 0; }
+      .contract-doc strong { font-weight: 700; color: #0f172a; }
+      /* Datos clave remarcados (canon, fechas, inmueble, partes) */
+      .contract-doc .dato {
+        font-weight: 700;
+        color: #4c1d95;
+        background: #f5f3ff;
+        padding: 0 3px;
+        border-radius: 3px;
+      }
+      .contract-doc a { color: #6d28d9; }
     </style>
   </head>
-  <body>${content}</body>
+  <body><div class="contract-doc">${content}</div></body>
 </html>`;
 }
 

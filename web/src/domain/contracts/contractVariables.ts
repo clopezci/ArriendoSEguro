@@ -41,14 +41,14 @@ export function buildContractVariables(input: ResidentialLeaseContractInput): Co
   const notifTenant = notifAddress(input.tenant.notificationAddress, NOTIF_FALLBACK_TENANT);
   const base: ContractVariableMap = {
     COMPARECENCIA_ARRENDADOR:
-      `${escapeHtml(input.landlord.fullName)}, mayor de edad, identificado(a) con ` +
-      `${escapeHtml(input.landlord.documentType)} No. ${escapeHtml(input.landlord.documentNumber)}, domiciliado(a) ` +
+      `<strong>${escapeHtml(input.landlord.fullName)}</strong>, mayor de edad, identificado(a) con ` +
+      `${escapeHtml(input.landlord.documentType)} No. <strong>${escapeHtml(input.landlord.documentNumber)}</strong>, domiciliado(a) ` +
       `en ${escapeHtml(input.landlord.city)}, con correo electrónico ${escapeHtml(input.landlord.email)}, teléfono ` +
       `${escapeHtml(input.landlord.phone)} y como dirección para notificaciones ${notifLandlord}, ` +
       `quien para efectos del presente contrato se denominará EL ARRENDADOR;`,
     COMPARECENCIA_ARRENDATARIO:
-      `${escapeHtml(input.tenant.fullName)}, mayor de edad, identificado(a) con ` +
-      `${escapeHtml(input.tenant.documentType)} No. ${escapeHtml(input.tenant.documentNumber)}, domiciliado(a) ` +
+      `<strong>${escapeHtml(input.tenant.fullName)}</strong>, mayor de edad, identificado(a) con ` +
+      `${escapeHtml(input.tenant.documentType)} No. <strong>${escapeHtml(input.tenant.documentNumber)}</strong>, domiciliado(a) ` +
       `en ${escapeHtml(input.tenant.city)}, con correo electrónico ${escapeHtml(input.tenant.email)}, teléfono ` +
       `${escapeHtml(input.tenant.phone)} y como dirección para notificaciones ${notifTenant}, ` +
       `quien para efectos del presente contrato se denominará EL ARRENDATARIO;`,
