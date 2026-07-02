@@ -9,6 +9,7 @@ import type { Inventory, InventoryKey, InventoryMeterReading } from "@/domain/in
 import { renderInitialDeliveryAct } from "@/domain/inventory/renderInitialDeliveryAct";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
+import { sendEmail } from "@/services/email/sendEmail";
 
 export const runtime = "nodejs";
 // PDF con pdf-lib (JS puro); headroom por inventario extenso / subida a Storage.
@@ -18,6 +19,8 @@ const schema = z.object({
   contractId: z.string().min(3),
   contractVersionId: z.string().min(3),
   observations: z.string().optional().default(""),
+  /** Fecha de entrega (YYYY-MM-DD). Si falta, se usa la fecha de hoy. */
+  deliveryDate: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -39,7 +42,11 @@ export async function POST(request: Request) {
     const versionSnap = await firestore.collection("contract_versions").doc(parsed.data.contractVersionId).get();
     const version = versionSnap.data() as {
       contractId?: string;
-      contractPayload?: { landlord?: { fullName?: string }; tenant?: { fullName?: string }; property?: { address?: string } };
+      contractPayload?: {
+        landlord?: { fullName?: string; email?: string };
+        tenant?: { fullName?: string; email?: string };
+        property?: { address?: string };
+      };
     } | undefined;
     if (!versionSnap.exists || version?.contractId !== parsed.data.contractId) {
       return NextResponse.json({ success: false, errors: [{ field: "contractVersionId", message: "Versión contractual inválida." }] }, { status: 422 });
@@ -69,8 +76,16 @@ export async function POST(request: Request) {
       .filter(Boolean)
       .slice(0, 5)
       .join(" | ");
+    const deliveryDateDisplay = (() => {
+      const raw = parsed.data.deliveryDate?.trim();
+      if (raw) {
+        const d = new Date(`${raw}T00:00:00`);
+        if (!Number.isNaN(d.getTime())) return d.toLocaleDateString("es-CO");
+      }
+      return new Date().toLocaleDateString("es-CO");
+    })();
     const rendered = renderInitialDeliveryAct({
-      deliveryDate: new Date().toLocaleDateString("es-CO"),
+      deliveryDate: deliveryDateDisplay,
       propertyAddress: version?.contractPayload?.property?.address ?? "Sin dirección",
       landlordName: version?.contractPayload?.landlord?.fullName ?? "Arrendador",
       tenantName: version?.contractPayload?.tenant?.fullName ?? "Arrendatario",
@@ -142,7 +157,51 @@ export async function POST(request: Request) {
       { merge: true },
     );
     auditEvent("initial_delivery_act_generated", { inventoryId: inventory.id, contractId: parsed.data.contractId });
-    return NextResponse.json({ success: true, annexId, documentHash: rendered.hash });
+
+    // Envío del acta a ambas partes por correo (best-effort; no bloquea el éxito).
+    const landlordEmail = version?.contractPayload?.landlord?.email?.trim().toLowerCase();
+    const tenantEmail = version?.contractPayload?.tenant?.email?.trim().toLowerCase();
+    const propertyAddress = version?.contractPayload?.property?.address ?? "el inmueble arrendado";
+    const recipients = Array.from(new Set([landlordEmail, tenantEmail].filter(Boolean))) as string[];
+    const linkLine = pdfUrl && pdfUrl.startsWith("http")
+      ? `<p>Puedes ver o descargar el acta aquí: <a href="${pdfUrl}">Acta de entrega (PDF)</a> (enlace válido por 7 días).</p>`
+      : `<p>El acta quedó archivada en el expediente del contrato en ArriendoSeguro.</p>`;
+    const emailHtml =
+      `<p>Hola,</p>` +
+      `<p>Se generó el <strong>acta de entrega inicial</strong> del inmueble ubicado en <strong>${propertyAddress}</strong>, ` +
+      `con fecha de entrega <strong>${deliveryDateDisplay}</strong>.</p>` +
+      `<p>${summary}</p>` +
+      linkLine +
+      `<p>Conserva este documento: es tu mejor prueba del estado del inmueble al inicio del arriendo.</p>` +
+      `<p style="color:#64748b;font-size:12px;">Enviado por ArriendoSeguro. No responde a este correo.</p>`;
+    let emailDelivery: "ok" | "partial" | "failed" | "none" = "none";
+    if (recipients.length > 0) {
+      const results = await Promise.all(
+        recipients.map((to) =>
+          sendEmail({
+            to,
+            subject: "Acta de entrega del inmueble — ArriendoSeguro",
+            html: emailHtml,
+            text: `Se generó el acta de entrega del inmueble en ${propertyAddress} (fecha ${deliveryDateDisplay}). ${summary}`,
+            templateCode: "initialDeliveryActEmail",
+            relatedEntityType: "contract",
+            relatedEntityId: parsed.data.contractId,
+          }).then(
+            (r) => r.status === "sent" || r.status === "mock",
+            () => false,
+          ),
+        ),
+      );
+      const okCount = results.filter(Boolean).length;
+      emailDelivery = okCount === 0 ? "failed" : okCount === results.length ? "ok" : "partial";
+      auditEvent("initial_delivery_act_emailed", {
+        contractId: parsed.data.contractId,
+        recipients: recipients.length,
+        delivery: emailDelivery,
+      });
+    }
+
+    return NextResponse.json({ success: true, annexId, documentHash: rendered.hash, emailDelivery });
   } catch {
     return NextResponse.json({ success: false, errors: [{ field: "server", message: "No se pudo generar acta de entrega." }] }, { status: 500 });
   }

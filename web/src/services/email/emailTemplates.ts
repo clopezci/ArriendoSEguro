@@ -19,7 +19,8 @@ export type EmailTemplateCode =
   | "paymentConfirmedToTenantEmail"
   | "tenantPaymentReminderEmail"
   | "ownerConfirmEscalationEmail"
-  | "specialClauseReviewEmail";
+  | "specialClauseReviewEmail"
+  | "initialDeliveryActEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
