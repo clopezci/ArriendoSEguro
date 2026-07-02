@@ -1,26 +1,27 @@
 "use client";
 
 /**
- * Campos de persona (nombre, documento colombiano, contacto y dirección urbana estructurada).
- * Se reutiliza en arrendador, arrendatario y codeudor para mantener una sola fuente de validación visual.
+ * Campos de persona (DATOS MÍNIMOS): nombre, documento colombiano, ciudad y
+ * contacto. Se reutiliza en arrendador, arrendatario y codeudor.
+ *
+ * La dirección de notificación de las personas se retiró para simplificar (Ley
+ * 820: el contenido mínimo del art. 3 no la exige; el art. 12 presume que se
+ * notifica en el inmueble/donde se recibe el canon). Solo el inmueble lleva
+ * dirección. La cláusula de notificaciones del contrato deja explícito el art. 12.
  */
 
 import { DOCUMENT_TYPE_OPTIONS } from "@/domain/colombia/document-validation";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 import { useMemo, useState } from "react";
-import { UrbanAddressFields } from "@/components/contracts/urban-address-fields";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 
 export function PartyDataFields({
   party,
-  legacyFreeTextAddressMessage,
   oathId,
   contractDraftId,
   thirdPartyAuthorization = false,
 }: {
   party: PartyDraft;
-  /** Si hay texto viejo sin partes, invitamos a reemplazar usando el formato nuevo. */
-  legacyFreeTextAddressMessage?: boolean;
   /**
    * Identificador del juramento para correlacionar la evidencia en
    * auditoría. Ej: "landlord_truthfulness_oath",
@@ -51,8 +52,6 @@ export function PartyDataFields({
   const hint = useMemo(() => {
     return DOCUMENT_TYPE_OPTIONS.find((o) => o.value === docType)?.hint ?? "";
   }, [docType]);
-
-  const parts = party.notificationAddressParts;
 
   return (
     <>
@@ -133,13 +132,6 @@ export function PartyDataFields({
           placeholder="Ej. 3001234567"
         />
       </label>
-
-      <UrbanAddressFields
-        prefix="addr"
-        parts={parts}
-        variant="notificacion"
-        legacyFreeTextAddress={!!legacyFreeTextAddressMessage && !!party.notificationAddress}
-      />
 
       {thirdPartyAuthorization && (
         <div className="sm:col-span-2 rounded-xl border border-amber-500/40 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">

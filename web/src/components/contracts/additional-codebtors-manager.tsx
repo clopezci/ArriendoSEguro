@@ -55,8 +55,7 @@ export function AdditionalCodebtorsManager({ contractId, max = 4 }: { contractId
       !f.fullName.trim() ||
       !f.documentNumber.trim() ||
       !f.city.trim() ||
-      !f.phone.trim() ||
-      !f.notificationAddress.trim()
+      !f.phone.trim()
     ) {
       setError("Completa todos los datos del codeudor.");
       return;
@@ -76,7 +75,7 @@ export function AdditionalCodebtorsManager({ contractId, max = 4 }: { contractId
       city: f.city.trim(),
       email: f.email.trim().toLowerCase(),
       phone: f.phone.trim(),
-      notificationAddress: f.notificationAddress.trim(),
+      notificationAddress: "",
       truthfulnessOathAccepted: true,
     };
     updateDraft(contractId, (d) =>
@@ -159,14 +158,6 @@ export function AdditionalCodebtorsManager({ contractId, max = 4 }: { contractId
           <Field label="Ciudad" value={form.city} onChange={(v) => setForm((s) => ({ ...s, city: v }))} />
           <Field label="Correo" value={form.email} onChange={(v) => setForm((s) => ({ ...s, email: v }))} />
           <Field label="Teléfono" value={form.phone} onChange={(v) => setForm((s) => ({ ...s, phone: v }))} />
-          <label className="text-xs text-slate-700 sm:col-span-2">
-            Dirección de notificación
-            <input
-              value={form.notificationAddress}
-              onChange={(e) => setForm((s) => ({ ...s, notificationAddress: e.target.value }))}
-              className="mt-1 w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm"
-            />
-          </label>
           <label className="sm:col-span-2 flex items-start gap-2 text-xs text-slate-800">
             <input
               type="checkbox"

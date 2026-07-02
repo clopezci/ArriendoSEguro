@@ -9,10 +9,6 @@ import type { PartyDraft } from "@/features/contracts/draft-types";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
-import {
-  formatColombianNotificationAddress,
-  parseNotificationAddressFromForm,
-} from "@/domain/colombia/structured-address";
 import { appendAudit, codebtorSchema, updateDraft } from "@/features/contracts/wizard-state";
 import {
   sanitizeCodebtorFromForm,
@@ -110,13 +106,8 @@ export default function CodebtorStepPage() {
     if (decision !== "yes") return;
     setErrors([]);
 
-    const addrParsed = parseNotificationAddressFromForm(formData);
-    if (!addrParsed.success) {
-      setErrors(humanizeZodIssues(addrParsed.error.issues));
-      return;
-    }
-    const notificationAddress = formatColombianNotificationAddress(addrParsed.data);
-    const sanitized = sanitizeCodebtorFromForm(formData, { notificationAddress });
+    // Datos mínimos: la dirección de notificación de las personas ya no se pide.
+    const sanitized = sanitizeCodebtorFromForm(formData, { notificationAddress: "" });
     const parsed = codebtorSchema.safeParse(sanitized);
 
     if (!parsed.success) {
@@ -145,8 +136,6 @@ export default function CodebtorStepPage() {
             city: parsed.data.city,
             email: parsed.data.email,
             phone: parsed.data.phone,
-            notificationAddress: parsed.data.notificationAddress,
-            notificationAddressParts: addrParsed.data,
             truthfulnessOathAccepted: Boolean(parsed.data.truthfulnessOath),
             economicSupport,
           },
@@ -246,10 +235,6 @@ export default function CodebtorStepPage() {
           <PartyDataFields
             key={formKey}
             party={party}
-            legacyFreeTextAddressMessage={
-              !!party.notificationAddress &&
-              !party.notificationAddressParts
-            }
             oathId="codebtor_truthfulness_oath"
             contractDraftId={id}
             thirdPartyAuthorization

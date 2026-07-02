@@ -3,10 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
-import {
-  formatColombianNotificationAddress,
-  parseNotificationAddressFromForm,
-} from "@/domain/colombia/structured-address";
 import { sanitizePartyFromForm } from "@/features/contracts/party-sanitize";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
@@ -108,18 +104,9 @@ export default function InvitacionPage() {
 
   async function onSubmit(formData: FormData) {
     setMsg("");
-    const addrParsed = parseNotificationAddressFromForm(formData);
-    if (!addrParsed.success) {
-      setMsg("Revisa la dirección de notificación.");
-      return;
-    }
-    const notificationAddress = formatColombianNotificationAddress(addrParsed.data);
-    const sanitized = sanitizePartyFromForm(formData, { notificationAddress });
-    const payloadParty = {
-      ...sanitized,
-      notificationAddress,
-      notificationAddressParts: addrParsed.data,
-    };
+    // Datos mínimos: ya no se pide dirección de notificación a las personas.
+    const sanitized = sanitizePartyFromForm(formData, { notificationAddress: "" });
+    const payloadParty = { ...sanitized, notificationAddress: "" };
     setBusy(true);
     try {
       const res = await fetch("/api/party-invite/submit", {
@@ -219,7 +206,6 @@ export default function InvitacionPage() {
             <PartyDataFields
               key={formKey}
               party={party}
-              legacyFreeTextAddressMessage={!!party.notificationAddress && !party.notificationAddressParts}
               oathId="invitee_truthfulness_oath"
               contractDraftId={token}
             />

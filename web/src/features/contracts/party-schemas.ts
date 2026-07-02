@@ -36,9 +36,13 @@ const partyObjectSchema = z.object({
   city: citySchema,
   email: z.string().email("Correo electrónico inválido."),
   phone: zPhoneCo,
-  notificationAddress: z
-    .string()
-    .min(12, "La dirección de notificación es demasiado corta o está incompleta."),
+  /**
+   * Dirección de notificación OPCIONAL (datos mínimos). Si se omite, aplica la
+   * presunción del art. 12 de la Ley 820 de 2003 (al arrendatario y al codeudor
+   * se les notifica en el inmueble arrendado; al arrendador donde recibe el
+   * canon), que el contrato deja explícita en su cláusula de notificaciones.
+   */
+  notificationAddress: z.string().max(200).optional().default(""),
   /**
    * Declaración bajo gravedad de juramento. La persona reconoce que la
    * información ingresada es verídica. Se exige aceptar la casilla para

@@ -161,12 +161,22 @@ export const CONTRACT_TEMPLATE = `
 
   <h2>DÉCIMA QUINTA. NOTIFICACIONES</h2>
   <p>
+    Para todos los efectos legales y contractuales, las partes recibirán notificaciones judiciales y extrajudiciales en
+    las siguientes direcciones:
+  </p>
+  <p>
     EL ARRENDADOR: Dirección [DIRECCION_NOTIFICACION_ARRENDADOR] - Correo [EMAIL_ARRENDADOR]
   </p>
   <p>
     EL ARRENDATARIO: Dirección [DIRECCION_NOTIFICACION_ARRENDATARIO] - Correo [EMAIL_ARRENDATARIO]
   </p>
   <p>[NOTIFICACION_CODEUDOR_CONDICIONAL]</p>
+  <p>
+    De conformidad con el artículo 12 de la Ley 820 de 2003, a falta de dirección expresamente señalada por alguna de
+    las partes, se entiende que EL ARRENDATARIO y quien actúe como codeudor, si lo hubiere, reciben notificaciones en el
+    inmueble arrendado, y EL ARRENDADOR en el lugar donde recibe el pago del canon. Cualquier cambio de dirección deberá
+    comunicarse por escrito a la otra parte para que surta efectos.
+  </p>
 
   <h2>DÉCIMA SEXTA. MORA, TERMINACIÓN Y RESTITUCIÓN LEGAL DEL INMUEBLE</h2>
   <p>

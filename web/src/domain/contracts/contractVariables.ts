@@ -25,19 +25,32 @@ function formatDate(value: string): string {
   return new Intl.DateTimeFormat("es-CO", { year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }
 
+// Respaldo del art. 12 de la Ley 820 de 2003 cuando la parte no señaló una
+// dirección de notificación (datos mínimos). Texto estático y confiable.
+const NOTIF_FALLBACK_LANDLORD = "el lugar donde recibe el pago del canon (presunción del art. 12 de la Ley 820 de 2003)";
+const NOTIF_FALLBACK_TENANT = "el inmueble arrendado objeto de este contrato (presunción del art. 12 de la Ley 820 de 2003)";
+
+/** Dirección de notificación con respaldo del art. 12 si la parte no la señaló. */
+function notifAddress(address: string | null | undefined, fallback: string): string {
+  const v = (address ?? "").trim();
+  return v ? escapeHtml(v) : fallback;
+}
+
 export function buildContractVariables(input: ResidentialLeaseContractInput): ContractVariableMap {
+  const notifLandlord = notifAddress(input.landlord.notificationAddress, NOTIF_FALLBACK_LANDLORD);
+  const notifTenant = notifAddress(input.tenant.notificationAddress, NOTIF_FALLBACK_TENANT);
   const base: ContractVariableMap = {
     COMPARECENCIA_ARRENDADOR:
       `${escapeHtml(input.landlord.fullName)}, mayor de edad, identificado(a) con ` +
       `${escapeHtml(input.landlord.documentType)} No. ${escapeHtml(input.landlord.documentNumber)}, domiciliado(a) ` +
       `en ${escapeHtml(input.landlord.city)}, con correo electrónico ${escapeHtml(input.landlord.email)}, teléfono ` +
-      `${escapeHtml(input.landlord.phone)} y dirección de notificación ${escapeHtml(input.landlord.notificationAddress)}, ` +
+      `${escapeHtml(input.landlord.phone)} y como dirección para notificaciones ${notifLandlord}, ` +
       `quien para efectos del presente contrato se denominará EL ARRENDADOR;`,
     COMPARECENCIA_ARRENDATARIO:
       `${escapeHtml(input.tenant.fullName)}, mayor de edad, identificado(a) con ` +
       `${escapeHtml(input.tenant.documentType)} No. ${escapeHtml(input.tenant.documentNumber)}, domiciliado(a) ` +
       `en ${escapeHtml(input.tenant.city)}, con correo electrónico ${escapeHtml(input.tenant.email)}, teléfono ` +
-      `${escapeHtml(input.tenant.phone)} y dirección de notificación ${escapeHtml(input.tenant.notificationAddress)}, ` +
+      `${escapeHtml(input.tenant.phone)} y como dirección para notificaciones ${notifTenant}, ` +
       `quien para efectos del presente contrato se denominará EL ARRENDATARIO;`,
     DIRECCION_INMUEBLE: escapeHtml(input.property.address),
     /** Aclaración legal/orientativa: dirección urbana ≠ certificación catastral; enlace a canal nacional de referencia. */
@@ -62,9 +75,9 @@ export function buildContractVariables(input: ResidentialLeaseContractInput): Co
     RESPONSABLE_SERVICIOS_PUBLICOS: escapeHtml(input.utilities.responsibleParty),
     DETALLE_SERVICIOS_PUBLICOS: escapeHtml(input.utilities.details),
     DETALLE_ADMINISTRACION_EXPENSAS: escapeHtml(input.utilities.adminFeesDetails),
-    DIRECCION_NOTIFICACION_ARRENDADOR: escapeHtml(input.landlord.notificationAddress),
+    DIRECCION_NOTIFICACION_ARRENDADOR: notifLandlord,
     EMAIL_ARRENDADOR: escapeHtml(input.landlord.email),
-    DIRECCION_NOTIFICACION_ARRENDATARIO: escapeHtml(input.tenant.notificationAddress),
+    DIRECCION_NOTIFICACION_ARRENDATARIO: notifTenant,
     EMAIL_ARRENDATARIO: escapeHtml(input.tenant.email),
     NUMERO_MESES_MORA: String(input.lease.latePaymentMonthsThreshold),
     NOMBRE_ARRENDADOR: escapeHtml(input.landlord.fullName),
@@ -98,7 +111,7 @@ export function buildContractVariables(input: ResidentialLeaseContractInput): Co
     base[`CIUDAD_CODEUDOR${s}`] = escapeHtml(c.city);
     base[`EMAIL_CODEUDOR${s}`] = escapeHtml(c.email);
     base[`TELEFONO_CODEUDOR${s}`] = escapeHtml(c.phone);
-    base[`DIRECCION_NOTIFICACION_CODEUDOR${s}`] = escapeHtml(c.notificationAddress);
+    base[`DIRECCION_NOTIFICACION_CODEUDOR${s}`] = notifAddress(c.notificationAddress, NOTIF_FALLBACK_TENANT);
     base[`DOCUMENTO_CODEUDOR${s}`] = `${escapeHtml(c.documentType)} ${escapeHtml(c.documentNumber)}`;
     base[`FIRMA_CODEUDOR${s}`] = "Pendiente de evento de firma";
     base[`FECHA_FIRMA_CODEUDOR${s}`] = "Pendiente";

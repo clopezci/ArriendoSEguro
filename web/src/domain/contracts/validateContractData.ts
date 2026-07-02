@@ -11,9 +11,8 @@ function validateParty(prefix: string, party: PersonParty, issues: ValidationIss
   if (isBlank(party.city)) issues.push({ field: `${prefix}.city`, message: "Ciudad requerida." });
   if (isBlank(party.email)) issues.push({ field: `${prefix}.email`, message: "Correo requerido." });
   if (isBlank(party.phone)) issues.push({ field: `${prefix}.phone`, message: "Teléfono requerido." });
-  if (isBlank(party.notificationAddress)) {
-    issues.push({ field: `${prefix}.notificationAddress`, message: "Dirección de notificación requerida." });
-  }
+  // La dirección de notificación es OPCIONAL (datos mínimos): si se omite, aplica
+  // la presunción del art. 12 de la Ley 820 de 2003 que el contrato deja explícita.
 }
 
 export function validateContractData(input: ResidentialLeaseContractInput): ValidationResult {

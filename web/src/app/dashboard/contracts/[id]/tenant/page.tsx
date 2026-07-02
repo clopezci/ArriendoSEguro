@@ -5,10 +5,6 @@ import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
-import {
-  formatColombianNotificationAddress,
-  parseNotificationAddressFromForm,
-} from "@/domain/colombia/structured-address";
 import { appendAudit, tenantSchema, updateDraft } from "@/features/contracts/wizard-state";
 import { sanitizePartyFromForm, PARTY_FIELD_LABELS } from "@/features/contracts/party-sanitize";
 import type { PartyDraft } from "@/features/contracts/draft-types";
@@ -40,13 +36,8 @@ export default function TenantStepPage() {
 
   function onSubmit(formData: FormData) {
     setErrors([]);
-    const addrParsed = parseNotificationAddressFromForm(formData);
-    if (!addrParsed.success) {
-      setErrors(humanizeZodIssues(addrParsed.error.issues));
-      return;
-    }
-    const notificationAddress = formatColombianNotificationAddress(addrParsed.data);
-    const sanitized = sanitizePartyFromForm(formData, { notificationAddress });
+    // Datos mínimos: la dirección de notificación de las personas ya no se pide.
+    const sanitized = sanitizePartyFromForm(formData, { notificationAddress: "" });
     const parsed = tenantSchema.safeParse(sanitized);
 
     if (!parsed.success) {
@@ -70,7 +61,6 @@ export default function TenantStepPage() {
           ...d,
           tenant: {
             ...tenantData,
-            notificationAddressParts: addrParsed.data,
             truthfulnessOathAccepted: Boolean(truthfulnessOath),
           },
           landlordCreditHistoryAttestation: {
@@ -113,9 +103,6 @@ export default function TenantStepPage() {
         <PartyDataFields
           key={formKey}
           party={party}
-          legacyFreeTextAddressMessage={
-            !!party.notificationAddress && !party.notificationAddressParts
-          }
           oathId="tenant_truthfulness_oath"
           contractDraftId={id}
           thirdPartyAuthorization
