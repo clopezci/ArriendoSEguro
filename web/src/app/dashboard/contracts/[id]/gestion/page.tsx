@@ -79,6 +79,22 @@ export default function GestionArriendoPage() {
             </p>
           </section>
 
+          {/* Renovación (solo se activa para contratos firmados; la página lo valida) */}
+          <section className="rounded-2xl border border-emerald-300 bg-emerald-50/60 p-5 shadow-sm">
+            <h2 className="text-base font-bold text-emerald-950">¿Se vence el contrato? Renuévalo fácil</h2>
+            <p className="mt-2 text-sm text-emerald-900/90">
+              Si vas a seguir con el mismo inquilino, renueva con un botón: dejas todo igual o editas, y generamos el{" "}
+              <strong>otrosí de prórroga y reajuste</strong> (con el IPC) que se envía a todas las partes. Solo para
+              contratos ya firmados.
+            </p>
+            <Link
+              href={`${base}/renovar`}
+              className="mt-3 inline-flex rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
+            >
+              Renovar contrato
+            </Link>
+          </section>
+
           <p className="text-sm text-slate-600">
             <Link href={`${base}/adicionales`} className="text-violet-700 underline">← Volver a la posventa</Link>
           </p>
