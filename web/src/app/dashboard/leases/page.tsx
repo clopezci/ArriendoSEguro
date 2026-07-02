@@ -339,6 +339,12 @@ export default function MisArriendosPage() {
                         >
                           Posventa
                         </Link>
+                        <Link
+                          href={`/dashboard/contracts/${d.id}/gestion`}
+                          className="inline-flex justify-center rounded-lg border border-violet-400 bg-violet-50 px-3 py-2 text-center text-sm font-medium text-violet-700 hover:bg-violet-100"
+                        >
+                          Gestionar arriendo
+                        </Link>
                       </div>
                     </div>
                   </div>

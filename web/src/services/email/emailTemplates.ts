@@ -20,7 +20,8 @@ export type EmailTemplateCode =
   | "tenantPaymentReminderEmail"
   | "ownerConfirmEscalationEmail"
   | "specialClauseReviewEmail"
-  | "initialDeliveryActEmail";
+  | "initialDeliveryActEmail"
+  | "reputationReviewReceivedEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;

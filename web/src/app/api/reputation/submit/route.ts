@@ -15,6 +15,7 @@ import {
   recomputeAggregateForSubject,
   runAntifraudOnSubmit,
 } from "@/lib/reputation/aggregate-store";
+import { sendEmail } from "@/services/email/sendEmail";
 
 export const runtime = "nodejs";
 
@@ -155,6 +156,30 @@ export async function POST(request: Request) {
         });
       } catch (aggErr) {
         await logServerError("reputation/aggregate", aggErr);
+      }
+
+      // Aviso al calificado (derecho de réplica). Best-effort; no rompe el guardado.
+      try {
+        const link = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/dashboard/contracts/${contractId}/reputacion`;
+        const html =
+          `<p>Hola,</p>` +
+          `<p>La otra parte de tu arriendo registró una <strong>calificación estructurada</strong> de la experiencia ` +
+          `(solo estrellas, sin comentarios de texto). Es privada: nadie puede consultarla por tu cédula.</p>` +
+          `<p>Tienes <strong>derecho de réplica</strong>: puedes responder desde tu expediente.</p>` +
+          (link.startsWith("http") ? `<p><a href="${link}">Ver la calificación y responder</a></p>` : "") +
+          `<p style="color:#64748b;font-size:12px;">Conforme a la política de evaluación de ArriendoSeguro. No hay listas negras ni búsqueda pública.</p>`;
+        await sendEmail({
+          to: subjectEmail,
+          subject: "Recibiste una calificación de tu arriendo — ArriendoSeguro",
+          html,
+          text: "La otra parte calificó la experiencia de tu arriendo. Tienes derecho de réplica desde tu expediente en ArriendoSeguro.",
+          templateCode: "reputationReviewReceivedEmail",
+          relatedEntityType: "contract",
+          relatedEntityId: contractId,
+        });
+        auditEvent("reputation_review_notified", { contractId, direction });
+      } catch (mailErr) {
+        await logServerError("reputation/notify", mailErr);
       }
     }
 
