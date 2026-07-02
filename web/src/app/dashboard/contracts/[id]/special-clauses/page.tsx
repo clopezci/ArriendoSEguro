@@ -132,7 +132,7 @@ export default function SpecialClausesStepPage() {
       })();
     }
 
-    router.push(`/dashboard/contracts/${id}/review`);
+    flashSaved(() => router.push(`/dashboard/contracts/${id}/review`));
   }
 
   const freeTextLength = freeText.length;

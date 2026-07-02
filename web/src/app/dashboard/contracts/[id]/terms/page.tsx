@@ -7,7 +7,9 @@ import { appendAudit, termsSchema, updateDraft } from "@/features/contracts/wiza
 import { sanitizeFreeText } from "@/lib/text/sanitize";
 import { humanizeZodIssues } from "@/lib/validations/zod-errors-es";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+const formatCop = (n: number) => `$${(n || 0).toLocaleString("es-CO")}`;
 
 /** Mapa de campos a etiquetas amigables en español para los errores. */
 const TERMS_FIELD_LABELS: Record<string, string> = {
@@ -26,10 +28,20 @@ export default function TermsStepPage() {
   const { draft, state } = useDraftGuard(id);
   const router = useRouter();
   const [errors, setErrors] = useState<string[]>([]);
+  // Canon en vivo para comparar con el tope legal del 1% (Ley 820, art. 18).
+  const [rent, setRent] = useState<number>(0);
+
+  useEffect(() => {
+    if (draft?.lease?.monthlyRent != null) setRent(Number(draft.lease.monthlyRent) || 0);
+  }, [draft?.lease?.monthlyRent]);
 
   if (state !== "ready" || !draft) {
     return <p className="text-sm text-slate-700">Cargando…</p>;
   }
+
+  const commercialValue = Number(draft.property?.commercialValue ?? 0);
+  const capUnknown = Boolean(draft.property?.commercialValueUnknown);
+  const legalCap = commercialValue > 0 ? Math.round(commercialValue * 0.01) : 0;
 
   function onSubmit(formData: FormData) {
     setErrors([]);
@@ -66,13 +78,52 @@ export default function TermsStepPage() {
           onSubmit(new FormData(e.currentTarget));
         }}
       >
-        <Input
-          name="monthlyRent"
-          label="Canon mensual (COP)"
-          type="number"
-          defaultValue={String(draft.lease.monthlyRent ?? "")}
-          hint="Valor mensual del arriendo en pesos colombianos."
-        />
+        <div className="sm:col-span-2 rounded-lg border border-violet-200 bg-violet-50/50 p-3 text-xs leading-relaxed text-slate-700">
+          <strong className="text-violet-800">Condiciones del contrato.</strong> Configúralas en orden: valor y tope
+          legal · método de pago · fechas y duración · alertas · servicios y anticipo · cláusulas. Al final, al guardar,
+          adjuntas los documentos de soporte.
+        </div>
+
+        <label className="text-sm">
+          <span className="mb-1 block text-slate-700">Canon mensual (COP)</span>
+          <input
+            name="monthlyRent"
+            type="number"
+            inputMode="numeric"
+            defaultValue={String(draft.lease.monthlyRent ?? "")}
+            onChange={(e) => setRent(Number(e.target.value) || 0)}
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+          />
+          <span className="mt-1 block text-xs text-slate-600">Valor mensual del arriendo en pesos colombianos.</span>
+        </label>
+
+        {(legalCap > 0 || capUnknown) && (
+          <div
+            className={`sm:col-span-2 rounded-lg border p-3 text-xs leading-relaxed ${
+              capUnknown
+                ? "border-amber-300 bg-amber-50 text-amber-900"
+                : rent > 0 && rent > legalCap
+                  ? "border-rose-300 bg-rose-50 text-rose-800"
+                  : "border-emerald-300 bg-emerald-50 text-emerald-900"
+            }`}
+          >
+            {capUnknown ? (
+              <>
+                Declaraste <strong>no conocer el valor comercial</strong>: el tope del 1% (Ley 820, art. 18) queda bajo tu
+                responsabilidad. Mantén el canon en un valor razonable frente al mercado.
+              </>
+            ) : (
+              <>
+                Tope legal del canon = 1% del valor comercial declarado ({formatCop(commercialValue)}):{" "}
+                <strong>{formatCop(legalCap)}</strong>.
+                {rent > 0 &&
+                  (rent > legalCap
+                    ? " ⚠️ El canon ingresado supera el tope legal. Ajústalo."
+                    : " ✓ El canon está dentro del tope.")}
+              </>
+            )}
+          </div>
+        )}
         <Input
           name="monthlyRentText"
           label="Canon mensual en letras"
@@ -169,7 +220,7 @@ export default function TermsStepPage() {
         )}
       </form>
       <StepNav
-        backHref={`/dashboard/contracts/${id}/property`}
+        backHref={`/dashboard/contracts/${id}/codebtor`}
         backLabel="Anterior"
         nextHref={`/dashboard/contracts/${id}/utilities`}
       />
