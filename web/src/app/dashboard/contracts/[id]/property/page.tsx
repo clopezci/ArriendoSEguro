@@ -191,7 +191,7 @@ export default function PropertyStepPage() {
       });
     }
 
-    router.push(`/dashboard/contracts/${id}/terms`);
+    router.push(`/dashboard/contracts/${id}/tenant`);
   }
 
   const legacyAddress = !!prop.address && !prop.addressParts;
@@ -220,7 +220,7 @@ export default function PropertyStepPage() {
           };
 
   return (
-    <WizardShell title="Inmueble a arrendar" currentStep={5} contractId={id}>
+    <WizardShell title="Inmueble a arrendar" currentStep={3} contractId={id}>
       {savedProps.length > 0 && (
         <div className="mb-4 rounded-lg border border-violet-300 bg-violet-50/60 p-3 text-sm">
           <p className="font-medium text-slate-800">Usar una propiedad guardada</p>
@@ -445,13 +445,9 @@ export default function PropertyStepPage() {
         )}
       </form>
       <StepNav
-        backHref={
-          draft.hasSolidaryCoDebtor
-            ? `/dashboard/contracts/${id}/codebtor`
-            : `/dashboard/contracts/${id}/tenant`
-        }
+        backHref={`/dashboard/contracts/${id}/landlord`}
         backLabel="Anterior"
-        nextHref={`/dashboard/contracts/${id}/terms`}
+        nextHref={`/dashboard/contracts/${id}/tenant`}
       />
     </WizardShell>
   );

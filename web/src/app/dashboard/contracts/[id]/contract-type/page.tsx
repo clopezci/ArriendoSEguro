@@ -136,6 +136,21 @@ export default function ContractTypeStepPage() {
       <div className="mb-4">
         <ContractOnboarding />
       </div>
+
+      <div className="mb-4 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900">
+        <p className="flex items-center gap-2 font-semibold">
+          <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] text-white">GRATIS</span>
+          Tu contrato es gratis
+        </p>
+        <ul className="mt-2 space-y-1 text-[13px] leading-relaxed">
+          <li>✓ Generas y descargas <strong>un contrato completo gratis</strong> (sin firma digital).</li>
+          <li>
+            ✓ La <strong>firma digital también puede ser gratis</strong>: si invitas a <strong>3 personas</strong> que
+            usen ArriendoSeguro, la desbloqueas sin costo. También puedes activarla al instante por un valor mínimo.
+          </li>
+        </ul>
+      </div>
+
       <p className="text-sm text-slate-700">
         Hoy ArriendoSeguro genera el contrato de{" "}
         <strong className="text-violet-700">vivienda urbana</strong>, que es el

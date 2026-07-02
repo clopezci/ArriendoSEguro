@@ -16,9 +16,9 @@ import { macroForWizardIndex, type MacroStepKey } from "@/features/contracts/ste
 export const WIZARD_STEPS = [
   "Tipo de contrato",
   "Arrendador (dueño)",
+  "Inmueble a arrendar",
   "Arrendatario (inquilino)",
   "Codeudor",
-  "Inmueble a arrendar",
   "Términos",
   "Servicios",
   "Cláusulas especiales",

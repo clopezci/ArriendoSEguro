@@ -18,10 +18,10 @@ export type StepGuideEntry = {
 /** Orden del asistente (debe coincidir con WIZARD_STEPS). */
 const STEP_GUIDES: StepGuideEntry[] = [
   { group: "Tus datos y el inmueble", title: "Tipo de contrato", hint: "Hoy generamos arriendo de vivienda urbana.", next: "Tus datos como dueño" },
-  { group: "Tus datos y el inmueble", title: "Arrendador (dueño)", hint: "Tus datos. Puedes usar los que ya guardaste.", next: "Datos del inquilino" },
+  { group: "Tus datos y el inmueble", title: "Arrendador (dueño)", hint: "Tus datos. Puedes usar los que ya guardaste.", next: "Datos del inmueble" },
+  { group: "Tus datos y el inmueble", title: "Inmueble a arrendar", hint: "Datos del inmueble. Puedes elegir uno guardado.", next: "Datos del inquilino" },
   { group: "Tus datos y el inmueble", title: "Arrendatario (inquilino)", hint: "Ingrésalos tú o envíale un enlace para que él los llene.", next: "Codeudor (opcional)" },
-  { group: "Tus datos y el inmueble", title: "Codeudor (opcional)", hint: "¿Hay codeudor? También aquí va la validación crediticia (opcional).", next: "Datos del inmueble" },
-  { group: "Tus datos y el inmueble", title: "Inmueble a arrendar", hint: "Datos del inmueble. Puedes elegir uno guardado.", next: "Términos del arriendo" },
+  { group: "Tus datos y el inmueble", title: "Codeudor (opcional)", hint: "¿Hay codeudor? También aquí va la validación crediticia (opcional).", next: "Condiciones del contrato" },
   { group: "Condiciones del contrato", title: "Términos", hint: "Canon, fechas, día de pago y duración.", next: "Servicios y garantía" },
   { group: "Condiciones del contrato", title: "Servicios públicos", hint: "Servicios y la garantía del Art. 15 (opcional).", next: "Cláusulas especiales" },
   { group: "Condiciones del contrato", title: "Cláusulas especiales", hint: "Mascotas, parqueadero, etc. Opcional.", next: "Revisar el contrato" },

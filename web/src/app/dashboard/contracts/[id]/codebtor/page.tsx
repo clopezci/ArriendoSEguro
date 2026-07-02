@@ -102,7 +102,7 @@ export default function CodebtorStepPage() {
     setDecision(has ? "yes" : "no");
     setErrors([]);
     if (!has) {
-      router.push(`/dashboard/contracts/${id}/property`);
+      router.push(`/dashboard/contracts/${id}/terms`);
     }
   }
 
@@ -185,13 +185,13 @@ export default function CodebtorStepPage() {
   }
 
   return (
-    <WizardShell title="Codeudor solidario" currentStep={4} contractId={id}>
+    <WizardShell title="Codeudor solidario" currentStep={5} contractId={id}>
       <div className="space-y-4">
         <p className="text-sm text-slate-700">
           ¿El contrato tendrá codeudor solidario? <span className="text-slate-500">(opcional)</span>
         </p>
         <p className="text-xs text-slate-500">
-          ¿Sin codeudor? No hay problema: elige «Continuar sin codeudor» y sigues con el inmueble.
+          ¿Sin codeudor? No hay problema: elige «Continuar sin codeudor» y sigues con las condiciones del contrato.
         </p>
         <p className="rounded-lg border border-slate-300 bg-white/95 p-3 text-sm text-slate-700">
           Un codeudor solidario es una persona que acepta respaldar las obligaciones del
@@ -333,10 +333,10 @@ export default function CodebtorStepPage() {
 
         {decision === "no" && (
           <Link
-            href={`/dashboard/contracts/${id}/property`}
+            href={`/dashboard/contracts/${id}/terms`}
             className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)]"
           >
-            Continuar al inmueble
+            Continuar a las condiciones
           </Link>
         )}
 

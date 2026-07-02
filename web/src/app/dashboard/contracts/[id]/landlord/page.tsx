@@ -98,7 +98,7 @@ export default function LandlordStepPage() {
       });
     }
 
-    router.push(`/dashboard/contracts/${id}/tenant`);
+    router.push(`/dashboard/contracts/${id}/property`);
   }
 
   return (
@@ -164,7 +164,7 @@ export default function LandlordStepPage() {
       <StepNav
         backHref={`/dashboard/contracts/${id}/contract-type`}
         backLabel="Anterior"
-        nextHref={`/dashboard/contracts/${id}/tenant`}
+        nextHref={`/dashboard/contracts/${id}/property`}
       />
     </WizardShell>
   );

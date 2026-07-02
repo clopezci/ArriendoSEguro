@@ -92,7 +92,7 @@ export default function TenantStepPage() {
   return (
     <WizardShell
       title="Datos del arrendatario (inquilino)"
-      currentStep={3}
+      currentStep={4}
       contractId={id}
     >
       <PartyInvitePanel
@@ -140,7 +140,7 @@ export default function TenantStepPage() {
         )}
       </form>
       <StepNav
-        backHref={`/dashboard/contracts/${id}/landlord`}
+        backHref={`/dashboard/contracts/${id}/property`}
         backLabel="Anterior"
         nextHref={`/dashboard/contracts/${id}/codebtor`}
       />
