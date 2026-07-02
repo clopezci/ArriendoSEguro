@@ -5,7 +5,9 @@ import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { isExpedienteCompleto } from "@/lib/dashboard/expediente-ui";
 import { getAllDrafts, type ContractDraft } from "@/features/contracts/wizard-state";
 import { freeTierEnabled } from "@/lib/config";
+import { MACRO_STEPS } from "@/features/contracts/steps5";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 type Entitlements = {
@@ -24,8 +26,11 @@ const STEPS: { n: number; label: string; hint: string }[] = [
 
 export function HomeDashboardPanel() {
   const { user } = useAuth();
+  const router = useRouter();
   const [entitlements, setEntitlements] = useState<Entitlements | null>(null);
   const [tick, setTick] = useState(0);
+  const [step1Choice, setStep1Choice] = useState(false);
+  const [lockedStep, setLockedStep] = useState<number | null>(null);
 
   const refreshDrafts = useCallback(() => setTick((t) => t + 1), []);
 
@@ -75,11 +80,28 @@ export function HomeDashboardPanel() {
         ? { href: `/dashboard/contracts/${id}/preview`, label: "Ver mi contrato" }
         : { href: `/dashboard/contracts/${id}/contract-type`, label: "Continuar mi contrato" };
 
+  // Clic en un paso: el paso 1 lleva a comenzar (o pregunta si ya hay contrato);
+  // los pasos 2–5 exigen tener contrato (si no, avisan cuál paso falta antes).
+  function handleStep(index: number) {
+    setLockedStep(null);
+    const step = MACRO_STEPS[index];
+    if (index === 0) {
+      if (id) setStep1Choice(true);
+      else router.push("/dashboard/contracts/new");
+      return;
+    }
+    if (!id) {
+      setLockedStep(index);
+      return;
+    }
+    router.push(step.entry(id));
+  }
+
   return (
     <div className="space-y-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Tu arriendo, paso a paso</h1>
-        <p className="text-slate-600">Crea, firma y gestiona tu arriendo entre particulares, en un flujo guiado.</p>
+        <p className="text-slate-600">Crea, firma y gestiona tu contrato de arrendamiento en un flujo guiado.</p>
       </header>
 
       {/* Acción principal */}
@@ -130,34 +152,107 @@ export function HomeDashboardPanel() {
         )}
       </section>
 
-      {/* Los 5 pasos (informativo, coherente con el flujo) */}
+      {/* Los 5 pasos, interactivos */}
       <section aria-labelledby="flow-steps" className="space-y-3">
         <h2 id="flow-steps" className="text-lg font-semibold text-slate-900">
           Cómo funciona — 5 pasos
         </h2>
         <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {STEPS.map((s) => (
-            <li key={s.n} className="flex gap-3 rounded-xl border border-slate-300 bg-white/95 p-4 shadow-sm">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-violet-500 text-sm font-black text-white">
-                {s.n}
+          {STEPS.map((s, index) => {
+            const locked = lockedStep === index;
+            return (
+              <li key={s.n}>
+                <button
+                  type="button"
+                  onClick={() => handleStep(index)}
+                  className={`flex w-full gap-3 rounded-xl border p-4 text-left shadow-sm transition hover:border-violet-400 hover:shadow-[0_8px_22px_rgba(139,92,246,0.16)] ${
+                    locked ? "border-amber-300 bg-amber-50" : "border-slate-300 bg-white/95"
+                  }`}
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-violet-500 text-sm font-black text-white">
+                    {s.n}
+                  </span>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">{s.label}</p>
+                    <p className="mt-0.5 text-xs text-slate-600">{s.hint}</p>
+                    {locked && (
+                      <p className="mt-1 text-xs font-medium text-amber-800">
+                        Primero completa el paso {index}: {STEPS[index - 1].label}.
+                      </p>
+                    )}
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+          <li>
+            <button
+              type="button"
+              onClick={() => {
+                setLockedStep(null);
+                if (id) router.push(`/dashboard/contracts/${id}/gestion`);
+                else setLockedStep(5);
+              }}
+              className={`flex w-full gap-3 rounded-xl border border-dashed p-4 text-left shadow-sm transition hover:brightness-95 ${
+                lockedStep === 5 ? "border-amber-300 bg-amber-50" : "border-emerald-400/80 bg-emerald-50/60"
+              }`}
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-emerald-500 text-base font-black text-white">
+                ★
               </span>
               <div>
-                <p className="text-sm font-bold text-slate-900">{s.label}</p>
-                <p className="mt-0.5 text-xs text-slate-600">{s.hint}</p>
+                <p className="text-sm font-bold text-slate-900">Gestiona tu arriendo</p>
+                <p className="mt-0.5 text-xs text-slate-600">Pagos, novedades, renovación y calificación.</p>
+                {lockedStep === 5 && (
+                  <p className="mt-1 text-xs font-medium text-amber-800">
+                    Primero crea y firma tu contrato para gestionarlo.
+                  </p>
+                )}
               </div>
-            </li>
-          ))}
-          <li className="flex gap-3 rounded-xl border border-dashed border-emerald-400/80 bg-emerald-50/60 p-4 shadow-sm">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-emerald-600 to-emerald-500 text-base font-black text-white">
-              ★
-            </span>
-            <div>
-              <p className="text-sm font-bold text-slate-900">Gestiona tu arriendo</p>
-              <p className="mt-0.5 text-xs text-slate-600">Pagos, novedades, renovación y calificación.</p>
-            </div>
+            </button>
           </li>
         </ol>
       </section>
+
+      {/* Elección al tocar "Arma tu expediente" cuando ya hay contrato */}
+      {step1Choice && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+          <button type="button" aria-label="Cerrar" className="absolute inset-0 bg-slate-900/50" onClick={() => setStep1Choice(false)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-300 bg-white p-5 shadow-2xl">
+            <h3 className="text-base font-bold text-slate-900">Ya tienes un contrato en curso</h3>
+            <p className="mt-1 text-sm text-slate-600">¿Qué quieres hacer?</p>
+            <div className="mt-4 space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setStep1Choice(false);
+                  if (id) router.push(`/dashboard/contracts/${id}/contract-type`);
+                }}
+                className="w-full rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-700"
+              >
+                Continuar mi contrato
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setStep1Choice(false);
+                  router.push("/dashboard/contracts/new");
+                }}
+                className="w-full rounded-lg border border-violet-400 px-4 py-2.5 text-sm font-semibold text-violet-700 hover:bg-violet-50"
+              >
+                Crear uno nuevo
+              </button>
+              <button
+                type="button"
+                onClick={() => setStep1Choice(false)}
+                className="w-full rounded-lg px-4 py-2 text-sm text-slate-500 hover:text-slate-700"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
