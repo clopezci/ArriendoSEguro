@@ -3,6 +3,7 @@
 import { UrbanAddressFields } from "@/components/contracts/urban-address-fields";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { flashSaved } from "@/components/contracts/save-flash";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import {
   formatColombianNotificationAddress,
@@ -191,7 +192,7 @@ export default function PropertyStepPage() {
       });
     }
 
-    router.push(`/dashboard/contracts/${id}/tenant`);
+    flashSaved(() => router.push(`/dashboard/contracts/${id}/tenant`));
   }
 
   const legacyAddress = !!prop.address && !prop.addressParts;

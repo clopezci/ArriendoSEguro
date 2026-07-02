@@ -9,6 +9,7 @@ import type { PartyDraft } from "@/features/contracts/draft-types";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { flashSaved } from "@/components/contracts/save-flash";
 import { appendAudit, codebtorSchema, updateDraft } from "@/features/contracts/wizard-state";
 import {
   sanitizeCodebtorFromForm,
@@ -98,7 +99,7 @@ export default function CodebtorStepPage() {
     setDecision(has ? "yes" : "no");
     setErrors([]);
     if (!has) {
-      router.push(`/dashboard/contracts/${id}/terms`);
+      flashSaved(() => router.push(`/dashboard/contracts/${id}/terms`));
     }
   }
 

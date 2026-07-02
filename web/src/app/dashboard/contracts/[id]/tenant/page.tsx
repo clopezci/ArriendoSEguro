@@ -5,6 +5,7 @@ import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { flashSaved } from "@/components/contracts/save-flash";
 import { appendAudit, tenantSchema, updateDraft } from "@/features/contracts/wizard-state";
 import { sanitizePartyFromForm, PARTY_FIELD_LABELS } from "@/features/contracts/party-sanitize";
 import type { PartyDraft } from "@/features/contracts/draft-types";
@@ -76,7 +77,7 @@ export default function TenantStepPage() {
         },
       ),
     );
-    router.push(`/dashboard/contracts/${id}/codebtor`);
+    flashSaved(() => router.push(`/dashboard/contracts/${id}/codebtor`));
   }
 
   return (

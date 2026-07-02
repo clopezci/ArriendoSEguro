@@ -3,6 +3,7 @@
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { flashSaved } from "@/components/contracts/save-flash";
 import { appendAudit, landlordSchema, updateDraft } from "@/features/contracts/wizard-state";
 import { sanitizePartyFromForm, PARTY_FIELD_LABELS } from "@/features/contracts/party-sanitize";
 import { humanizeZodIssues } from "@/lib/validations/zod-errors-es";
@@ -84,7 +85,7 @@ export default function LandlordStepPage() {
       void saveMyLandlordProfile(user, { ...landlordData, notificationAddress: "" });
     }
 
-    router.push(`/dashboard/contracts/${id}/property`);
+    flashSaved(() => router.push(`/dashboard/contracts/${id}/property`));
   }
 
   return (

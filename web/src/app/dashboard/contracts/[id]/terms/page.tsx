@@ -2,6 +2,7 @@
 
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { flashSaved } from "@/components/contracts/save-flash";
 import { appendAudit, termsSchema, updateDraft } from "@/features/contracts/wizard-state";
 import { sanitizeFreeText } from "@/lib/text/sanitize";
 import { humanizeZodIssues } from "@/lib/validations/zod-errors-es";
@@ -52,7 +53,7 @@ export default function TermsStepPage() {
     updateDraft(id, (d) =>
       appendAudit({ ...d, lease: parsed.data, renewalReminderEnabled }, "lease_terms_saved"),
     );
-    router.push(`/dashboard/contracts/${id}/utilities`);
+    flashSaved(() => router.push(`/dashboard/contracts/${id}/utilities`));
   }
 
   return (

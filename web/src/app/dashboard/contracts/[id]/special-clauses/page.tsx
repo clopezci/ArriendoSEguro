@@ -2,6 +2,7 @@
 
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { flashSaved } from "@/components/contracts/save-flash";
 import { setSpecialClauses } from "@/features/contracts/wizard-state";
 import {
   SPECIAL_CLAUSES_COST_NOTICE,
@@ -80,7 +81,7 @@ export default function SpecialClausesStepPage() {
         freeText: undefined,
         costNotified: true,
       });
-      router.push(`/dashboard/contracts/${id}/review`);
+      flashSaved(() => router.push(`/dashboard/contracts/${id}/review`));
       return;
     }
 

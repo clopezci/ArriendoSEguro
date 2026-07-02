@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { type ReactNode } from "react";
 import { WizardSteps5 } from "./wizard-steps5";
+import { SaveFlash } from "./save-flash";
 import { StepGuide } from "./step-guide";
 import type { ContractPhase } from "@/features/contracts/journey";
 import { macroForWizardIndex, type MacroStepKey } from "@/features/contracts/steps5";
@@ -55,6 +56,7 @@ export function WizardShell({
   if (variant === "extra") {
     return (
       <div className="space-y-5">
+        <SaveFlash />
         <div className="rounded-2xl border border-slate-300 bg-white/95 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.2)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
@@ -84,6 +86,7 @@ export function WizardShell({
 
   return (
     <div className="space-y-5">
+      <SaveFlash />
       <div className="rounded-2xl border border-slate-300 bg-white/95 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.2)]">
         <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
         <div className="mt-3">

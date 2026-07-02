@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { flashSaved } from "@/components/contracts/save-flash";
 import { ContractOnboarding } from "@/components/contracts/contract-onboarding";
 import type { ContractType } from "@/domain/contracts/types";
 import { setActingAs, setContractType } from "@/features/contracts/wizard-state";
@@ -124,7 +125,7 @@ export default function ContractTypeStepPage() {
     setActingError("");
     setContractType(id, "VIVIENDA_URBANA");
     setActingAs(id, acting, proxyAccepted);
-    router.push(`/dashboard/contracts/${id}/landlord`);
+    flashSaved(() => router.push(`/dashboard/contracts/${id}/landlord`));
   }
 
   return (

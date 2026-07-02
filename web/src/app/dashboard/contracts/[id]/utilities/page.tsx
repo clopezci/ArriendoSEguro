@@ -2,6 +2,7 @@
 
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { flashSaved } from "@/components/contracts/save-flash";
 import { UtilityGuaranteeSection } from "@/components/contracts/utility-guarantee-section";
 import { appendAudit, updateDraft, utilitiesSchema } from "@/features/contracts/wizard-state";
 import { sanitizeFreeText } from "@/lib/text/sanitize";
@@ -43,7 +44,7 @@ export default function UtilitiesStepPage() {
       ),
     );
     // Siguiente paso de la línea: cláusulas especiales (opcional, con «No»).
-    router.push(`/dashboard/contracts/${id}/special-clauses`);
+    flashSaved(() => router.push(`/dashboard/contracts/${id}/special-clauses`));
   }
 
   return (

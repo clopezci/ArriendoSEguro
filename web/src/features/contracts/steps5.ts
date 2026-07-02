@@ -55,7 +55,7 @@ export const MACRO_STEPS: MacroStep[] = [
     number: 4,
     label: "Firma",
     hint: "Firma de las partes con respaldo legal.",
-    entry: (id) => `${base(id)}/preview`,
+    entry: (id) => `${base(id)}/firma`,
   },
   {
     key: "acta",
