@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, type ReactNode } from "react";
-import { JourneyProgress } from "./journey-progress";
+import { type ReactNode } from "react";
+import { WizardSteps5 } from "./wizard-steps5";
 import { StepGuide } from "./step-guide";
 import type { ContractPhase } from "@/features/contracts/journey";
+import { macroForWizardIndex, type MacroStepKey } from "@/features/contracts/steps5";
 
 /**
  * Pasos del **Bloque 1** (asistente mínimo para generar el contrato). Lo
@@ -34,6 +35,7 @@ export function WizardShell({
   children,
   variant = "wizard",
   phase,
+  macroStep,
 }: {
   title: string;
   currentStep: number;
@@ -41,12 +43,14 @@ export function WizardShell({
   children: ReactNode;
   /** "wizard" muestra el progreso del Bloque 1; "extra" es adicionales/posventa. */
   variant?: "wizard" | "extra";
-  /** Fase global a resaltar en la franja de progreso. Por defecto se infiere de `variant`. */
+  /** (Compat) fase global; ya no se usa para pintar, se mantiene por firma. */
   phase?: ContractPhase;
+  /** Macro-paso a resaltar. Si no se pasa, se infiere del `currentStep`/variant. */
+  macroStep?: MacroStepKey | "posventa";
 }) {
   const clamped = Math.min(Math.max(currentStep, 1), steps.length);
-  const progress = useMemo(() => Math.round((clamped / steps.length) * 100), [clamped]);
-  const activePhase: ContractPhase = phase ?? (variant === "extra" ? "posventa" : "datos");
+  const active: MacroStepKey | "posventa" =
+    macroStep ?? (variant === "extra" ? "posventa" : macroForWizardIndex(clamped));
 
   if (variant === "extra") {
     return (
@@ -61,11 +65,11 @@ export function WizardShell({
               ← Volver a la posventa
             </Link>
           </div>
-          <p className="mt-2 text-xs text-slate-600">
+          <p className="mt-2 text-sm text-slate-600">
             Configuración adicional y posventa del expediente (no forma parte del asistente principal).
           </p>
           <div className="mt-3">
-            <JourneyProgress id={contractId} activePhase={activePhase} />
+            <WizardSteps5 id={contractId} active={active} />
           </div>
           <div className="mt-2">
             <StepGuide currentStep={clamped} variant="extra" />
@@ -83,34 +87,10 @@ export function WizardShell({
       <div className="rounded-2xl border border-slate-300 bg-white/95 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.2)]">
         <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
         <div className="mt-3">
-          <JourneyProgress id={contractId} activePhase={activePhase} />
+          <WizardSteps5 id={contractId} active={active} />
         </div>
-        <div className="mt-2">
+        <div className="mt-3">
           <StepGuide currentStep={clamped} variant="wizard" />
-        </div>
-        <div className="mt-4">
-          <div className="mb-2 flex items-center justify-between text-xs text-slate-700">
-            <span>
-              Paso {clamped} de {steps.length}
-            </span>
-            <span>{progress}%</span>
-          </div>
-          <div className="h-2 rounded bg-slate-200">
-            <div
-              className="h-2 rounded bg-violet-500 transition-all"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-1 text-[11px] text-slate-600 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-9">
-            {steps.map((s, idx) => (
-              <span
-                key={s}
-                className={idx + 1 <= clamped ? "font-medium text-violet-700" : ""}
-              >
-                {idx + 1}. {s}
-              </span>
-            ))}
-          </div>
         </div>
       </div>
       <div className="rounded-2xl border border-slate-300 bg-white p-5 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">

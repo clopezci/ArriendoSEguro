@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { useSavedContract } from "@/components/contracts/requires-saved-contract";
-import { JourneyProgress } from "@/components/contracts/journey-progress";
+import { WizardSteps5 } from "@/components/contracts/wizard-steps5";
 
 /**
  * Posventa del contrato como **checklist guiado**: un único centro de control
@@ -151,7 +151,7 @@ export default function PosventaHubPage() {
           <strong>pendiente</strong>. Puedes saltarte los marcados como opcionales.
         </p>
         <div className="pt-1">
-          <JourneyProgress id={id} activePhase="posventa" />
+          <WizardSteps5 id={id} active="posventa" />
         </div>
       </header>
 

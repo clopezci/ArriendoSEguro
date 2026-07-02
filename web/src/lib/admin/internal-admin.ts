@@ -1,19 +1,22 @@
 import type { DecodedIdToken } from "firebase-admin/auth";
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
+import { FOUNDER_ADMIN_EMAILS } from "@/lib/admin/founder-admins";
 
 /**
  * Lista blanca server-side. Nunca uses NEXT_PUBLIC_* para autorizar en API.
- * Ejemplo: ADMIN_INTERNAL_EMAILS=clopezci@hotmail.com
+ * Incluye SIEMPRE los correos de fundador (built-in) y suma los de
+ * `ADMIN_INTERNAL_EMAILS`. Ejemplo: ADMIN_INTERNAL_EMAILS=otro@correo.com
  */
 export function getAdminInternalEmailSet(): Set<string> {
   const raw = process.env.ADMIN_INTERNAL_EMAILS ?? "";
-  return new Set(
-    raw
+  return new Set([
+    ...FOUNDER_ADMIN_EMAILS,
+    ...raw
       .split(",")
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean),
-  );
+  ]);
 }
 
 export function isInternalAdminEmail(email: string | null | undefined): boolean {
