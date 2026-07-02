@@ -175,6 +175,7 @@ export async function POST(request: Request) {
       tokenExpiresAt: string;
       sentAt: string;
       emailMode: "real" | "mock" | "failed" | "skipped";
+      signingUrl?: string;
     }> = [];
     const now = new Date();
 
@@ -236,6 +237,9 @@ export async function POST(request: Request) {
         tokenExpiresAt,
         sentAt,
         emailMode: emailResult.mode,
+        // Modo prueba: si el correo no se entregó de verdad, devolvemos el enlace
+        // para poder probar el flujo sin Resend. Con correo real NO se expone.
+        ...(emailResult.mode === "real" ? {} : { signingUrl }),
       });
     }
 

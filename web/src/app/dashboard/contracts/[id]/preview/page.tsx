@@ -125,6 +125,7 @@ export default function PreviewStepPage() {
       sentAt?: string | null;
       signedAt?: string | null;
       emailMode?: "real" | "mock" | "failed" | "skipped";
+      signingUrl?: string;
     }>
   >([]);
   const [contractStatus, setContractStatus] = useState<string>("");
@@ -822,6 +823,19 @@ export default function PreviewStepPage() {
       {signatureRows.length > 0 && (
         <section className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4">
           <h3 className="text-sm font-semibold text-slate-900">Firmas</h3>
+
+          {signatureRows.some((s) => s.signingUrl) && (
+            <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+              <p className="font-semibold">Modo prueba (correo sin configurar)</p>
+              <p className="mt-0.5">
+                El correo aún no está activo, así que aquí tienes los enlaces para <strong>firmar cada parte tú
+                mismo</strong> y probar el flujo completo. Al abrir cada enlace, pulsa «Solicitar código»: el código
+                aparecerá en pantalla. Cuando actives el correo (Resend), estos enlaces dejarán de mostrarse y llegarán
+                por correo a cada parte.
+              </p>
+            </div>
+          )}
+
           <div className="mt-2 overflow-auto">
             <table className="min-w-full text-xs text-slate-700">
               <thead>
@@ -832,6 +846,7 @@ export default function PreviewStepPage() {
                   <th className="px-2 py-1 text-left">Estado</th>
                   <th className="px-2 py-1 text-left">Enviado</th>
                   <th className="px-2 py-1 text-left">Firmado</th>
+                  <th className="px-2 py-1 text-left">Enlace (prueba)</th>
                 </tr>
               </thead>
               <tbody>
@@ -843,6 +858,20 @@ export default function PreviewStepPage() {
                     <td className="px-2 py-1">{s.signatureStatus}</td>
                     <td className="px-2 py-1">{s.sentAt ? new Date(s.sentAt).toLocaleString("es-CO") : "-"}</td>
                     <td className="px-2 py-1">{s.signedAt ? new Date(s.signedAt).toLocaleString("es-CO") : "-"}</td>
+                    <td className="px-2 py-1">
+                      {s.signingUrl ? (
+                        <a
+                          href={s.signingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-medium text-violet-700 underline"
+                        >
+                          Abrir y firmar →
+                        </a>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

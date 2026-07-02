@@ -205,6 +205,13 @@ export type StartSignatureResponse =
         sentAt: string;
         /** Resultado del envío de la invitación al iniciar la ronda (Resend / mock). */
         emailMode?: "real" | "mock" | "failed" | "skipped";
+        /**
+         * Enlace de firma. Solo se incluye cuando el correo NO se entregó de
+         * verdad (modo prueba / correo sin configurar), para poder probar el
+         * flujo end-to-end sin Resend. En producción con correo real NO se
+         * expone (llega por correo a cada parte).
+         */
+        signingUrl?: string;
       }>;
     }
   | { success: false; errors: { field: string; message: string }[] };

@@ -137,7 +137,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json<SignatureOtpResponse>({
       success: true,
-      message: "Si el correo coincide con el del expediente, recibirás un código de 6 dígitos.",
+      // Modo prueba (correo sin configurar): mostramos el código para poder
+      // firmar de punta a punta sin Resend. Con correo real NO se expone.
+      message:
+        emailResult.status === "mock"
+          ? `Modo prueba (correo no configurado): tu código de verificación es ${code}. En producción llega por correo.`
+          : "Si el correo coincide con el del expediente, recibirás un código de 6 dígitos.",
     });
   } catch (error) {
     if (process.env.NODE_ENV !== "production") console.error("signatures/request-otp error", error);
