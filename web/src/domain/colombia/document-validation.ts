@@ -65,7 +65,7 @@ export function validateDocumentNumber(
 ): DocumentValidationResult {
   const n = normalizeDocumentInput(rawNumber);
   if (!n) {
-    return { ok: false, message: "Ingresá el número de documento." };
+    return { ok: false, message: "Ingresa el número de documento." };
   }
 
   const kind = documentType === "TI" ? "CC" : (documentType as DocumentType);
@@ -76,7 +76,7 @@ export function validateDocumentNumber(
         return { ok: false, message: "Este documento solo lleva números, sin letras." };
       }
       if (n.length < 6 || n.length > 11) {
-        return { ok: false, message: "Revisá la longitud (típicamente entre 6 y 11 dígitos)." };
+        return { ok: false, message: "Revisa la longitud (típicamente entre 6 y 11 dígitos)." };
       }
       return { ok: true, normalized: n };
     }
@@ -85,7 +85,7 @@ export function validateDocumentNumber(
       if (!/^[A-Z0-9]{6,15}$/.test(v)) {
         return {
           ok: false,
-          message: "Usá letras y números sin espacios; entre 6 y 15 caracteres.",
+          message: "Usa letras y números sin espacios; entre 6 y 15 caracteres.",
         };
       }
       if (!/\d/.test(v)) {
@@ -103,7 +103,7 @@ export function validateDocumentNumber(
     case "NIT": {
       const digits = n.replace(/\D/g, "");
       if (digits.length < 9 || digits.length > 11) {
-        return { ok: false, message: "NIT inválido: ingresá entre 9 y 11 dígitos incluyendo el dígito de verificación." };
+        return { ok: false, message: "NIT inválido: ingresa entre 9 y 11 dígitos incluyendo el dígito de verificación." };
       }
       const body = digits.slice(0, -1);
       const dv = parseInt(digits.slice(-1), 10);
@@ -114,7 +114,7 @@ export function validateDocumentNumber(
       if (expected < 0 || expected !== dv) {
         return {
           ok: false,
-          message: "El NIT no coincide con su dígito de verificación. Revisá el número en el RUT o cédula tributaria.",
+          message: "El NIT no coincide con su dígito de verificación. Revisa el número en el RUT o cédula tributaria.",
         };
       }
       return { ok: true, normalized: digits };
@@ -122,11 +122,11 @@ export function validateDocumentNumber(
     case "OTRO": {
       const t = rawNumber.trim();
       if (t.length < 4 || t.length > 24) {
-        return { ok: false, message: "Indicá entre 4 y 24 caracteres para el documento." };
+        return { ok: false, message: "Indica entre 4 y 24 caracteres para el documento." };
       }
       return { ok: true, normalized: t.toUpperCase() };
     }
     default:
-      return { ok: false, message: "Seleccioná un tipo de documento válido." };
+      return { ok: false, message: "Selecciona un tipo de documento válido." };
   }
 }

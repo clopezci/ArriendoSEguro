@@ -149,7 +149,7 @@ export default function EvidenciaExpedientePage() {
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-6 text-slate-900">
       <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Paso 12 · Evidencias</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Posventa · evidencias</p>
         <h1 className="text-2xl font-bold">Paquete de evidencia (descargas)</h1>
         <p className="text-sm text-slate-600">
           Aquí reunimos los enlaces de descarga del contrato y anexos generados en la plataforma. También puedes bajar un

@@ -12,17 +12,17 @@ const zPhoneCo = z.preprocess(
   (v) => String(v ?? "").replace(/\D/g, ""),
   z
     .string()
-    .length(10, "Ingresá exactamente 10 dígitos (sin +57 ni espacios).")
+    .length(10, "Ingresa exactamente 10 dígitos (sin +57 ni espacios).")
     .regex(/^\d{10}$/, "El teléfono solo debe contener números."),
 );
 
 const citySchema = z
   .string()
-  .min(2, "Indicá la ciudad.")
+  .min(2, "Indica la ciudad.")
   .max(60)
   .regex(
     /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s.\-']+$/,
-    "Usá solo letras y separadores habituales en el nombre de la ciudad.",
+    "Usa solo letras y separadores habituales en el nombre de la ciudad.",
   );
 
 /** Objeto base antes de refinamientos (permite codebtorSchema.extend). */

@@ -160,13 +160,13 @@ export function IngresarForm() {
     setNotice(null);
     const normalized = email.trim();
     if (!normalized) {
-      setError("Escribí primero tu correo para enviar el enlace de recuperación.");
+      setError("Escribe primero tu correo para enviar el enlace de recuperación.");
       return;
     }
     try {
       await resetPassword(normalized);
       setNotice(
-        "Te enviamos un enlace para restablecer la contraseña. Revisá bandeja principal, spam o promociones.",
+        "Te enviamos un enlace para restablecer la contraseña. Revisa bandeja principal, spam o promociones.",
       );
     } catch (err) {
       setError(mapFirebaseAuthError(err));

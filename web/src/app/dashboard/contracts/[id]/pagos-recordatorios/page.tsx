@@ -160,7 +160,7 @@ export default function PagosRecordatoriosPage() {
   return (
     <main className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6 text-slate-900">
       <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Adicionales</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Posventa · pagos</p>
         <h1 className="text-2xl font-bold">Pagos y recordatorios</h1>
         <p className="text-sm text-slate-600">
           El <strong>calendario de pagos se arma solo</strong> con las fechas de tu contrato. Aquí solo eliges{" "}

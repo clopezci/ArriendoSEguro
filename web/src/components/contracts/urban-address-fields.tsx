@@ -30,9 +30,9 @@ const COPY: Record<
   inmueble: {
     title: "Dirección del inmueble a arrendar (alineada a nomenclatura urbana)",
     intro:
-      "Usá la misma lógica que en catastro y correspondencia: tipo de vía, número principal, cruce y placa, más barrio. Ciudad y departamento van aparte. Esto no sustituye la consulta oficial en el catastro.",
+      "Usa la misma lógica que en catastro y correspondencia: tipo de vía, número principal, cruce y placa, más barrio. Ciudad y departamento van aparte. Esto no sustituye la consulta oficial en el catastro.",
     legacyHint:
-      "Tenías la dirección del inmueble a arrendar en una sola línea. Completá estos campos para mantener formato uniforme.",
+      "Tenías la dirección del inmueble a arrendar en una sola línea. Completa estos campos para mantener formato uniforme.",
   },
 };
 
