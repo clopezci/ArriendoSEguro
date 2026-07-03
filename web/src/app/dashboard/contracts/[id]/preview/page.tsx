@@ -292,13 +292,16 @@ export default function PreviewStepPage() {
     documentHash: string;
   };
 
-  async function saveDraftVersion(): Promise<SavedVersionState | null> {
+  async function saveDraftVersion(opts?: { force?: boolean }): Promise<SavedVersionState | null> {
     if (!activeDraft) return null;
     if (!previewHtml || !versionInfo) {
       setRenderErrors(["Primero genera la vista previa del contrato."]);
       return null;
     }
-    if (savedVersion) return savedVersion;
+    // Sin `force`, si ya hay versión no re-guardamos (evita duplicar). Con
+    // `force` (botón "Guardar de nuevo"), SÍ re-guardamos para capturar cambios
+    // de datos (p. ej. un correo editado) en una versión nueva.
+    if (savedVersion && !opts?.force) return savedVersion;
     setSavingVersion(true);
     setSaveMessage("");
     try {
@@ -764,7 +767,7 @@ export default function PreviewStepPage() {
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => void saveDraftVersion()}
+              onClick={() => void saveDraftVersion({ force: Boolean(savedVersion) })}
               disabled={savingVersion || !previewHtml}
               className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
             >

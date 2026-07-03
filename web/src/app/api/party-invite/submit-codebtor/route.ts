@@ -60,6 +60,14 @@ export async function POST(request: Request) {
   if (!profile) {
     return NextResponse.json({ success: false, errors: [{ field: "party", message: "Faltan datos mínimos del codeudor (nombre y documento)." }] }, { status: 422 });
   }
+  // El correo del codeudor es obligatorio: sin él no se le puede enviar el enlace
+  // de firma y, además, la clave de perfil quedaría vacía (colisión entre codeudores).
+  if (!profile.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email)) {
+    return NextResponse.json(
+      { success: false, errors: [{ field: "email", message: "El codeudor necesita un correo electrónico válido (allí firmará el contrato)." }] },
+      { status: 422 },
+    );
+  }
 
   const h = request.headers;
   const decode = (v: string | null) => {

@@ -140,6 +140,12 @@ export default function CodebtorStepPage() {
     }
 
     const economicSupport = sanitizeCodebtorEconomicSupportFromForm(formData);
+    // Si el codeudor fue INGRESADO por el inquilino (third_party), NO aceptó por
+    // sí mismo el consentimiento de firma electrónica ni la obligación solidaria:
+    // esos los acepta el CODEUDOR al firmar (en su página de firma). Los guardamos
+    // con honestidad (no marcados como aceptados por adelantado). Solo cuando el
+    // codeudor completó su propio enlace (self) o el dueño los marcó, quedan en true.
+    const attestedThirdParty = party.inviteAttestation?.mode === "third_party";
     updateDraft(id, (d) =>
       appendAudit(
         {
@@ -158,8 +164,8 @@ export default function CodebtorStepPage() {
           },
           codebtorConsents: {
             dataProcessingConsent: true,
-            electronicSignatureConsent: true,
-            solidaryObligationAcceptance: true,
+            electronicSignatureConsent: !attestedThirdParty,
+            solidaryObligationAcceptance: !attestedThirdParty,
           },
           landlordCreditHistoryAttestation: {
             ...d.landlordCreditHistoryAttestation,

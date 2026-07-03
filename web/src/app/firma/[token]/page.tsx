@@ -303,7 +303,36 @@ export default function SignatureTokenPage() {
         </section>
       )}
 
-      {info && !completed && (
+      {info && !completed && info.signatureStatus === "signed" && (
+        <section className="space-y-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50 p-5">
+          <div className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">
+              ✓
+            </span>
+            <h2 className="text-xl font-bold text-emerald-900">Ya firmaste este contrato</h2>
+          </div>
+          <p className="text-sm text-emerald-900">
+            Tu firma ya quedó registrada con su evidencia (fecha, IP y hash). No necesitas volver a firmar.
+          </p>
+          <div className="rounded-xl border border-emerald-300 bg-white/70 p-3">
+            <p className="text-sm font-semibold text-slate-900">{nextStepsForRole(info.partyType).title}</p>
+            <p className="mt-1 text-sm text-slate-700">{nextStepsForRole(info.partyType).body}</p>
+          </div>
+          <p className="text-sm font-medium text-slate-800">Ya puedes cerrar esta pantalla con tranquilidad. 👋</p>
+          {info.pdfUrl && (
+            <a
+              href={info.pdfUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex rounded-lg border border-emerald-600 bg-white px-3 py-2 text-sm font-medium text-emerald-800"
+            >
+              Ver o descargar el contrato (PDF)
+            </a>
+          )}
+        </section>
+      )}
+
+      {info && !completed && info.signatureStatus !== "signed" && (
         <section className="space-y-3 rounded-xl border border-slate-300 bg-white/95 p-4">
           <p>
             <strong>Firmante:</strong> {info.signerName}
