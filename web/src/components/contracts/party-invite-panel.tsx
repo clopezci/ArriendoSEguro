@@ -213,6 +213,9 @@ export function PartyInvitePanel({
               >
                 Importar sus datos al contrato
               </button>
+              <p className="mt-1 text-[11px] text-emerald-800/80">
+                Al importar se reemplazan los datos actuales de esta parte con los que envió la persona.
+              </p>
             </div>
           )}
 

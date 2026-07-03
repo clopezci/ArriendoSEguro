@@ -338,7 +338,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-  const [done, setDone] = useState<"invited" | "entered" | null>(null);
+  const [done, setDone] = useState<"invited" | "entered" | "none" | null>(null);
   const [inviteUrl, setInviteUrl] = useState("");
 
   async function sendInvite() {
@@ -408,6 +408,15 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
     }
   }
 
+  if (done === "none") {
+    return (
+      <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-800">
+        <p className="font-semibold">¡Todo listo! Este arriendo no tiene codeudor.</p>
+        <p className="mt-1">Ya puedes cerrar esta página.</p>
+      </div>
+    );
+  }
+
   if (done) {
     return (
       <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-800">
@@ -456,6 +465,13 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
           className={`rounded-lg border px-3 py-1.5 text-sm ${mode === "enter" ? "border-violet-500 bg-violet-100/70 text-violet-800" : "border-slate-300 text-slate-800"}`}
         >
           Ingresar sus datos yo
+        </button>
+        <button
+          type="button"
+          onClick={() => setDone("none")}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:border-emerald-500 hover:text-emerald-700"
+        >
+          No hay codeudor · Finalizar
         </button>
       </div>
 

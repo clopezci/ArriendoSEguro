@@ -70,7 +70,7 @@ export function WizardShell({
             </Link>
           </div>
           <p className="mt-2 text-sm text-slate-600">
-            Configuración adicional y posventa del expediente (no forma parte del asistente principal).
+            Gestión posventa del contrato. Vuelve al centro de control cuando quieras con el enlace de arriba.
           </p>
           <div className="mt-3">
             <WizardSteps5 id={contractId} active={active} />

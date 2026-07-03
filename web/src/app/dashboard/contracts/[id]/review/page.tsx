@@ -2,6 +2,7 @@
 
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { ExpedienteNotesCard } from "@/components/contracts/expediente-notes-card";
+import { flashSaved } from "@/components/contracts/save-flash";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import type { ContractType } from "@/domain/contracts/types";
 import {
@@ -268,7 +269,7 @@ export default function ReviewStepPage() {
             type="button"
             onClick={() => {
               updateDraft(id, (d) => appendAudit(d, "contract_draft_saved"));
-              alert("Borrador guardado.");
+              flashSaved(undefined, "Borrador guardado ✓");
             }}
             className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700"
           >

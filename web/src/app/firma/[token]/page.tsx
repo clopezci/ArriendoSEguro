@@ -21,6 +21,16 @@ type TokenInfoOk = {
 
 type TokenInfoErr = { success: false; errors: { field: string; message: string }[] };
 
+/** Etiqueta amigable del rol del firmante (no el código crudo). */
+function friendlyRole(partyType: string): string {
+  const p = (partyType || "").toLowerCase();
+  if (p.includes("landlord") || p.includes("arrendador")) return "Arrendador (dueño)";
+  if (p.includes("tenant") || p.includes("arrendatario") || p.includes("inquilino")) return "Arrendatario (inquilino)";
+  if (partyType.startsWith("solidaryCoDebtor_")) return `Codeudor solidario ${partyType.slice("solidaryCoDebtor_".length)}`;
+  if (p.includes("solidary") || p.includes("codebtor") || p.includes("codeudor")) return "Codeudor solidario";
+  return partyType;
+}
+
 export default function SignatureTokenPage() {
   const token = String(useParams<{ token: string }>().token);
   const [loading, setLoading] = useState(true);
@@ -204,7 +214,9 @@ export default function SignatureTokenPage() {
         Por seguridad, primero validamos un código de un solo uso (OTP) enviado a tu correo; después podrás aceptar
         las declaraciones y firmar. Ley 527 de 1999 (orientación general, no asesoría legal).
       </p>
-      {error && !completed && (
+      {/* El error se muestra arriba solo durante el paso del código (OTP). En el
+          paso de firma se muestra junto al botón, para no duplicar el mensaje. */}
+      {error && !completed && !info?.otpVerified && (
         <p className="rounded border border-rose-700 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>
       )}
 
@@ -341,7 +353,7 @@ export default function SignatureTokenPage() {
             <strong>Correo:</strong> {info.signerEmail}
           </p>
           <p>
-            <strong>Rol:</strong> {info.partyType}
+            <strong>Rol:</strong> {friendlyRole(info.partyType)}
           </p>
           <p>
             <strong>Contrato:</strong> {info.contractId}
