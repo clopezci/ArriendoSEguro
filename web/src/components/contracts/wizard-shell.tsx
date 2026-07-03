@@ -59,7 +59,9 @@ export function WizardShell({
         <SaveFlash />
         <div className="rounded-2xl border border-slate-300 bg-white/95 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.2)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
+            <h1 className="rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 px-4 py-3 text-2xl font-extrabold tracking-tight text-white shadow-[0_6px_18px_rgba(139,92,246,0.35)] sm:text-3xl">
+              {title}
+            </h1>
             <Link
               href={`/dashboard/contracts/${contractId}/adicionales`}
               className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 hover:border-violet-500 hover:text-violet-700"
@@ -88,7 +90,9 @@ export function WizardShell({
     <div className="space-y-5">
       <SaveFlash />
       <div className="rounded-2xl border border-slate-300 bg-white/95 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.2)]">
-        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h1>
+        <h1 className="rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 px-4 py-3 text-2xl font-extrabold tracking-tight text-white shadow-[0_6px_18px_rgba(139,92,246,0.35)] sm:text-3xl">
+              {title}
+            </h1>
         <div className="mt-3">
           <WizardSteps5 id={contractId} active={active} />
         </div>
