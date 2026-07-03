@@ -54,17 +54,40 @@ export async function POST(request: Request) {
   }
   const label = sanitizePropertyLabel(body?.label, property);
   const nowIso = new Date().toISOString();
-  const ref = firestore.collection(USER_PROPERTIES_COLLECTION).doc();
-  await ref.set({
+
+  // Dedup: si el usuario ya tiene guardado este inmueble (misma matrícula, o
+  // misma dirección cuando no hay matrícula), ACTUALIZAMOS ese registro en vez
+  // de crear un duplicado. Antes cada paso por el formulario creaba una copia.
+  const norm = (s: unknown) => String(s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  const reg = norm((property as { registryNumber?: string }).registryNumber);
+  const addr = norm((property as { address?: string }).address);
+  const existing = await firestore
+    .collection(USER_PROPERTIES_COLLECTION)
+    .where("ownerUid", "==", auth.user.uid)
+    .limit(200)
+    .get();
+  const match = existing.docs.find((d) => {
+    const p = ((d.data() as { property?: Record<string, unknown> }).property ?? {}) as {
+      registryNumber?: string;
+      address?: string;
+    };
+    if (reg && norm(p.registryNumber) === reg) return true;
+    if (!reg && addr && norm(p.address) === addr) return true;
+    return false;
+  });
+
+  const ref = match ? match.ref : firestore.collection(USER_PROPERTIES_COLLECTION).doc();
+  const data: Record<string, unknown> = {
     id: ref.id,
     ownerUid: auth.user.uid,
     ownerEmail: auth.user.email ?? null,
     label,
     property,
     updatedAt: nowIso,
-    createdAtServer: FieldValue.serverTimestamp(),
-  });
-  return NextResponse.json({ success: true, id: ref.id, label });
+  };
+  if (!match) data.createdAtServer = FieldValue.serverTimestamp();
+  await ref.set(data, { merge: true });
+  return NextResponse.json({ success: true, id: ref.id, label, updated: Boolean(match) });
 }
 
 /** Borra un inmueble guardado (solo si es del usuario). */

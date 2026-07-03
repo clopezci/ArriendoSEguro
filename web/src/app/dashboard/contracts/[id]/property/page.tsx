@@ -65,6 +65,9 @@ export default function PropertyStepPage() {
   const [savedProps, setSavedProps] = useState<SavedProperty[]>([]);
   const [propLabel, setPropLabel] = useState("");
   const [saveForReuse, setSaveForReuse] = useState(true);
+  // Id del inmueble guardado que se eligió para prellenar. Si está presente, el
+  // inmueble YA está guardado: no se vuelve a guardar y se muestra "ya guardado".
+  const [appliedSavedId, setAppliedSavedId] = useState<string | null>(null);
 
   // Sincroniza el estado local con el draft cuando se carga por primera
   // vez (o cuando se navega de vuelta al paso con datos persistidos).
@@ -90,6 +93,28 @@ export default function PropertyStepPage() {
     };
   }, [user]);
 
+  // Si el inmueble del borrador YA coincide con uno guardado (misma matrícula o
+  // dirección), lo marcamos como "ya guardado" para no volver a pedir guardarlo
+  // aunque el usuario no lo haya elegido de la lista en esta visita.
+  useEffect(() => {
+    if (!draft?.property || savedProps.length === 0) return;
+    const norm = (s: unknown) => String(s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+    const reg = norm(draft.property.registryNumber);
+    const addr = norm(draft.property.address);
+    const match = savedProps.find((sp) => {
+      const p = sp.property ?? {};
+      if (reg && norm(p.registryNumber) === reg) return true;
+      if (!reg && addr && norm(p.address) === addr) return true;
+      return false;
+    });
+    if (match) {
+      setAppliedSavedId(match.id);
+      setPropLabel((prev) => prev || match.label || "");
+    }
+    // Solo depende de la lista y del inmueble del borrador; los setters no cambian.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedProps, draft?.property]);
+
   function applySavedProperty(saved: SavedProperty) {
     const p = saved.property ?? {};
     // El oath NO se prellena (se re-acepta en cada contrato).
@@ -100,6 +125,8 @@ export default function PropertyStepPage() {
     setOwnershipOath(false);
     setNoCapAccepted(false);
     setPropLabel(saved.label ?? "");
+    setAppliedSavedId(saved.id);
+    setSaveForReuse(false);
     setFormKey((k) => k + 1);
   }
 
@@ -175,8 +202,24 @@ export default function PropertyStepPage() {
       updateDraft(id, (d) => appendAudit(d, "rent_cap_validation_passed"));
     }
 
+    // ¿El inmueble YA está guardado? (elegido de los guardados o coincide por
+    // matrícula/dirección con uno existente). En ese caso NO se vuelve a guardar.
+    const norm = (s: unknown) => String(s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+    const regNow = norm(parsed.data.registryNumber);
+    const addrNow = norm(address);
+    const alreadySaved =
+      Boolean(appliedSavedId) ||
+      savedProps.some((sp) => {
+        const p = sp.property ?? {};
+        if (regNow && norm(p.registryNumber) === regNow) return true;
+        if (!regNow && addrNow && norm(p.address) === addrNow) return true;
+        return false;
+      });
+
     // Guardar el inmueble para reutilizarlo (best-effort; no bloquea el flujo).
-    if (saveForReuse && user) {
+    // Solo si el usuario lo pidió y NO está ya guardado (evita duplicados y
+    // guardados redundantes al pasar de nuevo por el paso).
+    if (saveForReuse && !alreadySaved && user) {
       void saveMyProperty(user, {
         label: propLabel,
         property: {
@@ -414,30 +457,41 @@ export default function PropertyStepPage() {
           )}
         </div>
 
-        <div className="sm:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-          <label className="flex items-start gap-2">
-            <input
-              type="checkbox"
-              checked={saveForReuse}
-              onChange={(e) => setSaveForReuse(e.target.checked)}
-              className="mt-0.5 h-4 w-4 accent-violet-600"
-            />
-            <span>
-              <strong>Guardar este inmueble para reutilizarlo</strong> en futuros contratos (solo tú lo ves).
-            </span>
-          </label>
-          {saveForReuse && (
-            <label className="mt-2 block text-xs">
-              <span className="mb-1 block text-slate-700">Nombre para identificarlo (opcional)</span>
+        {appliedSavedId ? (
+          <div className="sm:col-span-2 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800">
+            <p className="font-medium">
+              ✓ Este inmueble ya está guardado{propLabel ? ` como «${propLabel}»` : ""}.
+            </p>
+            <p className="mt-0.5 text-xs text-emerald-800/90">
+              Lo elegiste de tus inmuebles guardados; no se volverá a guardar. Puedes usarlo tal cual en este contrato.
+            </p>
+          </div>
+        ) : (
+          <div className="sm:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+            <label className="flex items-start gap-2">
               <input
-                value={propLabel}
-                onChange={(e) => setPropLabel(e.target.value)}
-                placeholder="Ej.: Apto 502 Chapinero"
-                className="w-full max-w-sm rounded border border-slate-300 bg-white px-3 py-1.5 text-sm"
+                type="checkbox"
+                checked={saveForReuse}
+                onChange={(e) => setSaveForReuse(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-violet-600"
               />
+              <span>
+                <strong>Guardar este inmueble para reutilizarlo</strong> en futuros contratos (solo tú lo ves).
+              </span>
             </label>
-          )}
-        </div>
+            {saveForReuse && (
+              <label className="mt-2 block text-xs">
+                <span className="mb-1 block text-slate-700">Nombre para identificarlo (opcional)</span>
+                <input
+                  value={propLabel}
+                  onChange={(e) => setPropLabel(e.target.value)}
+                  placeholder="Ej.: Apto 502 Chapinero"
+                  className="w-full max-w-sm rounded border border-slate-300 bg-white px-3 py-1.5 text-sm"
+                />
+              </label>
+            )}
+          </div>
+        )}
 
         {errors.length > 0 && (
           <div
