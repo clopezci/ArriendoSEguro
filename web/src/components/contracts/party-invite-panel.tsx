@@ -157,10 +157,18 @@ export function PartyInvitePanel({
             <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800">
               <p className="font-semibold">La persona completó sus datos ✓</p>
               {attestation ? (
-                <p className="mt-1 text-xs text-emerald-800/90">
-                  Aceptó el <strong>juramento</strong> y la <strong>autorización de datos</strong> con su identidad y
-                  evidencia (fecha/IP). Al importar, esa evidencia queda registrada; no tendrás que marcarla tú.
-                </p>
+                attestation.mode === "third_party" ? (
+                  <p className="mt-1 text-xs text-emerald-800/90">
+                    Ingresado por <strong>{attestation.attestedByName ?? "el arrendatario"}</strong>, que declaró contar
+                    con la <strong>autorización del codeudor</strong> (con evidencia). El codeudor confirmará al firmar.
+                    No tendrás que marcarlo tú.
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-emerald-800/90">
+                    Aceptó el <strong>juramento</strong> y la <strong>autorización de datos</strong> con su identidad y
+                    evidencia (fecha/IP). Al importar, esa evidencia queda registrada; no tendrás que marcarla tú.
+                  </p>
+                )
               ) : null}
               <button
                 type="button"

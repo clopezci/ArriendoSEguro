@@ -150,32 +150,51 @@ export function PartyDataFields({
       </label>
 
       {attestation ? (
-        // El titular ya aceptó por el enlace (con su identidad + evidencia). El
-        // dueño NO vuelve a marcar nada: se muestra la evidencia en solo lectura
-        // y se envía el juramento como aceptado por el titular (input oculto).
-        <div className="sm:col-span-2 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs leading-relaxed text-emerald-900">
-          <p className="font-semibold text-emerald-900">✓ Aceptaciones registradas por el titular vía enlace</p>
-          <ul className="mt-1 space-y-0.5">
-            <li>
-              Declaración bajo gravedad de juramento:{" "}
-              <strong>{attestation.truthfulnessOathAccepted ? "aceptada" : "no aceptada"}</strong>.
-            </li>
-            <li>
-              Autorización de tratamiento de datos (Ley 1581):{" "}
-              <strong>{attestation.dataAuthorizationAccepted ? "aceptada" : "no aceptada"}</strong>.
-            </li>
-            <li className="text-emerald-800/80">
+        // El titular ya aceptó por el enlace (o un tercero autorizado ingresó sus
+        // datos). El dueño NO vuelve a marcar nada: se muestra la evidencia en
+        // solo lectura y se envía el juramento como aceptado (input oculto).
+        attestation.mode === "third_party" ? (
+          <div className="sm:col-span-2 rounded-xl border border-sky-300 bg-sky-50 p-3 text-xs leading-relaxed text-sky-900">
+            <p className="font-semibold text-sky-900">
+              ✓ Datos ingresados por {attestation.attestedByName ?? "el arrendatario"} (con autorización declarada)
+            </p>
+            <p className="mt-1">
+              Declaró contar con la <strong>autorización del codeudor</strong> (Ley 1581 de 2012) para registrar sus
+              datos. El codeudor <strong>confirmará la veracidad y aceptará el tratamiento de sus datos al firmar</strong>{" "}
+              el contrato.
+            </p>
+            <p className="mt-1 text-sky-800/80">
               Evidencia: {new Date(attestation.acceptedAt).toLocaleString("es-CO")}
               {attestation.city ? ` · ${attestation.city}` : ""}
               {attestation.ip ? ` · IP ${attestation.ip}` : ""}.
-            </li>
-          </ul>
-          <p className="mt-1 text-[11px] text-emerald-800/80">
-            Lo aceptó el propio titular; por eso no necesitas marcarlo tú. Si necesitas cambiar sus datos, vuelve a
-            invitarlo para conservar la evidencia correcta.
-          </p>
-          <input type="hidden" name="truthfulnessOath" value={attestation.truthfulnessOathAccepted ? "on" : ""} />
-        </div>
+            </p>
+            <input type="hidden" name="truthfulnessOath" value="on" />
+          </div>
+        ) : (
+          <div className="sm:col-span-2 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs leading-relaxed text-emerald-900">
+            <p className="font-semibold text-emerald-900">✓ Aceptaciones registradas por el titular vía enlace</p>
+            <ul className="mt-1 space-y-0.5">
+              <li>
+                Declaración bajo gravedad de juramento:{" "}
+                <strong>{attestation.truthfulnessOathAccepted ? "aceptada" : "no aceptada"}</strong>.
+              </li>
+              <li>
+                Autorización de tratamiento de datos (Ley 1581):{" "}
+                <strong>{attestation.dataAuthorizationAccepted ? "aceptada" : "no aceptada"}</strong>.
+              </li>
+              <li className="text-emerald-800/80">
+                Evidencia: {new Date(attestation.acceptedAt).toLocaleString("es-CO")}
+                {attestation.city ? ` · ${attestation.city}` : ""}
+                {attestation.ip ? ` · IP ${attestation.ip}` : ""}.
+              </li>
+            </ul>
+            <p className="mt-1 text-[11px] text-emerald-800/80">
+              Lo aceptó el propio titular; por eso no necesitas marcarlo tú. Si necesitas cambiar sus datos, vuelve a
+              invitarlo para conservar la evidencia correcta.
+            </p>
+            <input type="hidden" name="truthfulnessOath" value={attestation.truthfulnessOathAccepted ? "on" : ""} />
+          </div>
+        )
       ) : (
         <>
           {thirdPartyAuthorization && (

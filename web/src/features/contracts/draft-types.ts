@@ -40,8 +40,18 @@ export type PartyDraft = Partial<PersonParty> & {
 export interface InviteAttestation {
   truthfulnessOathAccepted: boolean;
   dataAuthorizationAccepted: boolean;
-  /** Siempre `true`: lo aceptó el propio titular por el enlace. */
-  acceptedByInvitee: true;
+  /** `true` si lo aceptó el propio titular; `false` si lo ingresó un tercero autorizado. */
+  acceptedByInvitee: boolean;
+  /**
+   * "self" = el titular completó y aceptó por su enlace (evidencia propia).
+   * "third_party" = un tercero autorizado (p. ej. el inquilino) ingresó los datos
+   * del codeudor declarando contar con su autorización (Ley 1581); el titular
+   * confirmará su veracidad y aceptación al firmar. Por compatibilidad, si falta
+   * se asume "self".
+   */
+  mode?: "self" | "third_party";
+  /** Nombre de quien ingresó los datos cuando `mode === "third_party"`. */
+  attestedByName?: string;
   /** Fecha/hora del servidor al recibir el envío (ISO). */
   acceptedAt: string;
   ip?: string | null;

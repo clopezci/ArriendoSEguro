@@ -9,6 +9,7 @@ import type { PartyDraft } from "@/features/contracts/draft-types";
 type Info = {
   usable?: boolean;
   status?: string;
+  role?: string;
   roleLabel?: string;
   inviterName?: string;
   inviteeName?: string;
@@ -247,11 +248,197 @@ export default function InvitacionPage() {
       )}
 
       {phase === "done" && (
-        <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-800">
-          <p className="font-semibold">¡Listo! Tus datos se enviaron al contrato.</p>
-          <p className="mt-1">Quien te invitó podrá verlos e incluirlos. Ya puedes cerrar esta página.</p>
+        <div className="space-y-4">
+          <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-800">
+            <p className="font-semibold">¡Listo! Tus datos se enviaron al contrato.</p>
+            <p className="mt-1">Quien te invitó podrá verlos e incluirlos.</p>
+          </div>
+          {info?.role === "tenant" ? (
+            <CodebtorSection tenantToken={token} />
+          ) : (
+            <p className="text-sm text-slate-600">Ya puedes cerrar esta página.</p>
+          )}
         </div>
       )}
     </main>
+  );
+}
+
+/**
+ * Sección para que el INQUILINO gestione al codeudor desde su propio enlace:
+ * puede invitarlo (el codeudor completa y acepta por su cuenta) o ingresar sus
+ * datos declarando que cuenta con su autorización (Ley 1581). Quien tiene la
+ * relación con el codeudor es el inquilino, no el dueño.
+ */
+function CodebtorSection({ tenantToken }: { tenantToken: string }) {
+  const [mode, setMode] = useState<"choose" | "invite" | "enter">("choose");
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [done, setDone] = useState<"invited" | "entered" | null>(null);
+
+  async function sendInvite() {
+    if (!email.includes("@")) {
+      setMsg("Ingresa un correo válido del codeudor.");
+      return;
+    }
+    setBusy(true);
+    setMsg("");
+    try {
+      const res = await fetch("/api/party-invite/create-codebtor", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ tenantToken, inviteeEmail: email.trim(), inviteeName: name.trim() }),
+      });
+      const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      if (!res.ok || !j.success) {
+        setMsg(j.errors?.[0]?.message ?? "No se pudo enviar la invitación al codeudor.");
+        return;
+      }
+      setDone("invited");
+    } catch {
+      setMsg("Error de red.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitCodebtor(formData: FormData) {
+    setMsg("");
+    if (formData.get("thirdPartyAuthorizationOath") !== "on") {
+      setMsg("Debes declarar que cuentas con la autorización del codeudor.");
+      return;
+    }
+    if (formData.get("truthfulnessOath") !== "on") {
+      setMsg("Debes aceptar la declaración bajo gravedad de juramento.");
+      return;
+    }
+    const sanitized = sanitizePartyFromForm(formData, { notificationAddress: "" });
+    setBusy(true);
+    try {
+      const res = await fetch("/api/party-invite/submit-codebtor", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          tenantToken,
+          party: { ...sanitized, notificationAddress: "" },
+          thirdPartyAuthorization: true,
+        }),
+      });
+      const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      if (!res.ok || !j.success) {
+        setMsg(j.errors?.[0]?.message ?? "No se pudieron enviar los datos del codeudor.");
+        return;
+      }
+      setDone("entered");
+    } catch {
+      setMsg("Error de red.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (done) {
+    return (
+      <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-800">
+        <p className="font-semibold">
+          {done === "invited"
+            ? "Le enviamos el enlace al codeudor ✓"
+            : "Registramos los datos del codeudor ✓"}
+        </p>
+        <p className="mt-1">
+          {done === "invited"
+            ? "El codeudor registrará sus datos y aceptará el juramento y la autorización por su enlace. Ya puedes cerrar esta página."
+            : "Quien te invitó los verá e incluirá. El codeudor confirmará al firmar. Ya puedes cerrar esta página."}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-violet-300 bg-white p-4">
+      <p className="text-sm font-semibold text-violet-900">¿Este arriendo tiene codeudor solidario?</p>
+      <p className="mt-0.5 text-xs text-slate-600">
+        Como tú tienes la relación con el codeudor, puedes <strong>invitarlo</strong> (él registra y acepta sus datos) o{" "}
+        <strong>ingresar sus datos</strong> si cuentas con su autorización. Si no hay codeudor, cierra esta página.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setMode("invite")}
+          className={`rounded-lg border px-3 py-1.5 text-sm ${mode === "invite" ? "border-violet-500 bg-violet-100/70 text-violet-800" : "border-slate-300 text-slate-800"}`}
+        >
+          Invitar al codeudor por correo
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("enter")}
+          className={`rounded-lg border px-3 py-1.5 text-sm ${mode === "enter" ? "border-violet-500 bg-violet-100/70 text-violet-800" : "border-slate-300 text-slate-800"}`}
+        >
+          Ingresar sus datos yo
+        </button>
+      </div>
+
+      {mode === "invite" && (
+        <div className="mt-3 flex flex-wrap items-end gap-2">
+          <label className="text-xs text-slate-700">
+            <span className="mb-1 block">Correo del codeudor</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="correo@ejemplo.com"
+              className="w-56 rounded border border-slate-300 px-2 py-1.5 text-sm"
+            />
+          </label>
+          <label className="text-xs text-slate-700">
+            <span className="mb-1 block">Nombre (opcional)</span>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nombre"
+              className="w-44 rounded border border-slate-300 px-2 py-1.5 text-sm"
+            />
+          </label>
+          <button
+            type="button"
+            disabled={busy || !email.includes("@")}
+            onClick={() => void sendInvite()}
+            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {busy ? "Enviando…" : "Enviar invitación"}
+          </button>
+        </div>
+      )}
+
+      {mode === "enter" && (
+        <form
+          className="mt-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submitCodebtor(new FormData(e.currentTarget));
+          }}
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PartyDataFields
+              party={{}}
+              oathId="tenant_entered_codebtor_oath"
+              contractDraftId={tenantToken}
+              thirdPartyAuthorization
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={busy}
+            className="mt-3 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {busy ? "Enviando…" : "Guardar datos del codeudor"}
+          </button>
+        </form>
+      )}
+
+      {msg && <p className="mt-2 text-sm text-rose-700">{msg}</p>}
+    </div>
   );
 }
