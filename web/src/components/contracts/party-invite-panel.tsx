@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
-import type { PartyDraft } from "@/features/contracts/draft-types";
+import type { InviteAttestation, PartyDraft } from "@/features/contracts/draft-types";
 
 type Mode = "self" | "invite";
 
@@ -31,6 +31,7 @@ export function PartyInvitePanel({
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"none" | "active" | "completed">("none");
   const [contribution, setContribution] = useState<PartyDraft | null>(null);
+  const [attestation, setAttestation] = useState<InviteAttestation | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -43,11 +44,16 @@ export function PartyInvitePanel({
       );
       const j = (await res.json()) as {
         success?: boolean;
-        invite?: { status?: string; contribution?: PartyDraft | null } | null;
+        invite?: {
+          status?: string;
+          contribution?: PartyDraft | null;
+          selfAttestation?: InviteAttestation | null;
+        } | null;
       };
       if (res.ok && j.success && j.invite) {
         setStatus((j.invite.status as "active" | "completed") ?? "none");
         setContribution(j.invite.contribution ?? null);
+        setAttestation(j.invite.selfAttestation ?? null);
         if (j.invite.status) setMode("invite");
       }
     } catch {
@@ -150,9 +156,21 @@ export function PartyInvitePanel({
           {status === "completed" && contribution && (
             <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800">
               <p className="font-semibold">La persona completó sus datos ✓</p>
+              {attestation ? (
+                <p className="mt-1 text-xs text-emerald-800/90">
+                  Aceptó el <strong>juramento</strong> y la <strong>autorización de datos</strong> con su identidad y
+                  evidencia (fecha/IP). Al importar, esa evidencia queda registrada; no tendrás que marcarla tú.
+                </p>
+              ) : null}
               <button
                 type="button"
-                onClick={() => onImport(contribution)}
+                onClick={() =>
+                  onImport({
+                    ...contribution,
+                    inviteAttestation: attestation ?? undefined,
+                    truthfulnessOathAccepted: Boolean(attestation?.truthfulnessOathAccepted),
+                  })
+                }
                 className="mt-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
               >
                 Importar sus datos al contrato
@@ -162,8 +180,8 @@ export function PartyInvitePanel({
 
           {msg && <p className="text-xs text-slate-700">{msg}</p>}
           <p className="text-[11px] text-slate-500">
-            La persona valida su identidad con un código a su correo (consentimiento). Al importar, podrás revisarlos y
-            ajustarlos antes de continuar.
+            La persona valida su identidad con un código a su correo y acepta, por el enlace, el juramento y la
+            autorización de tratamiento de datos (con evidencia). Al importar, esa evidencia queda registrada.
           </p>
         </div>
       )}

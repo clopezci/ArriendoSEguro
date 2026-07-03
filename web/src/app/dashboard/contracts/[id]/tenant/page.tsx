@@ -47,8 +47,12 @@ export default function TenantStepPage() {
   }
 
   function importParty(p: PartyDraft) {
-    setParty({ ...p, truthfulnessOathAccepted: false });
-    updateDraft(id, (d) => ({ ...d, tenant: { ...p, truthfulnessOathAccepted: false } }));
+    // Si el titular aceptó por el enlace (con evidencia), conservamos su
+    // atestación y NO reseteamos el juramento: la evidencia legal es la suya.
+    const attested = Boolean(p.inviteAttestation);
+    const next: PartyDraft = { ...p, truthfulnessOathAccepted: attested };
+    setParty(next);
+    updateDraft(id, (d) => ({ ...d, tenant: next }));
     setFormKey((k) => k + 1);
   }
 
@@ -93,6 +97,8 @@ export default function TenantStepPage() {
           tenant: {
             ...tenantData,
             truthfulnessOathAccepted: Boolean(truthfulnessOath),
+            // Conservamos la evidencia del titular (si completó por el enlace).
+            inviteAttestation: party.inviteAttestation ?? d.tenant?.inviteAttestation,
           },
           landlordCreditHistoryAttestation: {
             ...d.landlordCreditHistoryAttestation,
@@ -137,6 +143,7 @@ export default function TenantStepPage() {
           oathId="tenant_truthfulness_oath"
           contractDraftId={id}
           thirdPartyAuthorization
+          attestation={party.inviteAttestation ?? null}
         />
         <label className="text-sm sm:col-span-2">
           <span className="mb-1 block text-slate-700">Ingreso mensual aprox. del inquilino (COP) — opcional</span>

@@ -17,6 +17,12 @@ const schema = z.object({
   token: z.string().min(8),
   party: z.unknown(),
   saveProfile: z.boolean().optional(),
+  acceptances: z
+    .object({
+      truthfulnessOath: z.boolean(),
+      dataAuthorization: z.boolean(),
+    })
+    .optional(),
 });
 
 /** El invitado envía sus datos (requiere OTP ya verificado). */
@@ -46,9 +52,49 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, errors: [{ field: "party", message: "Faltan datos mínimos (nombre y documento)." }] }, { status: 422 });
   }
 
+  // Evidencia legal de la aceptación del TITULAR (captada en el servidor, no por
+  // el cliente): juramento + autorización de tratamiento de datos, con IP, fecha
+  // y user-agent. Es lo que evita que el dueño tenga que (o pueda) falsear estas
+  // aceptaciones al importar los datos.
+  const acc = parsed.data.acceptances;
+  if (!acc || !acc.truthfulnessOath || !acc.dataAuthorization) {
+    return NextResponse.json(
+      {
+        success: false,
+        errors: [
+          {
+            field: "acceptances",
+            message:
+              "Debes aceptar la declaración bajo juramento y la autorización de tratamiento de datos para continuar.",
+          },
+        ],
+      },
+      { status: 422 },
+    );
+  }
+  const h = request.headers;
+  const decode = (v: string | null) => {
+    if (!v) return null;
+    try {
+      return decodeURIComponent(v);
+    } catch {
+      return v;
+    }
+  };
+  const selfAttestation = {
+    truthfulnessOathAccepted: true,
+    dataAuthorizationAccepted: true,
+    acceptedByInvitee: true as const,
+    acceptedAt: new Date().toISOString(),
+    ip: clientIpFromRequest(request) || null,
+    userAgent: h.get("user-agent") ?? null,
+    city: decode(h.get("x-vercel-ip-city")),
+    country: h.get("x-vercel-ip-country") ?? null,
+  };
+
   const nowIso = new Date().toISOString();
   await firestore.collection(PARTY_INVITES_COLLECTION).doc(invite.token).set(
-    { contribution: profile, status: "completed", completedAt: nowIso },
+    { contribution: profile, selfAttestation, status: "completed", completedAt: nowIso },
     { merge: true },
   );
 

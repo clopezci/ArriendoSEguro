@@ -107,12 +107,22 @@ export default function InvitacionPage() {
     // Datos mínimos: ya no se pide dirección de notificación a las personas.
     const sanitized = sanitizePartyFromForm(formData, { notificationAddress: "" });
     const payloadParty = { ...sanitized, notificationAddress: "" };
+    // Aceptaciones del TITULAR (juramento + autorización de tratamiento de datos).
+    // Se envían aparte para que el servidor las guarde con evidencia (IP/fecha).
+    const acceptances = {
+      truthfulnessOath: formData.get("truthfulnessOath") === "on",
+      dataAuthorization: formData.get("dataAuthorizationOath") === "on",
+    };
+    if (!acceptances.truthfulnessOath || !acceptances.dataAuthorization) {
+      setMsg("Debes aceptar la declaración bajo juramento y la autorización de tratamiento de datos para continuar.");
+      return;
+    }
     setBusy(true);
     try {
       const res = await fetch("/api/party-invite/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ token, party: payloadParty, saveProfile }),
+        body: JSON.stringify({ token, party: payloadParty, saveProfile, acceptances }),
       });
       const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!res.ok || !j.success) {
@@ -208,6 +218,7 @@ export default function InvitacionPage() {
               party={party}
               oathId="invitee_truthfulness_oath"
               contractDraftId={token}
+              selfDataAuthorization
             />
             <label className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
               <input

@@ -15,12 +15,40 @@ export type PartyDraft = Partial<PersonParty> & {
    */
   truthfulnessOathAccepted?: boolean;
   /**
+   * Presente cuando el TITULAR de los datos completó su información por el
+   * enlace de invitación y aceptó allí, con su propia identidad y evidencia
+   * (IP/fecha), la declaración bajo juramento y la autorización de tratamiento
+   * de datos. Cuando existe, el dueño NO debe (ni puede) volver a marcar esas
+   * aceptaciones al importar: la evidencia legal es la del titular, no la del
+   * dueño. Se guarda para auditoría; no se imprime en el contrato.
+   */
+  inviteAttestation?: InviteAttestation;
+  /**
    * Datos opcionales del soporte económico del codeudor solidario
    * (informativos). Solo aplica cuando esta `PartyDraft` corresponde al
    * codeudor; no se imprime en el contrato y no se valida obligatoriedad.
    */
   economicSupport?: CodebtorEconomicSupportDraft;
 };
+
+/**
+ * Evidencia de que el titular de los datos aceptó, por el enlace de invitación
+ * y con su propia identidad, la declaración bajo juramento y la autorización de
+ * tratamiento de datos. La captura el servidor al recibir el envío (IP/fecha,
+ * más el user-agent y geolocalización aproximada de los encabezados).
+ */
+export interface InviteAttestation {
+  truthfulnessOathAccepted: boolean;
+  dataAuthorizationAccepted: boolean;
+  /** Siempre `true`: lo aceptó el propio titular por el enlace. */
+  acceptedByInvitee: true;
+  /** Fecha/hora del servidor al recibir el envío (ISO). */
+  acceptedAt: string;
+  ip?: string | null;
+  userAgent?: string | null;
+  city?: string | null;
+  country?: string | null;
+}
 
 /**
  * Información de respaldo económico del codeudor solidario. Es práctica

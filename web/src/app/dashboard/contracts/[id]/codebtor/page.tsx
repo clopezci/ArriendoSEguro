@@ -74,8 +74,12 @@ export default function CodebtorStepPage() {
   }
 
   function importParty(p: PartyDraft) {
-    setParty({ ...p, truthfulnessOathAccepted: false });
-    updateDraft(id, (d) => ({ ...d, solidaryCoDebtor: { ...p, truthfulnessOathAccepted: false } }));
+    // Si el titular (codeudor) aceptó por el enlace con evidencia, conservamos su
+    // atestación y no reseteamos el juramento.
+    const attested = Boolean(p.inviteAttestation);
+    const next: PartyDraft = { ...p, truthfulnessOathAccepted: attested };
+    setParty(next);
+    updateDraft(id, (d) => ({ ...d, solidaryCoDebtor: next }));
     setFormKey((k) => k + 1);
   }
 
@@ -148,6 +152,8 @@ export default function CodebtorStepPage() {
             email: parsed.data.email,
             phone: parsed.data.phone,
             truthfulnessOathAccepted: Boolean(parsed.data.truthfulnessOath),
+            // Conservamos la evidencia del titular (si completó por el enlace).
+            inviteAttestation: party.inviteAttestation ?? d.solidaryCoDebtor?.inviteAttestation,
             economicSupport,
           },
           codebtorConsents: {
@@ -249,27 +255,38 @@ export default function CodebtorStepPage() {
             oathId="codebtor_truthfulness_oath"
             contractDraftId={id}
             thirdPartyAuthorization
+            attestation={party.inviteAttestation ?? null}
           />
-          <CodebtorCheckWithEvidence
-            name="dataProcessingConsent"
-            label="Acepto tratamiento de datos."
-            oathId="codebtor_data_processing_consent"
-            contractDraftId={id}
-          />
-          <CodebtorCheckWithEvidence
-            name="electronicSignatureConsent"
-            label="Acepto firma electrónica."
-            oathId="codebtor_electronic_signature_consent"
-            contractDraftId={id}
-          />
-          <div className="sm:col-span-2">
-            <CodebtorCheckWithEvidence
-              name="solidaryObligationAcceptance"
-              label="Acepto la obligación solidaria dentro del contrato."
-              oathId="codebtor_solidary_obligation_acceptance"
-              contractDraftId={id}
-            />
-          </div>
+          {party.inviteAttestation ? (
+            <div className="sm:col-span-2 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-900">
+              El codeudor aceptó por el enlace, con su identidad y evidencia, la declaración bajo juramento y la
+              autorización de tratamiento de sus datos. La <strong>aceptación de firma electrónica</strong> y de la{" "}
+              <strong>obligación solidaria</strong> se capturará cuando el codeudor <strong>firme</strong> el contrato.
+            </div>
+          ) : (
+            <>
+              <CodebtorCheckWithEvidence
+                name="dataProcessingConsent"
+                label="Acepto tratamiento de datos."
+                oathId="codebtor_data_processing_consent"
+                contractDraftId={id}
+              />
+              <CodebtorCheckWithEvidence
+                name="electronicSignatureConsent"
+                label="Acepto firma electrónica."
+                oathId="codebtor_electronic_signature_consent"
+                contractDraftId={id}
+              />
+              <div className="sm:col-span-2">
+                <CodebtorCheckWithEvidence
+                  name="solidaryObligationAcceptance"
+                  label="Acepto la obligación solidaria dentro del contrato."
+                  oathId="codebtor_solidary_obligation_acceptance"
+                  contractDraftId={id}
+                />
+              </div>
+            </>
+          )}
 
           <CodebtorEconomicSupportSection
             initial={draft.solidaryCoDebtor.economicSupport}

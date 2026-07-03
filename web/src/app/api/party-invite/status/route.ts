@@ -35,7 +35,17 @@ export async function GET(request: Request) {
 
   // El más reciente (por createdAt).
   const docs = snap.docs
-    .map((d) => d.data() as { status?: string; inviteeEmail?: string; contribution?: unknown; completedAt?: string; createdAt?: string })
+    .map(
+      (d) =>
+        d.data() as {
+          status?: string;
+          inviteeEmail?: string;
+          contribution?: unknown;
+          selfAttestation?: unknown;
+          completedAt?: string;
+          createdAt?: string;
+        },
+    )
     .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
   const inv = docs[0];
 
@@ -45,6 +55,7 @@ export async function GET(request: Request) {
       status: inv.status ?? "active",
       inviteeEmail: inv.inviteeEmail ?? "",
       contribution: inv.status === "completed" ? inv.contribution ?? null : null,
+      selfAttestation: inv.status === "completed" ? inv.selfAttestation ?? null : null,
       completedAt: inv.completedAt ?? null,
     },
   });
