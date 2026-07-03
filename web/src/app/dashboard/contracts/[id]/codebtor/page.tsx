@@ -7,7 +7,6 @@ import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
 import { IncomeSuggestion, incomeBelowRent } from "@/components/contracts/income-suggestion";
 import type { PartyDraft } from "@/features/contracts/draft-types";
-import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { flashSaved } from "@/components/contracts/save-flash";
@@ -140,12 +139,12 @@ export default function CodebtorStepPage() {
     }
 
     const economicSupport = sanitizeCodebtorEconomicSupportFromForm(formData);
-    // Si el codeudor fue INGRESADO por el inquilino (third_party), NO aceptó por
-    // sí mismo el consentimiento de firma electrónica ni la obligación solidaria:
-    // esos los acepta el CODEUDOR al firmar (en su página de firma). Los guardamos
-    // con honestidad (no marcados como aceptados por adelantado). Solo cuando el
-    // codeudor completó su propio enlace (self) o el dueño los marcó, quedan en true.
-    const attestedThirdParty = party.inviteAttestation?.mode === "third_party";
+    // Las aceptaciones PERSONALES del codeudor (juramento, firma electrónica y
+    // obligación solidaria) solo cuentan si el PROPIO codeudor las aceptó por su
+    // enlace (self). Si lo ingresó el dueño o el inquilino (third_party), quedan
+    // PENDIENTES y se capturan cuando el codeudor FIRMA. La autorización de datos
+    // queda cubierta por la autorización de tercero. Nadie acepta por otro.
+    const selfAttested = Boolean(party.inviteAttestation) && party.inviteAttestation?.mode !== "third_party";
     updateDraft(id, (d) =>
       appendAudit(
         {
@@ -157,15 +156,17 @@ export default function CodebtorStepPage() {
             city: parsed.data.city,
             email: parsed.data.email,
             phone: parsed.data.phone,
-            truthfulnessOathAccepted: Boolean(parsed.data.truthfulnessOath),
+            truthfulnessOathAccepted: selfAttested
+              ? Boolean(party.inviteAttestation?.truthfulnessOathAccepted)
+              : false,
             // Conservamos la evidencia del titular (si completó por el enlace).
             inviteAttestation: party.inviteAttestation ?? d.solidaryCoDebtor?.inviteAttestation,
             economicSupport,
           },
           codebtorConsents: {
             dataProcessingConsent: true,
-            electronicSignatureConsent: !attestedThirdParty,
-            solidaryObligationAcceptance: !attestedThirdParty,
+            electronicSignatureConsent: selfAttested,
+            solidaryObligationAcceptance: selfAttested,
           },
           landlordCreditHistoryAttestation: {
             ...d.landlordCreditHistoryAttestation,
@@ -288,28 +289,19 @@ export default function CodebtorStepPage() {
               <input type="hidden" name="solidaryObligationAcceptance" value="on" />
             </div>
           ) : (
-            <>
-              <CodebtorCheckWithEvidence
-                name="dataProcessingConsent"
-                label="Acepto tratamiento de datos."
-                oathId="codebtor_data_processing_consent"
-                contractDraftId={id}
-              />
-              <CodebtorCheckWithEvidence
-                name="electronicSignatureConsent"
-                label="Acepto firma electrónica."
-                oathId="codebtor_electronic_signature_consent"
-                contractDraftId={id}
-              />
-              <div className="sm:col-span-2">
-                <CodebtorCheckWithEvidence
-                  name="solidaryObligationAcceptance"
-                  label="Acepto la obligación solidaria dentro del contrato."
-                  oathId="codebtor_solidary_obligation_acceptance"
-                  contractDraftId={id}
-                />
-              </div>
-            </>
+            // El dueño está ingresando los datos del codeudor: NO puede aceptar por
+            // él el tratamiento de datos, la firma electrónica ni la obligación
+            // solidaria. Esas las acepta el CODEUDOR cuando firma. Solo declaró
+            // (arriba) que cuenta con su autorización. Los inputs ocultos satisfacen
+            // el esquema; la página los guarda como PENDIENTES (no como aceptados).
+            <div className="sm:col-span-2 rounded-xl border border-sky-300 bg-sky-50 p-3 text-xs text-sky-900">
+              El <strong>consentimiento de firma electrónica</strong> y la <strong>aceptación de la obligación
+              solidaria</strong> del codeudor se capturan cuando el <strong>codeudor firma</strong> el contrato (o si
+              completa su propio enlace de invitación). No las aceptas tú por él.
+              <input type="hidden" name="dataProcessingConsent" value="on" />
+              <input type="hidden" name="electronicSignatureConsent" value="on" />
+              <input type="hidden" name="solidaryObligationAcceptance" value="on" />
+            </div>
           )}
 
           <CodebtorEconomicSupportSection
@@ -389,45 +381,6 @@ export default function CodebtorStepPage() {
         )}
       </div>
     </WizardShell>
-  );
-}
-
-/**
- * Wrapper de check de aceptación del codeudor que muestra evidencia (IP,
- * UA, fecha/hora, ubicación aproximada) debajo del control apenas el
- * codeudor marca la casilla. Conservamos el atributo `name=` para que
- * `wizard-state` siga leyendo el valor desde `FormData` como `on/off`.
- */
-function CodebtorCheckWithEvidence({
-  name,
-  label,
-  oathId,
-  contractDraftId,
-}: {
-  name: string;
-  label: string;
-  oathId: string;
-  contractDraftId: string;
-}) {
-  const [checked, setChecked] = useState(false);
-  return (
-    <div>
-      <label className="flex items-center gap-2 text-sm text-slate-700">
-        <input
-          type="checkbox"
-          name={name}
-          checked={checked}
-          onChange={(e) => setChecked(e.target.checked)}
-          className="h-4 w-4 rounded border-slate-500"
-        />
-        {label}
-      </label>
-      <OathEvidenceBadge
-        active={checked}
-        oathId={oathId}
-        contractDraftId={contractDraftId}
-      />
-    </div>
   );
 }
 

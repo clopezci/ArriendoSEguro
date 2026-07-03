@@ -87,7 +87,13 @@ export default function TenantStepPage() {
     const tenantIncomeDocs = TENANT_INCOME_DOC_TYPES.map((t) => t.value).filter(
       (v) => formData.get(`tenantIncomeDoc_${v}`) === "on",
     );
-    const { truthfulnessOath, ...tenantData } = parsed.data;
+    const { truthfulnessOath: _ignoredOath, ...tenantData } = parsed.data;
+    // El juramento del INQUILINO es del titular: solo cuenta si el propio inquilino
+    // lo aceptó por su enlace (self attestation). Si el dueño ingresó los datos, el
+    // dueño NO jura por él: queda PENDIENTE y se captura cuando el inquilino firma.
+    const titularOathAccepted = party.inviteAttestation
+      ? Boolean(party.inviteAttestation.truthfulnessOathAccepted)
+      : false;
     updateDraft(id, (d) =>
       appendAudit(
         {
@@ -96,7 +102,7 @@ export default function TenantStepPage() {
           tenantIncomeDocs: tenantIncomeDocs.length > 0 ? tenantIncomeDocs : undefined,
           tenant: {
             ...tenantData,
-            truthfulnessOathAccepted: Boolean(truthfulnessOath),
+            truthfulnessOathAccepted: titularOathAccepted,
             // Conservamos la evidencia del titular (si completó por el enlace).
             inviteAttestation: party.inviteAttestation ?? d.tenant?.inviteAttestation,
           },
@@ -108,7 +114,7 @@ export default function TenantStepPage() {
         },
         "tenant_data_saved",
         {
-          truthfulnessOathAccepted: Boolean(truthfulnessOath),
+          truthfulnessOathAccepted: titularOathAccepted,
           tenantCreditHistoryVerified: tenantVerified,
         },
       ),

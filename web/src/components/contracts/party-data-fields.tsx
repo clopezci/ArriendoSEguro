@@ -195,38 +195,50 @@ export function PartyDataFields({
             <input type="hidden" name="truthfulnessOath" value={attestation.truthfulnessOathAccepted ? "on" : ""} />
           </div>
         )
+      ) : thirdPartyAuthorization ? (
+        // Quien ingresa NO es el titular (p. ej. el dueño ingresando los datos del
+        // inquilino/codeudor, o el inquilino ingresando al codeudor). SOLO declara
+        // que tiene la autorización para registrar esos datos. Las aceptaciones
+        // PERSONALES del titular (juramento, autorización de datos, firma
+        // electrónica y obligación solidaria) NO las puede dar un tercero: las hace
+        // el propio titular AL FIRMAR. Por eso solo se muestra esta casilla.
+        <div className="sm:col-span-2 rounded-xl border border-amber-500/40 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
+          <label className="flex cursor-pointer items-start gap-2">
+            <input
+              type="checkbox"
+              name="thirdPartyAuthorizationOath"
+              required
+              checked={authChecked}
+              onChange={(e) => setAuthChecked(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-amber-300"
+            />
+            <span>
+              <strong>Autorización del titular de los datos.</strong>
+              {!authChecked && (
+                <>
+                  {" "}Declaro que <strong>cuento con la autorización expresa del titular</strong> de estos datos
+                  personales para registrarlos en este contrato y que se lo comunicaré, conforme a la Ley 1581 de 2012
+                  (Habeas Data).
+                </>
+              )}
+            </span>
+          </label>
+          <OathEvidenceBadge
+            active={authChecked}
+            oathId={`${oathId ?? "party"}_third_party_authorization`}
+            contractDraftId={contractDraftId}
+          />
+          <p className="mt-2 text-[11px] text-amber-800/90">
+            Las demás aceptaciones —<strong>declaración bajo juramento</strong>, autorización de tratamiento de datos y,
+            si es codeudor, <strong>firma electrónica</strong> y <strong>obligación solidaria</strong>— las hará{" "}
+            <strong>el propio titular al firmar</strong> el contrato. No puedes aceptarlas por otra persona.
+          </p>
+          {/* El titular acepta al firmar; el input oculto solo satisface el esquema.
+              La página guarda estas aceptaciones como PENDIENTES (no como del dueño). */}
+          <input type="hidden" name="truthfulnessOath" value="on" />
+        </div>
       ) : (
         <>
-          {thirdPartyAuthorization && (
-            <div className="sm:col-span-2 rounded-xl border border-amber-500/40 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
-              <label className="flex cursor-pointer items-start gap-2">
-                <input
-                  type="checkbox"
-                  name="thirdPartyAuthorizationOath"
-                  required
-                  checked={authChecked}
-                  onChange={(e) => setAuthChecked(e.target.checked)}
-                  className="mt-0.5 h-4 w-4 accent-amber-300"
-                />
-                <span>
-                  <strong>Autorización del titular de los datos.</strong>
-                  {!authChecked && (
-                    <>
-                      {" "}Declaro que <strong>cuento con la autorización expresa del titular</strong> de estos datos
-                      personales para registrarlos en este contrato y que se lo comunicaré, conforme a la Ley 1581 de
-                      2012 (Habeas Data). El titular podrá confirmarlos y ejercer sus derechos al momento de firmar.
-                    </>
-                  )}
-                </span>
-              </label>
-              <OathEvidenceBadge
-                active={authChecked}
-                oathId={`${oathId ?? "party"}_third_party_authorization`}
-                contractDraftId={contractDraftId}
-              />
-            </div>
-          )}
-
           {selfDataAuthorization && (
             <div className="sm:col-span-2 rounded-xl border border-amber-500/40 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
               <label className="flex cursor-pointer items-start gap-2">
