@@ -638,11 +638,18 @@ export default function PreviewStepPage() {
           <span>
             <span className="block font-semibold text-emerald-900">Notaría digital · gratis</span>
             <span className="mt-0.5 block text-xs text-slate-700">
-              Firma electrónica gratuita del Estado (Agencia Nacional Digital). Se hace <strong>uno a uno</strong>: cada
-              parte (dueño, inquilino y codeudores) firma el documento en su turno con su propia identidad. Cuando todos
-              firmen, se descarga el PDF resultante y, más adelante, se sube en el paso de{" "}
-              <strong>Evidencias → Notaría</strong>. No tiene costo y es opcional.
+              Firma y autenticación digital gratuita del Estado (Agencia Nacional Digital, Decreto 620 de 2020). Se hace{" "}
+              <strong>uno a uno</strong>, por fuera de la app: cada parte firma el mismo PDF en su turno y el último sube
+              el PDF final en el paso de <strong>Notaría</strong> del expediente. Es opcional y sin costo.
             </span>
+            <a
+              href="https://firmaautenticaciondigital.and.gov.co/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-flex text-xs font-medium text-violet-700 underline"
+            >
+              Ir a Firma y Autenticación Digital (Agencia Nacional Digital) ↗
+            </a>
           </span>
         </label>
 
@@ -667,14 +674,23 @@ export default function PreviewStepPage() {
             <span className="block font-semibold text-slate-900">Notaría física · opcional (con costo)</span>
             <span className="mt-0.5 block text-xs text-slate-700">
               Las partes acuden a una notaría para autenticar sus firmas o reconocer el contenido del contrato. Tiene
-              costo según las tarifas notariales vigentes. Más adelante, el PDF autenticado se sube en el paso de{" "}
-              <strong>Evidencias → Notaría</strong>.
+              costo según las tarifas notariales vigentes. El PDF autenticado se sube en el paso de{" "}
+              <strong>Notaría</strong> del expediente.
             </span>
+            <a
+              href="https://www.supernotariado.gov.co/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-flex text-xs font-medium text-violet-700 underline"
+            >
+              Superintendencia de Notariado y Registro ↗
+            </a>
           </span>
         </label>
 
         <p className="mt-3 text-xs text-slate-500">
-          Elijas lo que elijas (o nada), continúa abajo para revisar, guardar y firmar el contrato.
+          Elijas lo que elijas (o nada), continúa abajo para revisar, guardar y firmar el contrato. El paso a paso
+          completo y la carga del PDF firmado están en el paso de <strong>Notaría</strong> del expediente.
         </p>
       </div>
       <div id="preview-acciones" className="mb-4 flex flex-wrap items-center gap-3 scroll-mt-24">
