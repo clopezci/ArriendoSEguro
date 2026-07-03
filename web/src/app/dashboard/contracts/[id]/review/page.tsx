@@ -154,7 +154,7 @@ export default function ReviewStepPage() {
                 SPECIAL_CLAUSE_OTHER_ID,
               ) ? (
                 <p className="mt-2 text-xs text-amber-800">
-                  La cláusula libre («Otra») puede tener un costo adicional;
+                  La cláusula libre («Otra») tiene un costo adicional;
                   las del catálogo se incluyen sin costo.
                 </p>
               ) : (

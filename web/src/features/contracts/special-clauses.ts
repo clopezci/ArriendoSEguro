@@ -95,8 +95,8 @@ export const SPECIAL_CLAUSES_COST_NOTICE =
   "La opción «Otra» implica redacción personalizada por parte del equipo " +
   "de ArriendoSeguro y revisión para que se ajuste a la normatividad " +
   "colombiana. En particular, las cláusulas relacionadas con pagos, multas, " +
-  "intereses o penalidades deben ser revisadas por un abogado. Por eso puede " +
-  "tener un costo adicional, el cual te será notificado antes de generar el " +
+  "intereses o penalidades deben ser revisadas por un abogado. Por eso " +
+  "tiene un costo adicional, el cual te será notificado antes de generar el " +
   "contrato definitivo.";
 
 /**
