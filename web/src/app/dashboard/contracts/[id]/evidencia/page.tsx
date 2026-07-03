@@ -156,8 +156,8 @@ export default function EvidenciaExpedientePage() {
           solo archivo ZIP (contrato, inventario, acta si existen, anexos con PDF o HTML como el registro de pagos). Si
           falta algo, genera primero el PDF o el anexo desde la vista previa o el módulo correspondiente.
         </p>
-        <Link href={`/dashboard/contracts/${id}/evidencias`} className="inline-block text-sm text-violet-700 underline">
-          ← Evidencias del expediente
+        <Link href={`/dashboard/contracts/${id}/adicionales`} className="inline-block text-sm text-violet-700 underline">
+          ← Volver a la posventa
         </Link>
       </header>
 

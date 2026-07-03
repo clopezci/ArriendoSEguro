@@ -113,8 +113,8 @@ export default function RenovarPage() {
       <header className="space-y-1">
         <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Gestiona tu arriendo</p>
         <h1 className="text-2xl font-bold tracking-tight">Renovar contrato</h1>
-        <Link href={`/dashboard/contracts/${id}/gestion`} className="text-sm text-violet-700 underline">
-          ← Volver a gestionar el arriendo
+        <Link href={`/dashboard/contracts/${id}/adicionales`} className="text-sm text-violet-700 underline">
+          ← Volver a la posventa
         </Link>
       </header>
 
@@ -219,7 +219,7 @@ export default function RenovarPage() {
             </a>
           )}
           <p className="pt-1">
-            <Link href={`/dashboard/contracts/${id}/gestion`} className="text-violet-700 underline">← Volver a gestionar el arriendo</Link>
+            <Link href={`/dashboard/contracts/${id}/adicionales`} className="text-violet-700 underline">← Volver a la posventa</Link>
           </p>
         </section>
       )}

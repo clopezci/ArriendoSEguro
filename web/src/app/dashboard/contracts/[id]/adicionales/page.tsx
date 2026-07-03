@@ -14,7 +14,7 @@ import { WizardSteps5 } from "@/components/contracts/wizard-steps5";
  * Pendiente), para que el usuario sepa por dónde empezar y qué le falta. Las
  * sub-páginas vuelven aquí (no hay navegación libre que confunda).
  */
-type ItemKey = "documentos" | "pago" | "calendario" | "inventario" | "acta" | "notaria";
+type ItemKey = "documentos" | "pago" | "calendario" | "entrega" | "notaria";
 type ItemStatus = "loading" | "done" | "pending";
 
 type ChecklistItem = {
@@ -46,16 +46,10 @@ const CHECKLIST: ChecklistItem[] = [
     optional: true,
   },
   {
-    key: "inventario",
+    key: "entrega",
     slug: "inventory",
-    title: "Inventario inicial del inmueble",
-    description: "Registra el estado del inmueble por zonas (fotos), base para la entrega.",
-  },
-  {
-    key: "acta",
-    slug: "inventory",
-    title: "Acta de entrega",
-    description: "Genera el acta de entrega del inmueble (requiere el inventario).",
+    title: "Inventario y acta de entrega",
+    description: "Registra el estado del inmueble por zonas (fotos) y genera el acta de entrega a partir de él.",
   },
   {
     key: "notaria",
@@ -68,8 +62,10 @@ const CHECKLIST: ChecklistItem[] = [
 
 const SECONDARY = [
   { slug: "payments", title: "Registro de pagos", description: "Confirma pagos, genera anexos y el enlace para el inquilino." },
+  { slug: "soportes-codeudor", title: "Soportes de ingresos", description: "Carta laboral, colillas y extractos del codeudor y del inquilino." },
   { slug: "novedades", title: "Novedades del arriendo", description: "Incumplimientos, reparaciones, convivencia y acuerdos." },
   { slug: "alertas", title: "Alertas de vencimiento", description: "Recordatorios de terminación o renovación del contrato." },
+  { slug: "renovar", title: "Renovar contrato", description: "Genera el otrosí de prórroga y reajuste (IPC) para seguir con el mismo inquilino." },
   { slug: "reputacion", title: "Calificar la experiencia", description: "Califica al inquilino al final del arriendo." },
   { slug: "evidencia", title: "Paquete de evidencia (ZIP)", description: "Descarga unificada del expediente cuando esté disponible." },
 ];
@@ -86,8 +82,7 @@ export default function PosventaHubPage() {
     documentos: "loading",
     pago: "loading",
     calendario: "loading",
-    inventario: "loading",
-    acta: "loading",
+    entrega: "loading",
     notaria: "loading",
   });
 
@@ -115,21 +110,17 @@ export default function PosventaHubPage() {
         .then((r) => r.json())
         .then((j) => done("calendario", Array.isArray(j?.scheduledPayments) && j.scheduledPayments.length > 0))
         .catch(() => done("calendario", false));
-      // Inventario
-      fetch(`/api/inventory/by-contract?${vq}`)
-        .then((r) => r.json())
-        .then((j) => done("inventario", j?.inventory?.status === "completed" || j?.inventory?.status === "signed"))
-        .catch(() => done("inventario", false));
-      // Anexos (acta de entrega + notaría)
+      // Inventario + acta de entrega (un solo paso "entrega"): se marca hecho
+      // cuando ya existe el acta de entrega generada (que requiere el inventario).
       fetch(`/api/contracts/annexes/list?${vq}`)
         .then((r) => r.json())
         .then((j) => {
           const annexes: Array<{ annexType?: string; status?: string; pdfUrl?: string | null }> = Array.isArray(j?.annexes) ? j.annexes : [];
-          done("acta", annexes.some((a) => a.annexType === "initial_delivery_act" && a.status === "generated"));
+          done("entrega", annexes.some((a) => a.annexType === "initial_delivery_act" && a.status === "generated"));
           done("notaria", annexes.some((a) => a.annexType === "notarial_authentication" && Boolean(a.pdfUrl)));
         })
         .catch(() => {
-          done("acta", false);
+          done("entrega", false);
           done("notaria", false);
         });
     })();

@@ -242,8 +242,8 @@ export default function NovedadesExpedientePage() {
         </section>
 
         <p className="mt-6 text-xs text-slate-500">
-          <Link href={`/dashboard/contracts/${id}/evidencias`} className="text-violet-700 underline">
-            ← Volver a evidencias del expediente (paso 12)
+          <Link href={`/dashboard/contracts/${id}/adicionales`} className="text-violet-700 underline">
+            ← Volver a la posventa
           </Link>
           {" · "}
           <Link href={`/dashboard/contracts/${id}/preview`} className="text-violet-700 underline">

@@ -190,7 +190,7 @@ export function HomeDashboardPanel() {
               type="button"
               onClick={() => {
                 setLockedStep(null);
-                if (id) router.push(`/dashboard/contracts/${id}/gestion`);
+                if (id) router.push(`/dashboard/contracts/${id}/adicionales`);
                 else setLockedStep(5);
               }}
               className={`flex w-full gap-3 rounded-xl border border-dashed p-4 text-left shadow-sm transition hover:brightness-95 ${
