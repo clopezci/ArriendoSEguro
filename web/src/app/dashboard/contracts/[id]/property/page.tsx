@@ -368,14 +368,15 @@ export default function PropertyStepPage() {
         </div>
 
         <div className="sm:col-span-2 rounded-xl border border-amber-300 bg-amber-100/60 p-4 text-sm text-amber-800">
-          <h3 className="text-sm font-semibold text-amber-800">
-            Declaración bajo juramento sobre el inmueble
-          </h3>
-          <p className="mt-1 text-xs leading-relaxed text-amber-800">
-            Esta declaración es obligatoria para evitar disputas posteriores y
-            para que el contrato tenga validez frente a terceros. Por favor
-            revisa con cuidado antes de aceptar.
-          </p>
+          {!ownershipOath && (
+            <>
+              <h3 className="text-sm font-semibold text-amber-800">Declaración bajo juramento sobre el inmueble</h3>
+              <p className="mt-1 text-xs leading-relaxed text-amber-800">
+                Esta declaración es obligatoria para evitar disputas posteriores y para que el contrato tenga validez
+                frente a terceros. Por favor revisa con cuidado antes de aceptar.
+              </p>
+            </>
+          )}
           <label className="mt-3 flex cursor-pointer items-start gap-2">
             <input
               type="checkbox"
@@ -401,11 +402,13 @@ export default function PropertyStepPage() {
             oathId="property_ownership_oath"
             contractDraftId={id}
           />
-          <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
-            <span aria-hidden="true">📎</span> Podrás <strong>cargar la escritura, el certificado de libertad o el
-            poder autenticado</strong> en la sección «Documentos de propiedad / poder» (Evidencias del expediente),
-            después de guardar la versión del contrato.
-          </p>
+          {!ownershipOath && (
+            <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+              <span aria-hidden="true">📎</span> Podrás <strong>cargar la escritura, el certificado de libertad o el
+              poder autenticado</strong> en la sección «Documentos de propiedad / poder» (Evidencias del expediente),
+              después de guardar la versión del contrato.
+            </p>
+          )}
         </div>
 
         <div className="sm:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
