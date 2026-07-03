@@ -5,7 +5,8 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { parseGsUri } from "@/domain/codebtor-supports/storage-path";
-import { codebtorSupportsCollection, type CodebtorSupportDoc } from "@/domain/codebtor-supports/firestore-supports";
+import { supportsCollection, type CodebtorSupportDoc } from "@/domain/codebtor-supports/firestore-supports";
+import { supportPartySchema } from "@/domain/codebtor-supports/support-schema";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,7 @@ const querySchema = z.object({
   contractId: z.string().min(3),
   contractVersionId: z.string().min(3),
   supportId: z.string().min(3),
+  party: supportPartySchema,
 });
 
 type Err = { success: false; errors: { field: string; message: string }[] };
@@ -24,6 +26,7 @@ export async function GET(request: Request) {
       contractId: url.searchParams.get("contractId") ?? "",
       contractVersionId: url.searchParams.get("contractVersionId") ?? "",
       supportId: url.searchParams.get("supportId") ?? "",
+      party: url.searchParams.get("party") ?? undefined,
     });
     if (!parsed.success) {
       return NextResponse.json<Err>(
@@ -54,14 +57,14 @@ export async function GET(request: Request) {
       );
     }
 
-    const { contractId, contractVersionId, supportId } = parsed.data;
+    const { contractId, contractVersionId, supportId, party } = parsed.data;
     const participant = await requireContractParticipant(request, firestore, contractId, {
       kind: "by_version",
       contractVersionId,
     });
     if (!participant.ok) return participant.response;
 
-    const snap = await codebtorSupportsCollection(firestore, contractId).doc(supportId).get();
+    const snap = await supportsCollection(firestore, contractId, party).doc(supportId).get();
     if (!snap.exists) {
       return NextResponse.json<Err>(
         { success: false, errors: [{ field: "supportId", message: "Soporte no encontrado." }] },

@@ -9,8 +9,8 @@ import {
   CODEBTOR_SUPPORT_MAX_PER_TYPE,
   confirmSupportRequestSchema,
 } from "@/domain/codebtor-supports/support-schema";
-import { assertValidCodebtorSupportGsPath } from "@/domain/codebtor-supports/storage-path";
-import { codebtorSupportsCollection, countActiveSupportsForType } from "@/domain/codebtor-supports/firestore-supports";
+import { assertValidSupportGsPath } from "@/domain/codebtor-supports/storage-path";
+import { supportsCollection, countActiveSupportsForType } from "@/domain/codebtor-supports/firestore-supports";
 
 export const runtime = "nodejs";
 
@@ -63,31 +63,30 @@ export async function POST(request: Request) {
     });
     if (!participant.ok) return participant.response;
 
-    if (participant.role !== "landlord") {
+    const canUpload =
+      participant.role === "landlord" || (body.party === "tenant" && participant.role === "tenant");
+    if (!canUpload) {
       return NextResponse.json<Err>(
-        {
-          success: false,
-          errors: [{ field: "auth", message: "Solo el arrendador puede confirmar soportes del codeudor." }],
-        },
+        { success: false, errors: [{ field: "auth", message: "No tienes permiso para confirmar estos soportes." }] },
         { status: 403 },
       );
     }
 
-    const vSnap = await firestore.collection("contract_versions").doc(body.contractVersionId).get();
-    const hasCodebtor = Boolean((vSnap.data() as { hasSolidaryCoDebtor?: boolean } | undefined)?.hasSolidaryCoDebtor);
-    if (!hasCodebtor) {
-      return NextResponse.json<Err>(
-        {
-          success: false,
-          errors: [{ field: "contract", message: "Esta versión no tiene codeudor solidario." }],
-        },
-        { status: 422 },
-      );
+    if (body.party === "codebtor") {
+      const vSnap = await firestore.collection("contract_versions").doc(body.contractVersionId).get();
+      const hasCodebtor = Boolean((vSnap.data() as { hasSolidaryCoDebtor?: boolean } | undefined)?.hasSolidaryCoDebtor);
+      if (!hasCodebtor) {
+        return NextResponse.json<Err>(
+          { success: false, errors: [{ field: "contract", message: "Esta versión no tiene codeudor solidario." }] },
+          { status: 422 },
+        );
+      }
     }
 
-    const pathOk = assertValidCodebtorSupportGsPath(body.storagePath, {
+    const pathOk = assertValidSupportGsPath(body.storagePath, {
       expectedBucket: bucketName,
       contractId: body.contractId,
+      party: body.party,
       supportType: body.supportType,
     });
     if (!pathOk) {
@@ -100,7 +99,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const dupSnap = await codebtorSupportsCollection(firestore, body.contractId)
+    const dupSnap = await supportsCollection(firestore, body.contractId, body.party)
       .where("storagePath", "==", body.storagePath.trim())
       .limit(1)
       .get();
@@ -115,6 +114,7 @@ export async function POST(request: Request) {
       firestore,
       body.contractId,
       body.contractVersionId,
+      body.party,
       body.supportType,
     );
     if (already >= CODEBTOR_SUPPORT_MAX_PER_TYPE) {
@@ -163,10 +163,11 @@ export async function POST(request: Request) {
     }
 
     const now = new Date().toISOString();
-    const ref = codebtorSupportsCollection(firestore, body.contractId).doc();
+    const ref = supportsCollection(firestore, body.contractId, body.party).doc();
     await ref.set({
       contractId: body.contractId,
       contractVersionId: body.contractVersionId,
+      party: body.party,
       supportType: body.supportType,
       storagePath: body.storagePath.trim(),
       contentType: body.contentType,

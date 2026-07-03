@@ -9,6 +9,7 @@ import {
   safeSupportFilename,
 } from "@/domain/codebtor-supports/support-schema";
 import { countActiveSupportsForType } from "@/domain/codebtor-supports/firestore-supports";
+import { supportPathSegment } from "@/domain/codebtor-supports/storage-path";
 import { shouldBlockForPlus, plusRequiredResponse } from "@/lib/auth/contractPlusGate";
 
 export const runtime = "nodejs";
@@ -64,35 +65,39 @@ export async function POST(request: Request) {
     if (!participant.ok) return participant.response;
 
     if (await shouldBlockForPlus(firestore, participant.user.uid)) {
-      return plusRequiredResponse("Cargar soportes del codeudor");
+      return plusRequiredResponse("Cargar soportes de ingresos");
     }
 
-    if (participant.role !== "landlord") {
+    // El arrendador puede cargar los soportes de ambas partes; el inquilino puede
+    // cargar los suyos propios.
+    const canUpload =
+      participant.role === "landlord" || (body.party === "tenant" && participant.role === "tenant");
+    if (!canUpload) {
       return NextResponse.json<Err>(
-        {
-          success: false,
-          errors: [{ field: "auth", message: "Solo el arrendador (dueño) puede solicitar carga de soportes del codeudor." }],
-        },
+        { success: false, errors: [{ field: "auth", message: "No tienes permiso para cargar estos soportes." }] },
         { status: 403 },
       );
     }
 
-    const vSnap = await firestore.collection("contract_versions").doc(body.contractVersionId).get();
-    const hasCodebtor = Boolean((vSnap.data() as { hasSolidaryCoDebtor?: boolean } | undefined)?.hasSolidaryCoDebtor);
-    if (!hasCodebtor) {
-      return NextResponse.json<Err>(
-        {
-          success: false,
-          errors: [{ field: "contract", message: "Este contrato no tiene codeudor solidario; no aplica la carga de soportes." }],
-        },
-        { status: 422 },
-      );
+    if (body.party === "codebtor") {
+      const vSnap = await firestore.collection("contract_versions").doc(body.contractVersionId).get();
+      const hasCodebtor = Boolean((vSnap.data() as { hasSolidaryCoDebtor?: boolean } | undefined)?.hasSolidaryCoDebtor);
+      if (!hasCodebtor) {
+        return NextResponse.json<Err>(
+          {
+            success: false,
+            errors: [{ field: "contract", message: "Este contrato no tiene codeudor solidario; no aplica la carga de soportes." }],
+          },
+          { status: 422 },
+        );
+      }
     }
 
     const already = await countActiveSupportsForType(
       firestore,
       body.contractId,
       body.contractVersionId,
+      body.party,
       body.supportType,
     );
     if (already >= CODEBTOR_SUPPORT_MAX_PER_TYPE) {
@@ -111,7 +116,7 @@ export async function POST(request: Request) {
     }
 
     const stamp = Date.now();
-    const storageObjectPath = `contracts/${body.contractId}/codebtor-supports/${body.supportType}/${stamp}-${safeSupportFilename(body.filename)}`;
+    const storageObjectPath = `contracts/${body.contractId}/${supportPathSegment(body.party)}/${body.supportType}/${stamp}-${safeSupportFilename(body.filename)}`;
     const bucket = getStorage().bucket(bucketName);
     const file = bucket.file(storageObjectPath);
 

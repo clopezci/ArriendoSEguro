@@ -1,6 +1,6 @@
 "use client";
 
-import { CodebtorSupportsPanel } from "@/components/contracts/codebtor-supports-panel";
+import { PartySupportsPanel } from "@/components/contracts/codebtor-supports-panel";
 import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -30,7 +30,10 @@ export default function SoportesCodeudorPage() {
 
       <ExpedientePostWizardNav contractId={id} />
 
-      <CodebtorSupportsPanel contractId={id} variant="page" />
+      <PartySupportsPanel contractId={id} variant="page" party="codebtor" />
+      <div className="mt-2">
+        <PartySupportsPanel contractId={id} variant="page" party="tenant" />
+      </div>
     </main>
   );
 }

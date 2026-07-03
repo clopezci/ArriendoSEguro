@@ -4,7 +4,8 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { readPdfBytesFlexible } from "@/domain/contracts/readStoredPdfBytes";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
 import { auditEvent } from "@/features/contracts/audit-server";
-import { codebtorSupportsCollection, type CodebtorSupportDoc } from "@/domain/codebtor-supports/firestore-supports";
+import { supportsCollection, type CodebtorSupportDoc } from "@/domain/codebtor-supports/firestore-supports";
+import { SUPPORT_PARTY_VALUES } from "@/domain/codebtor-supports/support-schema";
 import { shouldBlockForPlus, plusRequiredResponse } from "@/lib/auth/contractPlusGate";
 
 export const runtime = "nodejs";
@@ -211,22 +212,24 @@ export async function GET(request: Request) {
       }
     }
 
-    const supportsSnap = await codebtorSupportsCollection(firestore, contractId).get();
-    let supportIndex = 0;
-    for (const d of supportsSnap.docs) {
-      const row = d.data() as Partial<CodebtorSupportDoc>;
-      if (row.voided || row.contractVersionId !== contractVersionId) continue;
-      const st = row.supportType ?? "otro";
-      const base = safeSegment(`${st}_${d.id.slice(-8)}`);
-      const ct = (row.contentType ?? "").toLowerCase();
-      const ext = ct.includes("png") ? "png" : ct.includes("jpeg") || ct.includes("jpg") ? "jpg" : "pdf";
-      const buf = await readPdfBytesFlexible({ pdfStoragePath: row.storagePath ?? null, pdfUrl: null });
-      if (buf?.length) {
-        supportIndex += 1;
-        const name = `soportes-codeudor/${String(supportIndex).padStart(2, "0")}_${base}.${ext}`;
-        tryAdd(name, buf, `${name} (${row.originalFilename ?? st})`);
-      } else {
-        manifest.push(`- (omitido) Soporte codeudor (${st}): no se pudo leer desde Storage.`);
+    for (const party of SUPPORT_PARTY_VALUES) {
+      const supportsSnap = await supportsCollection(firestore, contractId, party).get();
+      let supportIndex = 0;
+      for (const d of supportsSnap.docs) {
+        const row = d.data() as Partial<CodebtorSupportDoc>;
+        if (row.voided || row.contractVersionId !== contractVersionId) continue;
+        const st = row.supportType ?? "otro";
+        const base = safeSegment(`${st}_${d.id.slice(-8)}`);
+        const ct = (row.contentType ?? "").toLowerCase();
+        const ext = ct.includes("png") ? "png" : ct.includes("jpeg") || ct.includes("jpg") ? "jpg" : "pdf";
+        const buf = await readPdfBytesFlexible({ pdfStoragePath: row.storagePath ?? null, pdfUrl: null });
+        if (buf?.length) {
+          supportIndex += 1;
+          const name = `soportes-${party}/${String(supportIndex).padStart(2, "0")}_${base}.${ext}`;
+          tryAdd(name, buf, `${name} (${row.originalFilename ?? st})`);
+        } else {
+          manifest.push(`- (omitido) Soporte ${party} (${st}): no se pudo leer desde Storage.`);
+        }
       }
     }
 

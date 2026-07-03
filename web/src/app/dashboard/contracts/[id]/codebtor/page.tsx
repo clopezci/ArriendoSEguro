@@ -1,6 +1,6 @@
 "use client";
 
-import { CodebtorSupportsPanel } from "@/components/contracts/codebtor-supports-panel";
+import { PartySupportsPanel } from "@/components/contracts/codebtor-supports-panel";
 import { AdditionalCodebtorsManager } from "@/components/contracts/additional-codebtors-manager";
 import { CreditHistoryGuidanceBlock } from "@/components/contracts/credit-history-guidance-block";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
@@ -277,7 +277,7 @@ export default function CodebtorStepPage() {
           />
 
           <div className="sm:col-span-2">
-            <CodebtorSupportsPanel contractId={id} variant="wizard" />
+            <PartySupportsPanel contractId={id} variant="wizard" party="codebtor" />
           </div>
 
           <CreditHistoryGuidanceBlock

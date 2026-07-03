@@ -6,6 +6,7 @@ import {
   CODEBTOR_SUPPORT_MAX_PER_TYPE,
   CODEBTOR_SUPPORT_TYPES,
   type CodebtorSupportType,
+  type SupportParty,
 } from "@/domain/codebtor-supports/support-schema";
 import { useAuth } from "@/contexts/auth-context";
 import Link from "next/link";
@@ -29,13 +30,17 @@ type ListRow = {
   uploadedAt: string;
 };
 
-type CodebtorSupportsPanelProps = {
+type PartySupportsPanelProps = {
   contractId: string;
   /** En el wizard: mensaje más corto y sin cabecera duplicada. */
   variant?: "wizard" | "page";
+  /** Parte cuyos soportes se gestionan. Por defecto codeudor (compatibilidad). */
+  party?: SupportParty;
 };
 
-export function CodebtorSupportsPanel({ contractId, variant = "page" }: CodebtorSupportsPanelProps) {
+const PARTY_LABEL: Record<SupportParty, string> = { codebtor: "del codeudor", tenant: "de ingresos del inquilino" };
+
+export function PartySupportsPanel({ contractId, variant = "page", party = "codebtor" }: PartySupportsPanelProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -74,14 +79,15 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
       }
       const cid = lv.contract?.currentVersionId ?? null;
       setVersionId(cid);
-      setHasCodebtor(Boolean(lv.version?.hasSolidaryCoDebtor));
+      // El inquilino siempre "existe"; para codeudor depende de la versión.
+      setHasCodebtor(party === "tenant" ? true : Boolean(lv.version?.hasSolidaryCoDebtor));
       if (!cid || !user) {
         setSupports([]);
         setViewerRole(null);
         return;
       }
       const listRes = await fetch(
-        `/api/codebtor-supports/list?contractId=${encodeURIComponent(contractId)}&contractVersionId=${encodeURIComponent(cid)}`,
+        `/api/codebtor-supports/list?contractId=${encodeURIComponent(contractId)}&contractVersionId=${encodeURIComponent(cid)}&party=${encodeURIComponent(party)}`,
         { headers: { ...(await buildAuthHeaders(user)) } },
       );
       const listData = (await listRes.json()) as {
@@ -103,7 +109,7 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
     } finally {
       setLoading(false);
     }
-  }, [contractId, user]);
+  }, [contractId, user, party]);
 
   useEffect(() => {
     void load();
@@ -141,6 +147,7 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
         body: JSON.stringify({
           contractId,
           contractVersionId: versionId,
+          party,
           supportType: uploadType,
           filename: file.name,
           contentType,
@@ -172,6 +179,7 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
         body: JSON.stringify({
           contractId,
           contractVersionId: versionId,
+          party,
           supportType: uploadType,
           storagePath: upJson.storagePath,
           contentType,
@@ -202,7 +210,7 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
       const res = await fetch("/api/codebtor-supports/delete", {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ contractId, contractVersionId: versionId, supportId }),
+        body: JSON.stringify({ contractId, contractVersionId: versionId, party, supportId }),
       });
       const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!res.ok || !j.success) {
@@ -227,6 +235,7 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
         contractId,
         contractVersionId: versionId,
         supportId,
+        party,
       });
       const res = await fetch(`/api/codebtor-supports/download-url?${qs.toString()}`, {
         headers: { ...(await buildAuthHeaders(user)) },
@@ -253,13 +262,15 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
     variant === "wizard"
       ? "rounded-xl border border-violet-200 bg-violet-50/50 p-4"
       : "space-y-4";
+  const canUpload = viewerRole === "landlord" || (party === "tenant" && viewerRole === "tenant");
 
   return (
     <div className={shellClass}>
       <div className="space-y-1">
-        <h3 className="text-sm font-semibold text-slate-900">Soportes del codeudor (PDF o imágenes)</h3>
+        <h3 className="text-sm font-semibold text-slate-900">Soportes {PARTY_LABEL[party]} (PDF o imágenes)</h3>
         <p className="text-xs text-slate-600">
-          Carta laboral, colillas, extractos u otros respaldos económicos. Solo el arrendador sube o elimina; las demás
+          Carta laboral, colillas, extractos u otros respaldos económicos.{" "}
+          {party === "tenant" ? "El arrendador o el propio inquilino" : "Solo el arrendador"} sube o elimina; las demás
           partes pueden descargar. Requiere haber guardado una versión en vista previa.
         </p>
       </div>
@@ -296,7 +307,7 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
 
       {!loading && !error && user && versionId && hasCodebtor && (
         <>
-          {viewerRole === "landlord" && (
+          {canUpload && (
             <section className="rounded-lg border border-violet-200 bg-white p-3 shadow-sm">
               <p className="text-xs text-slate-600">
                 Adjunta cada soporte con su botón. Hasta {CODEBTOR_SUPPORT_MAX_PER_TYPE} por tipo; máx.{" "}
@@ -341,7 +352,7 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
             </section>
           )}
 
-          {viewerRole && viewerRole !== "landlord" && (
+          {viewerRole && !canUpload && (
             <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800">
               Puedes ver y descargar soportes; la carga la realiza el arrendador.
             </p>
@@ -370,7 +381,7 @@ export function CodebtorSupportsPanel({ contractId, variant = "page" }: Codebtor
                       >
                         Descargar
                       </button>
-                      {viewerRole === "landlord" && (
+                      {canUpload && (
                         <button
                           type="button"
                           className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-800 hover:bg-rose-50"

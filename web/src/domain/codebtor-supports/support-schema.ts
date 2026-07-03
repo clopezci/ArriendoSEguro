@@ -1,6 +1,11 @@
 import { z } from "zod";
 
-/** Tipos de soporte económico del codeudor (Bloque 12). */
+/** Parte a la que pertenece el soporte económico. */
+export const SUPPORT_PARTY_VALUES = ["codebtor", "tenant"] as const;
+export type SupportParty = (typeof SUPPORT_PARTY_VALUES)[number];
+export const supportPartySchema = z.enum(SUPPORT_PARTY_VALUES).optional().default("codebtor");
+
+/** Tipos de soporte económico (codeudor o inquilino). */
 export const CODEBTOR_SUPPORT_TYPES = [
   "carta_laboral",
   "colilla",
@@ -22,6 +27,7 @@ export const CODEBTOR_SUPPORT_MAX_PER_TYPE = 5;
 export const uploadUrlRequestSchema = z.object({
   contractId: z.string().min(3),
   contractVersionId: z.string().min(3),
+  party: supportPartySchema,
   supportType: codebtorSupportTypeSchema,
   filename: z.string().min(1).max(200),
   contentType: codebtorSupportContentTypeSchema,
@@ -31,6 +37,7 @@ export const uploadUrlRequestSchema = z.object({
 export const confirmSupportRequestSchema = z.object({
   contractId: z.string().min(3),
   contractVersionId: z.string().min(3),
+  party: supportPartySchema,
   supportType: codebtorSupportTypeSchema,
   storagePath: z.string().min(10).max(512),
   contentType: codebtorSupportContentTypeSchema,
@@ -41,6 +48,7 @@ export const confirmSupportRequestSchema = z.object({
 export const deleteSupportRequestSchema = z.object({
   contractId: z.string().min(3),
   contractVersionId: z.string().min(3),
+  party: supportPartySchema,
   supportId: z.string().min(3),
 });
 

@@ -4,6 +4,7 @@ import { CreditHistoryGuidanceBlock } from "@/components/contracts/credit-histor
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
 import { IncomeSuggestion, incomeBelowRent } from "@/components/contracts/income-suggestion";
+import { PartySupportsPanel } from "@/components/contracts/codebtor-supports-panel";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { flashSaved } from "@/components/contracts/save-flash";
@@ -196,6 +197,11 @@ export default function TenantStepPage() {
           </div>
         )}
       </form>
+
+      <div className="mt-4">
+        <PartySupportsPanel contractId={id} variant="wizard" party="tenant" />
+      </div>
+
       <StepNav
         backHref={`/dashboard/contracts/${id}/property`}
         backLabel="Anterior"

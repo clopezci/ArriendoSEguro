@@ -1,9 +1,10 @@
 import type { Firestore } from "firebase-admin/firestore";
-import type { CodebtorSupportType } from "./support-schema";
+import type { CodebtorSupportType, SupportParty } from "./support-schema";
 
 export type CodebtorSupportDoc = {
   contractId: string;
   contractVersionId: string;
+  party?: SupportParty;
   supportType: CodebtorSupportType;
   storagePath: string;
   contentType: string;
@@ -15,17 +16,23 @@ export type CodebtorSupportDoc = {
   voidedAt?: string | null;
 };
 
-export function codebtorSupportsCollection(firestore: Firestore, contractId: string) {
-  return firestore.collection("contracts").doc(contractId).collection("codebtor_supports");
+/**
+ * Subcolección de soportes por parte. El codeudor conserva `codebtor_supports`
+ * (histórico); el inquilino usa `tenant_supports`. Así no se requiere migración.
+ */
+export function supportsCollection(firestore: Firestore, contractId: string, party: SupportParty) {
+  const name = party === "tenant" ? "tenant_supports" : "codebtor_supports";
+  return firestore.collection("contracts").doc(contractId).collection(name);
 }
 
 export async function countActiveSupportsForType(
   firestore: Firestore,
   contractId: string,
   contractVersionId: string,
+  party: SupportParty,
   supportType: CodebtorSupportType,
 ): Promise<number> {
-  const snap = await codebtorSupportsCollection(firestore, contractId).get();
+  const snap = await supportsCollection(firestore, contractId, party).get();
   let n = 0;
   for (const d of snap.docs) {
     const row = d.data() as Partial<CodebtorSupportDoc>;

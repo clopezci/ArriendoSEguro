@@ -6,7 +6,7 @@ import { requireContractParticipant } from "@/lib/auth/serverAuth";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { deleteSupportRequestSchema } from "@/domain/codebtor-supports/support-schema";
 import { parseGsUri } from "@/domain/codebtor-supports/storage-path";
-import { codebtorSupportsCollection, type CodebtorSupportDoc } from "@/domain/codebtor-supports/firestore-supports";
+import { supportsCollection, type CodebtorSupportDoc } from "@/domain/codebtor-supports/firestore-supports";
 
 export const runtime = "nodejs";
 
@@ -53,17 +53,16 @@ export async function POST(request: Request) {
     });
     if (!participant.ok) return participant.response;
 
-    if (participant.role !== "landlord") {
+    const canDelete =
+      participant.role === "landlord" || (body.party === "tenant" && participant.role === "tenant");
+    if (!canDelete) {
       return NextResponse.json<Err>(
-        {
-          success: false,
-          errors: [{ field: "auth", message: "Solo el arrendador puede eliminar soportes del codeudor." }],
-        },
+        { success: false, errors: [{ field: "auth", message: "No tienes permiso para eliminar estos soportes." }] },
         { status: 403 },
       );
     }
 
-    const ref = codebtorSupportsCollection(firestore, body.contractId).doc(body.supportId);
+    const ref = supportsCollection(firestore, body.contractId, body.party).doc(body.supportId);
     const snap = await ref.get();
     if (!snap.exists) {
       return NextResponse.json<Err>(
