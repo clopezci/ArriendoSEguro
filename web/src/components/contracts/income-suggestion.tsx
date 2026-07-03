@@ -1,13 +1,21 @@
 "use client";
 
 /**
- * Sugerencia (NO bloqueante) de ingresos frente al canon.
+ * Sugerencia de ingresos frente al canon.
  *
- * Práctica común de inmobiliarias en Colombia: el arrendatario y el codeudor
- * deben demostrar ingresos de al menos 2 veces el canon (idealmente 3). No es
- * un requisito legal (la Ley 820 de 2003 no lo exige); es orientación de mercado.
+ * Práctica de inmobiliarias en Colombia: el arrendatario y el codeudor deberían
+ * demostrar ingresos de al menos 2 veces el canon (idealmente 3). No es requisito
+ * legal (Ley 820 de 2003), por eso 2× es solo SUGERENCIA (no bloquea).
+ *
+ * Sí es BLOQUEANTE cuando el ingreso declarado es INFERIOR al propio canon: no
+ * tendría cómo pagar el arriendo.
  */
 const money = (n: number) => `$${Math.round(n || 0).toLocaleString("es-CO")}`;
+
+/** ¿El ingreso declarado es inferior al canon? (bloqueante). 0/sin canon → no bloquea. */
+export function incomeBelowRent(rentReference: number, income: number): boolean {
+  return rentReference > 0 && income > 0 && income < rentReference;
+}
 
 export function IncomeSuggestion({
   rentReference,
@@ -23,28 +31,47 @@ export function IncomeSuggestion({
   if (!rentReference || rentReference <= 0) {
     return (
       <p className="mt-1 rounded-lg border border-violet-200 bg-violet-50/60 p-2 text-[11px] leading-snug text-slate-700">
-        💡 Sugerencia: las inmobiliarias suelen pedir que {who} tenga ingresos de al menos <strong>2 veces el canon</strong>{" "}
-        (idealmente 3). No es requisito legal; es orientación de mercado.
+        💡 Se sugiere que {who} tenga ingresos de al menos <strong>2 veces el valor del arrendamiento</strong>{" "}
+        (idealmente 3). Es orientación de inmobiliarias, no requisito legal.
       </p>
     );
   }
   const min2 = rentReference * 2;
   const ideal3 = rentReference * 3;
-  const below = income > 0 && income < min2;
+
+  // Bloqueante: ingreso por debajo del canon.
+  if (incomeBelowRent(rentReference, income)) {
+    return (
+      <p className="mt-1 rounded-lg border-2 border-rose-400 bg-rose-50 p-2 text-[11px] font-medium leading-snug text-rose-800">
+        ⛔ El ingreso ({money(income)}) es <strong>inferior al canon</strong> ({money(rentReference)}). Revisa el valor:
+        no tendría cómo pagar el arriendo. <strong>Debes corregirlo para continuar.</strong>
+      </p>
+    );
+  }
+  // Sugerencia (no bloqueante): por debajo de 2×.
+  if (income > 0 && income < min2) {
+    return (
+      <p className="mt-1 rounded-lg border border-amber-300 bg-amber-50 p-2 text-[11px] leading-snug text-amber-900">
+        ⚠️ Se <strong>sugiere</strong> que {who} tenga ingresos de al menos <strong>2 veces el arrendamiento</strong>{" "}
+        ({money(min2)}), idealmente 3× ({money(ideal3)}). El valor ingresado está por debajo de lo sugerido, pero{" "}
+        <strong>puedes continuar</strong>.
+      </p>
+    );
+  }
+  // Cumple lo sugerido.
+  if (income >= min2) {
+    return (
+      <p className="mt-1 rounded-lg border border-emerald-300 bg-emerald-50 p-2 text-[11px] leading-snug text-emerald-800">
+        ✓ Cumple lo sugerido: ingresos ≥ 2 veces el canon ({money(min2)}).
+      </p>
+    );
+  }
+  // Sin ingreso aún.
   return (
-    <div
-      className={`mt-1 rounded-lg border p-2 text-[11px] leading-snug ${
-        below ? "border-amber-300 bg-amber-50 text-amber-900" : "border-violet-200 bg-violet-50/60 text-slate-700"
-      }`}
-    >
-      💡 Sugerencia (no obligatoria): para un canon de <strong>{money(rentReference)}</strong>, se recomienda que {who}{" "}
-      tenga ingresos desde <strong>{money(min2)}</strong> (2×), idealmente <strong>{money(ideal3)}</strong> (3×). Es
-      práctica de inmobiliarias en Colombia; la Ley 820 no lo exige.
-      {below && (
-        <span className="mt-1 block font-medium">
-          ⚠️ El ingreso ingresado ({money(income)}) está por debajo de lo sugerido. Puedes continuar de todos modos.
-        </span>
-      )}
-    </div>
+    <p className="mt-1 rounded-lg border border-violet-200 bg-violet-50/60 p-2 text-[11px] leading-snug text-slate-700">
+      💡 Para un canon de <strong>{money(rentReference)}</strong>, se sugiere que {who} tenga ingresos desde{" "}
+      <strong>{money(min2)}</strong> (2×), idealmente <strong>{money(ideal3)}</strong> (3×). Orientación de
+      inmobiliarias, no requisito legal.
+    </p>
   );
 }

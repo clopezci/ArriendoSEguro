@@ -3,7 +3,7 @@
 import { CreditHistoryGuidanceBlock } from "@/components/contracts/credit-history-guidance-block";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
-import { IncomeSuggestion } from "@/components/contracts/income-suggestion";
+import { IncomeSuggestion, incomeBelowRent } from "@/components/contracts/income-suggestion";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { flashSaved } from "@/components/contracts/save-flash";
@@ -62,6 +62,13 @@ export default function TenantStepPage() {
     const tenantVerified = rawVerify as "yes" | "no";
 
     const incomeVal = Number(formData.get("tenantMonthlyIncome")) || 0;
+    const rentRef = Number(draft?.property?.monthlyRentProposed ?? draft?.lease?.monthlyRent ?? 0);
+    if (incomeBelowRent(rentRef, incomeVal)) {
+      setErrors([
+        "El ingreso del inquilino es inferior al valor del arriendo. Revisa el valor: no tendría cómo pagar el canon.",
+      ]);
+      return;
+    }
     const { truthfulnessOath, ...tenantData } = parsed.data;
     updateDraft(id, (d) =>
       appendAudit(

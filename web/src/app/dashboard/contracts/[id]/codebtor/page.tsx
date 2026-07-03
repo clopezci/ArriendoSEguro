@@ -5,7 +5,7 @@ import { AdditionalCodebtorsManager } from "@/components/contracts/additional-co
 import { CreditHistoryGuidanceBlock } from "@/components/contracts/credit-history-guidance-block";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
-import { IncomeSuggestion } from "@/components/contracts/income-suggestion";
+import { IncomeSuggestion, incomeBelowRent } from "@/components/contracts/income-suggestion";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
@@ -125,6 +125,15 @@ export default function CodebtorStepPage() {
       return;
     }
     const codebtorVerified = rawCodeVerify as "yes" | "no";
+
+    const codebtorIncome = Number(formData.get("supportMonthlyIncome")) || 0;
+    const rentRef = Number(draft?.property?.monthlyRentProposed ?? draft?.lease?.monthlyRent ?? 0);
+    if (incomeBelowRent(rentRef, codebtorIncome)) {
+      setErrors([
+        "El ingreso del codeudor es inferior al valor del arriendo. Revisa el valor: no tendría cómo respaldar el pago del canon.",
+      ]);
+      return;
+    }
 
     const economicSupport = sanitizeCodebtorEconomicSupportFromForm(formData);
     updateDraft(id, (d) =>
