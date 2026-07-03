@@ -14,6 +14,16 @@ import { DOCUMENT_TYPE_OPTIONS } from "@/domain/colombia/document-validation";
 import type { InviteAttestation, PartyDraft } from "@/features/contracts/draft-types";
 import { useMemo, useState } from "react";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
+import { ReadAloudButton } from "@/components/a11y/read-aloud";
+
+// Textos completos para la lectura por voz (los mismos que se muestran, para que
+// el usuario pueda escucharlos aunque el bloque esté colapsado tras aceptar).
+const THIRD_PARTY_AUTH_READ =
+  "Autorización del titular de los datos. Declaro que cuento con la autorización expresa del titular de estos datos personales para registrarlos en este contrato y que se lo comunicaré, conforme a la Ley 1581 de 2012 de Habeas Data.";
+const SELF_DATA_AUTH_READ =
+  "Autorización de tratamiento de mis datos. Autorizo el tratamiento de mis datos personales por ArriendoSeguro y por la contraparte de este contrato, para celebrar, ejecutar y controlar el arriendo, conforme a la Ley 1581 de 2012 de Habeas Data. Sé que puedo consultar, actualizar y suprimir mis datos, y conozco la política de tratamiento.";
+const TRUTHFULNESS_OATH_READ =
+  "Declaración bajo gravedad de juramento. Manifiesto que la información aquí consignada, nombres, documento, contacto, dirección y demás datos, es verídica, completa y actualizada. Conozco que entregar información falsa puede acarrear sanciones civiles, comerciales y penales, y autorizo a la contraparte a verificarla por los medios legales disponibles.";
 
 export function PartyDataFields({
   party,
@@ -228,11 +238,14 @@ export function PartyDataFields({
             oathId={`${oathId ?? "party"}_third_party_authorization`}
             contractDraftId={contractDraftId}
           />
-          <p className="mt-2 text-[11px] text-amber-800/90">
-            Las demás aceptaciones —<strong>declaración bajo juramento</strong>, autorización de tratamiento de datos y,
-            si es codeudor, <strong>firma electrónica</strong> y <strong>obligación solidaria</strong>— las hará{" "}
-            <strong>el propio titular al firmar</strong> el contrato. No puedes aceptarlas por otra persona.
-          </p>
+          <div className="mt-2 flex items-start justify-between gap-2">
+            <p className="text-[11px] text-amber-800/90">
+              Las demás aceptaciones —<strong>declaración bajo juramento</strong>, autorización de tratamiento de datos
+              y, si es codeudor, <strong>firma electrónica</strong> y <strong>obligación solidaria</strong>— las hará{" "}
+              <strong>el propio titular al firmar</strong> el contrato. No puedes aceptarlas por otra persona.
+            </p>
+            <ReadAloudButton text={THIRD_PARTY_AUTH_READ} label="Escuchar esta declaración" />
+          </div>
           {/* El titular acepta al firmar; el input oculto solo satisface el esquema.
               La página guarda estas aceptaciones como PENDIENTES (no como del dueño). */}
           <input type="hidden" name="truthfulnessOath" value="on" />
@@ -267,6 +280,9 @@ export function PartyDataFields({
                 oathId={`${oathId ?? "party"}_data_authorization`}
                 contractDraftId={contractDraftId}
               />
+              <div className="mt-1 flex justify-end">
+                <ReadAloudButton text={SELF_DATA_AUTH_READ} label="Escuchar esta autorización" />
+              </div>
             </div>
           )}
 
@@ -298,6 +314,9 @@ export function PartyDataFields({
               oathId={oathId ?? "party_truthfulness_oath"}
               contractDraftId={contractDraftId}
             />
+            <div className="mt-1 flex justify-end">
+              <ReadAloudButton text={TRUTHFULNESS_OATH_READ} label="Escuchar el juramento" />
+            </div>
           </div>
         </>
       )}

@@ -6,6 +6,7 @@ import { LegalFooter } from "@/components/layout/legal-footer";
 import { PwaInstallSiteBanner } from "@/components/pwa/pwa-install-site-banner";
 import { PwaRegister } from "@/components/pwa-register";
 import { AppProviders } from "@/components/providers/app-providers";
+import { ReadAloudProvider } from "@/components/a11y/read-aloud";
 import { ReferralTracker } from "@/components/referrals/referral-tracker";
 import { appConfig } from "@/lib/config";
 import type { Metadata, Viewport } from "next";
@@ -62,15 +63,17 @@ export default function RootLayout({
           Saltar al contenido
         </a>
         <AppProviders>
-          <ReferralTracker />
-          <div className="flex min-h-screen flex-col">
-            <div id="contenido" tabIndex={-1} className="flex-1">
-              {children}
+          <ReadAloudProvider>
+            <ReferralTracker />
+            <div className="flex min-h-screen flex-col">
+              <div id="contenido" tabIndex={-1} className="flex-1">
+                {children}
+              </div>
+              <LegalFooter />
             </div>
-            <LegalFooter />
-          </div>
-          <PwaInstallSiteBanner />
-          <CookieConsentBanner />
+            <PwaInstallSiteBanner />
+            <CookieConsentBanner />
+          </ReadAloudProvider>
         </AppProviders>
       </body>
     </html>
