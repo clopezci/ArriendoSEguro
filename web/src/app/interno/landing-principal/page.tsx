@@ -8,6 +8,13 @@ import { formatCopPlain } from "@/lib/product-pricing";
 import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/plan-plus-pricing";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import Link from "next/link";
+import type { Metadata } from "next";
+
+// Landing interna: no debe indexarse (duplica la home). Además está bloqueada en
+// robots.txt. Evita el flag de contenido duplicado / "doorway" de AdSense.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function LandingPrincipalInterna() {
   const firestore = getAdminFirestore();
