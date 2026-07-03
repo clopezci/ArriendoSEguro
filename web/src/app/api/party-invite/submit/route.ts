@@ -21,6 +21,8 @@ const schema = z.object({
     .object({
       truthfulnessOath: z.boolean(),
       dataAuthorization: z.boolean(),
+      electronicSignature: z.boolean().optional(),
+      solidaryObligation: z.boolean().optional(),
     })
     .optional(),
 });
@@ -72,6 +74,23 @@ export async function POST(request: Request) {
       { status: 422 },
     );
   }
+  // El codeudor solidario además acepta firma electrónica y obligación solidaria.
+  const isCodebtor = invite.role === "solidaryCoDebtor";
+  if (isCodebtor && (!acc.electronicSignature || !acc.solidaryObligation)) {
+    return NextResponse.json(
+      {
+        success: false,
+        errors: [
+          {
+            field: "acceptances",
+            message:
+              "Como codeudor solidario, debes aceptar el consentimiento de firma electrónica y la obligación solidaria.",
+          },
+        ],
+      },
+      { status: 422 },
+    );
+  }
   const h = request.headers;
   const decode = (v: string | null) => {
     if (!v) return null;
@@ -85,6 +104,7 @@ export async function POST(request: Request) {
     truthfulnessOathAccepted: true,
     dataAuthorizationAccepted: true,
     acceptedByInvitee: true as const,
+    ...(isCodebtor ? { electronicSignatureAccepted: true, solidaryObligationAccepted: true } : {}),
     acceptedAt: new Date().toISOString(),
     ip: clientIpFromRequest(request) || null,
     userAgent: h.get("user-agent") ?? null,

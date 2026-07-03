@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
+import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { sanitizePartyFromForm } from "@/features/contracts/party-sanitize";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
@@ -29,6 +30,10 @@ export default function InvitacionPage() {
   const [formKey, setFormKey] = useState(0);
   const [hasSavedProfile, setHasSavedProfile] = useState(false);
   const [saveProfile, setSaveProfile] = useState(true);
+  // Consentimientos adicionales SOLO del codeudor solidario (firma electrónica +
+  // aceptación de la obligación solidaria), con su evidencia.
+  const [elecSigChecked, setElecSigChecked] = useState(false);
+  const [solidaryChecked, setSolidaryChecked] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -108,14 +113,24 @@ export default function InvitacionPage() {
     // Datos mínimos: ya no se pide dirección de notificación a las personas.
     const sanitized = sanitizePartyFromForm(formData, { notificationAddress: "" });
     const payloadParty = { ...sanitized, notificationAddress: "" };
+    const isCodebtor = info?.role === "solidaryCoDebtor";
     // Aceptaciones del TITULAR (juramento + autorización de tratamiento de datos).
-    // Se envían aparte para que el servidor las guarde con evidencia (IP/fecha).
+    // El codeudor además acepta el consentimiento de firma electrónica y la
+    // obligación solidaria. Se envían aparte para guardarlas con evidencia.
     const acceptances = {
       truthfulnessOath: formData.get("truthfulnessOath") === "on",
       dataAuthorization: formData.get("dataAuthorizationOath") === "on",
+      electronicSignature: formData.get("electronicSignatureConsent") === "on",
+      solidaryObligation: formData.get("solidaryObligationAcceptance") === "on",
     };
     if (!acceptances.truthfulnessOath || !acceptances.dataAuthorization) {
       setMsg("Debes aceptar la declaración bajo juramento y la autorización de tratamiento de datos para continuar.");
+      return;
+    }
+    if (isCodebtor && (!acceptances.electronicSignature || !acceptances.solidaryObligation)) {
+      setMsg(
+        "Como codeudor solidario, debes aceptar el consentimiento de firma electrónica y la obligación solidaria para continuar.",
+      );
       return;
     }
     setBusy(true);
@@ -221,6 +236,53 @@ export default function InvitacionPage() {
               contractDraftId={token}
               selfDataAuthorization
             />
+
+            {info?.role === "solidaryCoDebtor" && (
+              <div className="sm:col-span-2 space-y-2 rounded-xl border border-amber-500/40 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
+                <p className="font-semibold text-amber-900">Como codeudor solidario, además:</p>
+                <label className="flex cursor-pointer items-start gap-2">
+                  <input
+                    type="checkbox"
+                    name="electronicSignatureConsent"
+                    required
+                    checked={elecSigChecked}
+                    onChange={(e) => setElecSigChecked(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-amber-300"
+                  />
+                  <span>
+                    <strong>Consentimiento de firma electrónica.</strong> Acepto firmar este contrato de forma
+                    electrónica y que la firma tenga plena validez (Ley 527 de 1999).
+                  </span>
+                </label>
+                <OathEvidenceBadge
+                  active={elecSigChecked}
+                  oathId="invitee_codebtor_electronic_signature_consent"
+                  contractDraftId={token}
+                />
+                <label className="flex cursor-pointer items-start gap-2">
+                  <input
+                    type="checkbox"
+                    name="solidaryObligationAcceptance"
+                    required
+                    checked={solidaryChecked}
+                    onChange={(e) => setSolidaryChecked(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 accent-amber-300"
+                  />
+                  <span>
+                    <strong>Aceptación de la obligación solidaria.</strong> Acepto constituirme como{" "}
+                    <strong>codeudor solidario</strong> del arrendatario y responder solidariamente por las obligaciones
+                    del contrato (pago del canon, servicios y demás), conforme a los artículos 1568 y siguientes del
+                    Código Civil.
+                  </span>
+                </label>
+                <OathEvidenceBadge
+                  active={solidaryChecked}
+                  oathId="invitee_codebtor_solidary_obligation_acceptance"
+                  contractDraftId={token}
+                />
+              </div>
+            )}
+
             <label className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
               <input
                 type="checkbox"

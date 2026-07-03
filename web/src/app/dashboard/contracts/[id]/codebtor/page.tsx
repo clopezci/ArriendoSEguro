@@ -259,9 +259,27 @@ export default function CodebtorStepPage() {
           />
           {party.inviteAttestation ? (
             <div className="sm:col-span-2 rounded-xl border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-900">
-              El codeudor aceptó por el enlace, con su identidad y evidencia, la declaración bajo juramento y la
-              autorización de tratamiento de sus datos. La <strong>aceptación de firma electrónica</strong> y de la{" "}
-              <strong>obligación solidaria</strong> se capturará cuando el codeudor <strong>firme</strong> el contrato.
+              {party.inviteAttestation.mode === "third_party" ? (
+                <>
+                  Datos ingresados por el arrendatario, que declaró contar con la autorización del codeudor. La{" "}
+                  <strong>veracidad, la firma electrónica y la obligación solidaria</strong> las acepta el codeudor{" "}
+                  <strong>al firmar</strong> el contrato.
+                </>
+              ) : (
+                <>
+                  El codeudor aceptó por el enlace, con su identidad y evidencia:{" "}
+                  <strong>
+                    juramento, autorización de datos, consentimiento de firma electrónica y obligación solidaria
+                  </strong>
+                  . No necesitas marcar nada tú.
+                </>
+              )}
+              {/* Inputs ocultos: el codeudor ya aceptó por el enlace (o confirmará al
+                  firmar). Satisfacen el esquema para poder avanzar sin que el dueño
+                  marque casillas que no le corresponden. */}
+              <input type="hidden" name="dataProcessingConsent" value="on" />
+              <input type="hidden" name="electronicSignatureConsent" value="on" />
+              <input type="hidden" name="solidaryObligationAcceptance" value="on" />
             </div>
           ) : (
             <>

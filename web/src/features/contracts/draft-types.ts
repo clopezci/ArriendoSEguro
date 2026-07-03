@@ -40,6 +40,10 @@ export type PartyDraft = Partial<PersonParty> & {
 export interface InviteAttestation {
   truthfulnessOathAccepted: boolean;
   dataAuthorizationAccepted: boolean;
+  /** Solo codeudor: consentimiento de firma electrónica aceptado por el titular. */
+  electronicSignatureAccepted?: boolean;
+  /** Solo codeudor: aceptación de la obligación solidaria por el titular. */
+  solidaryObligationAccepted?: boolean;
   /** `true` si lo aceptó el propio titular; `false` si lo ingresó un tercero autorizado. */
   acceptedByInvitee: boolean;
   /**
