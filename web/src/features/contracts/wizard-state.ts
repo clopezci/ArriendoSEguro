@@ -654,21 +654,28 @@ export function setSpecialClauses(
 }
 
 /**
- * Preferencia de autenticación notarial (Bloque 9). El archivo autenticado
- * se registra aparte vía API al subir el PDF.
+ * Preferencia de autenticación notarial (Bloque 9). Admite dos opciones
+ * independientes (el usuario puede elegir una, ambas o ninguna): notaría física
+ * (`wantsNotarization`) y notaría digital gratuita del Estado
+ * (`wantsDigitalNotary`). El archivo autenticado se registra aparte vía API al
+ * subir el PDF; por eso preservamos `uploadedDocumentRef`/`uploadedAt`.
  */
 export function setNotarizationSelection(
   draftId: string,
-  wantsNotarization: boolean,
+  patch: { wantsNotarization?: boolean; wantsDigitalNotary?: boolean },
 ): ContractDraft | null {
   return updateDraft(draftId, (draft) =>
     appendAudit(
       {
         ...draft,
-        notarization: { wantsNotarization },
+        notarization: {
+          ...draft.notarization,
+          wantsNotarization: patch.wantsNotarization ?? draft.notarization?.wantsNotarization ?? false,
+          wantsDigitalNotary: patch.wantsDigitalNotary ?? draft.notarization?.wantsDigitalNotary ?? false,
+        },
       },
       "notarization_selection_updated",
-      { wantsNotarization },
+      { ...patch },
     ),
   );
 }

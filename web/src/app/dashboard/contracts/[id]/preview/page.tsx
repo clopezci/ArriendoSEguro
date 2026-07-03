@@ -170,6 +170,7 @@ export default function PreviewStepPage() {
   } | null>(null);
 
   const [wantsNotarizationUi, setWantsNotarizationUi] = useState(false);
+  const [wantsDigitalNotaryUi, setWantsDigitalNotaryUi] = useState(false);
 
   const activeDraft = draft;
 
@@ -227,6 +228,7 @@ export default function PreviewStepPage() {
     if (state !== "ready" || !id) return;
     const d = getDraft(id);
     setWantsNotarizationUi(Boolean(d?.notarization?.wantsNotarization));
+    setWantsDigitalNotaryUi(Boolean(d?.notarization?.wantsDigitalNotary));
   }, [id, state]);
 
   async function requestPreview() {
@@ -613,24 +615,49 @@ export default function PreviewStepPage() {
         />
       </div>
       <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-800">
-        <h2 className="font-semibold text-slate-900">Autenticación notarial (opcional)</h2>
+        <h2 className="font-semibold text-slate-900">¿Quieres autenticar el contrato? (opcional)</h2>
         <p className="mt-1 text-xs text-slate-600">
-          Si las partes van a autenticar el contrato en notaría, deja constancia aquí. Cuando la plantilla{" "}
-          <span className="font-mono">AS-LEASE-2026.2</span> esté activa, la cláusula correspondiente puede mostrarse al
-          regenerar la vista previa. El PDF autenticado lo subes en el{" "}
-          <Link href={`/dashboard/contracts/${id}/evidencias`} className="font-medium text-violet-700 underline">
-            paso 12 — Evidencias
-          </Link>{" "}
-          → Notaría (no sustituye la firma electrónica en la plataforma).
+          La firma electrónica que hacen aquí (código OTP + evidencia de fecha, IP y hash) ya tiene validez legal en
+          Colombia (Ley 527 de 1999). Si además quieren un respaldo extra, tienen dos caminos. Puedes elegir{" "}
+          <strong>uno, ambos o ninguno</strong>. Ninguno reemplaza la firma electrónica de la plataforma; son
+          complementarios.
         </p>
-        <label className="mt-3 flex cursor-pointer items-start gap-2">
+
+        {/* Opción A · Notaría digital gratuita (firma del Estado) */}
+        <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+          <input
+            type="checkbox"
+            checked={wantsDigitalNotaryUi}
+            onChange={(e) => {
+              const v = e.target.checked;
+              setWantsDigitalNotaryUi(v);
+              setNotarizationSelection(id, { wantsDigitalNotary: v });
+            }}
+            className="mt-0.5"
+          />
+          <span>
+            <span className="block font-semibold text-emerald-900">Notaría digital · gratis</span>
+            <span className="mt-0.5 block text-xs text-slate-700">
+              Firma electrónica gratuita del Estado (Agencia Nacional Digital). Se hace <strong>uno a uno</strong>: cada
+              parte (dueño, inquilino y codeudores) firma el documento en su turno con su propia identidad. Cuando todos
+              firmen, se descarga el PDF resultante y lo subes aquí en{" "}
+              <Link href={`/dashboard/contracts/${id}/evidencias`} className="font-medium text-violet-700 underline">
+                Evidencias → Notaría
+              </Link>
+              . No tiene costo y es opcional.
+            </span>
+          </span>
+        </label>
+
+        {/* Opción B · Notaría física (con costo) */}
+        <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 bg-white/70 p-3">
           <input
             type="checkbox"
             checked={wantsNotarizationUi}
             onChange={(e) => {
               const v = e.target.checked;
               setWantsNotarizationUi(v);
-              setNotarizationSelection(id, v);
+              setNotarizationSelection(id, { wantsNotarization: v });
               if (previewHtml) {
                 setSaveMessage(
                   "Actualizaste la preferencia de notaría. Pulsa «Regenerar vista previa» y, si ya habías guardado versión, vuelve a guardarla para alinear el expediente.",
@@ -639,10 +666,36 @@ export default function PreviewStepPage() {
             }}
             className="mt-0.5"
           />
-          <span>Llevaremos el contrato a notaría para autenticación (como refuerzo a la firma electrónica aquí).</span>
+          <span>
+            <span className="block font-semibold text-slate-900">Notaría física · opcional (con costo)</span>
+            <span className="mt-0.5 block text-xs text-slate-700">
+              Las partes acuden a una notaría para autenticar sus firmas o reconocer el contenido del contrato. Tiene
+              costo según las tarifas notariales vigentes. Luego suben el PDF autenticado en{" "}
+              <Link href={`/dashboard/contracts/${id}/evidencias`} className="font-medium text-violet-700 underline">
+                Evidencias → Notaría
+              </Link>
+              .
+            </span>
+          </span>
         </label>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-slate-500">
+            Elijas lo que elijas (o nada), continúa abajo para revisar, guardar y firmar el contrato.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (wantsNotarizationUi || wantsDigitalNotaryUi) void requestPreview();
+              document.getElementById("preview-acciones")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+            className="inline-flex items-center gap-1 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
+          >
+            Continuar al siguiente paso →
+          </button>
+        </div>
       </div>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div id="preview-acciones" className="mb-4 flex flex-wrap items-center gap-3 scroll-mt-24">
         <button
           type="button"
           onClick={requestPreview}
@@ -1118,9 +1171,6 @@ export default function PreviewStepPage() {
           </div>
         </section>
       )}
-      <p className="mt-3 text-xs text-slate-600">
-        TODO: validar sesión y accessStatus en backend para ambos endpoints antes de producción.
-      </p>
     </WizardShell>
   );
 }

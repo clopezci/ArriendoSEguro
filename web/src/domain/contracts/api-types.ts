@@ -26,6 +26,7 @@ const specialClausesSchema = z.object({
 
 const notarizationSchema = z.object({
   wantsNotarization: z.boolean(),
+  wantsDigitalNotary: z.boolean().optional(),
   uploadedDocumentRef: z.string().optional(),
   uploadedAt: z.string().optional(),
 });

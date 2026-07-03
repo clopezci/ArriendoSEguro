@@ -53,7 +53,14 @@ export interface SpecialClausesSelection {
  * el HTML del contrato).
  */
 export interface NotarizationSelection {
+  /** Notaría física (autenticación de firmas ante notario, con costo). */
   wantsNotarization: boolean;
+  /**
+   * Notaría digital gratuita: firma electrónica del Estado (Agencia Nacional
+   * Digital). Es opcional y complementaria; cada parte firma en su turno y el
+   * PDF resultante se sube en Evidencias → Notaría.
+   */
+  wantsDigitalNotary?: boolean;
   uploadedDocumentRef?: string;
   uploadedAt?: string;
 }

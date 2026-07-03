@@ -887,7 +887,9 @@ export default function InventoryNewPage() {
       )}
 
       <p className="mt-4 text-xs text-slate-600">
-        TODO: inventario final se implementará en el módulo de cierre del contrato.
+        Este es el inventario de <strong>entrega</strong> del inmueble. El inventario de{" "}
+        <strong>devolución</strong> (al terminar el arriendo) se hará más adelante, en el cierre del contrato, para
+        comparar el estado y dejar el paz y salvo.
       </p>
     </WizardShell>
   );

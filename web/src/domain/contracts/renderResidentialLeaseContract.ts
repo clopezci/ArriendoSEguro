@@ -207,9 +207,3 @@ export function getContractRenderSummary(input: ResidentialLeaseContractInput): 
   ].join("\n");
 }
 
-/**
- * TODO(Firma): integrar evento de firma electrónica real y reemplazar placeholders.
- * TODO(PDF): consumir renderContractPdfFromHtml() desde contractVersioning.ts cuando se instale librería.
- * TODO(Bitácora): persistir hash, IP, userAgent y timestamp de firma por cada firmante.
- */
-
