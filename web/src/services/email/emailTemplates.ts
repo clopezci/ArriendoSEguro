@@ -308,13 +308,14 @@ export function signatureOtpEmail(input: {
   minutesValid: number;
 }): CompiledEmailTemplate {
   const subject = "Código de verificación para firmar tu contrato";
-  const text = `Hola ${input.signerName},\n\nTu código de verificación en ArriendoSeguro es: ${input.code}\n\nVálido por ${input.minutesValid} minutos. Si no solicitaste firmar, ignora este mensaje.`;
+  const text = `Hola ${input.signerName},\n\nTu código de verificación en ArriendoSeguro es: ${input.code}\n\nVálido por ${input.minutesValid} minutos. Si no solicitaste firmar, ignora este mensaje.\n\nConsejo: si no ves este correo en tu bandeja de entrada, revisa las carpetas de spam / correo no deseado o promociones.`;
   const html = baseHtml(
     "Código de verificación",
     `<p>Hola <strong>${input.signerName}</strong>,</p>
      <p>Tu código para continuar con la firma electrónica es:</p>
      <p style="font-size:28px;letter-spacing:6px;font-weight:bold;color:#5b21b6;">${input.code}</p>
      <p>Válido por <strong>${input.minutesValid} minutos</strong>.</p>
+     <p style="font-size:13px;color:#64748b;">¿No ves nuestros correos? Revisa la carpeta de <strong>spam / correo no deseado</strong> o promociones y marca este mensaje como "No es spam" para recibir los siguientes.</p>
      <p style="font-size:13px;color:#64748b;">Si no solicitaste este código, puedes ignorar el mensaje.</p>`,
   );
   return { subject, html, text };

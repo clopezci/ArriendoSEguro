@@ -142,7 +142,7 @@ export async function POST(request: Request) {
       message:
         emailResult.status === "mock"
           ? `Modo prueba (correo no configurado): tu código de verificación es ${code}. En producción llega por correo.`
-          : "Si el correo coincide con el del expediente, recibirás un código de 6 dígitos.",
+          : "Si el correo coincide con el del expediente, recibirás un código de 6 dígitos. Si no lo ves en tu bandeja de entrada en un par de minutos, revisa las carpetas de spam / correo no deseado o promociones.",
     });
   } catch (error) {
     if (process.env.NODE_ENV !== "production") console.error("signatures/request-otp error", error);

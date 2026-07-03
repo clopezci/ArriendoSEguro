@@ -23,7 +23,18 @@ export async function GET(request: Request) {
       .where("contractVersionId", "==", contractVersionId)
       .get();
 
-    const signatures = snap.docs.map((d) => {
+    type Row = {
+      id: string;
+      partyType: string;
+      signerName: string;
+      signerEmail: string;
+      signatureStatus: string;
+      sentAt: string | null;
+      signedAt: string | null;
+      createdAt: string | null;
+    };
+
+    const rows: Row[] = snap.docs.map((d) => {
       const s = d.data() as {
         partyType: string;
         signerName: string;
@@ -31,6 +42,7 @@ export async function GET(request: Request) {
         signatureStatus: string;
         sentAt?: string;
         signedAt?: string;
+        createdAt?: string;
       };
       return {
         id: d.id,
@@ -40,8 +52,37 @@ export async function GET(request: Request) {
         signatureStatus: s.signatureStatus,
         sentAt: s.sentAt ?? null,
         signedAt: s.signedAt ?? null,
+        createdAt: s.createdAt ?? null,
       };
     });
+
+    // Deduplicación por parte: rondas de firma repetidas (o reintentos) pudieron
+    // crear varias filas para la misma parte. Mostramos UNA por `partyType`:
+    // se descartan las canceladas y, entre las restantes, se prefiere la firmada
+    // y, si ninguna, la más reciente. Así el conteo "X de N" es correcto.
+    const recency = (r: Row) => r.signedAt ?? r.sentAt ?? r.createdAt ?? "";
+    const isBetter = (candidate: Row, current: Row): boolean => {
+      const candSigned = candidate.signatureStatus === "signed";
+      const curSigned = current.signatureStatus === "signed";
+      if (candSigned !== curSigned) return candSigned; // firmada gana
+      return recency(candidate) > recency(current); // si empatan, la más reciente
+    };
+    const byParty = new Map<string, Row>();
+    for (const r of rows) {
+      if (r.signatureStatus === "cancelled") continue;
+      const cur = byParty.get(r.partyType);
+      if (!cur || isBetter(r, cur)) byParty.set(r.partyType, r);
+    }
+
+    const signatures = [...byParty.values()].map((r) => ({
+      id: r.id,
+      partyType: r.partyType,
+      signerName: r.signerName,
+      signerEmail: r.signerEmail,
+      signatureStatus: r.signatureStatus,
+      sentAt: r.sentAt,
+      signedAt: r.signedAt,
+    }));
     return NextResponse.json({ success: true, signatures });
   } catch {
     return NextResponse.json(

@@ -235,6 +235,32 @@ export default function SignatureTokenPage() {
             </div>
           )}
 
+          {(() => {
+            const role = (info?.partyType ?? "").toLowerCase();
+            const isLandlord =
+              role.includes("landlord") ||
+              role.includes("arrendador") ||
+              role.includes("owner") ||
+              role.includes("propietario");
+            return isLandlord ? (
+              <div className="rounded-xl border border-emerald-300 bg-white/70 p-3 text-sm text-slate-800">
+                <p className="font-semibold text-slate-900">¿Qué haces ahora, como dueño?</p>
+                <p className="mt-1">
+                  Entra a tu cuenta en ArriendoSeguro para seguir el proceso: ver quién ha firmado, descargar el
+                  contrato final y continuar con la posventa (pagos, inventario y más).
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                <p className="font-semibold">Un último paso de tu parte</p>
+                <p className="mt-1">
+                  <strong>Ponte en contacto con el arrendador (dueño)</strong> para continuar con el proceso (por
+                  ejemplo, coordinar la entrega del inmueble). No necesitas crear una cuenta para esto.
+                </p>
+              </div>
+            );
+          })()}
+
           <p className="text-sm font-medium text-slate-800">
             Ya puedes cerrar esta pantalla con tranquilidad. 👋
           </p>
@@ -250,12 +276,29 @@ export default function SignatureTokenPage() {
                 Ver o descargar el contrato (PDF)
               </a>
             )}
-            <a
-              href="https://arriendoseguro.app"
-              className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white"
-            >
-              Ir a arriendoseguro.app
-            </a>
+            {(() => {
+              const role = (info?.partyType ?? "").toLowerCase();
+              const isLandlord =
+                role.includes("landlord") ||
+                role.includes("arrendador") ||
+                role.includes("owner") ||
+                role.includes("propietario");
+              return isLandlord ? (
+                <a
+                  href="https://arriendoseguro.app/ingresar"
+                  className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white"
+                >
+                  Entrar a mi cuenta →
+                </a>
+              ) : (
+                <a
+                  href="https://arriendoseguro.app"
+                  className="rounded-lg border border-emerald-600 bg-white px-3 py-2 text-sm font-medium text-emerald-800"
+                >
+                  Conocer arriendoseguro.app
+                </a>
+              );
+            })()}
           </div>
         </section>
       )}
@@ -308,6 +351,10 @@ export default function SignatureTokenPage() {
               >
                 {otpBusy ? "Enviando…" : "Solicitar o reenviar código al correo"}
               </button>
+              <p className="text-xs text-slate-600">
+                El código llega a <strong>{info.signerEmail}</strong>. Si no lo ves en tu bandeja de entrada en un par de
+                minutos, revisa la carpeta de <strong>spam / correo no deseado</strong> o promociones.
+              </p>
               <div className="flex flex-wrap items-end gap-2">
                 <label className="block text-sm">
                   Código de 6 dígitos

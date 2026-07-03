@@ -640,11 +640,8 @@ export default function PreviewStepPage() {
             <span className="mt-0.5 block text-xs text-slate-700">
               Firma electrónica gratuita del Estado (Agencia Nacional Digital). Se hace <strong>uno a uno</strong>: cada
               parte (dueño, inquilino y codeudores) firma el documento en su turno con su propia identidad. Cuando todos
-              firmen, se descarga el PDF resultante y lo subes aquí en{" "}
-              <Link href={`/dashboard/contracts/${id}/evidencias`} className="font-medium text-violet-700 underline">
-                Evidencias → Notaría
-              </Link>
-              . No tiene costo y es opcional.
+              firmen, se descarga el PDF resultante y, más adelante, se sube en el paso de{" "}
+              <strong>Evidencias → Notaría</strong>. No tiene costo y es opcional.
             </span>
           </span>
         </label>
@@ -670,30 +667,15 @@ export default function PreviewStepPage() {
             <span className="block font-semibold text-slate-900">Notaría física · opcional (con costo)</span>
             <span className="mt-0.5 block text-xs text-slate-700">
               Las partes acuden a una notaría para autenticar sus firmas o reconocer el contenido del contrato. Tiene
-              costo según las tarifas notariales vigentes. Luego suben el PDF autenticado en{" "}
-              <Link href={`/dashboard/contracts/${id}/evidencias`} className="font-medium text-violet-700 underline">
-                Evidencias → Notaría
-              </Link>
-              .
+              costo según las tarifas notariales vigentes. Más adelante, el PDF autenticado se sube en el paso de{" "}
+              <strong>Evidencias → Notaría</strong>.
             </span>
           </span>
         </label>
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-slate-500">
-            Elijas lo que elijas (o nada), continúa abajo para revisar, guardar y firmar el contrato.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              if (wantsNotarizationUi || wantsDigitalNotaryUi) void requestPreview();
-              document.getElementById("preview-acciones")?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-            className="inline-flex items-center gap-1 rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
-          >
-            Continuar al siguiente paso →
-          </button>
-        </div>
+        <p className="mt-3 text-xs text-slate-500">
+          Elijas lo que elijas (o nada), continúa abajo para revisar, guardar y firmar el contrato.
+        </p>
       </div>
       <div id="preview-acciones" className="mb-4 flex flex-wrap items-center gap-3 scroll-mt-24">
         <button
@@ -728,7 +710,11 @@ export default function PreviewStepPage() {
         </div>
       )}
       {previewHtml && (
-        <div className="max-h-[70vh] overflow-auto rounded-lg border border-slate-300 bg-white p-4 text-slate-900">
+        // `relative z-0 [transform:translateZ(0)]` crea un bloque contenedor para
+        // descendientes con `position:fixed` (p. ej. marca de agua o CSS propio del
+        // contrato inyectado): así el HTML del contrato NUNCA escapa del recuadro ni
+        // se monta sobre el menú/encabezado. `overflow-auto` mantiene el scroll interno.
+        <div className="relative z-0 max-h-[70vh] overflow-auto rounded-lg border border-slate-300 bg-white p-4 text-slate-900 [transform:translateZ(0)]">
           <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
         </div>
       )}
@@ -868,51 +854,6 @@ export default function PreviewStepPage() {
       )}
       {contractStatus && <p className="text-xs text-slate-600">Estado contractual: {contractStatus}</p>}
 
-      {savedVersion && (
-        <section className="mt-8 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50/90 to-white p-5 shadow-[0_8px_28px_rgba(139,92,246,0.14)]">
-          <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Siguiente paso</p>
-          {plusActive || demoActive ? (
-            <>
-              <h3 className="mt-1 text-base font-bold text-slate-900">Continúa con la posventa, paso a paso</h3>
-              <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                Con tu contrato guardado, te llevamos a un <strong>centro de control</strong> donde haces, en orden y
-                viendo qué falta: documentos de respaldo, método de pago, calendario de pagos, inventario de entrega y
-                más.
-              </p>
-              <Link
-                href={`/dashboard/contracts/${id}/adicionales`}
-                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] hover:bg-violet-500"
-              >
-                Ir a la posventa →
-              </Link>
-            </>
-          ) : (
-            <>
-              <h3 className="mt-1 text-base font-bold text-slate-900">
-                Tu contrato está listo. ¿Quieres el respaldo completo del arriendo?
-              </h3>
-              <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                Lo generaste y guardaste <strong>gratis</strong>. El acompañamiento <strong>durante el arriendo</strong>{" "}
-                es parte del <strong>Plan Plus</strong>:
-              </p>
-              <ul className="mt-2 grid gap-1 text-xs text-slate-700 sm:grid-cols-2">
-                <li>• Inventario y acta de entrega</li>
-                <li>• Alertas de vencimiento y renovación</li>
-                <li>• Recordatorios y notificaciones</li>
-                <li>• Registro de pagos y soportes</li>
-                <li>• Registro de novedades y mantenimientos</li>
-                <li>• Calificación de la experiencia</li>
-              </ul>
-              <Link
-                href="/dashboard/plans"
-                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] hover:bg-violet-500"
-              >
-                Activar Plan Plus →
-              </Link>
-            </>
-          )}
-        </section>
-      )}
       {signatureRoundMessage && (
         <div
           id="firma-resultado"
@@ -1169,6 +1110,53 @@ export default function PreviewStepPage() {
               </tbody>
             </table>
           </div>
+        </section>
+      )}
+
+      {/* CTA FINAL — al final del todo, sin romper el flujo de los pasos de arriba. */}
+      {savedVersion && (
+        <section className="mt-8 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50/90 to-white p-5 shadow-[0_8px_28px_rgba(139,92,246,0.14)]">
+          <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Y para terminar</p>
+          {plusActive || demoActive ? (
+            <>
+              <h3 className="mt-1 text-base font-bold text-slate-900">Continúa con la posventa, paso a paso</h3>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                Con tu contrato guardado, te llevamos a un <strong>centro de control</strong> donde haces, en orden y
+                viendo qué falta: documentos de respaldo, método de pago, calendario de pagos, inventario de entrega y
+                más.
+              </p>
+              <Link
+                href={`/dashboard/contracts/${id}/adicionales`}
+                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] hover:bg-violet-500"
+              >
+                Ir a la posventa →
+              </Link>
+            </>
+          ) : (
+            <>
+              <h3 className="mt-1 text-base font-bold text-slate-900">
+                Tu contrato está listo. ¿Quieres el respaldo completo del arriendo?
+              </h3>
+              <p className="mt-1 text-sm leading-relaxed text-slate-600">
+                Lo generaste y guardaste <strong>gratis</strong>. El acompañamiento <strong>durante el arriendo</strong>{" "}
+                es parte del <strong>Plan Plus</strong>:
+              </p>
+              <ul className="mt-2 grid gap-1 text-xs text-slate-700 sm:grid-cols-2">
+                <li>• Inventario y acta de entrega</li>
+                <li>• Alertas de vencimiento y renovación</li>
+                <li>• Recordatorios y notificaciones</li>
+                <li>• Registro de pagos y soportes</li>
+                <li>• Registro de novedades y mantenimientos</li>
+                <li>• Calificación de la experiencia</li>
+              </ul>
+              <Link
+                href="/dashboard/plans"
+                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] hover:bg-violet-500"
+              >
+                Activar Plan Plus →
+              </Link>
+            </>
+          )}
         </section>
       )}
     </WizardShell>

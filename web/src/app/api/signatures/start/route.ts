@@ -153,6 +153,8 @@ export async function POST(request: Request) {
       .collection("signatures")
       .where("contractId", "==", contractId)
       .get();
+    const nowISO = new Date().toISOString();
+    // Cancela pendientes de OTRAS versiones (el documento cambió).
     await Promise.all(
       existingSignatures.docs
         .filter((d) => {
@@ -163,15 +165,33 @@ export async function POST(request: Request) {
           );
         })
         .map((d) =>
-          d.ref.set({ signatureStatus: "cancelled", updatedAt: new Date().toISOString() }, { merge: true }),
+          d.ref.set({ signatureStatus: "cancelled", updatedAt: nowISO }, { merge: true }),
         ),
     );
+
+    // Idempotencia: agrupamos las firmas EXISTENTES de esta versión por parte.
+    // Al reenviar, reutilizamos una fila por parte (regenerando el token) y
+    // cancelamos los duplicados; a quien ya firmó no se le reenvía. Antes cada
+    // clic creaba filas nuevas → "faltan 9 cuando solo son 3".
+    type SigSnap = FirebaseFirestore.QueryDocumentSnapshot;
+    const byParty = new Map<string, SigSnap[]>();
+    for (const d of existingSignatures.docs) {
+      const row = d.data() as { contractVersionId?: string };
+      if (row.contractVersionId !== contractVersionId) continue;
+      const arr = byParty.get((d.data() as { partyType?: string }).partyType ?? "") ?? [];
+      arr.push(d);
+      byParty.set((d.data() as { partyType?: string }).partyType ?? "", arr);
+    }
+    const recency = (d: SigSnap) => {
+      const r = d.data() as { signedAt?: string; sentAt?: string; createdAt?: string };
+      return r.signedAt ?? r.sentAt ?? r.createdAt ?? "";
+    };
 
     auditEvent("signature_round_started", { contractId, contractVersionId, parties: parties.length });
     const signatures: Array<{
       partyType: SignaturePartyType;
       signerEmail: string;
-      signatureStatus: "sent";
+      signatureStatus: "sent" | "signed";
       tokenExpiresAt: string;
       sentAt: string;
       emailMode: "real" | "mock" | "failed" | "skipped";
@@ -182,36 +202,71 @@ export async function POST(request: Request) {
     for (const party of parties) {
       const person = personForParty(version.contractPayload, party);
       if (!person) continue;
-      const signatureRef = firestore.collection("signatures").doc();
+
+      const existingForParty = (byParty.get(party) ?? []).slice();
+      const signedDoc = existingForParty.find(
+        (d) => (d.data() as { signatureStatus?: string }).signatureStatus === "signed",
+      );
+
+      // Ya firmó: conservamos su firma, cancelamos duplicados y NO reenviamos.
+      if (signedDoc) {
+        await Promise.all(
+          existingForParty
+            .filter((d) => d.id !== signedDoc.id)
+            .map((d) => d.ref.set({ signatureStatus: "cancelled", updatedAt: nowISO }, { merge: true })),
+        );
+        const row = signedDoc.data() as { signerEmail?: string; tokenExpiresAt?: string; signedAt?: string };
+        signatures.push({
+          partyType: party,
+          signerEmail: row.signerEmail ?? person.email.trim().toLowerCase(),
+          signatureStatus: "signed",
+          tokenExpiresAt: row.tokenExpiresAt ?? nowISO,
+          sentAt: row.signedAt ?? nowISO,
+          emailMode: "skipped",
+        });
+        continue;
+      }
+
+      // No firmó: reutilizamos una fila (la más reciente) y cancelamos el resto.
+      // Si no había ninguna, creamos una nueva.
+      const sorted = existingForParty.sort((a, b) => (recency(b) > recency(a) ? 1 : -1));
+      const signatureRef = sorted[0]?.ref ?? firestore.collection("signatures").doc();
+      await Promise.all(
+        sorted.slice(1).map((d) => d.ref.set({ signatureStatus: "cancelled", updatedAt: nowISO }, { merge: true })),
+      );
+      const isReused = Boolean(sorted[0]);
       const { token, tokenHash } = generateSignatureToken(signatureRef.id);
       const tokenExpiresAt = new Date(now.getTime() + SIGNATURE_TOKEN_HOURS * 60 * 60 * 1000).toISOString();
       const sentAt = new Date().toISOString();
       const signingUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/firma/${token}`;
 
-      await signatureRef.set({
-        id: signatureRef.id,
-        contractId,
-        contractVersionId,
-        leaseProcessId: contract?.draftId ?? contractId,
-        leasePartyId: `${contractId}:${party}`,
-        partyType: party,
-        signerName: person.fullName,
-        signerEmail: person.email.trim().toLowerCase(),
-        signerDocument: `${person.documentType} ${person.documentNumber}`,
-        signatureStatus: "sent",
-        signatureMethod: "email_link",
-        tokenHash,
-        tokenExpiresAt,
-        consentAccepted: false,
-        signedAt: null,
-        ipAddress: null,
-        userAgent: null,
-        sentAt,
-        documentHash: version.documentHash,
-        evidenceJson: null,
-        createdAt: sentAt,
-        updatedAt: sentAt,
-      });
+      await signatureRef.set(
+        {
+          id: signatureRef.id,
+          contractId,
+          contractVersionId,
+          leaseProcessId: contract?.draftId ?? contractId,
+          leasePartyId: `${contractId}:${party}`,
+          partyType: party,
+          signerName: person.fullName,
+          signerEmail: person.email.trim().toLowerCase(),
+          signerDocument: `${person.documentType} ${person.documentNumber}`,
+          signatureStatus: "sent",
+          signatureMethod: "email_link",
+          tokenHash,
+          tokenExpiresAt,
+          consentAccepted: false,
+          signedAt: null,
+          ipAddress: null,
+          userAgent: null,
+          sentAt,
+          documentHash: version.documentHash,
+          evidenceJson: null,
+          ...(isReused ? {} : { createdAt: sentAt }),
+          updatedAt: sentAt,
+        },
+        { merge: true },
+      );
 
       auditEvent("signature_request_created", { contractId, contractVersionId, partyType: party });
       const emailResult = await sendSignatureEmail({
