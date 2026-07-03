@@ -168,7 +168,7 @@ export default function CodebtorStepPage() {
         },
       ),
     );
-    router.push(`/dashboard/contracts/${id}/property`);
+    flashSaved(() => router.push(`/dashboard/contracts/${id}/terms`));
   }
 
   // Estilos comunes para los botones Sí/No. Cuando la decisión está en
