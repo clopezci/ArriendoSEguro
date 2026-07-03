@@ -28,6 +28,7 @@ const RESOURCES_ITEMS: Item[] = [
 
 const ADMIN_ITEMS: Item[] = [
   { href: "/admin", label: "Panel de administración" },
+  { href: "/dashboard/email-logs", label: "Diagnóstico de correos" },
   { href: "/dashboard/contracts/new", label: "Nuevo expediente (directo)" },
   { href: "/panel/expediente", label: "Panel legacy" },
 ];
