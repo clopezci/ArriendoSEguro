@@ -1,6 +1,7 @@
 "use client";
 
 import { SIGNING_CONSENT_TEXTS, SIGNING_DATA_CONFIRMATION_TEXT } from "@/domain/signatures/signingConsentTexts";
+import { ReadAloudButton } from "@/components/a11y/read-aloud-button";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -421,7 +422,13 @@ export default function SignatureTokenPage() {
             </div>
           ) : (
             <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3">
-              <h2 className="text-sm font-semibold text-slate-900">Paso 2 — Declaraciones y firma</h2>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="text-sm font-semibold text-slate-900">Paso 2 — Declaraciones y firma</h2>
+                <ReadAloudButton
+                  text={`${SIGNING_CONSENT_TEXTS.contractReadingAcceptance}. ${SIGNING_CONSENT_TEXTS.electronicSignatureAcceptance}. ${SIGNING_DATA_CONFIRMATION_TEXT}`}
+                  label="Escuchar las declaraciones"
+                />
+              </div>
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" checked={consentA} onChange={(e) => setConsentA(e.target.checked)} />
                 <span>{SIGNING_CONSENT_TEXTS.contractReadingAcceptance}</span>

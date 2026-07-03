@@ -15,7 +15,8 @@ import type {
 } from "@/domain/contracts/api-types";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ReadAloudButton } from "@/components/a11y/read-aloud-button";
 
 /**
  * Etiquetas amigables para los `field` que devuelve `validateContractData`
@@ -171,6 +172,8 @@ export default function PreviewStepPage() {
 
   const [wantsNotarizationUi, setWantsNotarizationUi] = useState(false);
   const [wantsDigitalNotaryUi, setWantsDigitalNotaryUi] = useState(false);
+  // Ref al HTML del contrato renderizado, para la lectura por voz.
+  const contractRef = useRef<HTMLDivElement>(null);
 
   const activeDraft = draft;
 
@@ -727,13 +730,19 @@ export default function PreviewStepPage() {
         </div>
       )}
       {previewHtml && (
-        // `relative z-0 [transform:translateZ(0)]` crea un bloque contenedor para
-        // descendientes con `position:fixed` (p. ej. marca de agua o CSS propio del
-        // contrato inyectado): así el HTML del contrato NUNCA escapa del recuadro ni
-        // se monta sobre el menú/encabezado. `overflow-auto` mantiene el scroll interno.
-        <div className="relative z-0 max-h-[70vh] overflow-auto rounded-lg border border-slate-300 bg-white p-4 text-slate-900 [transform:translateZ(0)]">
-          <div dangerouslySetInnerHTML={{ __html: previewHtml }} />
-        </div>
+        <>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <p className="text-xs font-medium text-slate-500">Vista previa del contrato</p>
+            <ReadAloudButton targetRef={contractRef} withText label="Escuchar el contrato en voz alta" />
+          </div>
+          {/* `relative z-0 [transform:translateZ(0)]` crea un bloque contenedor para
+              descendientes con `position:fixed` (p. ej. marca de agua o CSS propio del
+              contrato inyectado): así el HTML del contrato NUNCA escapa del recuadro ni
+              se monta sobre el menú/encabezado. `overflow-auto` mantiene el scroll interno. */}
+          <div className="relative z-0 max-h-[70vh] overflow-auto rounded-lg border border-slate-300 bg-white p-4 text-slate-900 [transform:translateZ(0)]">
+            <div ref={contractRef} dangerouslySetInnerHTML={{ __html: previewHtml }} />
+          </div>
+        </>
       )}
       {versionInfo && (
         <div className="mt-3 rounded-lg border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">
