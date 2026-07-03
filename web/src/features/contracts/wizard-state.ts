@@ -228,6 +228,12 @@ export interface ContractDraft {
    */
   renewalReminderEnabled?: boolean;
   /**
+   * Ingreso mensual aproximado del arrendatario (informativo, no legal). Sirve
+   * para la sugerencia de solvencia (práctica de inmobiliarias: ≥2× el canon).
+   * No forma parte del contrato ni del hash.
+   */
+  tenantMonthlyIncome?: number;
+  /**
    * Garantía para servicios públicos (Art. 15 Ley 820 de 2003). Opcional; se
    * captura en el paso de Servicios con aceptación y registro de IP en servidor.
    */

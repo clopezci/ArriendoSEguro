@@ -3,6 +3,7 @@
 import { CreditHistoryGuidanceBlock } from "@/components/contracts/credit-history-guidance-block";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
+import { IncomeSuggestion } from "@/components/contracts/income-suggestion";
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { flashSaved } from "@/components/contracts/save-flash";
@@ -20,10 +21,15 @@ export default function TenantStepPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [party, setParty] = useState<PartyDraft>(draft?.tenant ?? {});
   const [formKey, setFormKey] = useState(0);
+  const [income, setIncome] = useState<number>(0);
 
   useEffect(() => {
     if (draft?.tenant) setParty(draft.tenant);
   }, [draft?.tenant]);
+
+  useEffect(() => {
+    if (draft?.tenantMonthlyIncome != null) setIncome(Number(draft.tenantMonthlyIncome) || 0);
+  }, [draft?.tenantMonthlyIncome]);
 
   if (state !== "ready" || !draft) {
     return <p className="text-sm text-slate-700">Cargando…</p>;
@@ -55,11 +61,13 @@ export default function TenantStepPage() {
     }
     const tenantVerified = rawVerify as "yes" | "no";
 
+    const incomeVal = Number(formData.get("tenantMonthlyIncome")) || 0;
     const { truthfulnessOath, ...tenantData } = parsed.data;
     updateDraft(id, (d) =>
       appendAudit(
         {
           ...d,
+          tenantMonthlyIncome: incomeVal > 0 ? incomeVal : undefined,
           tenant: {
             ...tenantData,
             truthfulnessOathAccepted: Boolean(truthfulnessOath),
@@ -108,6 +116,23 @@ export default function TenantStepPage() {
           contractDraftId={id}
           thirdPartyAuthorization
         />
+        <label className="text-sm sm:col-span-2">
+          <span className="mb-1 block text-slate-700">Ingreso mensual aprox. del inquilino (COP) — opcional</span>
+          <input
+            name="tenantMonthlyIncome"
+            type="number"
+            inputMode="numeric"
+            defaultValue={draft.tenantMonthlyIncome ? String(draft.tenantMonthlyIncome) : ""}
+            onChange={(e) => setIncome(Number(e.target.value) || 0)}
+            className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+            placeholder="Ej. 5000000"
+          />
+          <IncomeSuggestion
+            rentReference={Number(draft.property?.monthlyRentProposed ?? draft.lease?.monthlyRent ?? 0)}
+            income={income}
+            who="el inquilino"
+          />
+        </label>
         <CreditHistoryGuidanceBlock
           variant="tenant"
           verificationName="tenantCreditHistoryVerified"
