@@ -449,6 +449,11 @@ export default function PreviewStepPage() {
       };
       const details = data.signatures.map((s) => {
         const label = labelForParty(s.partyType);
+        // Quien ya firmó no se reenvía: lo indicamos claramente para que se vea
+        // quién firmó y quién falta.
+        if (s.signatureStatus === "signed") {
+          return `${label} (${s.signerEmail}): ✓ firma ya realizada (no se reenvía).`;
+        }
         const mode = s.emailMode ?? "mock";
         const modeLabel =
           mode === "real"
@@ -461,9 +466,8 @@ export default function PreviewStepPage() {
         return `${label} (${s.signerEmail}): ${modeLabel}.`;
       });
       const anyReal = data.signatures.some((s) => s.emailMode === "real");
-      const anyFailed = data.signatures.some(
-        (s) => s.emailMode === "failed" || s.emailMode === "skipped",
-      );
+      // "skipped" ya no cuenta como fallo: ahora significa "ya había firmado".
+      const anyFailed = data.signatures.some((s) => s.emailMode === "failed");
       let footer: "mock" | "send_failed" | undefined;
       if (anyFailed) footer = "send_failed";
       else if (!anyReal) footer = "mock";
@@ -671,20 +675,14 @@ export default function PreviewStepPage() {
             className="mt-0.5"
           />
           <span>
-            <span className="block font-semibold text-slate-900">Notaría física · opcional (con costo)</span>
+            <span className="block font-semibold text-slate-900">
+              Notaría física · opcional (sujeta a los costos de la notaría)
+            </span>
             <span className="mt-0.5 block text-xs text-slate-700">
-              Las partes acuden a una notaría para autenticar sus firmas o reconocer el contenido del contrato. Tiene
-              costo según las tarifas notariales vigentes. El PDF autenticado se sube en el paso de{" "}
+              Las partes acuden a una notaría para autenticar sus firmas o reconocer el contenido del contrato. El costo
+              lo cobra la notaría según sus tarifas vigentes. El PDF autenticado se sube en el paso de{" "}
               <strong>Notaría</strong> del expediente.
             </span>
-            <a
-              href="https://www.supernotariado.gov.co/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-flex text-xs font-medium text-violet-700 underline"
-            >
-              Superintendencia de Notariado y Registro ↗
-            </a>
           </span>
         </label>
 
@@ -756,19 +754,31 @@ export default function PreviewStepPage() {
               ? "Listo: tu contrato quedó registrado. Ya puedes firmar, descargar el PDF y usar la posventa."
               : "Deja registrada esta versión para poder firmar, descargar el PDF y habilitar la posventa (pagos, novedades, documentos)."}
           </p>
+          {savedVersion && (
+            <p className="mt-1 rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900">
+              ¿Volviste atrás y cambiaste datos de una parte (por ejemplo, el correo del codeudor)? Pulsa{" "}
+              <strong>«Guardar de nuevo»</strong> aquí y luego <strong>reenvía las firmas</strong> para que se use el dato
+              actualizado. La firma toma los datos de la última versión guardada.
+            </p>
+          )}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => void saveDraftVersion()}
-              disabled={savingVersion || !previewHtml || Boolean(savedVersion)}
+              disabled={savingVersion || !previewHtml}
               className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               {savingVersion
                 ? "Guardando…"
                 : savedVersion
-                  ? `Guardado ✓${versionInfo ? ` (v${versionInfo.versionNumber})` : ""}`
+                  ? "Guardar de nuevo (si cambiaste datos)"
                   : "Guardar mi contrato"}
             </button>
+            {savedVersion && !savingVersion && (
+              <span className="text-xs font-medium text-emerald-700">
+                Guardado ✓{versionInfo ? ` (v${versionInfo.versionNumber})` : ""}
+              </span>
+            )}
             {!previewHtml && !savedVersion && (
               <span className="text-xs text-slate-500">Espera a que termine la vista previa (se genera sola).</span>
             )}

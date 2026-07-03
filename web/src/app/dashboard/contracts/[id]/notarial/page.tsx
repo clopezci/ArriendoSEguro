@@ -236,18 +236,11 @@ export default function NotarialOptionalPage() {
               >
                 Ir a Firma y Autenticación Digital (Agencia Nacional Digital)
               </a>
-              <a
-                href="https://www.supernotariado.gov.co/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm font-medium text-slate-900 hover:border-violet-500 hover:text-violet-800"
-              >
-                Superintendencia de Notariado y Registro
-              </a>
             </div>
             <p className="mt-2 text-[11px] text-slate-500">
-              Enlaces oficiales del Estado. ArriendoSeguro no es notaría ni cobra por estos trámites; valida costos y
-              requisitos directamente con la entidad.
+              Enlace oficial del Estado. Para la notaría física, los costos los cobra la notaría según sus tarifas
+              vigentes. ArriendoSeguro no es notaría ni cobra por estos trámites; valida costos y requisitos directamente
+              con la entidad.
             </p>
           </section>
 
