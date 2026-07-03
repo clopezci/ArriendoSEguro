@@ -34,6 +34,7 @@ export function PartyInvitePanel({
   const [attestation, setAttestation] = useState<InviteAttestation | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [inviteUrl, setInviteUrl] = useState("");
 
   const refreshStatus = useCallback(async () => {
     if (!user) return;
@@ -75,13 +76,29 @@ export function PartyInvitePanel({
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
         body: JSON.stringify({ contractDraftId, role, inviteeEmail: email.trim(), inviteeName: name.trim(), inviterName }),
       });
-      const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      const j = (await res.json()) as {
+        success?: boolean;
+        emailStatus?: string;
+        invitationUrl?: string;
+        errors?: { message?: string }[];
+      };
       if (!res.ok || !j.success) {
-        setMsg(j.errors?.[0]?.message ?? "No se pudo enviar la invitación (revisa el correo).");
+        setMsg(j.errors?.[0]?.message ?? "No se pudo crear la invitación.");
         return;
       }
       setStatus("active");
-      setMsg(`Enviamos el enlace a ${email.trim()}. Cuando complete sus datos, pulsa «Actualizar».`);
+      setInviteUrl(j.invitationUrl ?? "");
+      if (j.emailStatus === "sent") {
+        setMsg(`Enviamos el enlace por correo a ${email.trim()}. Si no llega en unos minutos, revisa spam y pulsa «Actualizar».`);
+      } else if (j.emailStatus === "mock") {
+        setMsg(
+          "Modo prueba: en este entorno el correo NO está configurado (Resend), así que no se envió correo. Copia el enlace de abajo para probar.",
+        );
+      } else {
+        setMsg(
+          "La invitación quedó creada, pero el correo no se pudo enviar. Revisa «Admin → Diagnóstico de correos». Mientras tanto, comparte el enlace de abajo.",
+        );
+      }
     } catch {
       setMsg("Error de red.");
     } finally {
@@ -187,6 +204,14 @@ export function PartyInvitePanel({
           )}
 
           {msg && <p className="text-xs text-slate-700">{msg}</p>}
+          {inviteUrl && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900">
+              <p className="font-semibold">Enlace de la invitación (para probar / compartir):</p>
+              <a href={inviteUrl} target="_blank" rel="noreferrer" className="mt-0.5 block break-all font-mono text-violet-800 underline">
+                {inviteUrl}
+              </a>
+            </div>
+          )}
           <p className="text-[11px] text-slate-500">
             La persona valida su identidad con un código a su correo y acepta, por el enlace, el juramento y la
             autorización de tratamiento de datos (con evidencia). Al importar, esa evidencia queda registrada.

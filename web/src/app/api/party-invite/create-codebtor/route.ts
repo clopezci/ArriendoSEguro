@@ -66,14 +66,16 @@ export async function POST(request: Request) {
     .doc(invite.token)
     .set({ createdViaTenantToken: parsed.data.tenantToken }, { merge: true });
 
+  const base = appConfig.publicUrl.replace(/\/$/, "");
+  const invitationUrl = `${base}/invitacion/${invite.token}`;
+  let emailStatus: "sent" | "failed" | "mock" | "skipped" = "skipped";
   try {
-    const base = appConfig.publicUrl.replace(/\/$/, "");
     const tpl = inviteCounterpartyEmail({
       inviterName: tenantName,
       contractLabel: "un contrato de arrendamiento (como codeudor solidario)",
-      invitationUrl: `${base}/invitacion/${invite.token}`,
+      invitationUrl,
     });
-    await sendEmail({
+    const r = await sendEmail({
       to: invite.inviteeEmail,
       subject: tpl.subject,
       html: tpl.html,
@@ -82,9 +84,15 @@ export async function POST(request: Request) {
       relatedEntityType: "party_invite",
       relatedEntityId: invite.token,
     });
+    emailStatus = r.status;
   } catch {
-    /* el correo es best-effort; la invitación queda creada igual */
+    emailStatus = "failed";
   }
 
-  return NextResponse.json({ success: true, status: invite.status });
+  return NextResponse.json({
+    success: true,
+    status: invite.status,
+    emailStatus,
+    ...(emailStatus === "sent" ? {} : { invitationUrl }),
+  });
 }

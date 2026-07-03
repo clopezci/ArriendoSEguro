@@ -49,14 +49,16 @@ export async function POST(request: Request) {
     inviterName: parsed.data.inviterName?.trim() || auth.user.email || "El arrendador",
   });
 
+  const base = appConfig.publicUrl.replace(/\/$/, "");
+  const invitationUrl = `${base}/invitacion/${invite.token}`;
+  let emailStatus: "sent" | "failed" | "mock" | "skipped" = "skipped";
   try {
-    const base = appConfig.publicUrl.replace(/\/$/, "");
     const tpl = inviteCounterpartyEmail({
       inviterName: invite.inviterName,
       contractLabel: "un contrato de arrendamiento",
-      invitationUrl: `${base}/invitacion/${invite.token}`,
+      invitationUrl,
     });
-    await sendEmail({
+    const r = await sendEmail({
       to: invite.inviteeEmail,
       subject: tpl.subject,
       html: tpl.html,
@@ -65,9 +67,18 @@ export async function POST(request: Request) {
       relatedEntityType: "party_invite",
       relatedEntityId: invite.token,
     });
+    emailStatus = r.status;
   } catch {
-    /* el correo es best-effort; la invitación queda creada igual */
+    emailStatus = "failed";
   }
 
-  return NextResponse.json({ success: true, status: invite.status });
+  // Si el correo NO salió de verdad (prueba/mock o falló), devolvemos el enlace
+  // para poder continuar la prueba sin correo. Con correo real (`sent`) NO se
+  // expone (llega por correo a la persona).
+  return NextResponse.json({
+    success: true,
+    status: invite.status,
+    emailStatus,
+    ...(emailStatus === "sent" ? {} : { invitationUrl }),
+  });
 }

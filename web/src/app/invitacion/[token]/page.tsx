@@ -277,6 +277,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [done, setDone] = useState<"invited" | "entered" | null>(null);
+  const [inviteUrl, setInviteUrl] = useState("");
 
   async function sendInvite() {
     if (!email.includes("@")) {
@@ -291,11 +292,17 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ tenantToken, inviteeEmail: email.trim(), inviteeName: name.trim() }),
       });
-      const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      const j = (await res.json()) as {
+        success?: boolean;
+        emailStatus?: string;
+        invitationUrl?: string;
+        errors?: { message?: string }[];
+      };
       if (!res.ok || !j.success) {
         setMsg(j.errors?.[0]?.message ?? "No se pudo enviar la invitación al codeudor.");
         return;
       }
+      if (j.emailStatus !== "sent" && j.invitationUrl) setInviteUrl(j.invitationUrl);
       setDone("invited");
     } catch {
       setMsg("Error de red.");
@@ -352,6 +359,16 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
             ? "El codeudor registrará sus datos y aceptará el juramento y la autorización por su enlace. Ya puedes cerrar esta página."
             : "Quien te invitó los verá e incluirá. El codeudor confirmará al firmar. Ya puedes cerrar esta página."}
         </p>
+        {done === "invited" && inviteUrl && (
+          <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900">
+            <p className="font-semibold">
+              El correo no salió automáticamente (o está en modo prueba). Comparte este enlace con el codeudor:
+            </p>
+            <a href={inviteUrl} target="_blank" rel="noreferrer" className="mt-0.5 block break-all font-mono text-violet-800 underline">
+              {inviteUrl}
+            </a>
+          </div>
+        )}
       </div>
     );
   }
