@@ -234,6 +234,12 @@ export interface ContractDraft {
    */
   tenantMonthlyIncome?: number;
   /**
+   * Tipos de documento de ingresos que aportará el arrendatario (informativo):
+   * carta laboral, colillas, extractos (independiente/comerciante), etc. La carga
+   * de los archivos como tal se hace en la sección de documentos del expediente.
+   */
+  tenantIncomeDocs?: string[];
+  /**
    * Garantía para servicios públicos (Art. 15 Ley 820 de 2003). Opcional; se
    * captura en el paso de Servicios con aceptación y registro de IP en servidor.
    */

@@ -14,6 +14,16 @@ import { humanizeZodIssues } from "@/lib/validations/zod-errors-es";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+const TENANT_INCOME_DOC_TYPES = [
+  { value: "carta_laboral", label: "Carta laboral / certificación de ingresos (empleado)" },
+  { value: "colilla", label: "Colillas / desprendibles de pago (empleado)" },
+  { value: "extracto", label: "Extractos bancarios (independiente / comerciante)" },
+  { value: "declaracion_renta", label: "Declaración de renta" },
+  { value: "estado_cuenta", label: "Estado de cuenta / ingresos independientes" },
+  { value: "rut", label: "RUT / matrícula mercantil (comerciante)" },
+  { value: "otro", label: "Otro soporte de ingresos" },
+] as const;
+
 export default function TenantStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
@@ -69,12 +79,16 @@ export default function TenantStepPage() {
       ]);
       return;
     }
+    const tenantIncomeDocs = TENANT_INCOME_DOC_TYPES.map((t) => t.value).filter(
+      (v) => formData.get(`tenantIncomeDoc_${v}`) === "on",
+    );
     const { truthfulnessOath, ...tenantData } = parsed.data;
     updateDraft(id, (d) =>
       appendAudit(
         {
           ...d,
           tenantMonthlyIncome: incomeVal > 0 ? incomeVal : undefined,
+          tenantIncomeDocs: tenantIncomeDocs.length > 0 ? tenantIncomeDocs : undefined,
           tenant: {
             ...tenantData,
             truthfulnessOathAccepted: Boolean(truthfulnessOath),
@@ -140,6 +154,29 @@ export default function TenantStepPage() {
             who="el inquilino"
           />
         </label>
+
+        <fieldset className="sm:col-span-2 rounded-xl border border-violet-200 bg-violet-50/40 p-3">
+          <legend className="px-1 text-xs font-semibold text-violet-800">
+            Documentos de ingresos que aportará el inquilino (opcional)
+          </legend>
+          <p className="mb-2 text-[11px] text-slate-600">
+            Marca los que aplican según sea empleado, independiente o comerciante. Los archivos como tal se cargan en la
+            sección de documentos del expediente, tras guardar el contrato.
+          </p>
+          <div className="grid gap-1 sm:grid-cols-2">
+            {TENANT_INCOME_DOC_TYPES.map((t) => (
+              <label key={t.value} className="flex items-start gap-2 text-xs text-slate-800">
+                <input
+                  type="checkbox"
+                  name={`tenantIncomeDoc_${t.value}`}
+                  defaultChecked={draft.tenantIncomeDocs?.includes(t.value) ?? false}
+                  className="mt-0.5 h-4 w-4 accent-violet-500"
+                />
+                <span>{t.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <CreditHistoryGuidanceBlock
           variant="tenant"
           verificationName="tenantCreditHistoryVerified"
