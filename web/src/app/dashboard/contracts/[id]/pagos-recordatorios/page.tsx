@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
 import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
+import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import type { PaymentMethodKind, AccountType } from "@/domain/payments/paymentSettings";
 
 export default function PagosRecordatoriosPage() {
@@ -230,14 +231,22 @@ export default function PagosRecordatoriosPage() {
         )}
 
         {method !== "none" && (
-          <label className="mt-4 flex cursor-pointer items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
-            <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4 accent-amber-500" />
-            <span>
-              Autorizo que estos datos de pago se compartan con <strong>mi inquilino</strong> únicamente para
-              facilitarle el pago del canon y se incluyan en los recordatorios. Entiendo que ArriendoSeguro no recauda
-              ni custodia el dinero. Soy responsable de la veracidad de los datos.
-            </span>
-          </label>
+          <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
+            <label className="flex cursor-pointer items-start gap-2">
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4 accent-amber-500" />
+              <span>
+                <strong>Autorización para compartir tus datos de pago.</strong>
+                {!consent && (
+                  <>
+                    {" "}Autorizo que estos datos de pago se compartan con <strong>mi inquilino</strong> únicamente para
+                    facilitarle el pago del canon y se incluyan en los recordatorios. Entiendo que ArriendoSeguro no
+                    recauda ni custodia el dinero. Soy responsable de la veracidad de los datos.
+                  </>
+                )}
+              </span>
+            </label>
+            <OathEvidenceBadge active={consent} oathId="payment_data_sharing_consent" contractDraftId={id} />
+          </div>
         )}
 
         <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">

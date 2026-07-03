@@ -317,16 +317,18 @@ export default function PropertyStepPage() {
 
           {valueUnknown && (
             <div className="mt-3 rounded-lg border border-amber-300 bg-amber-100/60 p-3 text-xs leading-relaxed text-amber-800">
-              <p className="font-semibold">Declaración del arrendador (dueño)</p>
-              <p className="mt-1">
-                Como arrendador (dueño del inmueble), declaro bajo mi responsabilidad que el canon mensual
-                pactado <strong>no superará el 1% del valor comercial</strong> real
-                del inmueble (Ley 820 de 2003). Acepto que si lo excede, asumo de
-                forma exclusiva las consecuencias legales y económicas, eximiendo a
-                <em> ArriendoSeguro</em> de toda responsabilidad sobre la verificación
-                de ese tope, dado que no se aportó el valor comercial al momento de
-                generar el contrato.
-              </p>
+              {!noCapAccepted && (
+                <>
+                  <p className="font-semibold">Declaración del arrendador (dueño)</p>
+                  <p className="mt-1">
+                    Como arrendador (dueño del inmueble), declaro bajo mi responsabilidad que el canon mensual pactado{" "}
+                    <strong>no superará el 1% del valor comercial</strong> real del inmueble (Ley 820 de 2003). Acepto que
+                    si lo excede, asumo de forma exclusiva las consecuencias legales y económicas, eximiendo a
+                    <em> ArriendoSeguro</em> de toda responsabilidad sobre la verificación de ese tope, dado que no se
+                    aportó el valor comercial al momento de generar el contrato.
+                  </p>
+                </>
+              )}
               <label className="mt-2 flex cursor-pointer items-start gap-2">
                 <input
                   type="checkbox"
@@ -336,7 +338,8 @@ export default function PropertyStepPage() {
                   className="mt-0.5 h-4 w-4 accent-amber-300"
                 />
                 <span className="text-amber-800">
-                  Acepto expresamente esta responsabilidad y eximo a ArriendoSeguro.
+                  <strong>Declaración del arrendador (valor comercial).</strong>
+                  {!noCapAccepted && " Acepto expresamente esta responsabilidad y eximo a ArriendoSeguro."}
                 </span>
               </label>
               <OathEvidenceBadge
