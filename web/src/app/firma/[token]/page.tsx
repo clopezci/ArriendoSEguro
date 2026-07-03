@@ -31,6 +31,8 @@ export default function SignatureTokenPage() {
   const [consentData, setConsentData] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [okMsg, setOkMsg] = useState("");
+  const [completed, setCompleted] = useState(false);
+  const [fullySigned, setFullySigned] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [otpBusy, setOtpBusy] = useState(false);
   const [otpInfo, setOtpInfo] = useState("");
@@ -156,11 +158,41 @@ export default function SignatureTokenPage() {
         }
       }
       setOkMsg(msg);
+      setFullySigned(data.contractStatus === "signed");
+      setCompleted(true);
+      setError("");
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       setError("Error de red al completar la firma.");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function nextStepsForRole(partyType: string): { title: string; body: string } {
+    const t = (partyType || "").toLowerCase();
+    if (t.includes("landlord") || t.includes("arrendador") || t.includes("owner") || t.includes("propietario")) {
+      return {
+        title: "Eres el arrendador (dueño)",
+        body: "Cuando todas las partes firmen, recibirás el contrato firmado por correo. Puedes entrar a arriendoseguro.app para hacerle seguimiento al arriendo, registrar pagos y la posventa.",
+      };
+    }
+    if (t.includes("codebtor") || t.includes("codeudor") || t.includes("solidary") || t.includes("solidario")) {
+      return {
+        title: "Eres el codeudor solidario",
+        body: "¡Listo! Completaste tu parte del proceso. Te avisaremos por correo cuando el contrato quede totalmente firmado. Te invitamos a conocer arriendoseguro.app para tus propios arriendos.",
+      };
+    }
+    if (t.includes("tenant") || t.includes("arrendatario") || t.includes("inquilino")) {
+      return {
+        title: "Eres el inquilino (arrendatario)",
+        body: "¡Listo! Ya firmaste. Cuando todas las partes firmen, recibirás el contrato firmado por correo. Ponte en contacto con el arrendador (dueño) para coordinar la entrega del inmueble y continuar.",
+      };
+    }
+    return {
+      title: "Firma completada",
+      body: "Cuando todas las partes firmen, recibirás el contrato firmado por correo.",
+    };
   }
 
   if (loading) return <main className="mx-auto max-w-3xl p-6 text-slate-800">Cargando enlace de firma...</main>;
@@ -172,9 +204,63 @@ export default function SignatureTokenPage() {
         Por seguridad, primero validamos un código de un solo uso (OTP) enviado a tu correo; después podrás aceptar
         las declaraciones y firmar. Ley 527 de 1999 (orientación general, no asesoría legal).
       </p>
-      {error && <p className="rounded border border-rose-700 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
-      {okMsg && <p className="rounded border border-emerald-500 bg-emerald-50 p-3 text-sm text-emerald-700">{okMsg}</p>}
-      {info && (
+      {error && !completed && (
+        <p className="rounded border border-rose-700 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>
+      )}
+
+      {completed && (
+        <section className="space-y-3 rounded-2xl border-2 border-emerald-500 bg-emerald-50 p-5">
+          <div className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600 text-lg font-bold text-white">
+              ✓
+            </span>
+            <h2 className="text-xl font-bold text-emerald-900">{okMsg}</h2>
+          </div>
+          {fullySigned ? (
+            <p className="text-sm text-emerald-900">
+              El contrato quedó <strong>completamente firmado por todas las partes</strong>. Cada firmante recibirá el
+              documento final por correo.
+            </p>
+          ) : (
+            <p className="text-sm text-emerald-900">
+              Tu firma quedó registrada. Aún faltan otras partes por firmar; te avisaremos por correo cuando el contrato
+              quede totalmente firmado.
+            </p>
+          )}
+
+          {info && (
+            <div className="rounded-xl border border-emerald-300 bg-white/70 p-3">
+              <p className="text-sm font-semibold text-slate-900">{nextStepsForRole(info.partyType).title}</p>
+              <p className="mt-1 text-sm text-slate-700">{nextStepsForRole(info.partyType).body}</p>
+            </div>
+          )}
+
+          <p className="text-sm font-medium text-slate-800">
+            Ya puedes cerrar esta pantalla con tranquilidad. 👋
+          </p>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            {info?.pdfUrl && (
+              <a
+                href={info.pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-lg border border-emerald-600 bg-white px-3 py-2 text-sm font-medium text-emerald-800"
+              >
+                Ver o descargar el contrato (PDF)
+              </a>
+            )}
+            <a
+              href="https://arriendoseguro.app"
+              className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white"
+            >
+              Ir a arriendoseguro.app
+            </a>
+          </div>
+        </section>
+      )}
+
+      {info && !completed && (
         <section className="space-y-3 rounded-xl border border-slate-300 bg-white/95 p-4">
           <p>
             <strong>Firmante:</strong> {info.signerName}
@@ -268,6 +354,9 @@ export default function SignatureTokenPage() {
               >
                 {submitting ? "Firmando..." : "Firmar electrónicamente"}
               </button>
+              {error && (
+                <p className="rounded border border-rose-400 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>
+              )}
             </div>
           )}
         </section>

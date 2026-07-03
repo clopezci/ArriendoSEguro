@@ -71,6 +71,28 @@ function formatBackendIssues(
   });
 }
 
+/** Etiqueta amigable para el rol de cada firmante (partyType). */
+function signerPartyLabel(party: string): string {
+  const map: Record<string, string> = {
+    landlord: "Arrendador (dueño)",
+    tenant: "Arrendatario (inquilino)",
+    solidaryCoDebtor: "Codeudor solidario",
+  };
+  if (map[party]) return map[party];
+  if (party.startsWith("solidaryCoDebtor_")) return `Codeudor ${party.slice("solidaryCoDebtor_".length)}`;
+  return party;
+}
+
+/** Estado de firma en palabras (color + texto). */
+function signatureStatusLabel(status: string): { text: string; className: string } {
+  const s = (status || "").toLowerCase();
+  if (s === "signed") return { text: "✓ Firmó", className: "font-semibold text-emerald-700" };
+  if (s === "sent" || s === "pending" || s === "in_progress")
+    return { text: "Pendiente de firma", className: "text-amber-700" };
+  if (s === "expired") return { text: "Enlace vencido", className: "text-rose-700" };
+  return { text: status || "—", className: "text-slate-600" };
+}
+
 export default function PreviewStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
@@ -108,6 +130,7 @@ export default function PreviewStepPage() {
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfFeedback, setPdfFeedback] = useState("");
   const [startingSignatures, setStartingSignatures] = useState(false);
+  const [refreshingSignatures, setRefreshingSignatures] = useState(false);
   const [signatureRoundMessage, setSignatureRoundMessage] = useState<{
     tone: "info" | "warning";
     title: string;
@@ -517,6 +540,63 @@ export default function PreviewStepPage() {
     void load();
   }, [savedVersion]);
 
+  // Al RECARGAR la página, `savedVersion` queda vacío (solo se llena al guardar
+  // durante la sesión). Si el contrato ya tiene una versión guardada en el
+  // servidor, la hidratamos para poder mostrar el estado de las firmas. Sin
+  // esto, tras firmar y refrescar no se veía ningún avance (parecía que no había
+  // pasado nada) y el botón de firma quedaba deshabilitado: un callejón sin salida.
+  useEffect(() => {
+    if (savedVersion) return;
+    if (!id) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/contracts/latest-version?contractId=${encodeURIComponent(id)}`);
+        const data = (await res.json()) as {
+          success?: boolean;
+          contract?: { currentVersionId?: string | null; status?: string | null } | null;
+          version?: { id?: string; contractId?: string | null } | null;
+        };
+        if (cancelled || !res.ok || !data.success) return;
+        const versionId = data.version?.id ?? data.contract?.currentVersionId ?? null;
+        if (versionId) {
+          setSavedVersion({
+            contractId: id,
+            contractVersionId: versionId,
+            versionNumber: 0,
+            documentHash: "",
+          });
+          if (data.contract?.status) setContractStatus(data.contract.status);
+        }
+      } catch {
+        /* silencioso: si no hay versión aún, el flujo normal sigue igual */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, savedVersion]);
+
+  // Refresco manual del estado de firmas (botón "Actualizar estado"): re-consulta
+  // la lista para que el dueño vea, sin recargar, quién ya firmó.
+  async function refreshSignatures() {
+    if (!savedVersion) return;
+    setRefreshingSignatures(true);
+    try {
+      const sigRes = await fetch(
+        `/api/signatures/list?contractId=${encodeURIComponent(savedVersion.contractId)}&contractVersionId=${encodeURIComponent(savedVersion.contractVersionId)}`,
+      );
+      const sigData = (await sigRes.json()) as
+        | { success: true; signatures: typeof signatureRows }
+        | { success: false };
+      if (sigRes.ok && sigData.success) setSignatureRows(sigData.signatures);
+    } catch {
+      /* silencioso */
+    } finally {
+      setRefreshingSignatures(false);
+    }
+  }
+
   if (state !== "ready" || !activeDraft) return <p className="text-sm text-slate-700">Cargando…</p>;
 
   return (
@@ -661,17 +741,25 @@ export default function PreviewStepPage() {
           ) : (
             <>
               <p className="mt-0.5 text-xs text-slate-600">
-                {savedVersion
-                  ? "Enviaremos la solicitud de firma por correo a cada parte (arrendador, arrendatario y codeudores)."
-                  : "Primero completa el Paso 1 (guardar tu contrato)."}
+                {!savedVersion
+                  ? "Primero completa el Paso 1 (guardar tu contrato)."
+                  : hasAllSigned
+                    ? "El contrato ya quedó firmado por todas las partes. Revisa el estado más abajo ↓"
+                    : signatureRows.length > 0
+                      ? "La ronda de firmas ya está iniciada. Puedes reenviar la invitación por correo si alguna parte no la recibió."
+                      : "Enviaremos la solicitud de firma por correo a cada parte (arrendador, arrendatario y codeudores)."}
               </p>
               <button
                 type="button"
                 onClick={startSignatureRound}
-                disabled={startingSignatures || !savedVersion}
+                disabled={startingSignatures || !savedVersion || hasAllSigned}
                 className="mt-2 rounded-lg border border-sky-500 px-4 py-2 text-sm font-medium text-sky-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {startingSignatures ? "Iniciando firma…" : "Iniciar firma"}
+                {startingSignatures
+                  ? "Iniciando firma…"
+                  : signatureRows.length > 0
+                    ? "Reenviar invitación de firma"
+                    : "Iniciar firma"}
               </button>
               {!startingSignatures && signatureRows.length > 0 && (
                 <p className="mt-1 text-xs font-medium text-emerald-700">
@@ -822,7 +910,49 @@ export default function PreviewStepPage() {
       )}
       {signatureRows.length > 0 && (
         <section className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4">
-          <h3 className="text-sm font-semibold text-slate-900">Firmas</h3>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-slate-900">
+              Estado de firmas
+              <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                {signatureRows.filter((s) => s.signatureStatus === "signed").length} de {signatureRows.length} firmaron
+              </span>
+            </h3>
+            <button
+              type="button"
+              onClick={() => void refreshSignatures()}
+              disabled={refreshingSignatures}
+              className="rounded-lg border border-violet-500 px-3 py-1.5 text-xs font-medium text-violet-700 disabled:opacity-60"
+            >
+              {refreshingSignatures ? "Actualizando…" : "↻ Actualizar estado"}
+            </button>
+          </div>
+
+          {/* Guía de qué sigue, según cómo va la ronda. */}
+          {hasAllSigned ? (
+            <div className="mt-2 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-900">
+              <p className="font-semibold">¡Todas las partes firmaron! 🎉</p>
+              <p className="mt-0.5">
+                El contrato quedó firmado con su evidencia (fecha, IP y hash). Cada parte recibió el aviso por correo.
+                Continúa con la <strong>posventa</strong> más abajo para gestionar el arriendo (pagos, inventario y más).
+              </p>
+            </div>
+          ) : (
+            <div className="mt-2 rounded-lg border border-sky-300 bg-sky-50 p-3 text-xs text-sky-900">
+              <p className="font-semibold">Vas en camino: falta que firmen algunas partes.</p>
+              <p className="mt-0.5">
+                Como <strong>arrendador (dueño)</strong>, cuando <strong>todas</strong> las partes firmen, el contrato
+                quedará firmado y recibirás el aviso por correo. Puedes pulsar «↻ Actualizar estado» para ver el avance
+                sin recargar. Pendientes:{" "}
+                <strong>
+                  {signatureRows
+                    .filter((s) => s.signatureStatus !== "signed")
+                    .map((s) => signerPartyLabel(s.partyType))
+                    .join(", ") || "ninguna"}
+                </strong>
+                .
+              </p>
+            </div>
+          )}
 
           {signatureRows.some((s) => s.signingUrl) && (
             <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
@@ -852,10 +982,12 @@ export default function PreviewStepPage() {
               <tbody>
                 {signatureRows.map((s, idx) => (
                   <tr key={`${s.partyType}-${idx}`} className="border-b border-slate-300">
-                    <td className="px-2 py-1">{s.partyType}</td>
+                    <td className="px-2 py-1">{signerPartyLabel(s.partyType)}</td>
                     <td className="px-2 py-1">{s.signerName ?? "-"}</td>
                     <td className="px-2 py-1">{s.signerEmail}</td>
-                    <td className="px-2 py-1">{s.signatureStatus}</td>
+                    <td className={`px-2 py-1 ${signatureStatusLabel(s.signatureStatus).className}`}>
+                      {signatureStatusLabel(s.signatureStatus).text}
+                    </td>
                     <td className="px-2 py-1">{s.sentAt ? new Date(s.sentAt).toLocaleString("es-CO") : "-"}</td>
                     <td className="px-2 py-1">{s.signedAt ? new Date(s.signedAt).toLocaleString("es-CO") : "-"}</td>
                     <td className="px-2 py-1">
