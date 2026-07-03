@@ -35,6 +35,7 @@ export function PartyInvitePanel({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
+  const [currentInviteeEmail, setCurrentInviteeEmail] = useState("");
 
   const refreshStatus = useCallback(async () => {
     if (!user) return;
@@ -47,6 +48,7 @@ export function PartyInvitePanel({
         success?: boolean;
         invite?: {
           status?: string;
+          inviteeEmail?: string;
           contribution?: PartyDraft | null;
           selfAttestation?: InviteAttestation | null;
         } | null;
@@ -55,6 +57,11 @@ export function PartyInvitePanel({
         setStatus((j.invite.status as "active" | "completed") ?? "none");
         setContribution(j.invite.contribution ?? null);
         setAttestation(j.invite.selfAttestation ?? null);
+        setCurrentInviteeEmail(j.invite.inviteeEmail ?? "");
+        // Precargamos el correo actual para que el dueño VEA a quién va la
+        // invitación y pueda cambiarlo si es otra persona (antes el campo
+        // quedaba vacío y el enlace seguía yendo al correo anterior).
+        setEmail((prev) => prev || j.invite?.inviteeEmail || "");
         if (j.invite.status) setMode("invite");
       }
     } catch {
@@ -132,6 +139,12 @@ export function PartyInvitePanel({
 
       {mode === "invite" && (
         <div className="mt-3 space-y-2">
+          {currentInviteeEmail && status !== "completed" && (
+            <p className="rounded-md border border-sky-200 bg-sky-50 p-2 text-[11px] text-sky-900">
+              Invitación actual para: <strong>{currentInviteeEmail}</strong>. Si es otra persona, cambia el correo abajo
+              y reenvía: el enlace se enviará al <strong>correo que dejes aquí</strong> (el anterior se invalida).
+            </p>
+          )}
           {status !== "completed" && (
             <div className="flex flex-wrap items-end gap-2">
               <label className="text-xs text-slate-700">

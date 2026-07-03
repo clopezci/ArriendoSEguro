@@ -27,10 +27,14 @@ export type CreateInviteParams = {
 };
 
 /**
- * Crea una invitación. Si ya hay una **activa** para el mismo contrato+rol,
- * la reutiliza (no multiplica enlaces).
+ * Crea una invitación. Si ya hay una **activa** para el mismo contrato+rol y el
+ * MISMO correo, la reutiliza (no multiplica enlaces). Si el correo es DISTINTO
+ * (el dueño cambió el destinatario), invalida la anterior y crea una nueva para
+ * el nuevo correo: antes se reutilizaba a ciegas y el enlace seguía yendo al
+ * correo original aunque se escribiera otro.
  */
 export async function createInvite(firestore: Firestore, params: CreateInviteParams): Promise<PartyInviteDoc> {
+  const newEmail = normalizeEmail(params.inviteeEmail);
   const existing = await firestore
     .collection(PARTY_INVITES_COLLECTION)
     .where("contractDraftId", "==", params.contractDraftId)
@@ -40,7 +44,14 @@ export async function createInvite(firestore: Firestore, params: CreateInvitePar
     .get()
     .catch(() => null);
   if (existing && !existing.empty) {
-    return existing.docs[0].data() as PartyInviteDoc;
+    const doc = existing.docs[0];
+    const data = doc.data() as PartyInviteDoc;
+    if (normalizeEmail(data.inviteeEmail) === newEmail) {
+      return data; // mismo destinatario → mismo enlace
+    }
+    // Correo distinto (otra persona): invalidamos el enlace anterior y creamos
+    // uno nuevo abajo, para que el correo llegue al destinatario correcto.
+    await doc.ref.set({ status: "expired", updatedAt: new Date().toISOString() }, { merge: true });
   }
 
   const token = newInviteToken();
