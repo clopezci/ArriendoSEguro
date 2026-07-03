@@ -385,13 +385,15 @@ export default function PropertyStepPage() {
               className="mt-0.5 h-4 w-4 accent-amber-300"
             />
             <span className="text-amber-800">
-              Bajo la gravedad de juramento declaro que (i) los datos del
-              inmueble registrados, incluida la matrícula inmobiliaria, son
-              <strong> reales y verdaderos</strong>, y (ii) soy el
-              <strong> propietario del inmueble</strong> o cuento con
-              <strong> poder vigente y suficiente</strong> para arrendarlo a
-              nombre de su propietario. Asumo la responsabilidad legal y
-              económica por la veracidad de esta declaración.
+              <strong>Declaración bajo la gravedad de juramento (inmueble).</strong>
+              {!ownershipOath && (
+                <>
+                  {" "}Declaro que (i) los datos del inmueble registrados, incluida la matrícula inmobiliaria, son
+                  <strong> reales y verdaderos</strong>, y (ii) soy el <strong>propietario del inmueble</strong> o cuento
+                  con <strong>poder vigente y suficiente</strong> para arrendarlo a nombre de su propietario. Asumo la
+                  responsabilidad legal y económica por la veracidad de esta declaración.
+                </>
+              )}
             </span>
           </label>
           <OathEvidenceBadge

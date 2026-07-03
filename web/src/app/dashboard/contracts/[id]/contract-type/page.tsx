@@ -7,6 +7,7 @@ import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { flashSaved } from "@/components/contracts/save-flash";
 import { ContractOnboarding } from "@/components/contracts/contract-onboarding";
+import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import type { ContractType } from "@/domain/contracts/types";
 import { setActingAs, setContractType } from "@/features/contracts/wizard-state";
 
@@ -280,20 +281,28 @@ export default function ContractTypeStepPage() {
         </div>
 
         {acting === "proxy" && (
-          <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-amber-300 bg-amber-100/60 p-3 text-xs leading-relaxed text-amber-900">
-            <input
-              type="checkbox"
-              checked={proxyAccepted}
-              onChange={(e) => setProxyAccepted(e.target.checked)}
-              className="mt-0.5 h-4 w-4 accent-amber-500"
-            />
-            <span>
-              Bajo la gravedad de juramento declaro que cuento con <strong>poder vigente y suficiente</strong> para
-              arrendar este inmueble a nombre de su propietario, que la información es veraz, y me comprometo a{" "}
-              <strong>subir el poder autenticado</strong> en la sección de evidencias del expediente. Asumo la
-              responsabilidad legal y económica por esta declaración.
-            </span>
-          </label>
+          <div className="mt-3 rounded-lg border border-amber-300 bg-amber-100/60 p-3 text-xs leading-relaxed text-amber-900">
+            <label className="flex cursor-pointer items-start gap-2">
+              <input
+                type="checkbox"
+                checked={proxyAccepted}
+                onChange={(e) => setProxyAccepted(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-amber-500"
+              />
+              <span>
+                <strong>Declaración bajo la gravedad de juramento (apoderado).</strong>
+                {!proxyAccepted && (
+                  <>
+                    {" "}Declaro que cuento con <strong>poder vigente y suficiente</strong> para arrendar este inmueble a
+                    nombre de su propietario, que la información es veraz, y me comprometo a{" "}
+                    <strong>subir el poder autenticado</strong> en la sección de evidencias del expediente. Asumo la
+                    responsabilidad legal y económica por esta declaración.
+                  </>
+                )}
+              </span>
+            </label>
+            <OathEvidenceBadge active={proxyAccepted} oathId="proxy_declaration_oath" contractDraftId={id} />
+          </div>
         )}
         {actingError && <p className="mt-2 text-xs text-rose-700">{actingError}</p>}
       </div>
