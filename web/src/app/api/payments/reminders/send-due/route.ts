@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { requireCronAuth } from "@/lib/security/cron";
 import { sendPaymentReminderEmail } from "@/features/payments/sendPaymentReminderEmail";
 import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
 
-export async function POST() {
+// Endpoint de recordatorios (legacy). Se protege con CRON_SECRET para que no sea
+// un disparador abierto de correos. El cron canónico es tenant-reminders/send-due.
+export async function POST(request: Request) {
+  const gate = requireCronAuth(request);
+  if (!gate.ok) return gate.response;
   try {
     const firestore = getAdminFirestore();
     if (!firestore) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });

@@ -1,0 +1,57 @@
+import { NextResponse } from "next/server";
+import { requireCronAuth } from "@/lib/security/cron";
+import { appConfig } from "@/lib/config";
+import { logServerError } from "@/lib/observability/observability";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+// Da margen para que corran todas las tareas (Vercel lo acota al máximo del plan).
+export const maxDuration = 60;
+
+/**
+ * Despachador de CRON diario. Vercel Cron dispara este GET una vez al día; aquí
+ * ejecutamos (con el mismo CRON_SECRET) cada tarea `send-due`, que son POST.
+ *
+ * Un solo cron para funcionar en cualquier plan de Vercel (el gratuito limita el
+ * número/frecuencia de crons). Añadir una tarea = añadir su ruta a TASKS.
+ *
+ * Requiere `CRON_SECRET` en el entorno; Vercel lo envía automáticamente en el
+ * header `Authorization: Bearer <CRON_SECRET>` de las llamadas de cron.
+ */
+const TASKS = [
+  "/api/payments/tenant-reminders/send-due", // recordatorios de pago al inquilino + escalamiento
+  "/api/contracts/renewal-reminders/send-due", // vencimiento / renovación (preaviso 3 meses)
+  "/api/legal/ipc-reminder/send-due", // aviso de incremento anual por IPC
+  "/api/observability/error-alert/send-due", // alertas de errores (operación)
+] as const;
+
+export async function GET(request: Request) {
+  const gate = requireCronAuth(request);
+  if (!gate.ok) return gate.response;
+
+  const secret = process.env.CRON_SECRET?.trim() ?? "";
+  let origin = "";
+  try {
+    origin = new URL(request.url).origin;
+  } catch {
+    origin = appConfig.publicUrl.replace(/\/$/, "");
+  }
+
+  const ran = await Promise.all(
+    TASKS.map(async (path) => {
+      try {
+        const res = await fetch(`${origin}${path}`, {
+          method: "POST",
+          headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" },
+          cache: "no-store",
+        });
+        return { task: path, status: res.status };
+      } catch (err) {
+        await logServerError("cron/daily", err);
+        return { task: path, status: "error" as const };
+      }
+    }),
+  );
+
+  return NextResponse.json({ success: true, ranAt: new Date().toISOString(), ran });
+}
