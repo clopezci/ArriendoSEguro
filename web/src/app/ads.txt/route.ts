@@ -11,7 +11,9 @@
 export const dynamic = "force-dynamic";
 
 export function GET() {
-  const raw = process.env.ADSENSE_PUBLISHER_ID?.trim() ?? "";
+  // Publisher ID público, precargado por defecto (sobrescribible con la variable
+  // de entorno ADSENSE_PUBLISHER_ID si algún día cambia de cuenta).
+  const raw = process.env.ADSENSE_PUBLISHER_ID?.trim() || "pub-7622431410037127";
   const pub = raw.replace(/^ca-/i, ""); // ads.txt usa "pub-...", no "ca-pub-..."
   const body = /^pub-\d{10,}$/i.test(pub)
     ? `google.com, ${pub}, DIRECT, f08c47fec0942fa0\n`

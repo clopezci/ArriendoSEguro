@@ -43,6 +43,8 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/images/arriendoseguro-social-profile.png", sizes: "512x512" }],
   },
+  // Verificación de propiedad de Google AdSense (uno de los 3 métodos).
+  other: { "google-adsense-account": "ca-pub-7622431410037127" },
   // Verificación de propiedad en Google Search Console (pega el valor del
   // método "etiqueta HTML" en NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION en Vercel).
   ...(googleSiteVerification ? { verification: { google: googleSiteVerification } } : {}),

@@ -8,7 +8,10 @@ import Script from "next/script";
  * (Producción), con el formato `ca-pub-XXXXXXXXXXXXXXXX`. Si no está configurado,
  * no se carga nada (el sitio funciona igual, sin anuncios).
  */
-const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID?.trim();
+// El publisher ID es público (aparece en ads.txt y en el propio script). Se deja
+// como valor por defecto para que la verificación funcione sin configurar Vercel;
+// se puede sobrescribir con NEXT_PUBLIC_ADSENSE_CLIENT_ID si algún día cambia.
+const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID?.trim() || "ca-pub-7622431410037127";
 
 export function AdSense() {
   if (!ADSENSE_CLIENT || !/^ca-pub-\d{10,}$/i.test(ADSENSE_CLIENT)) return null;
