@@ -97,6 +97,24 @@ export default function AcercaDePage() {
           <p className="mt-2 text-slate-700">
             Estamos atentos a dudas, ideas y posibles alianzas.
           </p>
+          <p className="mt-3 text-sm text-slate-700">
+            Escríbenos a{" "}
+            <a href="mailto:clpezci@gmail.com" className="font-medium text-violet-700 underline">
+              clpezci@gmail.com
+            </a>{" "}
+            · Proyecto operado desde <strong>Medellín, Colombia</strong>.
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            Consulta nuestros{" "}
+            <Link href="/legal/terminos" className="text-violet-700 underline">
+              Términos
+            </Link>{" "}
+            y el{" "}
+            <Link href="/legal/aviso-privacidad" className="text-violet-700 underline">
+              Aviso de privacidad
+            </Link>
+            .
+          </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <Link
               href="/contacto"

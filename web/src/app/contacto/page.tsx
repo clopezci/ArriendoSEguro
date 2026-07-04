@@ -19,6 +19,13 @@ export default function ContactoPage() {
             ¿Tienes dudas, comentarios o necesitas soporte con tu expediente de arriendo?
             Escríbenos con este formulario. Te responderemos al correo que nos indiques.
           </p>
+          <p className="mt-3 text-sm text-slate-700">
+            También puedes escribirnos directamente a{" "}
+            <a href="mailto:clpezci@gmail.com" className="font-medium text-violet-700 underline">
+              clpezci@gmail.com
+            </a>
+            . Proyecto operado desde <strong>Medellín, Colombia</strong>. Respondemos usualmente en 1–3 días hábiles.
+          </p>
           <p className="mt-3 text-sm text-slate-600">
             Para temas de tratamiento de datos personales (Habeas Data, Ley 1581 de 2012), elige el
             tema correspondiente o revisa nuestro{" "}
