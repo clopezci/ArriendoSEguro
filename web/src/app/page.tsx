@@ -95,7 +95,79 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="mx-auto w-full max-w-2xl px-5 pb-4">
+      {/* Contenido informativo (bajo el acceso): describe el servicio y enlaza a
+          las guías/herramientas gratuitas. Da a la home texto original y útil. */}
+      <section className="border-t border-slate-200 bg-white">
+        <div className="mx-auto w-full max-w-3xl px-5 py-10 text-left text-slate-700">
+          <h2 className="text-xl font-bold text-slate-900">
+            Contratos de arriendo entre particulares en Colombia, bien hechos
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed">
+            ArriendoSeguro es una herramienta para que <strong>arrendadores e inquilinos</strong> que ya acordaron un
+            arriendo lo <strong>formalicen y documenten</strong> sin depender de una inmobiliaria. Te guiamos paso a paso
+            para armar el contrato conforme a la <strong>Ley 820 de 2003</strong> (arrendamiento de vivienda urbana),
+            firmarlo con <strong>firma electrónica</strong> con validez legal (<strong>Ley 527 de 1999</strong>),
+            registrar el <strong>inventario de entrega</strong> con fotos y llevar el control de{" "}
+            <strong>pagos, novedades y renovación</strong>.
+          </p>
+          <p className="mt-3 text-sm leading-relaxed">
+            No somos inmobiliaria ni asesoría jurídica: te ayudamos a dejar por escrito y con evidencia lo que las partes
+            acuerdan, para reducir conflictos. El primer contrato es <strong>gratis</strong>; el acompañamiento durante el
+            arriendo es un plan de pago único por contrato, una fracción mínima del valor del canon.
+          </p>
+
+          <h3 className="mt-6 text-base font-semibold text-slate-900">¿Qué puedes hacer aquí?</h3>
+          <ul className="mt-2 grid gap-1.5 text-sm sm:grid-cols-2">
+            <li>• Crear el contrato de arrendamiento paso a paso.</li>
+            <li>• Verificar que el canon respete el tope legal (1% del valor comercial).</li>
+            <li>• Definir servicios públicos, codeudor y cláusulas especiales.</li>
+            <li>• Firmar electrónicamente con trazabilidad (fecha, IP y hash).</li>
+            <li>• Hacer el inventario y el acta de entrega del inmueble.</li>
+            <li>• Registrar pagos, novedades, renovación y calificación privada.</li>
+          </ul>
+
+          <h3 className="mt-6 text-base font-semibold text-slate-900">Aprende y usa nuestras herramientas gratis</h3>
+          <p className="mt-2 text-sm leading-relaxed">
+            Publicamos guías con fuentes legales reales y herramientas de acceso libre:
+          </p>
+          <ul className="mt-2 space-y-1.5 text-sm">
+            <li>
+              📘{" "}
+              <Link href="/blog" className="font-medium text-violet-700 hover:underline">
+                Blog de arriendo
+              </Link>{" "}
+              — artículos sobre canon, incremento anual por IPC, terminación, inventario y más, con las leyes citadas.
+            </li>
+            <li>
+              🧮{" "}
+              <Link href="/calculadoras" className="font-medium text-violet-700 hover:underline">
+                Calculadoras
+              </Link>{" "}
+              — incremento por IPC, tope del canon, intereses de mora y días de preaviso.
+            </li>
+            <li>
+              📄{" "}
+              <Link href="/plantillas" className="font-medium text-violet-700 hover:underline">
+                Plantillas y descargas
+              </Link>{" "}
+              — carta de preaviso, paz y salvo, acta de entrega y autorización de datos.
+            </li>
+            <li>
+              ❓{" "}
+              <Link href="/entiendelo-facil" className="font-medium text-violet-700 hover:underline">
+                Cómo funciona
+              </Link>{" "}
+              — guía clara para formalizar tu primer arriendo.
+            </li>
+          </ul>
+          <p className="mt-4 text-xs text-slate-500">
+            Información general orientada a Colombia; no sustituye asesoría legal. Consulta siempre las normas vigentes y,
+            ante dudas, a un profesional.
+          </p>
+        </div>
+      </section>
+
+      <footer className="mx-auto w-full max-w-2xl px-5 pb-4 pt-6">
         <p className="text-center text-[10px] leading-relaxed text-slate-400">
           ArriendoSeguro no reemplaza una inmobiliaria ni una asesoría legal. Ayuda a formalizar y documentar arriendos
           entre particulares.

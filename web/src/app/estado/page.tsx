@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description:
     "Estado operativo de ArriendoSeguro en tiempo real: aplicación, base de datos y correo, además de incidentes reportados.",
   alternates: { canonical: "/estado" },
+  // Panel operativo sin contenido informativo: no indexar.
+  robots: { index: false, follow: true },
 };
 
 export default function EstadoPage() {

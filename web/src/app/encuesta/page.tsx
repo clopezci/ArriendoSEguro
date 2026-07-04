@@ -10,7 +10,8 @@ export const metadata: Metadata = {
   title: "Encuesta de validación | ArriendoSeguro",
   description:
     "Responde la encuesta corta de ArriendoSeguro y ayúdanos a priorizar la fase inicial del producto para arriendos entre particulares en Colombia.",
-  robots: { index: true, follow: true },
+  // Formulario de captación (no es contenido): no indexar, seguir enlaces.
+  robots: { index: false, follow: true },
 };
 
 export default async function EncuestaPage() {

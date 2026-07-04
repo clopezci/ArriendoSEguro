@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   description:
     "¿Encontraste un error, algo no funciona o tienes una queja o sugerencia? Repórtalo y nos ayudas a mejorar ArriendoSeguro.",
   alternates: { canonical: "/reportar" },
+  // Formulario de soporte sin contenido informativo: no indexar.
+  robots: { index: false, follow: true },
 };
 
 export default function ReportarPage() {
