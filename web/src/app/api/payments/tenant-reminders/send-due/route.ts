@@ -45,22 +45,22 @@ export async function POST(request: Request) {
   let reminders = 0;
   let escalations = 0;
 
-  // Ventana de fechas relevante para los hitos (3 días antes y el día del
-  // vencimiento). `dueDate` se guarda como "YYYY-MM-DD", así que el rango
-  // lexicográfico coincide con el cronológico. Acotamos a [-1, +4] días para
-  // cubrir bordes de zona horaria; el filtro exacto del hito sigue en el bucle.
+  // Ventana de fechas relevante. `dueDate` se guarda como "YYYY-MM-DD", así que el
+  // rango lexicográfico coincide con el cronológico. Cubrimos hasta 31 días adelante
+  // porque los "días de aviso" son configurables (1–30) en Pagos y recordatorios;
+  // el hito exacto se filtra en el bucle.
   const isoDay = (addDays: number) => {
     const x = new Date(now);
     x.setUTCDate(x.getUTCDate() + addDays);
     return x.toISOString().slice(0, 10);
   };
 
-  // 1) Recordatorios al inquilino (3 días antes y el día del vencimiento).
+  // 1) Recordatorios al inquilino: N días antes (configurable) y el día del vencimiento.
   const schedSnap = await firestore
     .collection("scheduled_payments")
     .where("dueDate", ">=", isoDay(-1))
-    .where("dueDate", "<=", isoDay(4))
-    .limit(1000)
+    .where("dueDate", "<=", isoDay(31))
+    .limit(2000)
     .get()
     .catch(() => null);
   for (const d of schedSnap?.docs ?? []) {
@@ -72,16 +72,21 @@ export async function POST(request: Request) {
       dueDate?: string;
       expectedAmount?: number;
       status?: string;
+      reminderEnabled?: boolean;
+      reminderDaysBefore?: number;
       tenantReminder3SentAt?: string;
       tenantReminderDueSentAt?: string;
     };
     if (!row.contractId || !row.contractVersionId || !row.dueDate) continue;
     if (row.status === "reported_paid" || row.status === "cancelled") continue;
+    if (row.reminderEnabled === false) continue; // el dueño desactivó los recordatorios
     const due = new Date(row.dueDate);
     const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    const milestone = diffDays === 3 ? "3days" : diffDays === 0 ? "due" : null;
+    // Hito "antes" con los días de aviso configurados (por defecto 3) + el día del vencimiento.
+    const daysBefore = Math.min(30, Math.max(1, Number(row.reminderDaysBefore) || 3));
+    const milestone = diffDays === daysBefore ? "before" : diffDays === 0 ? "due" : null;
     if (!milestone) continue;
-    if (milestone === "3days" && row.tenantReminder3SentAt) continue;
+    if (milestone === "before" && row.tenantReminder3SentAt) continue;
     if (milestone === "due" && row.tenantReminderDueSentAt) continue;
 
     const parties = await loadVersionParties(firestore, row.contractVersionId, versionCache);
@@ -107,7 +112,7 @@ export async function POST(request: Request) {
       amountText: `$${(Number(row.expectedAmount) || 0).toLocaleString("es-CO")}`,
       howToPay: describePaymentMethodForTenant(settings),
       payUrl: `${base}/pago/${token}`,
-      whenLabel: milestone === "3days" ? "Faltan 3 días" : "Hoy vence",
+      whenLabel: milestone === "before" ? `Faltan ${daysBefore} días` : "Hoy vence",
     });
     const r = await sendEmail({
       to: tenantEmail,
@@ -120,7 +125,7 @@ export async function POST(request: Request) {
     });
     if (r.status === "sent" || r.status === "mock") {
       await d.ref.set(
-        milestone === "3days" ? { tenantReminder3SentAt: now.toISOString() } : { tenantReminderDueSentAt: now.toISOString() },
+        milestone === "before" ? { tenantReminder3SentAt: now.toISOString() } : { tenantReminderDueSentAt: now.toISOString() },
         { merge: true },
       );
       reminders += 1;

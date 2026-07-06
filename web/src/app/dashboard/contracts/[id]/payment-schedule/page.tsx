@@ -102,24 +102,6 @@ export default function PaymentSchedulePage() {
     }
   }
 
-  async function saveSettings() {
-    setSaving(true);
-    setError("");
-    try {
-      const res = await fetch("/api/payments/schedule/update-settings", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ leaseProcessId: id, contractId: id, ...settings }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data?.errors?.[0]?.message ?? "No se pudo guardar configuración.");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al guardar configuración.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function updateOne(row: ScheduledPayment, patch: Partial<ScheduledPayment>) {
     const res = await fetch("/api/payments/schedule/update-one", {
       method: "POST",
@@ -165,33 +147,23 @@ export default function PaymentSchedulePage() {
         </button>
       </div>
 
-      <section className="mt-4 rounded border border-slate-300 p-3">
-        <h3 className="text-sm font-semibold">Configuración de recordatorios</h3>
-        <div className="mt-2 grid gap-3 md:grid-cols-2">
-          <label className="text-xs text-slate-700">Activo
-            <select className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.enabled ? "si" : "no"} onChange={(e) => setSettings((p) => ({ ...p, enabled: e.target.value === "si" }))}>
-              <option value="si">Sí</option><option value="no">No</option>
-            </select>
-          </label>
-          <label className="text-xs text-slate-700">Días antes
-            <input type="number" className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.defaultDaysBefore} onChange={(e) => setSettings((p) => ({ ...p, defaultDaysBefore: Number(e.target.value || 1) }))} />
-          </label>
-          <label className="text-xs text-slate-700">Correo arrendatario (inquilino)
-            <input className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.tenantEmail} onChange={(e) => setSettings((p) => ({ ...p, tenantEmail: e.target.value }))} />
-          </label>
-          <label className="text-xs text-slate-700">Copiar arrendador (dueño)
-            <select className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.landlordCopyEnabled ? "si" : "no"} onChange={(e) => setSettings((p) => ({ ...p, landlordCopyEnabled: e.target.value === "si" }))}>
-              <option value="no">No</option><option value="si">Sí</option>
-            </select>
-          </label>
-          <label className="text-xs text-slate-700">Correo arrendador (dueño)
-            <input className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.landlordEmail} onChange={(e) => setSettings((p) => ({ ...p, landlordEmail: e.target.value }))} />
-          </label>
-          <label className="text-xs text-slate-700">Mensaje personalizado
-            <input className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={settings.customMessage} onChange={(e) => setSettings((p) => ({ ...p, customMessage: e.target.value }))} />
-          </label>
-        </div>
-        <button type="button" onClick={saveSettings} className="mt-3 rounded border border-emerald-500 px-3 py-2 text-sm text-emerald-700">Guardar configuración</button>
+      {/* Solo lectura: la configuración de recordatorios (método de pago y días de
+          aviso) vive SOLO en «Pagos y recordatorios», para no tener dos editores
+          que se desincronicen. Aquí se muestra el estado actual. */}
+      <section className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+        <p>
+          <strong>Recordatorios al inquilino:</strong>{" "}
+          {settings.enabled
+            ? `activos — ${settings.defaultDaysBefore} día(s) antes de cada vencimiento y el día del vencimiento.`
+            : "desactivados."}
+        </p>
+        <p className="mt-1 text-slate-500">
+          Para cambiar el método de pago o los días de aviso, ve a{" "}
+          <a href={`/dashboard/contracts/${id}/pagos-recordatorios`} className="font-semibold text-violet-700 underline">
+            Pagos y recordatorios
+          </a>
+          .
+        </p>
       </section>
 
       <div className="mt-4 overflow-auto rounded border border-slate-300">
