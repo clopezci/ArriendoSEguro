@@ -4,7 +4,7 @@ import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { requireAuthenticatedUser, requestClientIp, requestUserAgent } from "@/lib/auth/serverAuth";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import { getResolvedPlanPlusPricing } from "@/domain/platform-payments/plan-plus-pricing";
+import { computePlanPlusOrderAmount } from "@/domain/platform-payments/order-amount";
 import { getPaymentProvider } from "@/domain/platform-payments/provider-factory";
 import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
 import { normalizeCreateOrderIdentity } from "@/domain/platform-payments/order-rules";
@@ -42,13 +42,15 @@ export async function POST(request: Request) {
     const orderRef = firestore.collection("platform_orders").doc();
     const providerReference = `AS_PLUS_${Date.now()}_${randomUUID().slice(0, 8)}`;
     const selected = getPaymentProvider(parsed.data.paymentProvider);
-    const pricing = await getResolvedPlanPlusPricing(firestore);
+    // Total autoritativo en servidor: Plan Plus (precio/promoción vigente) + la
+    // cláusula «Otra» del expediente si aplica. Nunca se confía en el cliente.
+    const amount = await computePlanPlusOrderAmount(firestore, { leaseProcessId: parsed.data.leaseProcessId });
     const normalized = normalizeCreateOrderIdentity({
       tokenUserId: auth.user.uid,
       tokenUserEmail: auth.user.email,
       planCode: "plus",
       leaseProcessId: parsed.data.leaseProcessId,
-      checkoutAmountCop: pricing.checkoutCop,
+      checkoutAmountCop: amount.totalCop,
     });
     const baseOrder = {
       id: orderRef.id,
@@ -62,6 +64,9 @@ export async function POST(request: Request) {
       paymentProvider: selected.providerCode,
       providerReference,
       checkoutUrl: "",
+      lineItems: amount.lineItems,
+      planPlusCop: amount.planPlusCop,
+      clauseCop: amount.clauseCop,
       createdAt: now,
       updatedAt: now,
       createdAtServer: FieldValue.serverTimestamp(),
@@ -99,6 +104,10 @@ export async function POST(request: Request) {
       status: "pending",
       amount: normalized.amount,
       currency: "COP",
+      lineItems: amount.lineItems,
+      planPlusCop: amount.planPlusCop,
+      clauseCop: amount.clauseCop,
+      hasCostedClause: amount.hasCostedClause,
     });
   } catch {
     return NextResponse.json(

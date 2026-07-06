@@ -25,7 +25,20 @@ type EntitlementsResponse = {
   demoEntitlement?: { id: string } | null;
 };
 
-type ActivePricing = { checkoutCop: number; listCompareCop: number };
+type ActivePricing = {
+  checkoutCop: number;
+  listCompareCop: number;
+  isPromo?: boolean;
+  promoName?: string | null;
+  promoMessage?: string | null;
+};
+
+type OrderLineItem = { code: string; label: string; amountCop: number };
+type CartPreview = {
+  lineItems: OrderLineItem[];
+  totalCop: number;
+  hasCostedClause: boolean;
+};
 
 export default function PlansPage() {
   const { user } = useAuth();
@@ -35,6 +48,8 @@ export default function PlansPage() {
   const [orderId, setOrderId] = useState("");
   const [loading, setLoading] = useState(false);
   const [pricing, setPricing] = useState<ActivePricing | null>(null);
+  const [leaseProcessId, setLeaseProcessId] = useState<string | null>(null);
+  const [cart, setCart] = useState<CartPreview | null>(null);
   const [entitlements, setEntitlements] = useState<EntitlementsResponse | null>(null);
   const [referral, setReferral] = useState<{
     status: ReferralStatus | null;
@@ -82,14 +97,27 @@ export default function PlansPage() {
     void (async () => {
       try {
         const res = await fetch("/api/platform-payments/active-pricing");
-        const j = (await res.json()) as { success?: boolean; checkoutCop?: number; listCompareCop?: number };
+        const j = (await res.json()) as {
+          success?: boolean;
+          checkoutCop?: number;
+          listCompareCop?: number;
+          isPromo?: boolean;
+          promoName?: string | null;
+          promoMessage?: string | null;
+        };
         if (
           res.ok &&
           j.success &&
           typeof j.checkoutCop === "number" &&
           typeof j.listCompareCop === "number"
         ) {
-          setPricing({ checkoutCop: j.checkoutCop, listCompareCop: j.listCompareCop });
+          setPricing({
+            checkoutCop: j.checkoutCop,
+            listCompareCop: j.listCompareCop,
+            isPromo: j.isPromo,
+            promoName: j.promoName ?? null,
+            promoMessage: j.promoMessage ?? null,
+          });
         }
       } catch {
         /* respaldo: constantes locales */
@@ -100,6 +128,42 @@ export default function PlansPage() {
   useEffect(() => {
     void loadAccess();
   }, [loadAccess]);
+
+  // Carrito por contrato: si llegamos con `?contract=<id>`, mostramos el desglose
+  // (Plan Plus + cláusula «Otra» si aplica) para ese expediente.
+  useEffect(() => {
+    if (typeof window === "undefined" || !user) return;
+    const lease = new URLSearchParams(window.location.search).get("contract");
+    if (!lease) return;
+    setLeaseProcessId(lease);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(
+          `/api/platform-payments/order-preview?leaseProcessId=${encodeURIComponent(lease)}`,
+          { headers: { ...(await buildAuthHeaders(user)) } },
+        );
+        const j = (await res.json()) as {
+          success?: boolean;
+          lineItems?: OrderLineItem[];
+          totalCop?: number;
+          hasCostedClause?: boolean;
+        };
+        if (!cancelled && res.ok && j.success && Array.isArray(j.lineItems)) {
+          setCart({
+            lineItems: j.lineItems,
+            totalCop: Number(j.totalCop) || 0,
+            hasCostedClause: Boolean(j.hasCostedClause),
+          });
+        }
+      } catch {
+        /* sin red: se mostrará el precio simple del Plan Plus */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   // Retorno desde el Web Checkout de Wompi (`?order=<referencia>`). El webhook es
   // la fuente de verdad y otorga el acceso Plus; aquí solo reflejamos el estado:
@@ -170,7 +234,7 @@ export default function PlansPage() {
       const res = await fetch("/api/platform-payments/create-order", {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ planCode: "plus" }),
+        body: JSON.stringify({ planCode: "plus", ...(leaseProcessId ? { leaseProcessId } : {}) }),
       });
       const data = (await res.json()) as {
         success?: boolean;
@@ -357,6 +421,12 @@ export default function PlansPage() {
               ? "Descuento por referido aprobado aplicado a tu Plan Plus."
               : pricingLine.subtitle}
           </p>
+          {!referralDiscount.applied && pricing?.isPromo && pricing.promoMessage && (
+            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800">
+              🏷️ {pricing.promoName ? `${pricing.promoName}: ` : ""}
+              {pricing.promoMessage}
+            </p>
+          )}
           <p className="mt-2 text-sm text-slate-600">Pago único por contrato gestionado en la plataforma. Sin mensualidades.</p>
           <p className="mt-2 text-xs leading-relaxed text-slate-600">{PER_CONTRACT_PAYMENT_NOTICE}</p>
           <ul className="mt-4 space-y-2 text-sm text-slate-700">
@@ -370,13 +440,35 @@ export default function PlansPage() {
             <li>Recordatorios</li>
             <li>Anexos</li>
           </ul>
+          {cart && cart.hasCostedClause && (
+            <div className="mt-4 rounded-xl border border-violet-300 bg-violet-50/60 p-3 text-sm">
+              <p className="mb-2 font-semibold text-slate-800">Tu carrito para este contrato</p>
+              <ul className="space-y-1">
+                {cart.lineItems.map((it) => (
+                  <li key={it.code} className="flex items-center justify-between text-slate-700">
+                    <span>{it.label}</span>
+                    <span className="font-medium">{formatCopPlain(it.amountCop)} COP</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-2 flex items-center justify-between border-t border-violet-200 pt-2 text-slate-900">
+                <span className="font-semibold">Total a pagar</span>
+                <span className="text-base font-bold text-violet-700">{formatCopPlain(cart.totalCop)} COP</span>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Incluye la cláusula personalizada «Otra» que agregaste al contrato.
+              </p>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => void createPlusOrder()}
             disabled={loading}
             className="mt-6 w-full rounded-lg bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(139,92,246,0.35)] hover:bg-violet-500 disabled:opacity-50"
           >
-            Activar Plan Plus
+            {cart && cart.hasCostedClause
+              ? `Pagar ${formatCopPlain(cart.totalCop)} COP`
+              : "Activar Plan Plus"}
           </button>
           {checkoutUrl && (
             <a

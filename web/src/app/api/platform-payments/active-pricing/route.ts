@@ -12,5 +12,8 @@ export async function GET() {
     success: true,
     checkoutCop: pricing.checkoutCop,
     listCompareCop: pricing.listCompareCop,
+    isPromo: pricing.isPromo,
+    promoName: pricing.promoName,
+    promoMessage: pricing.promoMessage,
   });
 }

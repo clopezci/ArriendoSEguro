@@ -8,7 +8,6 @@ import {
   PLAN_PLUS_CUSTOM_COP_LIMITS,
   PLAN_PLUS_PRICING_COLLECTION,
   PLAN_PLUS_PRICING_DOC_ID,
-  type PlanPlusPricingPreset,
 } from "@/domain/platform-payments/plan-plus-pricing";
 import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
 
@@ -16,26 +15,39 @@ export const runtime = "nodejs";
 
 const patchSchema = z
   .object({
-    preset: z.enum(["promo_49900", "list_89900", "custom"]),
-    customCheckoutCop: z
+    mode: z.enum(["full", "promo"]),
+    listCop: z
       .number()
       .int()
       .min(PLAN_PLUS_CUSTOM_COP_LIMITS.min)
       .max(PLAN_PLUS_CUSTOM_COP_LIMITS.max)
       .optional(),
-    customListCop: z
+    promoType: z.enum(["fixed", "percent"]).optional(),
+    promoFixedCop: z
       .number()
       .int()
       .min(PLAN_PLUS_CUSTOM_COP_LIMITS.min)
       .max(PLAN_PLUS_CUSTOM_COP_LIMITS.max)
       .optional(),
+    promoPercent: z.number().min(0.1).max(95).optional(),
+    promoName: z.string().trim().max(60).optional(),
+    promoMessage: z.string().trim().max(160).optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.preset === "custom" && data.customCheckoutCop == null) {
+    if (data.mode !== "promo") return;
+    const type = data.promoType ?? "fixed";
+    if (type === "fixed" && data.promoFixedCop == null) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Indica el monto en COP cuando eliges “otro”.",
-        path: ["customCheckoutCop"],
+        message: "Indica el precio promocional en COP.",
+        path: ["promoFixedCop"],
+      });
+    }
+    if (type === "percent" && data.promoPercent == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Indica el % de descuento de la promoción.",
+        path: ["promoPercent"],
       });
     }
   });
@@ -60,14 +72,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     success: true,
     stored: snap.exists ? raw : null,
-    preset: raw.preset ?? null,
-    customCheckoutCop: raw.customCheckoutCop ?? null,
-    customListCop: raw.customListCop ?? null,
-    resolved: {
-      checkoutCop: resolved.checkoutCop,
-      listCompareCop: resolved.listCompareCop,
-      preset: resolved.preset,
-    },
+    resolved,
     limitsCop: PLAN_PLUS_CUSTOM_COP_LIMITS,
   });
 }
@@ -106,15 +111,23 @@ export async function PATCH(request: Request) {
   }
 
   const now = new Date().toISOString();
-  const preset = parsed.data.preset as PlanPlusPricingPreset;
-  const customCheckoutCop = preset === "custom" ? parsed.data.customCheckoutCop! : null;
-  const customListCop = preset === "custom" ? (parsed.data.customListCop ?? null) : null;
+  const d = parsed.data;
+  const isPromo = d.mode === "promo";
+  const promoType = isPromo ? (d.promoType ?? "fixed") : null;
 
   await firestore.collection(PLAN_PLUS_PRICING_COLLECTION).doc(PLAN_PLUS_PRICING_DOC_ID).set(
     {
-      preset,
-      customCheckoutCop,
-      customListCop,
+      mode: d.mode,
+      listCop: d.listCop ?? null,
+      promoType,
+      promoFixedCop: isPromo && promoType === "fixed" ? (d.promoFixedCop ?? null) : null,
+      promoPercent: isPromo && promoType === "percent" ? (d.promoPercent ?? null) : null,
+      promoName: isPromo ? (d.promoName?.trim() || null) : null,
+      promoMessage: isPromo ? (d.promoMessage?.trim() || null) : null,
+      // Limpia campos del esquema anterior para no confundir el resolver.
+      preset: FieldValue.delete(),
+      customCheckoutCop: FieldValue.delete(),
+      customListCop: FieldValue.delete(),
       updatedAt: now,
       updatedAtServer: FieldValue.serverTimestamp(),
       updatedByEmail: auth.user.email.trim().toLowerCase(),
@@ -125,17 +138,11 @@ export async function PATCH(request: Request) {
   const resolved = await getResolvedPlanPlusPricing(firestore);
 
   await auditPlatformPaymentEvent(firestore, "admin_plan_plus_pricing_updated", {
-    preset,
+    mode: d.mode,
     checkoutCop: resolved.checkoutCop,
     listCompareCop: resolved.listCompareCop,
+    isPromo: resolved.isPromo,
   });
 
-  return NextResponse.json({
-    success: true,
-    resolved: {
-      checkoutCop: resolved.checkoutCop,
-      listCompareCop: resolved.listCompareCop,
-      preset: resolved.preset,
-    },
-  });
+  return NextResponse.json({ success: true, resolved });
 }

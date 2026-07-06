@@ -192,10 +192,20 @@ export default function AdminPage() {
   const [inspectEmail, setInspectEmail] = useState("");
   const [inspectedEmail, setInspectedEmail] = useState("");
 
-  const [ppPreset, setPpPreset] = useState<"promo_49900" | "list_89900" | "custom">("promo_49900");
-  const [ppCustom, setPpCustom] = useState("");
-  const [ppCustomList, setPpCustomList] = useState("");
-  const [ppResolved, setPpResolved] = useState<{ checkoutCop: number; listCompareCop: number } | null>(null);
+  const [ppMode, setPpMode] = useState<"full" | "promo">("promo");
+  const [ppPromoType, setPpPromoType] = useState<"fixed" | "percent">("fixed");
+  const [ppListCop, setPpListCop] = useState("89900");
+  const [ppPromoFixed, setPpPromoFixed] = useState("49900");
+  const [ppPromoPercent, setPpPromoPercent] = useState("");
+  const [ppPromoName, setPpPromoName] = useState("Lanzamiento");
+  const [ppPromoMessage, setPpPromoMessage] = useState("Precio promocional por tiempo limitado");
+  const [ppResolved, setPpResolved] = useState<{
+    checkoutCop: number;
+    listCompareCop: number;
+    isPromo: boolean;
+    promoName: string | null;
+    promoMessage: string | null;
+  } | null>(null);
   const [ppPricingErr, setPpPricingErr] = useState("");
   const [ppPricingMsg, setPpPricingMsg] = useState("");
   const [ppSaveLoading, setPpSaveLoading] = useState(false);
@@ -232,20 +242,35 @@ export default function AdminPage() {
         const prRes = await fetch("/api/admin/plan-plus-pricing", { headers: { ...(await buildAuthHeaders(user)) } });
         type PrJson = {
           success?: boolean;
-          resolved?: { checkoutCop: number; listCompareCop: number; preset: "promo_49900" | "list_89900" | "custom" };
-          stored?: { customCheckoutCop?: number | null; customListCop?: number | null } | null;
+          resolved?: {
+            checkoutCop: number;
+            listCompareCop: number;
+            isPromo: boolean;
+            promoName: string | null;
+            promoMessage: string | null;
+            mode: "full" | "promo";
+            promoType: "fixed" | "percent" | null;
+            promoPercent: number | null;
+          };
           errors?: { message?: string }[];
         };
         const prJson = (await prRes.json()) as PrJson;
         if (prRes.ok && prJson.success && prJson.resolved) {
-          setPpPreset(prJson.resolved.preset);
-          const cust = prJson.stored?.customCheckoutCop;
-          setPpCustom(String(typeof cust === "number" && Number.isFinite(cust) ? cust : prJson.resolved.checkoutCop));
-          const custList = prJson.stored?.customListCop;
-          setPpCustomList(
-            String(typeof custList === "number" && Number.isFinite(custList) ? custList : prJson.resolved.listCompareCop),
-          );
-          setPpResolved({ checkoutCop: prJson.resolved.checkoutCop, listCompareCop: prJson.resolved.listCompareCop });
+          const r = prJson.resolved;
+          setPpMode(r.mode);
+          setPpPromoType(r.promoType ?? "fixed");
+          setPpListCop(String(r.listCompareCop));
+          setPpPromoFixed(String(r.promoType === "percent" ? "" : r.checkoutCop));
+          setPpPromoPercent(r.promoPercent != null ? String(r.promoPercent) : "");
+          setPpPromoName(r.promoName ?? "Lanzamiento");
+          setPpPromoMessage(r.promoMessage ?? "Precio promocional por tiempo limitado");
+          setPpResolved({
+            checkoutCop: r.checkoutCop,
+            listCompareCop: r.listCompareCop,
+            isPromo: r.isPromo,
+            promoName: r.promoName,
+            promoMessage: r.promoMessage,
+          });
           setPpPricingErr("");
         } else {
           setPpPricingErr(prJson.errors?.[0]?.message ?? "No se pudo cargar el precio del Plan Plus.");
@@ -685,49 +710,48 @@ export default function AdminPage() {
     setPpPricingErr("");
     setPpPricingMsg("");
     try {
-      const digits = ppCustom.replace(/[^\d]/g, "");
-      const n = digits === "" ? NaN : Number(digits);
-      const listDigits = ppCustomList.replace(/[^\d]/g, "");
-      const listN = listDigits === "" ? NaN : Number(listDigits);
+      const listN = Number(ppListCop.replace(/[^\d]/g, "") || "NaN");
+      const fixedN = Number(ppPromoFixed.replace(/[^\d]/g, "") || "NaN");
+      const pctN = Number(ppPromoPercent.replace(/[^\d.]/g, "") || "NaN");
+      const { min, max } = PLAN_PLUS_CUSTOM_COP_LIMITS;
+
+      if (!Number.isInteger(listN) || listN < min || listN > max) {
+        setPpPricingErr(`El precio pleno debe ser un entero entre ${min.toLocaleString("es-CO")} y ${max.toLocaleString("es-CO")} COP.`);
+        return;
+      }
       const body: {
-        preset: "promo_49900" | "list_89900" | "custom";
-        customCheckoutCop?: number;
-        customListCop?: number;
-      } =
-        ppPreset === "custom"
-          ? {
-              preset: "custom",
-              customCheckoutCop: n,
-              ...(Number.isInteger(listN) ? { customListCop: listN } : {}),
-            }
-          : { preset: ppPreset };
-      if (
-        ppPreset === "custom" &&
-        (!Number.isInteger(n) ||
-          n < PLAN_PLUS_CUSTOM_COP_LIMITS.min ||
-          n > PLAN_PLUS_CUSTOM_COP_LIMITS.max)
-      ) {
-        setPpPricingErr(
-          `El monto personalizado debe ser un entero entre ${PLAN_PLUS_CUSTOM_COP_LIMITS.min.toLocaleString(
-            "es-CO",
-          )} y ${PLAN_PLUS_CUSTOM_COP_LIMITS.max.toLocaleString("es-CO")} COP.`,
-        );
-        return;
+        mode: "full" | "promo";
+        listCop: number;
+        promoType?: "fixed" | "percent";
+        promoFixedCop?: number;
+        promoPercent?: number;
+        promoName?: string;
+        promoMessage?: string;
+      } = { mode: ppMode, listCop: listN };
+
+      if (ppMode === "promo") {
+        body.promoType = ppPromoType;
+        body.promoName = ppPromoName.trim();
+        body.promoMessage = ppPromoMessage.trim();
+        if (ppPromoType === "fixed") {
+          if (!Number.isInteger(fixedN) || fixedN < min || fixedN > max) {
+            setPpPricingErr(`El precio promocional debe ser un entero entre ${min.toLocaleString("es-CO")} y ${max.toLocaleString("es-CO")} COP.`);
+            return;
+          }
+          if (fixedN >= listN) {
+            setPpPricingErr("El precio promocional debe ser menor al precio pleno.");
+            return;
+          }
+          body.promoFixedCop = fixedN;
+        } else {
+          if (!Number.isFinite(pctN) || pctN < 0.1 || pctN > 95) {
+            setPpPricingErr("El % de descuento debe estar entre 0,1 y 95.");
+            return;
+          }
+          body.promoPercent = pctN;
+        }
       }
-      if (
-        ppPreset === "custom" &&
-        Number.isInteger(listN) &&
-        (listN < PLAN_PLUS_CUSTOM_COP_LIMITS.min ||
-          listN > PLAN_PLUS_CUSTOM_COP_LIMITS.max ||
-          listN < n)
-      ) {
-        setPpPricingErr(
-          `El precio de lista (tachado) debe ser un entero entre ${PLAN_PLUS_CUSTOM_COP_LIMITS.min.toLocaleString(
-            "es-CO",
-          )} y ${PLAN_PLUS_CUSTOM_COP_LIMITS.max.toLocaleString("es-CO")} COP, y no menor al precio vigente.`,
-        );
-        return;
-      }
+
       const res = await fetch("/api/admin/plan-plus-pricing", {
         method: "PATCH",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
@@ -738,7 +762,12 @@ export default function AdminPage() {
         resolved?: {
           checkoutCop: number;
           listCompareCop: number;
-          preset: "promo_49900" | "list_89900" | "custom";
+          isPromo: boolean;
+          promoName: string | null;
+          promoMessage: string | null;
+          mode: "full" | "promo";
+          promoType: "fixed" | "percent" | null;
+          promoPercent: number | null;
         };
         errors?: { message?: string }[];
       };
@@ -747,10 +776,22 @@ export default function AdminPage() {
         return;
       }
       if (json.resolved) {
-        setPpResolved({ checkoutCop: json.resolved.checkoutCop, listCompareCop: json.resolved.listCompareCop });
-        setPpPreset(json.resolved.preset);
+        const r = json.resolved;
+        setPpResolved({
+          checkoutCop: r.checkoutCop,
+          listCompareCop: r.listCompareCop,
+          isPromo: r.isPromo,
+          promoName: r.promoName,
+          promoMessage: r.promoMessage,
+        });
+        setPpMode(r.mode);
+        setPpPromoType(r.promoType ?? "fixed");
+        setPpPromoPercent(r.promoPercent != null ? String(r.promoPercent) : "");
+        setPpPromoFixed(String(r.promoType === "percent" ? "" : r.checkoutCop));
         setPpPricingMsg(
-          `Listo: nueva orden cobrará ${json.resolved.checkoutCop.toLocaleString("es-CO")} COP (referencia lista ${json.resolved.listCompareCop.toLocaleString("es-CO")} COP).`,
+          r.isPromo
+            ? `Listo: promoción «${r.promoName}» activa. Nueva orden cobrará ${r.checkoutCop.toLocaleString("es-CO")} COP (precio pleno ${r.listCompareCop.toLocaleString("es-CO")} COP).`
+            : `Listo: sin promoción. Nueva orden cobrará el precio pleno ${r.checkoutCop.toLocaleString("es-CO")} COP.`,
         );
       }
     } catch {
@@ -1005,8 +1046,15 @@ export default function AdminPage() {
             {ppResolved && (
               <p className="mt-2 text-xs text-slate-800">
                 Aplicando ahora:{" "}
-                <strong>${ppResolved.checkoutCop.toLocaleString("es-CO")}</strong> COP a cobrar · referencia lista{" "}
-                <strong>${ppResolved.listCompareCop.toLocaleString("es-CO")}</strong> COP
+                <strong>${ppResolved.checkoutCop.toLocaleString("es-CO")}</strong> COP a cobrar ·{" "}
+                {ppResolved.isPromo ? (
+                  <>
+                    precio pleno <strong>${ppResolved.listCompareCop.toLocaleString("es-CO")}</strong> COP · promoción{" "}
+                    <strong>«{ppResolved.promoName}»</strong> ({ppResolved.promoMessage})
+                  </>
+                ) : (
+                  <>sin promoción (precio pleno)</>
+                )}
               </p>
             )}
             {ppPricingErr && (
@@ -1019,67 +1067,125 @@ export default function AdminPage() {
                 {ppPricingMsg}
               </p>
             )}
+            {/* Precio pleno (lista) */}
+            <label className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-800">
+              Precio pleno (de lista) COP
+              <input
+                type="text"
+                inputMode="numeric"
+                aria-label="Precio pleno COP"
+                value={ppListCop}
+                onChange={(e) => setPpListCop(e.target.value)}
+                className="w-32 rounded border border-slate-300 px-2 py-1 text-xs"
+              />
+            </label>
+
+            {/* Modo: con o sin promoción */}
             <fieldset className="mt-3 space-y-2 border-0 p-0 text-xs text-slate-800">
-              <legend className="sr-only">Modo de precio</legend>
+              <legend className="mb-1 font-medium text-slate-700">Promoción</legend>
               <label className="flex cursor-pointer items-start gap-2">
                 <input
                   type="radio"
-                  name="plan-plus-preset"
+                  name="plan-plus-mode"
                   className="mt-0.5"
-                  checked={ppPreset === "promo_49900"}
-                  onChange={() => setPpPreset("promo_49900")}
+                  checked={ppMode === "full"}
+                  onChange={() => setPpMode("full")}
                 />
-                <span>$49.900 COP (beneficio lanzamiento versus lista)</span>
+                <span>Sin promoción — se cobra el precio pleno.</span>
               </label>
               <label className="flex cursor-pointer items-start gap-2">
                 <input
                   type="radio"
-                  name="plan-plus-preset"
+                  name="plan-plus-mode"
                   className="mt-0.5"
-                  checked={ppPreset === "list_89900"}
-                  onChange={() => setPpPreset("list_89900")}
+                  checked={ppMode === "promo"}
+                  onChange={() => setPpMode("promo")}
                 />
-                <span>$89.900 COP (precio de lista sin beneficio lanzamiento)</span>
+                <span>Con promoción vigente.</span>
               </label>
-              <label className="flex cursor-pointer flex-wrap items-start gap-2">
-                <input
-                  type="radio"
-                  name="plan-plus-preset"
-                  className="mt-0.5"
-                  checked={ppPreset === "custom"}
-                  onChange={() => setPpPreset("custom")}
-                />
-                <span className="flex flex-wrap items-center gap-2">
-                  Otro: precio vigente (checkout) COP
+            </fieldset>
+
+            {ppMode === "promo" && (
+              <div className="mt-2 space-y-2 rounded-lg border border-violet-200 bg-violet-50/40 p-3 text-xs text-slate-800">
+                <div className="flex flex-wrap gap-3">
+                  <label className="flex cursor-pointer items-center gap-1.5">
+                    <input
+                      type="radio"
+                      name="plan-plus-promo-type"
+                      checked={ppPromoType === "fixed"}
+                      onChange={() => setPpPromoType("fixed")}
+                    />
+                    Por precio fijo
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-1.5">
+                    <input
+                      type="radio"
+                      name="plan-plus-promo-type"
+                      checked={ppPromoType === "percent"}
+                      onChange={() => setPpPromoType("percent")}
+                    />
+                    Por % de descuento
+                  </label>
+                </div>
+
+                {ppPromoType === "fixed" ? (
+                  <label className="flex flex-wrap items-center gap-2">
+                    Precio promocional COP
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      aria-label="Precio promocional COP"
+                      value={ppPromoFixed}
+                      onChange={(e) => setPpPromoFixed(e.target.value)}
+                      className="w-32 rounded border border-slate-300 px-2 py-1 text-xs"
+                    />
+                  </label>
+                ) : (
+                  <label className="flex flex-wrap items-center gap-2">
+                    % de descuento sobre el precio pleno
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      aria-label="Porcentaje de descuento"
+                      value={ppPromoPercent}
+                      onChange={(e) => setPpPromoPercent(e.target.value)}
+                      className="w-24 rounded border border-slate-300 px-2 py-1 text-xs"
+                    />
+                    %
+                  </label>
+                )}
+
+                <label className="flex flex-wrap items-center gap-2">
+                  Nombre de la promoción
                   <input
                     type="text"
-                    inputMode="numeric"
-                    aria-label="Precio vigente COP personalizado"
-                    disabled={ppPreset !== "custom"}
-                    value={ppCustom}
-                    onChange={(e) => setPpCustom(e.target.value)}
-                    className="w-36 rounded border border-slate-300 px-2 py-1 text-xs disabled:opacity-50"
-                  />
-                </span>
-              </label>
-              {ppPreset === "custom" && (
-                <label className="flex flex-wrap items-center gap-2 pl-6 text-slate-700">
-                  Precio de lista (tachado) COP
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    aria-label="Precio de lista tachado COP personalizado"
-                    value={ppCustomList}
-                    onChange={(e) => setPpCustomList(e.target.value)}
-                    className="w-36 rounded border border-slate-300 px-2 py-1 text-xs"
+                    aria-label="Nombre de la promoción"
+                    value={ppPromoName}
+                    onChange={(e) => setPpPromoName(e.target.value)}
+                    maxLength={60}
+                    placeholder="Ej.: Lanzamiento"
+                    className="w-48 rounded border border-slate-300 px-2 py-1 text-xs"
                   />
                 </label>
-              )}
-            </fieldset>
-            <p className="mt-1 text-[11px] text-slate-500">
-              Otro: enteros entre {PLAN_PLUS_CUSTOM_COP_LIMITS.min.toLocaleString("es-CO")} y{" "}
-              {PLAN_PLUS_CUSTOM_COP_LIMITS.max.toLocaleString("es-CO")} COP. El precio de lista (tachado) debe ser{" "}
-              mayor o igual al precio vigente; si lo dejas vacío, se usa el de lista por defecto.
+                <label className="block">
+                  <span className="mb-1 block">Mensaje que verá el cliente</span>
+                  <input
+                    type="text"
+                    aria-label="Mensaje de la promoción"
+                    value={ppPromoMessage}
+                    onChange={(e) => setPpPromoMessage(e.target.value)}
+                    maxLength={160}
+                    placeholder="Ej.: Precio promocional por tiempo limitado"
+                    className="w-full rounded border border-slate-300 px-2 py-1 text-xs"
+                  />
+                </label>
+              </div>
+            )}
+
+            <p className="mt-2 text-[11px] text-slate-500">
+              Montos enteros entre {PLAN_PLUS_CUSTOM_COP_LIMITS.min.toLocaleString("es-CO")} y{" "}
+              {PLAN_PLUS_CUSTOM_COP_LIMITS.max.toLocaleString("es-CO")} COP. En «% de descuento», el precio se redondea a
+              la centena de peso más cercana. Guarda para ver el precio que quedará vigente.
             </p>
             <button
               type="button"

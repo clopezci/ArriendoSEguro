@@ -808,8 +808,15 @@ export default function PreviewStepPage() {
                 La firma con respaldo legal (código OTP + evidencia de IP/fecha/hash, Ley 527) es parte del Plan Plus.
                 Puedes generar el contrato gratis y firmarlo cuando actives Plus.
               </p>
+              {activeDraft?.specialClauses?.enabled &&
+                activeDraft.specialClauses.selected?.includes("OTRA") && (
+                  <p className="mt-1 text-xs text-amber-800">
+                    Este contrato incluye la cláusula «Otra» (con costo): se sumará automáticamente en el carrito al
+                    activar Plan Plus.
+                  </p>
+                )}
               <Link
-                href="/dashboard/plans"
+                href={`/dashboard/plans?contract=${encodeURIComponent(activeDraft?.id ?? id)}`}
                 className="mt-2 inline-flex rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700"
               >
                 Activar Plan Plus
