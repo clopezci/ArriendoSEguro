@@ -7,7 +7,7 @@ import { appendAudit, getDraft, setNotarizationSelection, toContractInput, updat
 import { auditEvent } from "@/features/contracts/audit";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
-import { freeTierEnabled } from "@/lib/config";
+import { useFreeTier } from "@/lib/useFreeTier";
 import type {
   ContractPreviewResponse,
   GenerateContractPdfResponse,
@@ -98,6 +98,7 @@ export default function PreviewStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
   const { user } = useAuth();
+  const freeTier = useFreeTier();
   // Estado Plus: define si el contrato lleva marca de agua + CTA del tier gratis.
   const [plusActive, setPlusActive] = useState(false);
   // Demo también habilita firmar/posventa (sin ser Plus de pago).
@@ -247,7 +248,7 @@ export default function PreviewStepPage() {
         body: JSON.stringify({
           contractPayload: toContractInput(activeDraft),
           isDemo: Boolean(activeDraft.isDemo),
-          isFreeTier: freeTierEnabled && !activeDraft.isDemo && !plusActive,
+          isFreeTier: freeTier.enabled && !activeDraft.isDemo && !plusActive,
         }),
       });
       const data = (await res.json()) as ContractPreviewResponse;

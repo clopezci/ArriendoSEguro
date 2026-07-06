@@ -5,7 +5,7 @@ import {
   getPlanPlusPricingForPublicPages,
 } from "@/domain/platform-payments/plan-plus-pricing";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import { freeTierEnabled } from "@/lib/config";
+import { getFreeTierForPublicPages } from "@/domain/platform-payments/free-tier";
 import Link from "next/link";
 
 export const metadata = {
@@ -101,6 +101,7 @@ export default async function EntiendeloFacilPage() {
   const firestore = getAdminFirestore();
   const pricing = await getPlanPlusPricingForPublicPages(firestore);
   const planPlusPriceComparison = formatPlanPlusPriceLineCheckoutAndList(pricing.checkoutCop, pricing.listCompareCop);
+  const freeTier = await getFreeTierForPublicPages(firestore);
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6">
@@ -210,11 +211,11 @@ export default async function EntiendeloFacilPage() {
 
         <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
           <h2 className="text-2xl font-semibold">Una alternativa de bajo costo para formalizar</h2>
-          {freeTierEnabled && (
+          {freeTier.enabled && (
             <p className="mt-3 rounded-lg border border-emerald-400 bg-emerald-50 px-4 py-3 font-semibold text-emerald-800">
-              Generar tu contrato de arrendamiento es <span className="underline">gratis</span>. La firma
-              electrónica con validez, el inventario, el registro de pagos y todo el respaldo se activan con
-              Plan Plus (pago único por contrato), por una fracción de lo que cuesta tu arriendo.
+              Generar tu contrato de arrendamiento es <span className="underline">gratis por tiempo limitado</span>. La
+              firma electrónica con validez, el inventario, el registro de pagos y todo el respaldo se activan con Plan
+              Plus (pago único por contrato), por una fracción de lo que cuesta tu arriendo.
             </p>
           )}
           <p className="mt-3 text-slate-700">

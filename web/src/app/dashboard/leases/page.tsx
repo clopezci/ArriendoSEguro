@@ -12,7 +12,7 @@ import {
   estadoExpedienteResumen,
 } from "@/lib/dashboard/expediente-ui";
 import { canSeeInternalDashboardTools } from "@/lib/dashboard/internal-tools";
-import { freeTierEnabled } from "@/lib/config";
+import { useFreeTier } from "@/lib/useFreeTier";
 import {
   getAllDrafts,
   logGlobalAudit,
@@ -38,7 +38,7 @@ type AccessState = {
   canUseDemo: boolean;
 };
 
-function statusLabel(state: AccessState): string {
+function statusLabel(state: AccessState, freeEnabled: boolean): string {
   if (state.loading) return "Consultando estado…";
   if (state.errored) return "No disponible";
   if (state.plusActive && !state.canCreateRealContract) {
@@ -46,13 +46,14 @@ function statusLabel(state: AccessState): string {
   }
   if (state.plusActive) return "Plan Plus activo";
   if (state.demoActive) return "Demo activo";
-  return freeTierEnabled
+  return freeEnabled
     ? "Gratis · genera tu contrato; firma, inventario y soportes con Plan Plus"
     : "Pendiente de pago";
 }
 
 export default function MisArriendosPage() {
   const { user } = useAuth();
+  const freeTier = useFreeTier();
   const router = useRouter();
   const [refreshSeed, setRefreshSeed] = useState(0);
   const [access, setAccess] = useState<AccessState>({
@@ -144,10 +145,10 @@ export default function MisArriendosPage() {
   // Con el tier gratis activo, cualquier usuario autenticado puede crear y
   // generar el contrato (con marca de agua + CTA a Plus). Plus/demo desbloquean
   // firma y posventa. Si el tier gratis se apaga, vuelve el bloqueo por pago.
-  const freeCanCreate = freeTierEnabled && !access.loading && !access.errored;
+  const freeCanCreate = freeTier.enabled && !access.loading && !access.errored;
   const canCreate = access.canCreateRealContract || access.canUseDemo || freeCanCreate;
   const hasAnyAccess = access.plusActive || access.demoActive;
-  const showBlocked = !access.loading && !access.errored && !hasAnyAccess && !freeTierEnabled;
+  const showBlocked = !access.loading && !access.errored && !hasAnyAccess && !freeTier.enabled;
   const plusConsumed = access.plusActive && !access.canCreateRealContract;
 
   useEffect(() => {
@@ -184,7 +185,7 @@ export default function MisArriendosPage() {
           <div>
             <p className="text-sm text-slate-600">
               Estado de tu acceso:{" "}
-              <strong className="text-slate-800">{statusLabel(access)}</strong>
+              <strong className="text-slate-800">{statusLabel(access, freeTier.enabled)}</strong>
             </p>
             {showBlocked && (
               <p className="mt-2 text-sm text-amber-800">
@@ -258,7 +259,7 @@ export default function MisArriendosPage() {
           <div className="rounded-2xl border border-slate-300 bg-white/95 p-8 text-center">
             <p className="text-slate-700">Todavía no tienes expedientes.</p>
             <p className="mt-2 text-sm text-slate-500">
-              {freeTierEnabled
+              {freeTier.enabled
                 ? "Crea tu primer contrato gratis desde aquí. La firma electrónica, el inventario y los soportes se activan con Plan Plus."
                 : "Cuando actives Plus o demo, puedes crear el primero desde el panel principal o desde aquí."}
             </p>

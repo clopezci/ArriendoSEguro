@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { Firestore } from "firebase-admin/firestore";
-import { freeTierEnabled } from "@/lib/config";
+import { getResolvedFreeTier } from "@/domain/platform-payments/free-tier";
 import {
   getAnyValidPlusEntitlementForUser,
   getAnyValidDemoEntitlementForUser,
@@ -23,7 +23,8 @@ export async function userHasPlusOrDemo(firestore: Firestore, uid: string): Prom
 
 /** `true` si hay que bloquear: tier gratis activo y el usuario no tiene Plus/demo. */
 export async function shouldBlockForPlus(firestore: Firestore, uid: string): Promise<boolean> {
-  if (!freeTierEnabled) return false;
+  const freeTier = await getResolvedFreeTier(firestore);
+  if (!freeTier.enabled) return false;
   return !(await userHasPlusOrDemo(firestore, uid));
 }
 

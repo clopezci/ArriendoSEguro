@@ -3,7 +3,7 @@
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { canSeeInternalDashboardTools } from "@/lib/dashboard/internal-tools";
-import { freeTierEnabled } from "@/lib/config";
+import { useFreeTier } from "@/lib/useFreeTier";
 import {
   CONTRACT_EARLY_BIRD_PRICE_COP,
   CONTRACT_LIST_PRICE_COP,
@@ -50,6 +50,7 @@ export default function PlansPage() {
   const [pricing, setPricing] = useState<ActivePricing | null>(null);
   const [leaseProcessId, setLeaseProcessId] = useState<string | null>(null);
   const [cart, setCart] = useState<CartPreview | null>(null);
+  const freeTier = useFreeTier();
   const [entitlements, setEntitlements] = useState<EntitlementsResponse | null>(null);
   const [referral, setReferral] = useState<{
     status: ReferralStatus | null;
@@ -338,7 +339,7 @@ export default function PlansPage() {
       <header className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Planes</h1>
         <p className="max-w-3xl text-sm text-slate-600">
-          {freeTierEnabled
+          {freeTier.enabled
             ? "Generar tu contrato es gratis. Con Plan Plus desbloqueas la firma electrónica, el inventario, los pagos y todo el respaldo. El cobro es solo por uso de la plataforma; no procesamos ni depositamos tu canon."
             : "El cobro es solo por uso de la plataforma; no procesamos ni depositamos tu canon de arriendo."}
         </p>
@@ -374,16 +375,13 @@ export default function PlansPage() {
         <p className="rounded border border-rose-600/40 bg-rose-900/20 p-2 text-sm text-rose-700">{error}</p>
       )}
 
-      <div className={`grid gap-6 ${freeTierEnabled ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
-        {freeTierEnabled && (
+      <div className={`grid gap-6 ${freeTier.enabled ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+        {freeTier.enabled && (
           <article className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(0,0,0,0.12)]">
-            <h2 className="text-xl font-semibold text-slate-900">Gratis</h2>
+            <h2 className="text-xl font-semibold text-slate-900">{freeTier.label}</h2>
             <p className="mt-2 text-lg font-semibold text-slate-800">$0</p>
             <p className="mt-1 text-xs font-medium text-slate-500">Sin costo</p>
-            <p className="mt-2 text-sm text-slate-600">
-              Crea e imprime tu contrato de arrendamiento. Sale con una marca discreta
-              «arriendoseguro.app» y recomendaciones; es utilizable.
-            </p>
+            <p className="mt-2 text-sm text-slate-600">{freeTier.message}</p>
             <ul className="mt-4 space-y-2 text-sm text-slate-700">
               <li>Contrato de arrendamiento (generar e imprimir)</li>
               <li>Con o sin codeudor</li>

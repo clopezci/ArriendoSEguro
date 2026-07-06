@@ -88,10 +88,19 @@ export default function NewContractPage() {
         return;
       }
 
-      // Tier gratuito: sin Plus ni demo, igual puede crear y generar el
-      // contrato (saldrá con marca de agua + CTA a Plus). Firma y posventa
-      // siguen siendo Plus. Se puede apagar con NEXT_PUBLIC_FREE_TIER_ENABLED.
-      if (freeTierEnabled) {
+      // Tier gratuito (configurable en admin): sin Plus ni demo, igual puede
+      // crear y generar el contrato (con marca de agua + CTA a Plus). Firma y
+      // posventa siguen siendo Plus. Si el admin lo apagó, va a acceso
+      // bloqueado. Consultamos el valor autoritativo del servidor.
+      let freeEnabled = freeTierEnabled;
+      try {
+        const ftRes = await fetch("/api/free-tier");
+        const ft = (await ftRes.json()) as { success?: boolean; enabled?: boolean };
+        if (ftRes.ok && ft.success) freeEnabled = Boolean(ft.enabled);
+      } catch {
+        /* sin red: usamos el valor por defecto del entorno */
+      }
+      if (freeEnabled) {
         const freeDraft = createContractDraft({
           userId: user.uid,
           accessStatus: "free",

@@ -15,7 +15,7 @@ import {
   getAnyValidPlusEntitlementForUser,
   getAnyValidDemoEntitlementForUser,
 } from "@/domain/platform-payments/entitlements";
-import { freeTierEnabled } from "@/lib/config";
+import { getResolvedFreeTier } from "@/domain/platform-payments/free-tier";
 
 export const runtime = "nodejs";
 
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
 
     // Gate de pago: con el tier gratis activo, la firma electrónica es Plus
     // (o demo). Un contrato gratis se genera, pero firmar requiere Plus.
-    if (freeTierEnabled) {
+    if ((await getResolvedFreeTier(firestore)).enabled) {
       const [plus, demo] = await Promise.all([
         getAnyValidPlusEntitlementForUser(firestore, participant.user.uid),
         getAnyValidDemoEntitlementForUser(firestore, participant.user.uid),

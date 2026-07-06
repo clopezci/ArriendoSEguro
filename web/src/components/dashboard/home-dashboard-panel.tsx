@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { isExpedienteCompleto } from "@/lib/dashboard/expediente-ui";
 import { getAllDrafts, type ContractDraft } from "@/features/contracts/wizard-state";
-import { freeTierEnabled } from "@/lib/config";
+import { useFreeTier } from "@/lib/useFreeTier";
 import { MACRO_STEPS } from "@/features/contracts/steps5";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -27,6 +27,7 @@ const STEPS: { n: number; label: string; hint: string }[] = [
 export function HomeDashboardPanel() {
   const { user } = useAuth();
   const router = useRouter();
+  const freeTier = useFreeTier();
   const [entitlements, setEntitlements] = useState<Entitlements | null>(null);
   const [tick, setTick] = useState(0);
   const [step1Choice, setStep1Choice] = useState(false);
@@ -66,7 +67,7 @@ export function HomeDashboardPanel() {
   const demoActive = !!entitlements?.demoActive;
   const interactive = plusActive || demoActive;
   // Crear el contrato es gratis; firma/inventario/posventa se activan con Plus.
-  const canCreate = interactive || freeTierEnabled;
+  const canCreate = interactive || freeTier.enabled;
   const loadingEnt = entitlements === null;
 
   const id = primaryDraft?.id;

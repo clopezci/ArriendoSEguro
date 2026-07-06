@@ -13,7 +13,7 @@ import { auditEvent } from "@/features/contracts/audit-server";
 import { logServerError } from "@/lib/observability/observability";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
 import { userHasPlusOrDemo } from "@/lib/auth/contractPlusGate";
-import { freeTierEnabled } from "@/lib/config";
+import { getResolvedFreeTier } from "@/domain/platform-payments/free-tier";
 import { applyFreeTierWatermark, type FreeTierCtaOptions } from "@/domain/contracts/freeTierWatermark";
 import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/plan-plus-pricing";
 import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
     // La versión guardada es limpia. Si el usuario NO es Plus (tier gratis),
     // el PDF de descarga sale con marca de agua + CTA. Plus/demo lo descargan limpio.
     let htmlForPdf = version.html;
-    if (freeTierEnabled && !(await userHasPlusOrDemo(firestore, participant.user.uid))) {
+    if ((await getResolvedFreeTier(firestore)).enabled && !(await userHasPlusOrDemo(firestore, participant.user.uid))) {
       const payload = (versionSnap.data() as { contractPayload?: ResidentialLeaseContractInput } | undefined)
         ?.contractPayload;
       const total =

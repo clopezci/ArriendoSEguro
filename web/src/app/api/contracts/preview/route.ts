@@ -8,7 +8,7 @@ import { applyDemoWatermark } from "@/domain/contracts/demoWatermark";
 import { applyFreeTierWatermark, type FreeTierCtaOptions } from "@/domain/contracts/freeTierWatermark";
 import { validateContractData } from "@/domain/contracts/validateContractData";
 import { generateDocumentHash } from "@/domain/contracts/hash";
-import { freeTierEnabled } from "@/lib/config";
+import { getFreeTierForPublicPages } from "@/domain/platform-payments/free-tier";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/plan-plus-pricing";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
@@ -93,7 +93,8 @@ export async function POST(request: Request) {
         { status: 422 },
       );
     }
-    const useFreeWatermark = !parsedReq.data.isDemo && freeTierEnabled && Boolean(parsedReq.data.isFreeTier);
+    const freeTier = await getFreeTierForPublicPages(getAdminFirestore());
+    const useFreeWatermark = !parsedReq.data.isDemo && freeTier.enabled && Boolean(parsedReq.data.isFreeTier);
 
     // Para el CTA del tier gratis: valor total del contrato (canon × meses) y
     // precio de referencia de Plus, para mostrar "menos del 0,X% del valor".

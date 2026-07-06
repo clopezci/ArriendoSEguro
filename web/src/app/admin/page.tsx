@@ -210,6 +210,14 @@ export default function AdminPage() {
   const [ppPricingMsg, setPpPricingMsg] = useState("");
   const [ppSaveLoading, setPpSaveLoading] = useState(false);
 
+  // Config del tier gratis (crear contrato gratis o no).
+  const [ftEnabled, setFtEnabled] = useState(true);
+  const [ftLabel, setFtLabel] = useState("Gratis por tiempo limitado");
+  const [ftMessage, setFtMessage] = useState("");
+  const [ftErr, setFtErr] = useState("");
+  const [ftMsg, setFtMsg] = useState("");
+  const [ftSaveLoading, setFtSaveLoading] = useState(false);
+
   const hintSet = useMemo(() => new Set(publicAdminHintEmails()), []);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -277,6 +285,21 @@ export default function AdminPage() {
         }
       } catch {
         setPpPricingErr("Error de red al cargar precio Plan Plus.");
+      }
+      try {
+        const ftRes = await fetch("/api/admin/free-tier", { headers: { ...(await buildAuthHeaders(user)) } });
+        const ftJson = (await ftRes.json()) as {
+          success?: boolean;
+          resolved?: { enabled: boolean; label: string; message: string };
+        };
+        if (ftRes.ok && ftJson.success && ftJson.resolved) {
+          setFtEnabled(Boolean(ftJson.resolved.enabled));
+          setFtLabel(ftJson.resolved.label);
+          setFtMessage(ftJson.resolved.message);
+          setFtErr("");
+        }
+      } catch {
+        setFtErr("Error de red al cargar el tier gratis.");
       }
     } catch {
       setLoadError("Error de red al cargar el panel.");
@@ -801,6 +824,43 @@ export default function AdminPage() {
     }
   }
 
+  async function saveFreeTier() {
+    if (!user) return;
+    setFtSaveLoading(true);
+    setFtErr("");
+    setFtMsg("");
+    try {
+      const res = await fetch("/api/admin/free-tier", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ enabled: ftEnabled, label: ftLabel.trim(), message: ftMessage.trim() }),
+      });
+      const json = (await res.json()) as {
+        success?: boolean;
+        resolved?: { enabled: boolean; label: string; message: string };
+        errors?: { message?: string }[];
+      };
+      if (!res.ok || !json.success) {
+        setFtErr(json.errors?.[0]?.message ?? "No se pudo guardar.");
+        return;
+      }
+      if (json.resolved) {
+        setFtEnabled(json.resolved.enabled);
+        setFtLabel(json.resolved.label);
+        setFtMessage(json.resolved.message);
+        setFtMsg(
+          json.resolved.enabled
+            ? "Listo: crear el contrato es GRATIS (con marca de agua). Firma y posventa siguen siendo Plan Plus."
+            : "Listo: el tier gratis quedó APAGADO. Crear un contrato ahora requiere Plan Plus.",
+        );
+      }
+    } catch {
+      setFtErr("Error de red al guardar.");
+    } finally {
+      setFtSaveLoading(false);
+    }
+  }
+
   async function downloadSurveysCsv() {
     if (!user) return;
     const res = await fetch("/api/admin/surveys-export", { headers: { ...(await buildAuthHeaders(user)) } });
@@ -1194,6 +1254,63 @@ export default function AdminPage() {
               className="mt-3 rounded-lg bg-violet-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
             >
               {ppSaveLoading ? "Guardando…" : "Guardar precio"}
+            </button>
+          </section>
+        )}
+
+        {data && (
+          <section className="mb-6 rounded-xl border border-emerald-400/40 bg-white/95 p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">Contrato gratis (tier gratis)</h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              Controla si generar el contrato es gratis. Si lo <strong>apagas</strong>, crear un contrato pasa a requerir
+              Plan Plus (su precio y promoción se manejan arriba). Útil si el consumo sube sin ingresos. Se guarda en{" "}
+              <code className="text-[11px]">app_settings/free_tier</code>.
+            </p>
+            {ftErr && (
+              <p className="mt-2 rounded border border-rose-400/45 bg-rose-50 px-2 py-1 text-xs text-rose-800">{ftErr}</p>
+            )}
+            {ftMsg && (
+              <p className="mt-2 rounded border border-emerald-400/40 bg-emerald-50 px-2 py-1 text-xs text-emerald-800">
+                {ftMsg}
+              </p>
+            )}
+            <label className="mt-3 flex cursor-pointer items-center gap-2 text-xs text-slate-800">
+              <input type="checkbox" checked={ftEnabled} onChange={(e) => setFtEnabled(e.target.checked)} />
+              <span>
+                <strong>Contrato gratis activado</strong> (crear/imprimir contrato sin costo, con marca de agua). Si lo
+                desmarcas, crear un contrato exige Plan Plus.
+              </span>
+            </label>
+            <label className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-800">
+              Etiqueta del plan gratis
+              <input
+                type="text"
+                aria-label="Etiqueta del plan gratis"
+                value={ftLabel}
+                onChange={(e) => setFtLabel(e.target.value)}
+                maxLength={60}
+                placeholder="Gratis por tiempo limitado"
+                className="w-64 rounded border border-slate-300 px-2 py-1 text-xs"
+              />
+            </label>
+            <label className="mt-3 block text-xs text-slate-800">
+              <span className="mb-1 block">Mensaje del plan gratis (lo ve el usuario en Planes)</span>
+              <textarea
+                aria-label="Mensaje del plan gratis"
+                value={ftMessage}
+                onChange={(e) => setFtMessage(e.target.value)}
+                maxLength={400}
+                rows={3}
+                className="w-full rounded border border-slate-300 px-2 py-1 text-xs"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={ftSaveLoading}
+              onClick={() => void saveFreeTier()}
+              className="mt-3 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            >
+              {ftSaveLoading ? "Guardando…" : "Guardar tier gratis"}
             </button>
           </section>
         )}
