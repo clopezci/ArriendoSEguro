@@ -101,6 +101,42 @@ export default function PlansPage() {
     void loadAccess();
   }, [loadAccess]);
 
+  // Retorno desde el Web Checkout de Wompi (`?order=<referencia>`). El webhook es
+  // la fuente de verdad y otorga el acceso Plus; aquí solo reflejamos el estado:
+  // sondeamos las entitlements unos segundos por si el webhook llega con retraso.
+  useEffect(() => {
+    if (typeof window === "undefined" || !user) return;
+    const ref = new URLSearchParams(window.location.search).get("order");
+    if (!ref) return;
+    let cancelled = false;
+    let attempts = 0;
+    setMsg("Estamos confirmando tu pago. Esto puede tardar unos segundos…");
+    const tick = async () => {
+      if (cancelled) return;
+      attempts += 1;
+      const res = await fetch("/api/access/entitlements/me", {
+        headers: { ...(await buildAuthHeaders(user)) },
+      }).catch(() => null);
+      const data = res && res.ok ? ((await res.json()) as EntitlementsResponse) : null;
+      if (data?.success) setEntitlements(data);
+      if (data?.plusActive) {
+        setMsg("¡Pago confirmado! Tu Plan Plus ya está activo.");
+        return;
+      }
+      if (attempts >= 6) {
+        setMsg(
+          "Recibimos tu regreso del pago. Si ya pagaste y aún no ves el Plan Plus activo, espera un momento y actualiza esta página.",
+        );
+        return;
+      }
+      if (!cancelled) setTimeout(() => void tick(), 4000);
+    };
+    void tick();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   // Estado de referido del usuario (para aplicar el descuento si está aprobado).
   useEffect(() => {
     if (!user) return;

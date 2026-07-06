@@ -220,6 +220,7 @@ test("13) webhook moneda distinta no activa acceso", async () => {
     reference: order.providerReference,
     status: "APPROVED",
     amountInCents: 4_990_000,
+    currency: "USD",
     txId: "tx_cur",
     secret: "sec_test",
   });

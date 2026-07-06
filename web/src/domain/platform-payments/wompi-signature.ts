@@ -54,3 +54,21 @@ export function verifyWompiWebhookSignature(
     : { valid: false, reason: "checksum_mismatch" };
 }
 
+/**
+ * Firma de integridad exigida por el Web Checkout de Wompi al CREAR una transacción:
+ *   sha256(reference + amountInCents + currency + [expirationTime] + integritySecret)
+ * Va en el query param `signature:integrity` de la URL del checkout.
+ */
+export function buildWompiIntegritySignature(opts: {
+  reference: string;
+  amountInCents: number;
+  currency: string;
+  expirationTime?: string;
+  integritySecret: string;
+}): string {
+  const base = opts.expirationTime
+    ? `${opts.reference}${opts.amountInCents}${opts.currency}${opts.expirationTime}${opts.integritySecret}`
+    : `${opts.reference}${opts.amountInCents}${opts.currency}${opts.integritySecret}`;
+  return createHash("sha256").update(base).digest("hex");
+}
+
