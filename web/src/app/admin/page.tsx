@@ -198,7 +198,7 @@ export default function AdminPage() {
   const [ppPromoFixed, setPpPromoFixed] = useState("49900");
   const [ppPromoPercent, setPpPromoPercent] = useState("");
   const [ppPromoName, setPpPromoName] = useState("Lanzamiento");
-  const [ppPromoMessage, setPpPromoMessage] = useState("Precio promocional por tiempo limitado");
+  const [ppPromoMessage, setPpPromoMessage] = useState("Promoción de lanzamiento por tiempo limitado");
   const [ppResolved, setPpResolved] = useState<{
     checkoutCop: number;
     listCompareCop: number;

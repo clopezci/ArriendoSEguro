@@ -36,7 +36,7 @@ export const PLAN_PLUS_CUSTOM_COP_LIMITS = { min: CUSTOM_MIN_COP, max: CUSTOM_MA
 
 /** Textos por defecto de la promoción de lanzamiento. */
 export const DEFAULT_PROMO_NAME = "Lanzamiento";
-export const DEFAULT_PROMO_MESSAGE = "Precio promocional por tiempo limitado";
+export const DEFAULT_PROMO_MESSAGE = "Promoción de lanzamiento por tiempo limitado";
 
 /** Esquema nuevo (promociones con nombre/mensaje). */
 const storedSchema = z.object({
