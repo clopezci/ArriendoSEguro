@@ -70,7 +70,7 @@ export const SPECIAL_CLAUSE_OPTIONS: SpecialClauseOption[] = [
     id: SPECIAL_CLAUSE_OTHER_ID,
     label: "Otra cláusula especial",
     description:
-      "Escríbela en tus palabras. Tiene un cobro adicional porque la revisa nuestro equipo jurídico (especialmente cláusulas de pago, multas o penalidades). Te mostramos el valor al elegirla.",
+      "Escríbela en tus palabras. Tiene un cobro adicional porque la revisa nuestro equipo jurídico (especialmente cláusulas de pago, multas o penalidades). Te mostramos el valor al elegirla y se suma a tu Plan Plus.",
   },
 ];
 
@@ -96,8 +96,8 @@ export const SPECIAL_CLAUSES_COST_NOTICE =
   "de ArriendoSeguro y revisión para que se ajuste a la normatividad " +
   "colombiana. En particular, las cláusulas relacionadas con pagos, multas, " +
   "intereses o penalidades deben ser revisadas por un abogado. Por eso " +
-  "tiene un costo adicional, el cual te será notificado antes de generar el " +
-  "contrato definitivo.";
+  "tiene un costo adicional, que se suma automáticamente al pago del Plan " +
+  "Plus cuando actives tu contrato.";
 
 /**
  * Aviso informativo (sin costo) que se muestra cuando hay cláusulas

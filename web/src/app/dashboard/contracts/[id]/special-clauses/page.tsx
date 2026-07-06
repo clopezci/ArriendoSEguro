@@ -251,8 +251,8 @@ export default function SpecialClausesStepPage() {
                 </p>
                 <p className="mt-1">{SPECIAL_CLAUSES_COST_NOTICE}</p>
                 <p className="mt-1 text-xs">
-                  Al guardar, enviaremos tu solicitud al equipo jurídico. Te confirmaremos el valor antes de generar el
-                  contrato definitivo.
+                  Al guardar, tu cláusula queda registrada y su costo se suma al pago del Plan Plus cuando actives tu
+                  contrato. Nuestro equipo jurídico la revisa antes de la firma.
                 </p>
               </div>
             )}
