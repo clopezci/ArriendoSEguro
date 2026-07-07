@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { HOUSE_ADS, pickHouseAd, type HouseAd } from "@/content/ads/house-ads";
 
 type AdsMode = "house" | "adsense" | "off";
@@ -39,6 +40,7 @@ function fetchAdsConfig(): Promise<AdsConfig> {
  */
 export function AdSlot({ placement, className = "" }: { placement: string; className?: string }) {
   const [config, setConfig] = useState<AdsConfig | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     let cancelled = false;
@@ -49,6 +51,12 @@ export function AdSlot({ placement, className = "" }: { placement: string; class
       cancelled = true;
     };
   }, []);
+
+  // Barrera dura: NUNCA se muestran anuncios dentro de la aplicación (/dashboard,
+  // donde viven las funciones premium: firma, inventario, pagos…) ni en el portal
+  // del inquilino (/panel). Los anuncios solo aparecen en páginas públicas y
+  // gratuitas (blog, informativas).
+  if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/panel")) return null;
 
   if (!config || config.mode === "off") return null;
 
