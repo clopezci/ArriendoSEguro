@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { createContractDraft, updateDraft } from "@/features/contracts/wizard-state";
 import { JourneyScene } from "@/components/nuevo/journey-scene";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
+import { validateStep, type Answers } from "@/lib/nuevo/validation";
 
 /**
  * F1+F2 del rediseño "Un paso a la vez" (rama rediseno-frontend-v2).
@@ -46,13 +47,6 @@ const QUESTIONS: Q[] = [
   { id: "docs", block: "Documentos del inquilino", prompt: "Documentos del inquilino", hint: "Los subes tú, o le pides al inquilino que los cargue por WhatsApp o correo.", kind: "docs", basic: false },
 ];
 
-type Answers = {
-  name: string; docType: string; docNumber: string; phone: string; email: string;
-  address: string; city: string; canon: string;
-  tenantMode: "self" | "invite"; tenantName: string;
-  hasCodebtor: "" | "yes" | "no"; codebtorName: string;
-  docMethod: "" | "self" | "whatsapp" | "email"; docPhone: string; docEmail: string;
-};
 const EMPTY: Answers = { name: "", docType: "CC", docNumber: "", phone: "", email: "", address: "", city: "", canon: "", tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "", docMethod: "", docPhone: "", docEmail: "" };
 
 const BASIC_TOTAL = QUESTIONS.filter((q) => q.basic).length;
@@ -68,7 +62,11 @@ export default function NuevoPage() {
 
   const [draftId, setDraftId] = useState<string | null>(null);
   const [i, setI] = useState(0);
-  const [a, setA] = useState<Answers>(EMPTY);
+  const [a, setARaw] = useState<Answers>(EMPTY);
+  const [error, setError] = useState<string | null>(null);
+
+  // Al editar cualquier campo, limpiamos el error visible.
+  function setA(n: Answers) { setARaw(n); if (error) setError(null); }
 
   useEffect(() => {
     const x = Math.floor(Math.random() * THEMES.length);
@@ -93,7 +91,8 @@ export default function NuevoPage() {
   function start() {
     const draft = createContractDraft({ userId: user?.uid ?? "invitado", accessStatus: "free", isDemo: false });
     setDraftId(draft.id);
-    setA(EMPTY);
+    setARaw(EMPTY);
+    setError(null);
     setI(0);
     setMode("flow");
   }
@@ -131,11 +130,15 @@ export default function NuevoPage() {
   }
 
   function next() {
+    const e = validateStep(q.kind, a);
+    if (e) { setError(e); return; }        // no se avanza con datos inválidos/en blanco
+    setError(null);
     persist(a);
     if (i >= QUESTIONS.length - 1) { setMode("done"); return; }
     setI(i + 1);
   }
   function back() {
+    setError(null);
     if (i === 0) { setMode("home"); return; }
     setI(i - 1);
   }
@@ -183,6 +186,12 @@ export default function NuevoPage() {
                     <h2 className="text-balance text-3xl font-extrabold tracking-tight">{q.prompt}</h2>
                     <p className="mt-1.5 mb-5 text-slate-500">{q.hint}</p>
                     <Field q={q} a={a} setA={setA} />
+                    {error && (
+                      <p className="mt-3 flex items-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5v.01" /></svg>
+                        {error}
+                      </p>
+                    )}
                   </motion.div>
                 </AnimatePresence>
               </div>
