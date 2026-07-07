@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TopBackNav } from "@/components/nav/top-back-nav";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ const principios = [
 export default function AcercaDePage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      <TopBackNav />
       <main className="mx-auto max-w-4xl space-y-8 px-4 py-10 sm:px-6">
         <header className="rounded-2xl border border-slate-300 bg-white/95 p-6 shadow-[0_14px_34px_rgba(139,92,246,0.22)]">
           <p className="text-sm font-medium text-violet-700">Marca en validación · Colombia</p>

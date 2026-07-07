@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TopBackNav } from "@/components/nav/top-back-nav";
 import { StatusBoard } from "@/components/status/status-board";
 
 export const metadata: Metadata = {
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 export default function EstadoPage() {
   return (
     <main className="mx-auto max-w-2xl space-y-6 px-4 py-10 sm:px-6">
+      <TopBackNav />
       <header className="space-y-2">
         <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Estado</p>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Estado del servicio</h1>

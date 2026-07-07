@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TopBackNav } from "@/components/nav/top-back-nav";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ const cookieTable = [
 export default function CookiesPolicyPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      <TopBackNav />
       <main className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6">
         <header className="rounded-2xl border border-slate-300 bg-white/95 p-6 shadow-[0_14px_34px_rgba(139,92,246,0.22)]">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Política de cookies</h1>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TopBackNav } from "@/components/nav/top-back-nav";
 import Link from "next/link";
 import { JsonLdScript } from "@/components/blog/json-ld";
 import { absoluteUrl } from "@/content/blog/seo";
@@ -33,6 +34,7 @@ export default function PreavisoPage() {
     <>
       <JsonLdScript data={jsonLd} />
       <div className="min-h-screen bg-slate-50 text-slate-900">
+        <TopBackNav backHref="/calculadoras" backLabel="Volver a calculadoras" />
         <main className="mx-auto max-w-3xl space-y-6 px-4 py-10 sm:px-6">
           <nav className="text-sm">
             <Link href="/calculadoras" className="text-violet-700 hover:underline">

@@ -7,6 +7,7 @@ import {
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getFreeTierForPublicPages } from "@/domain/platform-payments/free-tier";
 import { AdSlot } from "@/components/ads/ad-slot";
+import { TopBackNav } from "@/components/nav/top-back-nav";
 import Link from "next/link";
 
 export const metadata = {
@@ -105,6 +106,7 @@ export default async function EntiendeloFacilPage() {
   const freeTier = await getFreeTierForPublicPages(firestore);
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      <TopBackNav />
       <main className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6">
         <section className="rounded-2xl border border-slate-300 bg-white/95 p-6 shadow-[0_14px_34px_rgba(139,92,246,0.22)]">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">

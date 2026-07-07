@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TopBackNav } from "@/components/nav/top-back-nav";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { JsonLdScript } from "@/components/blog/json-ld";
@@ -72,6 +73,7 @@ export default async function TemplatePage({ params }: { params: Promise<{ slug:
     <>
       <JsonLdScript data={jsonLd} />
       <div className="min-h-screen bg-slate-50 text-slate-900">
+        <TopBackNav backHref="/plantillas" backLabel="Volver a plantillas" />
         <main className="mx-auto max-w-3xl space-y-5 px-4 py-8 sm:px-6">
           <nav className="no-print text-sm">
             <Link href="/plantillas" className="text-violet-700 hover:underline">
