@@ -47,13 +47,15 @@ export function JourneyScene({ pct, stepIndex }: { pct: number; stepIndex: numbe
           <rect x="24" y="52" width="13" height="13" rx="2" fill={arrived ? "#FFD23F" : "#EAE6DF"} />
         </svg>
         <span
-          className="absolute bottom-[14px] text-[30px] leading-none motion-safe:animate-[bob_0.5s_ease-in-out_infinite]"
+          className="absolute bottom-[14px] inline-block text-[30px] leading-none [transform:scaleX(-1)] motion-safe:animate-[bob_0.5s_ease-in-out_infinite]"
           style={{ left: `${left}%`, transition: "left .6s cubic-bezier(.35,.1,.35,1)" }}
         >
           {walker}
         </span>
       </div>
-      <style>{`@keyframes bob{50%{transform:translateY(-3px)}}`}</style>
+      {/* El emoji mira a la izquierda por defecto; scaleX(-1) lo voltea para que
+          camine mirando hacia la casa (a la derecha). El bob conserva el volteo. */}
+      <style>{`@keyframes bob{0%,100%{transform:scaleX(-1) translateY(0)}50%{transform:scaleX(-1) translateY(-3px)}}`}</style>
     </div>
   );
 }
