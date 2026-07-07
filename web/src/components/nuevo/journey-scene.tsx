@@ -6,9 +6,19 @@
  * Refuerza el progreso de forma lúdica. Respeta prefers-reduced-motion vía CSS.
  */
 
-// Hogares diversos: persona sola, parejas, familias, mascota, y personas con
-// discapacidad (silla de ruedas, bastón) — todos representados.
-const WALKERS = ["🚶", "👫", "👨‍👩‍👧", "👨‍👩‍👧‍👦", "🧑‍🦽", "🧑‍🦯", "🚶‍♀️ 🐕", "🧑‍🤝‍🧑"];
+// Hogares diversos e inclusivos. `flip:true` solo para los emojis que miran a
+// la IZQUIERDA por defecto (caminan de lado): así todos avanzan MIRANDO la casa
+// (a la derecha). Los que miran de frente (parejas/familias) no se voltean.
+const WALKERS: { e: string; flip: boolean }[] = [
+  { e: "🚶", flip: true },
+  { e: "👨‍👩‍👧", flip: false },
+  { e: "🧑‍🦽", flip: true },
+  { e: "👫", flip: false },
+  { e: "🧑‍🦯", flip: true },
+  { e: "👨‍👩‍👧‍👦", flip: false },
+  { e: "🚶‍♀️", flip: true },
+  { e: "🧑‍🤝‍🧑", flip: false },
+];
 
 const MESSAGES: { min: number; text: string }[] = [
   { min: 100, text: "¡Bienvenido a tu casa! 🎉" },
@@ -28,7 +38,7 @@ function messageFor(pct: number): string {
 export function JourneyScene({ pct, stepIndex }: { pct: number; stepIndex: number }) {
   const arrived = pct >= 100;
   const left = arrived ? 76 : 2 + pct * 0.66;
-  const walker = WALKERS[stepIndex % WALKERS.length];
+  const w = WALKERS[stepIndex % WALKERS.length];
 
   return (
     <div className="mt-6 border-t border-dashed border-slate-300 pt-4">
@@ -46,16 +56,16 @@ export function JourneyScene({ pct, stepIndex }: { pct: number; stepIndex: numbe
           <rect x="43" y="60" width="16" height="28" rx="2" fill="#C9A26B" />
           <rect x="24" y="52" width="13" height="13" rx="2" fill={arrived ? "#FFD23F" : "#EAE6DF"} />
         </svg>
-        <span
-          className="absolute bottom-[14px] inline-block text-[30px] leading-none [transform:scaleX(-1)] motion-safe:animate-[bob_0.5s_ease-in-out_infinite]"
-          style={{ left: `${left}%`, transition: "left .6s cubic-bezier(.35,.1,.35,1)" }}
-        >
-          {walker}
+        {/* outer: posición · middle: volteo estático (solo si mira a la izquierda) ·
+            inner: animación de caminar (translateY). Separarlos evita que el bob
+            pise el scaleX. */}
+        <span className="absolute bottom-[14px] inline-block" style={{ left: `${left}%`, transition: "left .6s cubic-bezier(.35,.1,.35,1)" }}>
+          <span className="inline-block" style={w.flip ? { transform: "scaleX(-1)" } : undefined}>
+            <span className="inline-block text-[30px] leading-none motion-safe:animate-[bob_0.5s_ease-in-out_infinite]">{w.e}</span>
+          </span>
         </span>
       </div>
-      {/* El emoji mira a la izquierda por defecto; scaleX(-1) lo voltea para que
-          camine mirando hacia la casa (a la derecha). El bob conserva el volteo. */}
-      <style>{`@keyframes bob{0%,100%{transform:scaleX(-1) translateY(0)}50%{transform:scaleX(-1) translateY(-3px)}}`}</style>
+      <style>{`@keyframes bob{50%{transform:translateY(-3px)}}`}</style>
     </div>
   );
 }
