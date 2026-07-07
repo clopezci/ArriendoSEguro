@@ -218,6 +218,18 @@ export default function AdminPage() {
   const [ftMsg, setFtMsg] = useState("");
   const [ftSaveLoading, setFtSaveLoading] = useState(false);
 
+  // Config de anuncios (house / adsense / off).
+  const [adMode, setAdMode] = useState<"house" | "adsense" | "off">("house");
+  const [adClient, setAdClient] = useState("");
+  const [adSlots, setAdSlots] = useState<{ blog_article: string; blog_index: string; content: string }>({
+    blog_article: "",
+    blog_index: "",
+    content: "",
+  });
+  const [adErr, setAdErr] = useState("");
+  const [adMsg, setAdMsg] = useState("");
+  const [adSaveLoading, setAdSaveLoading] = useState(false);
+
   const hintSet = useMemo(() => new Set(publicAdminHintEmails()), []);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -300,6 +312,25 @@ export default function AdminPage() {
         }
       } catch {
         setFtErr("Error de red al cargar el tier gratis.");
+      }
+      try {
+        const adRes = await fetch("/api/admin/ads-config", { headers: { ...(await buildAuthHeaders(user)) } });
+        const adJson = (await adRes.json()) as {
+          success?: boolean;
+          resolved?: { mode: "house" | "adsense" | "off"; adClient: string; slots: Record<string, string> };
+        };
+        if (adRes.ok && adJson.success && adJson.resolved) {
+          setAdMode(adJson.resolved.mode);
+          setAdClient(adJson.resolved.adClient);
+          setAdSlots({
+            blog_article: adJson.resolved.slots.blog_article ?? "",
+            blog_index: adJson.resolved.slots.blog_index ?? "",
+            content: adJson.resolved.slots.content ?? "",
+          });
+          setAdErr("");
+        }
+      } catch {
+        setAdErr("Error de red al cargar anuncios.");
       }
     } catch {
       setLoadError("Error de red al cargar el panel.");
@@ -861,6 +892,57 @@ export default function AdminPage() {
     }
   }
 
+  async function saveAdsConfig() {
+    if (!user) return;
+    setAdSaveLoading(true);
+    setAdErr("");
+    setAdMsg("");
+    try {
+      const res = await fetch("/api/admin/ads-config", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({
+          mode: adMode,
+          adClient: adClient.trim(),
+          slots: {
+            blog_article: adSlots.blog_article.trim(),
+            blog_index: adSlots.blog_index.trim(),
+            content: adSlots.content.trim(),
+          },
+        }),
+      });
+      const json = (await res.json()) as {
+        success?: boolean;
+        resolved?: { mode: "house" | "adsense" | "off"; adClient: string; slots: Record<string, string> };
+        errors?: { message?: string }[];
+      };
+      if (!res.ok || !json.success) {
+        setAdErr(json.errors?.[0]?.message ?? "No se pudo guardar.");
+        return;
+      }
+      if (json.resolved) {
+        setAdMode(json.resolved.mode);
+        setAdClient(json.resolved.adClient);
+        const missing =
+          json.resolved.mode === "adsense" &&
+          (!json.resolved.slots.blog_article || !json.resolved.slots.blog_index || !json.resolved.slots.content);
+        setAdMsg(
+          json.resolved.mode === "house"
+            ? "Listo: mostrando publicidad interna (house ads)."
+            : json.resolved.mode === "off"
+              ? "Listo: anuncios desactivados."
+              : missing
+                ? "Listo: modo AdSense. Faltan slots en algún espacio; esos caen a house ad hasta que pegues su ID."
+                : "Listo: mostrando anuncios reales de Google AdSense.",
+        );
+      }
+    } catch {
+      setAdErr("Error de red al guardar.");
+    } finally {
+      setAdSaveLoading(false);
+    }
+  }
+
   async function downloadSurveysCsv() {
     if (!user) return;
     const res = await fetch("/api/admin/surveys-export", { headers: { ...(await buildAuthHeaders(user)) } });
@@ -1311,6 +1393,96 @@ export default function AdminPage() {
               className="mt-3 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
             >
               {ftSaveLoading ? "Guardando…" : "Guardar tier gratis"}
+            </button>
+          </section>
+        )}
+
+        {data && (
+          <section className="mb-6 rounded-xl border border-sky-400/40 bg-white/95 p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">Anuncios (AdSense / publicidad interna)</h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              Mientras Google aprueba AdSense, muestra <strong>publicidad interna</strong> (tips y features de
+              ArriendoSeguro). Cuando te aprueben, cambia el modo a <strong>AdSense</strong> y pega el ID de cada unidad
+              de anuncio. Se guarda en <code className="text-[11px]">app_settings/ads</code>.
+            </p>
+            {adErr && (
+              <p className="mt-2 rounded border border-rose-400/45 bg-rose-50 px-2 py-1 text-xs text-rose-800">{adErr}</p>
+            )}
+            {adMsg && (
+              <p className="mt-2 rounded border border-emerald-400/40 bg-emerald-50 px-2 py-1 text-xs text-emerald-800">
+                {adMsg}
+              </p>
+            )}
+            <fieldset className="mt-3 space-y-2 border-0 p-0 text-xs text-slate-800">
+              <legend className="mb-1 font-medium text-slate-700">Modo</legend>
+              {(
+                [
+                  ["house", "Publicidad interna (house ads) — recomendado mientras aprueban"],
+                  ["adsense", "AdSense real (requiere pegar los IDs de unidad abajo)"],
+                  ["off", "Sin anuncios"],
+                ] as const
+              ).map(([value, label]) => (
+                <label key={value} className="flex cursor-pointer items-start gap-2">
+                  <input
+                    type="radio"
+                    name="ads-mode"
+                    className="mt-0.5"
+                    checked={adMode === value}
+                    onChange={() => setAdMode(value)}
+                  />
+                  <span>{label}</span>
+                </label>
+              ))}
+            </fieldset>
+
+            <label className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-800">
+              Publisher ID (ca-pub-…)
+              <input
+                type="text"
+                aria-label="Publisher ID de AdSense"
+                value={adClient}
+                onChange={(e) => setAdClient(e.target.value)}
+                placeholder="ca-pub-7622431410037127"
+                className="w-64 rounded border border-slate-300 px-2 py-1 text-xs"
+              />
+            </label>
+
+            <div className="mt-3 space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-800">
+              <p className="font-medium text-slate-700">
+                IDs de unidad de anuncio (data-ad-slot) — solo se usan en modo AdSense
+              </p>
+              {(
+                [
+                  ["blog_article", "Artículo del blog"],
+                  ["blog_index", "Índice del blog"],
+                  ["content", "Contenido (Entiéndelo fácil)"],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="flex flex-wrap items-center gap-2">
+                  <span className="w-52">{label}</span>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    aria-label={`Slot ${label}`}
+                    value={adSlots[key]}
+                    onChange={(e) => setAdSlots((s) => ({ ...s, [key]: e.target.value }))}
+                    placeholder="1234567890"
+                    className="w-40 rounded border border-slate-300 px-2 py-1 text-xs"
+                  />
+                </label>
+              ))}
+              <p className="text-[11px] text-slate-500">
+                Si un espacio no tiene ID en modo AdSense, cae a publicidad interna para no dejar hueco.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              disabled={adSaveLoading}
+              onClick={() => void saveAdsConfig()}
+              className="mt-3 rounded-lg bg-sky-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            >
+              {adSaveLoading ? "Guardando…" : "Guardar anuncios"}
             </button>
           </section>
         )}

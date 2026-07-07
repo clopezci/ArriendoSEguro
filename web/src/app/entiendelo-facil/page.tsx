@@ -6,6 +6,7 @@ import {
 } from "@/domain/platform-payments/plan-plus-pricing";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getFreeTierForPublicPages } from "@/domain/platform-payments/free-tier";
+import { AdSlot } from "@/components/ads/ad-slot";
 import Link from "next/link";
 
 export const metadata = {
@@ -264,6 +265,8 @@ export default async function EntiendeloFacilPage() {
             particulares.
           </p>
         </section>
+
+        <AdSlot placement="content" />
 
         <section id="conocer-mas" className="space-y-5 rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
           <h2 className="text-2xl font-semibold">Conocer más: visión completa de Arriendo Seguro</h2>

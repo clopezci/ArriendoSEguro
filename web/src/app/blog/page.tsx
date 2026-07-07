@@ -1,4 +1,5 @@
 import { BlogHub } from "@/components/blog/blog-hub";
+import { AdSlot } from "@/components/ads/ad-slot";
 import { JsonLdScript } from "@/components/blog/json-ld";
 import { BLOG_ARTICLES, getFeaturedArticle } from "@/content/blog/articles";
 import { absoluteUrl } from "@/content/blog/seo";
@@ -73,6 +74,8 @@ export default function BlogPage() {
           <div className="mt-10">
             <BlogHub featured={featured} articles={BLOG_ARTICLES} />
           </div>
+
+          <AdSlot placement="blog_index" />
         </main>
       </div>
     </>

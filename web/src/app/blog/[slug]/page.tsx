@@ -1,4 +1,5 @@
 import { ArticleBody } from "@/components/blog/article-body";
+import { AdSlot } from "@/components/ads/ad-slot";
 import { JsonLdScript } from "@/components/blog/json-ld";
 import { BLOG_ARTICLES, getArticleBySlug, getRelatedArticles } from "@/content/blog/articles";
 import { absoluteUrl } from "@/content/blog/seo";
@@ -96,6 +97,8 @@ export default async function BlogArticlePage({ params }: Props) {
           </header>
 
           <ArticleBody blocks={article.blocks} />
+
+          <AdSlot placement="blog_article" />
 
           {related.length > 0 ? (
             <section className="mt-12 border-t border-slate-200 pt-10" aria-labelledby="related-heading">
