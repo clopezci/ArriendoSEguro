@@ -230,6 +230,15 @@ export default function AdminPage() {
   const [adMsg, setAdMsg] = useState("");
   const [adSaveLoading, setAdSaveLoading] = useState(false);
 
+  // Hub de pagos (apps externas).
+  type HubAppRow = { id: string; name: string; apiKeyPrefix: string; webhookUrl: string; active: boolean; createdAt: string };
+  const [hubApps, setHubApps] = useState<HubAppRow[]>([]);
+  const [hubNewName, setHubNewName] = useState("");
+  const [hubNewWebhook, setHubNewWebhook] = useState("");
+  const [hubCreated, setHubCreated] = useState<{ name: string; apiKey: string; hmacSecret: string } | null>(null);
+  const [hubErr, setHubErr] = useState("");
+  const [hubLoading, setHubLoading] = useState(false);
+
   const hintSet = useMemo(() => new Set(publicAdminHintEmails()), []);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -331,6 +340,13 @@ export default function AdminPage() {
         }
       } catch {
         setAdErr("Error de red al cargar anuncios.");
+      }
+      try {
+        const hubRes = await fetch("/api/admin/hub-apps", { headers: { ...(await buildAuthHeaders(user)) } });
+        const hubJson = (await hubRes.json()) as { success?: boolean; apps?: HubAppRow[] };
+        if (hubRes.ok && hubJson.success) setHubApps(hubJson.apps ?? []);
+      } catch {
+        setHubErr("Error de red al cargar el hub.");
       }
     } catch {
       setLoadError("Error de red al cargar el panel.");
@@ -943,6 +959,56 @@ export default function AdminPage() {
     }
   }
 
+  async function createHubApp() {
+    if (!user) return;
+    setHubLoading(true);
+    setHubErr("");
+    setHubCreated(null);
+    try {
+      const res = await fetch("/api/admin/hub-apps", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ name: hubNewName.trim(), webhookUrl: hubNewWebhook.trim() }),
+      });
+      const json = (await res.json()) as {
+        success?: boolean;
+        app?: HubAppRow;
+        apiKey?: string;
+        hmacSecret?: string;
+        errors?: { message?: string }[];
+      };
+      if (!res.ok || !json.success || !json.app) {
+        setHubErr(json.errors?.[0]?.message ?? "No se pudo crear la app.");
+        return;
+      }
+      setHubApps((prev) => [json.app as HubAppRow, ...prev]);
+      setHubCreated({ name: json.app.name, apiKey: json.apiKey ?? "", hmacSecret: json.hmacSecret ?? "" });
+      setHubNewName("");
+      setHubNewWebhook("");
+    } catch {
+      setHubErr("Error de red al crear la app.");
+    } finally {
+      setHubLoading(false);
+    }
+  }
+
+  async function toggleHubApp(id: string, active: boolean) {
+    if (!user) return;
+    try {
+      const res = await fetch("/api/admin/hub-apps", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ id, active }),
+      });
+      const json = (await res.json()) as { success?: boolean; app?: HubAppRow };
+      if (res.ok && json.success && json.app) {
+        setHubApps((prev) => prev.map((a) => (a.id === id ? (json.app as HubAppRow) : a)));
+      }
+    } catch {
+      setHubErr("Error de red al actualizar la app.");
+    }
+  }
+
   async function downloadSurveysCsv() {
     if (!user) return;
     const res = await fetch("/api/admin/surveys-export", { headers: { ...(await buildAuthHeaders(user)) } });
@@ -1484,6 +1550,118 @@ export default function AdminPage() {
             >
               {adSaveLoading ? "Guardando…" : "Guardar anuncios"}
             </button>
+          </section>
+        )}
+
+        {data && (
+          <section className="mb-6 rounded-xl border border-indigo-400/40 bg-white/95 p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">Hub de pagos (apps externas)</h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              Registra otras aplicaciones (incluidas las de Supabase) para que facturen por la cuenta Wompi central. Cada
+              app recibe una <strong>API key</strong> y un <strong>secreto HMAC</strong> (se muestran una sola vez) y una{" "}
+              <strong>URL de webhook</strong> a la que le notificamos el estado de cada pago. Endpoints:{" "}
+              <code className="text-[11px]">POST /api/hub/orders</code> y{" "}
+              <code className="text-[11px]">GET /api/hub/orders/&#123;id&#125;</code>.
+            </p>
+            {hubErr && (
+              <p className="mt-2 rounded border border-rose-400/45 bg-rose-50 px-2 py-1 text-xs text-rose-800">{hubErr}</p>
+            )}
+
+            {hubCreated && (
+              <div className="mt-3 rounded-lg border-2 border-amber-400 bg-amber-50 p-3 text-xs text-amber-900">
+                <p className="font-bold">
+                  Credenciales de «{hubCreated.name}» — cópialas ahora, no se vuelven a mostrar:
+                </p>
+                <p className="mt-2 break-all">
+                  <span className="font-semibold">API key:</span> <code>{hubCreated.apiKey}</code>
+                </p>
+                <p className="mt-1 break-all">
+                  <span className="font-semibold">HMAC secret:</span> <code>{hubCreated.hmacSecret}</code>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setHubCreated(null)}
+                  className="mt-2 rounded border border-amber-600/50 px-2 py-1 hover:bg-amber-100"
+                >
+                  Ya las copié
+                </button>
+              </div>
+            )}
+
+            <div className="mt-3 flex flex-wrap items-end gap-2 text-xs text-slate-800">
+              <label className="flex flex-col gap-1">
+                <span>Nombre de la app</span>
+                <input
+                  type="text"
+                  value={hubNewName}
+                  onChange={(e) => setHubNewName(e.target.value)}
+                  placeholder="Ej.: AppStickers"
+                  className="w-48 rounded border border-slate-300 px-2 py-1"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span>URL de webhook (a dónde notificamos)</span>
+                <input
+                  type="text"
+                  value={hubNewWebhook}
+                  onChange={(e) => setHubNewWebhook(e.target.value)}
+                  placeholder="https://miapp.com/api/hub/webhook"
+                  className="w-72 rounded border border-slate-300 px-2 py-1"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={hubLoading || hubNewName.trim().length < 2 || !hubNewWebhook.trim()}
+                onClick={() => void createHubApp()}
+                className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white disabled:opacity-50"
+              >
+                {hubLoading ? "Creando…" : "Registrar app"}
+              </button>
+            </div>
+
+            <div className="mt-4 overflow-auto rounded border border-slate-200">
+              <table className="min-w-full text-xs text-slate-700">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50 text-left">
+                    <th className="px-2 py-1">App</th>
+                    <th className="px-2 py-1">API key</th>
+                    <th className="px-2 py-1">Webhook</th>
+                    <th className="px-2 py-1">Estado</th>
+                    <th className="px-2 py-1">Acción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hubApps.map((a) => (
+                    <tr key={a.id} className="border-b border-slate-100">
+                      <td className="px-2 py-1 font-medium text-slate-900">{a.name}</td>
+                      <td className="px-2 py-1">
+                        <code>{a.apiKeyPrefix}…</code>
+                      </td>
+                      <td className="px-2 py-1 max-w-[220px] truncate" title={a.webhookUrl}>
+                        {a.webhookUrl}
+                      </td>
+                      <td className="px-2 py-1">{a.active ? "Activa" : "Inactiva"}</td>
+                      <td className="px-2 py-1">
+                        <button
+                          type="button"
+                          onClick={() => void toggleHubApp(a.id, !a.active)}
+                          className={`rounded border px-2 py-0.5 ${a.active ? "border-rose-400 text-rose-700" : "border-emerald-500 text-emerald-700"}`}
+                        >
+                          {a.active ? "Desactivar" : "Activar"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {hubApps.length === 0 && (
+                    <tr>
+                      <td className="px-2 py-2 text-slate-500" colSpan={5}>
+                        Sin apps registradas todavía.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </section>
         )}
 

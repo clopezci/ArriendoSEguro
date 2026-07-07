@@ -4,6 +4,7 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
 import { verifyWompiWebhookSignature } from "@/domain/platform-payments/wompi-signature";
 import { decideWebhookHandling } from "@/domain/platform-payments/webhook-logic";
+import { processHubWompiEvent } from "@/domain/hub/hub-webhook";
 import { plusAccessConfirmedEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
 import { logServerError } from "@/lib/observability/observability";
@@ -72,6 +73,13 @@ export async function POST(request: Request) {
     const amount = Math.floor((tx?.amount_in_cents ?? 0) / 100);
     const currency = tx?.currency ?? "";
     const providerPaymentId = tx?.id ?? "";
+
+    // Órdenes del HUB (apps externas): se enrutan aparte. La misma URL de eventos
+    // de Wompi sirve para ArriendoSeguro y para el hub.
+    if (providerReference.startsWith("HUB_")) {
+      const result = await processHubWompiEvent(firestore, event, Date.now());
+      return NextResponse.json(result.body, { status: result.httpStatus });
+    }
 
     const orderSnap = await firestore
       .collection("platform_orders")
