@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
@@ -9,6 +9,7 @@ import { createContractDraft, updateDraft } from "@/features/contracts/wizard-st
 import { JourneyScene } from "@/components/nuevo/journey-scene";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { validateStep, type Answers } from "@/lib/nuevo/validation";
+import { useVoice } from "@/lib/nuevo/useVoice";
 
 /**
  * F1+F2 del rediseño "Un paso a la vez" (rama rediseno-frontend-v2).
@@ -88,16 +89,27 @@ export default function NuevoPage() {
     return Math.round((db / BASIC_TOTAL) * 50 + (EXTRA_TOTAL ? de / EXTRA_TOTAL : 0) * 50);
   }, [i]);
 
+  // --- Modo voz / accesibilidad ---
+  const { supported: voiceSupported, listening, speak, listen, stop } = useVoice();
+  const [voiceMode, setVoiceMode] = useState(false);
+  const aRef = useRef(a); aRef.current = a;
+  const iRef = useRef(i); iRef.current = i;
+  const voiceModeRef = useRef(voiceMode); voiceModeRef.current = voiceMode;
+  const draftIdRef = useRef<string | null>(null);
+  const onTranscriptRef = useRef<(t: string) => void>(() => {});
+
   function start() {
     const draft = createContractDraft({ userId: user?.uid ?? "invitado", accessStatus: "free", isDemo: false });
     setDraftId(draft.id);
+    draftIdRef.current = draft.id;
     setARaw(EMPTY);
     setError(null);
     setI(0);
     setMode("flow");
   }
 
-  function persist(n: Answers) {
+  const persist = useCallback((n: Answers) => {
+    const draftId = draftIdRef.current;
     if (!draftId) return;
     const canonNum = Number(n.canon.replace(/[^\d]/g, "")) || 0;
     updateDraft(draftId, (d) => ({
@@ -127,20 +139,99 @@ export default function NuevoPage() {
         ? { ...d.solidaryCoDebtor, fullName: n.codebtorName.trim() || d.solidaryCoDebtor.fullName }
         : d.solidaryCoDebtor,
     }));
-  }
+  }, []);
 
-  function next() {
-    const e = validateStep(q.kind, a);
-    if (e) { setError(e); return; }        // no se avanza con datos inválidos/en blanco
+  const relisten = useCallback(() => {
+    if (voiceModeRef.current) listen((t) => onTranscriptRef.current(t));
+  }, [listen]);
+
+  const next = useCallback(() => {
+    const cq = QUESTIONS[iRef.current];
+    const e = validateStep(cq.kind, aRef.current);
+    if (e) { setError(e); if (voiceModeRef.current) speak(e, relisten); return; } // no avanza con datos inválidos/en blanco
     setError(null);
-    persist(a);
-    if (i >= QUESTIONS.length - 1) { setMode("done"); return; }
-    setI(i + 1);
-  }
-  function back() {
+    persist(aRef.current);
+    if (iRef.current >= QUESTIONS.length - 1) { setMode("done"); return; }
+    setI(iRef.current + 1);
+  }, [persist, speak, relisten]);
+
+  const back = useCallback(() => {
     setError(null);
-    if (i === 0) { setMode("home"); return; }
-    setI(i - 1);
+    if (iRef.current === 0) { setMode("home"); return; }
+    setI(iRef.current - 1);
+  }, []);
+
+  // Rellena por voz según el tipo de paso.
+  const fillByVoice = useCallback((kind: string, s: string, raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    setError(null);
+    setARaw((p) => {
+      switch (kind) {
+        case "text": return { ...p, name: raw };
+        case "doc":
+          if (/c[eé]dula|\bc c\b|\bcc\b/.test(s)) return { ...p, docType: "CC" };
+          if (/extranjer[ií]a|\bce\b/.test(s)) return { ...p, docType: "CE" };
+          if (/\bnit\b/.test(s)) return { ...p, docType: "NIT" };
+          if (/pasaporte/.test(s)) return { ...p, docType: "Pasaporte" };
+          return { ...p, docNumber: digits || p.docNumber };
+        case "contact": return digits.length >= 7 ? { ...p, phone: digits } : p;
+        case "addr": return { ...p, address: raw };
+        case "canon": return { ...p, canon: digits || p.canon };
+        case "tenant": return { ...p, tenantName: raw };
+        case "codebtor":
+          if (/\bno\b|sin codeudor/.test(s)) return { ...p, hasCodebtor: "no" };
+          if (/\bs[ií]\b|con codeudor/.test(s)) return { ...p, hasCodebtor: "yes" };
+          return p;
+        case "docs":
+          if (/whatsapp|wasap/.test(s)) return { ...p, docMethod: "whatsapp" };
+          if (/correo|email|mail/.test(s)) return { ...p, docMethod: "email" };
+          if (/yo|subo|mismo/.test(s)) return { ...p, docMethod: "self" };
+          if (digits.length >= 7) return { ...p, docPhone: digits };
+          return p;
+        default: return p;
+      }
+    });
+  }, []);
+
+  const speakStep = useCallback(() => {
+    const cq = QUESTIONS[iRef.current];
+    let text = `${cq.prompt}. ${cq.hint}`;
+    if (cq.kind === "doc") text += " Di el tipo: cédula, extranjería, nit o pasaporte, y luego el número.";
+    if (cq.kind === "codebtor") text += " Responde sí o no.";
+    if (cq.kind === "docs") text += " Di: yo, whatsapp, o correo.";
+    text += " Cuando termines, di: continuar. Para volver, di: atrás.";
+    speak(text, relisten);
+  }, [speak, relisten]);
+
+  const onTranscript = useCallback((t: string) => {
+    const s = t.toLowerCase().trim();
+    if (/\b(continuar|contin[uú]a|siguiente|adelante|listo)\b/.test(s)) { next(); return; }
+    if (/\b(atr[aá]s|anterior|volver|regresar)\b/.test(s)) { back(); return; }
+    if (/\b(repetir|repite|rep[ií]telo|otra vez)\b/.test(s)) { speakStep(); return; }
+    fillByVoice(QUESTIONS[iRef.current].kind, s, t);
+    speak("Anotado. Di continuar cuando termines, o corrige.", relisten);
+  }, [next, back, speakStep, fillByVoice, speak, relisten]);
+  onTranscriptRef.current = onTranscript;
+
+  // Al entrar a un paso en modo voz, lee la pregunta y escucha.
+  useEffect(() => {
+    if (!voiceMode || mode !== "flow" || !voiceSupported) return;
+    speakStep();
+    return () => stop();
+  }, [voiceMode, mode, i, voiceSupported, speakStep, stop]);
+
+  // Al terminar, lo anuncia por voz.
+  useEffect(() => {
+    if (voiceMode && mode === "done" && voiceSupported) {
+      speak("Lo básico está listo. Continúa con documentos y firma en el asistente.");
+    }
+  }, [voiceMode, mode, voiceSupported, speak]);
+
+  function toggleVoice() {
+    const nv = !voiceMode;
+    setVoiceMode(nv);
+    if (!nv) { stop(); return; }
+    if (mode === "home") speak("Modo voz activado. Elige: crear un contrato, o gestionar mis contratos.");
   }
 
   const q = QUESTIONS[i];
@@ -156,7 +247,21 @@ export default function NuevoPage() {
             <span className="h-7 w-7 rounded-[9px] bg-gradient-to-br from-[#5646E5] to-[#8B6BFF] shadow-lg shadow-violet-500/40" />
             ArriendoSeguro
           </Link>
-          <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Vista nueva (beta)</span>
+          <div className="flex items-center gap-2">
+            {voiceSupported && (
+              <button type="button" onClick={toggleVoice} aria-pressed={voiceMode}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${voiceMode ? "bg-[#5646E5] text-white" : "border border-slate-200 bg-white/70 text-slate-600 hover:border-[#5646E5]"}`}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10a7 7 0 0 1-14 0M12 17v4" /></svg>
+                {voiceMode ? (listening ? "Escuchando…" : "Voz activa") : "Modo voz"}
+              </button>
+            )}
+            <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Vista nueva (beta)</span>
+          </div>
+        </div>
+
+        {/* Anuncio para lectores de pantalla (pregunta actual y errores). */}
+        <div className="sr-only" role="status" aria-live="polite">
+          {mode === "flow" ? `${q.block}. ${q.prompt}. ${q.hint}` : ""}{error ? `. Error: ${error}` : ""}
         </div>
 
         <AnimatePresence mode="wait">
