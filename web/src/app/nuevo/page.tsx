@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { createContractDraft, updateDraft } from "@/features/contracts/wizard-state";
 import { JourneyScene } from "@/components/nuevo/journey-scene";
+import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 
 /**
  * F1+F2 del rediseño "Un paso a la vez" (rama rediseno-frontend-v2).
@@ -29,7 +30,7 @@ const SUBPHRASES = [
   "Tú pones los datos; la ley la ponemos nosotros.",
 ];
 
-type Kind = "text" | "doc" | "contact" | "addr" | "canon" | "tenant" | "codebtor";
+type Kind = "text" | "doc" | "contact" | "addr" | "canon" | "tenant" | "codebtor" | "docs";
 type Q = { id: string; block: string; prompt: string; hint: string; kind: Kind; ph?: string; basic: boolean };
 
 // Tramo básico (0-50%): dueño 3 + inmueble 2 + inquilino 1 = 6.
@@ -40,8 +41,9 @@ const QUESTIONS: Q[] = [
   { id: "contact", block: "Datos del dueño", prompt: "¿Cómo lo contactamos?", hint: "Celular y correo — para notificaciones y firma.", kind: "contact", basic: true },
   { id: "addr", block: "Datos del inmueble", prompt: "¿Dónde queda el inmueble?", hint: "Dirección y ciudad que irán en el contrato.", kind: "addr", basic: true },
   { id: "canon", block: "Datos del inmueble", prompt: "¿Cuál es el canon mensual?", hint: "Después validamos el tope legal (Ley 820).", kind: "canon", ph: "$ 1.500.000", basic: true },
-  { id: "tenant", block: "Datos del inquilino", prompt: "¿Quién será el arrendatario?", hint: "Lo llenas tú o se lo pides a él (el envío se hace en el asistente).", kind: "tenant", basic: true },
+  { id: "tenant", block: "Datos del inquilino", prompt: "¿Quién será el arrendatario?", hint: "Lo llenas tú o se lo pides a él.", kind: "tenant", basic: true },
   { id: "codebtor", block: "¿Codeudor?", prompt: "¿Tendrá codeudor solidario?", hint: "Opcional. Añade respaldo si lo necesitas.", kind: "codebtor", basic: false },
+  { id: "docs", block: "Documentos del inquilino", prompt: "Documentos del inquilino", hint: "Los subes tú, o le pides al inquilino que los cargue por WhatsApp o correo.", kind: "docs", basic: false },
 ];
 
 type Answers = {
@@ -49,8 +51,9 @@ type Answers = {
   address: string; city: string; canon: string;
   tenantMode: "self" | "invite"; tenantName: string;
   hasCodebtor: "" | "yes" | "no"; codebtorName: string;
+  docMethod: "" | "self" | "whatsapp" | "email"; docPhone: string; docEmail: string;
 };
-const EMPTY: Answers = { name: "", docType: "CC", docNumber: "", phone: "", email: "", address: "", city: "", canon: "", tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "" };
+const EMPTY: Answers = { name: "", docType: "CC", docNumber: "", phone: "", email: "", address: "", city: "", canon: "", tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "", docMethod: "", docPhone: "", docEmail: "" };
 
 const BASIC_TOTAL = QUESTIONS.filter((q) => q.basic).length;
 const EXTRA_TOTAL = QUESTIONS.length - BASIC_TOTAL;
@@ -115,7 +118,12 @@ export default function NuevoPage() {
         city: n.city.trim() || d.property.city,
         ...(canonNum > 0 ? { monthlyRentProposed: canonNum } : {}),
       },
-      tenant: { ...d.tenant, fullName: n.tenantName.trim() || d.tenant.fullName },
+      tenant: {
+        ...d.tenant,
+        fullName: n.tenantName.trim() || d.tenant.fullName,
+        phone: (n.docMethod === "whatsapp" ? n.docPhone.trim() : "") || d.tenant.phone,
+        email: (n.docMethod === "email" ? n.docEmail.trim() : "") || d.tenant.email,
+      },
       solidaryCoDebtor: n.hasCodebtor === "yes"
         ? { ...d.solidaryCoDebtor, fullName: n.codebtorName.trim() || d.solidaryCoDebtor.fullName }
         : d.solidaryCoDebtor,
@@ -270,7 +278,42 @@ function Field({ q, a, setA }: { q: Q; a: Answers; setA: (a: Answers) => void })
           )}
         </>
       );
+    case "docs":
+      return (
+        <div className="flex flex-col gap-2.5">
+          <DocOption sel={a.docMethod === "self"} onClick={() => setA({ ...a, docMethod: "self" })} tone="me" title="Los subo yo ahora" desc="Cargo los documentos del inquilino directamente." icon={mailIcon} />
+          <DocOption sel={a.docMethod === "whatsapp"} onClick={() => setA({ ...a, docMethod: "whatsapp" })} tone="wa" title="Enviar por WhatsApp" desc="Le llega un mensaje para que suba sus documentos." icon={waIcon} />
+          <DocOption sel={a.docMethod === "email"} onClick={() => setA({ ...a, docMethod: "email" })} tone="em" title="Enviar por correo" desc="El mismo enlace, por email." icon={mailIcon} />
+          {a.docMethod === "whatsapp" && (
+            <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+              <input className={inputCls} inputMode="tel" placeholder="📱 Celular del inquilino" value={a.docPhone} onChange={(e) => setA({ ...a, docPhone: e.target.value })} />
+              <button type="button" disabled={a.docPhone.replace(/\D/g, "").length < 7}
+                onClick={() => window.open(buildWhatsAppUrl(a.docPhone, "Hola 👋 Te invito a subir tus documentos para el contrato de arriendo en ArriendoSeguro. El enlace específico te llegará al finalizar el contrato. Más info: https://arriendoseguro.app"), "_blank")}
+                className="whitespace-nowrap rounded-2xl bg-[#25D366] px-5 py-4 text-base font-bold text-white transition hover:brightness-105 active:scale-95 disabled:opacity-50">
+                Abrir WhatsApp
+              </button>
+            </div>
+          )}
+          {a.docMethod === "email" && (
+            <input className={inputCls} inputMode="email" placeholder="✉️ Correo del inquilino" value={a.docEmail} onChange={(e) => setA({ ...a, docEmail: e.target.value })} />
+          )}
+          <p className="mt-1 text-xs text-slate-500">El enlace específico para subir documentos se genera al crear el contrato en el asistente; aquí dejamos listo el método y el contacto.</p>
+        </div>
+      );
   }
+}
+
+const mailIcon = <svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 5h16v14H4z" /><path d="M4 7l8 6 8-6" /></svg>;
+const waIcon = <svg viewBox="0 0 24 24" width="20" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3a9 9 0 0 0-7.7 13.6L3 21l4.5-1.2A9 9 0 1 0 12 3z" /></svg>;
+
+function DocOption({ sel, onClick, tone, title, desc, icon }: { sel: boolean; onClick: () => void; tone: "me" | "wa" | "em"; title: string; desc: string; icon: ReactNode }) {
+  const toneCls = tone === "wa" ? "bg-[#25D36622] text-[#128C4B]" : tone === "em" ? "bg-[#ECE9FB] text-[#5646E5]" : "bg-[#FFEDE7] text-[#C7361A]";
+  return (
+    <button type="button" onClick={onClick} className={`flex items-center gap-3.5 rounded-2xl border-2 p-4 text-left transition ${sel ? "border-[#5646E5] bg-[#ECE9FB]" : "border-slate-200 bg-white hover:border-[#5646E5]"}`}>
+      <span className={`grid h-10 w-10 flex-none place-items-center rounded-xl ${toneCls}`}>{icon}</span>
+      <span><b className="block text-[16px]">{title}</b><small className="text-[13.5px] text-slate-500">{desc}</small></span>
+    </button>
+  );
 }
 
 function chip(sel: boolean) {
