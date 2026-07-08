@@ -300,6 +300,36 @@ export default function NuevoPage() {
     }
   }
 
+  // --- Envío del enlace de documentos al inquilino (token real por contrato) ---
+  const [inviteBusy, setInviteBusy] = useState(false);
+  const [inviteStatus, setInviteStatus] = useState<string | null>(null);
+
+  async function sendInvite(method: "whatsapp" | "email") {
+    const draftId = draftIdRef.current;
+    if (!draftId) { setInviteStatus("Primero empieza el contrato."); return; }
+    setInviteBusy(true); setInviteStatus(null);
+    try {
+      const res = await fetch("/api/nuevo/invite", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
+        body: JSON.stringify({ contractDraftId: draftId, method, phone: aRef.current.docPhone, email: aRef.current.docEmail, name: aRef.current.tenantName }),
+      });
+      if (res.status === 401) { setInviteStatus("Inicia sesión para enviar el enlace al inquilino."); return; }
+      const j = (await res.json()) as { success?: boolean; invitationUrl?: string; emailStatus?: string; errors?: { message?: string }[] };
+      if (!j.success || !j.invitationUrl) { setInviteStatus(j.errors?.[0]?.message ?? "No se pudo generar el enlace."); return; }
+      if (method === "whatsapp") {
+        window.open(buildWhatsAppUrl(aRef.current.docPhone, `Hola 👋 Te comparto el enlace para completar tus datos y subir tus documentos del contrato de arriendo en ArriendoSeguro: ${j.invitationUrl}`), "_blank");
+        setInviteStatus("WhatsApp abierto con el enlace real ✓");
+      } else {
+        setInviteStatus(j.emailStatus === "sent" ? "Correo con el enlace enviado ✓" : "Enlace generado (correo en modo prueba).");
+      }
+    } catch {
+      setInviteStatus("Error de red al generar el enlace.");
+    } finally {
+      setInviteBusy(false);
+    }
+  }
+
   const q = QUESTIONS[i];
 
   return (
@@ -378,7 +408,7 @@ export default function NuevoPage() {
                   <motion.div key={q.id} initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }}>
                     <h2 className="text-balance text-3xl font-extrabold tracking-tight">{q.prompt}</h2>
                     <p className="mt-1.5 mb-5 text-slate-500">{q.hint}</p>
-                    <Field q={q} a={a} setA={setA} />
+                    <Field q={q} a={a} setA={setA} docs={{ send: sendInvite, status: inviteStatus, busy: inviteBusy }} />
                     {error && (
                       <p className="mt-3 flex items-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5v.01" /></svg>
@@ -441,7 +471,7 @@ export default function NuevoPage() {
 
 const inputCls = "w-full rounded-2xl border-2 border-slate-200 bg-white px-[18px] py-4 text-lg outline-none transition focus:border-[#5646E5] focus:ring-4 focus:ring-[#ECE9FB]";
 
-function Field({ q, a, setA }: { q: Q; a: Answers; setA: (a: Answers) => void }) {
+function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => void; docs: { send: (m: "whatsapp" | "email") => void; status: string | null; busy: boolean } }) {
   switch (q.kind) {
     case "text":
       return <input autoFocus className={inputCls} placeholder={q.ph} value={a.name} onChange={(e) => setA({ ...a, name: e.target.value })} />;
@@ -498,22 +528,28 @@ function Field({ q, a, setA }: { q: Q; a: Answers; setA: (a: Answers) => void })
       return (
         <div className="flex flex-col gap-2.5">
           <DocOption sel={a.docMethod === "self"} onClick={() => setA({ ...a, docMethod: "self" })} tone="me" title="Los subo yo ahora" desc="Cargo los documentos del inquilino directamente." icon={mailIcon} />
-          <DocOption sel={a.docMethod === "whatsapp"} onClick={() => setA({ ...a, docMethod: "whatsapp" })} tone="wa" title="Enviar por WhatsApp" desc="Le llega un mensaje para que suba sus documentos." icon={waIcon} />
+          <DocOption sel={a.docMethod === "whatsapp"} onClick={() => setA({ ...a, docMethod: "whatsapp" })} tone="wa" title="Enviar por WhatsApp" desc="Le llega un enlace real para completar sus datos y subir documentos." icon={waIcon} />
           <DocOption sel={a.docMethod === "email"} onClick={() => setA({ ...a, docMethod: "email" })} tone="em" title="Enviar por correo" desc="El mismo enlace, por email." icon={mailIcon} />
           {a.docMethod === "whatsapp" && (
             <div className="mt-1 flex flex-col gap-2 sm:flex-row">
               <input className={inputCls} inputMode="tel" placeholder="📱 Celular del inquilino" value={a.docPhone} onChange={(e) => setA({ ...a, docPhone: e.target.value })} />
-              <button type="button" disabled={a.docPhone.replace(/\D/g, "").length < 7}
-                onClick={() => window.open(buildWhatsAppUrl(a.docPhone, "Hola 👋 Te invito a subir tus documentos para el contrato de arriendo en ArriendoSeguro. El enlace específico te llegará al finalizar el contrato. Más info: https://arriendoseguro.app"), "_blank")}
+              <button type="button" disabled={docs.busy || a.docPhone.replace(/\D/g, "").length < 7} onClick={() => docs.send("whatsapp")}
                 className="whitespace-nowrap rounded-2xl bg-[#25D366] px-5 py-4 text-base font-bold text-white transition hover:brightness-105 active:scale-95 disabled:opacity-50">
-                Abrir WhatsApp
+                {docs.busy ? "Generando…" : "Enviar por WhatsApp"}
               </button>
             </div>
           )}
           {a.docMethod === "email" && (
-            <input className={inputCls} inputMode="email" placeholder="✉️ Correo del inquilino" value={a.docEmail} onChange={(e) => setA({ ...a, docEmail: e.target.value })} />
+            <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+              <input className={inputCls} inputMode="email" placeholder="✉️ Correo del inquilino" value={a.docEmail} onChange={(e) => setA({ ...a, docEmail: e.target.value })} />
+              <button type="button" disabled={docs.busy || !a.docEmail.trim()} onClick={() => docs.send("email")}
+                className="whitespace-nowrap rounded-2xl bg-[#5646E5] px-5 py-4 text-base font-bold text-white transition hover:brightness-105 active:scale-95 disabled:opacity-50">
+                {docs.busy ? "Enviando…" : "Enviar por correo"}
+              </button>
+            </div>
           )}
-          <p className="mt-1 text-xs text-slate-500">El enlace específico para subir documentos se genera al crear el contrato en el asistente; aquí dejamos listo el método y el contacto.</p>
+          {docs.status && <p className="text-sm font-medium text-emerald-700">{docs.status}</p>}
+          <p className="mt-1 text-xs text-slate-500">El enlace es único de este contrato: el inquilino completa sus datos y sube documentos. También puedes elegir “los subo yo”.</p>
         </div>
       );
   }
