@@ -91,7 +91,7 @@ export default function NuevoPage() {
   }, [i]);
 
   // --- Modo voz / accesibilidad ---
-  const { supported: voiceSupported, listening, speak, listen, stop } = useVoice();
+  const { canSpeak, canListen, listening, speak, listen, stop } = useVoice();
   const [voiceMode, setVoiceMode] = useState(false);
   const aRef = useRef(a); aRef.current = a;
   const iRef = useRef(i); iRef.current = i;
@@ -143,8 +143,8 @@ export default function NuevoPage() {
   }, []);
 
   const relisten = useCallback(() => {
-    if (voiceModeRef.current) listen((t) => onTranscriptRef.current(t));
-  }, [listen]);
+    if (voiceModeRef.current && canListen) listen((t) => onTranscriptRef.current(t));
+  }, [listen, canListen]);
 
   const next = useCallback(() => {
     const cq = QUESTIONS[iRef.current];
@@ -200,9 +200,9 @@ export default function NuevoPage() {
     if (cq.kind === "doc") text += " Di el tipo: cédula, extranjería, nit o pasaporte, y luego el número.";
     if (cq.kind === "codebtor") text += " Responde sí o no.";
     if (cq.kind === "docs") text += " Di: yo, whatsapp, o correo.";
-    text += " Cuando termines, di: continuar. Para volver, di: atrás.";
+    text += canListen ? " Cuando termines, di: continuar. Para volver, di: atrás." : " Escribe tu respuesta y toca Continuar.";
     speak(text, relisten);
-  }, [speak, relisten]);
+  }, [speak, relisten, canListen]);
 
   const onTranscript = useCallback((t: string) => {
     const s = t.toLowerCase().trim();
@@ -216,23 +216,27 @@ export default function NuevoPage() {
 
   // Al entrar a un paso en modo voz, lee la pregunta y escucha.
   useEffect(() => {
-    if (!voiceMode || mode !== "flow" || !voiceSupported) return;
+    if (!voiceMode || mode !== "flow" || !canSpeak) return;
     speakStep();
     return () => stop();
-  }, [voiceMode, mode, i, voiceSupported, speakStep, stop]);
+  }, [voiceMode, mode, i, canSpeak, speakStep, stop]);
 
   // Al terminar, lo anuncia por voz.
   useEffect(() => {
-    if (voiceMode && mode === "done" && voiceSupported) {
+    if (voiceMode && mode === "done" && canSpeak) {
       speak("Lo básico está listo. Continúa con documentos y firma en el asistente.");
     }
-  }, [voiceMode, mode, voiceSupported, speak]);
+  }, [voiceMode, mode, canSpeak, speak]);
 
   function toggleVoice() {
     const nv = !voiceMode;
     setVoiceMode(nv);
     if (!nv) { stop(); return; }
-    if (mode === "home") speak("Modo voz activado. Elige: crear un contrato, o gestionar mis contratos.");
+    if (mode === "home") {
+      speak(canListen
+        ? "Modo voz activado. Elige: crear un contrato, o gestionar mis contratos."
+        : "Modo lectura activado. Leeré cada pregunta en voz alta; escribe tu respuesta con el teclado.");
+    }
   }
 
   // --- Asistente IA (opcional) ---
@@ -344,11 +348,11 @@ export default function NuevoPage() {
             ArriendoSeguro
           </Link>
           <div className="flex items-center gap-2">
-            {voiceSupported && (
+            {canSpeak && (
               <button type="button" onClick={toggleVoice} aria-pressed={voiceMode}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${voiceMode ? "bg-[#5646E5] text-white" : "border border-slate-200 bg-white/70 text-slate-600 hover:border-[#5646E5]"}`}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10a7 7 0 0 1-14 0M12 17v4" /></svg>
-                {voiceMode ? (listening ? "Escuchando…" : "Voz activa") : "Modo voz"}
+                {voiceMode ? (canListen ? (listening ? "Escuchando…" : "Voz activa") : "Leyendo") : (canListen ? "Modo voz" : "Modo lectura")}
               </button>
             )}
             <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Vista nueva (beta)</span>

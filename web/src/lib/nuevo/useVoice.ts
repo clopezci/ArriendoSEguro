@@ -23,14 +23,18 @@ type RecognitionLike = {
 };
 
 export function useVoice() {
-  const [supported, setSupported] = useState(false);
+  // `canSpeak`: puede LEER en voz alta (TTS) — incluye iPhone/Safari.
+  // `canListen`: puede ESCUCHAR/dictar (STT) — Chrome/Edge/Android; NO iOS.
+  const [canSpeak, setCanSpeak] = useState(false);
+  const [canListen, setCanListen] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [listening, setListening] = useState(false);
   const recRef = useRef<RecognitionLike | null>(null);
 
   useEffect(() => {
     const w = window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown };
-    setSupported(Boolean(w.SpeechRecognition || w.webkitSpeechRecognition) && "speechSynthesis" in window);
+    setCanSpeak("speechSynthesis" in window);
+    setCanListen(Boolean(w.SpeechRecognition || w.webkitSpeechRecognition));
   }, []);
 
   const speak = useCallback((text: string, onEnd?: () => void) => {
@@ -82,5 +86,5 @@ export function useVoice() {
     setSpeaking(false);
   }, []);
 
-  return { supported, speaking, listening, speak, listen, stop };
+  return { canSpeak, canListen, speaking, listening, speak, listen, stop };
 }
