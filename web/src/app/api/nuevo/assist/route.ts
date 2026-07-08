@@ -31,6 +31,15 @@ const ASK_SYSTEM =
   "particulares en Colombia. Si preguntan por una cláusula o término, explícalo de forma simple. No des asesoría " +
   "legal definitiva; sugiere validar con un abogado cuando el caso sea delicado.";
 
+/** Extrae el bloque JSON de la respuesta (quita ```fences``` y texto alrededor). */
+function extractJsonBlock(s: string): string {
+  const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  const raw = fence ? fence[1] : s;
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  return start >= 0 && end > start ? raw.slice(start, end + 1) : raw;
+}
+
 export async function POST(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
@@ -58,8 +67,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model,
         temperature: isExtract ? 0 : 0.4,
-        max_tokens: isExtract ? 400 : 220,
-        ...(isExtract ? { response_format: { type: "json_object" } } : {}),
+        max_tokens: isExtract ? 500 : 220,
         messages: [
           { role: "system", content: isExtract ? EXTRACT_SYSTEM : ASK_SYSTEM },
           { role: "user", content: parsed.data.text },
@@ -67,7 +75,11 @@ export async function POST(request: Request) {
       }),
     });
     if (!res.ok) {
-      return NextResponse.json({ success: false, available: true, error: "provider_error" }, { status: 502 });
+      const body = await res.text().catch(() => "");
+      return NextResponse.json(
+        { success: false, available: true, error: "provider_error", detail: `HTTP ${res.status}: ${body.slice(0, 220)}` },
+        { status: 502 },
+      );
     }
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const content = json.choices?.[0]?.message?.content ?? "";
@@ -75,9 +87,12 @@ export async function POST(request: Request) {
     if (isExtract) {
       let data: Record<string, unknown> = {};
       try {
-        data = JSON.parse(content) as Record<string, unknown>;
+        data = JSON.parse(extractJsonBlock(content)) as Record<string, unknown>;
       } catch {
-        return NextResponse.json({ success: false, available: true, error: "parse_error" }, { status: 502 });
+        return NextResponse.json(
+          { success: false, available: true, error: "parse_error", detail: content.slice(0, 220) },
+          { status: 502 },
+        );
       }
       return NextResponse.json({ success: true, available: true, data });
     }

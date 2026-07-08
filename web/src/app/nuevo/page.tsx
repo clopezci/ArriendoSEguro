@@ -254,7 +254,7 @@ export default function NuevoPage() {
       headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
       body: JSON.stringify({ mode, text }),
     });
-    return (await res.json()) as { success?: boolean; available?: boolean; data?: Record<string, unknown>; answer?: string };
+    return (await res.json()) as { success?: boolean; available?: boolean; data?: Record<string, unknown>; answer?: string; error?: string; detail?: string };
   }
 
   async function prefillFromAI() {
@@ -264,7 +264,10 @@ export default function NuevoPage() {
     try {
       const j = await callAssist("extract", t);
       if (j.available === false) { setAiNote("El asistente IA aún no está configurado (falta la API key)."); return; }
-      if (!j.success || !j.data) { setAiNote("No pude leer los datos; intenta reformular con nombres y valores claros."); return; }
+      if (!j.success || !j.data) {
+        setAiNote(j.detail || j.error ? `Falló la IA (${j.error ?? "error"}): ${j.detail ?? ""}` : "No pude leer los datos; intenta reformular con nombres y valores claros.");
+        return;
+      }
       const d = j.data;
       const dt = String(d.docType ?? "").toUpperCase();
       const docType = dt === "CE" ? "CE" : dt === "NIT" ? "NIT" : dt.startsWith("PAS") ? "Pasaporte" : "CC";
