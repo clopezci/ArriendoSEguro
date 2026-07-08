@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { createContractDraft, updateDraft } from "@/features/contracts/wizard-state";
 import { JourneyScene } from "@/components/nuevo/journey-scene";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
@@ -234,6 +235,71 @@ export default function NuevoPage() {
     if (mode === "home") speak("Modo voz activado. Elige: crear un contrato, o gestionar mis contratos.");
   }
 
+  // --- Asistente IA (opcional) ---
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiText, setAiText] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiNote, setAiNote] = useState<string | null>(null);
+  const [askText, setAskText] = useState("");
+  const [askAns, setAskAns] = useState<string | null>(null);
+  const [askBusy, setAskBusy] = useState(false);
+
+  async function callAssist(mode: "extract" | "ask", text: string) {
+    const res = await fetch("/api/nuevo/assist", {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
+      body: JSON.stringify({ mode, text }),
+    });
+    return (await res.json()) as { success?: boolean; available?: boolean; data?: Record<string, unknown>; answer?: string };
+  }
+
+  async function prefillFromAI() {
+    const t = aiText.trim();
+    if (t.length < 10) { setAiNote("Cuéntame un poco más (mínimo 10 caracteres)."); return; }
+    setAiBusy(true); setAiNote(null);
+    try {
+      const j = await callAssist("extract", t);
+      if (j.available === false) { setAiNote("El asistente IA aún no está configurado (falta la API key)."); return; }
+      if (!j.success || !j.data) { setAiNote("No pude leer los datos; intenta reformular con nombres y valores claros."); return; }
+      const d = j.data;
+      const dt = String(d.docType ?? "").toUpperCase();
+      const docType = dt === "CE" ? "CE" : dt === "NIT" ? "NIT" : dt.startsWith("PAS") ? "Pasaporte" : "CC";
+      const has = String(d.hasCodebtor ?? "");
+      const prefilled: Answers = {
+        ...EMPTY,
+        name: String(d.name ?? ""), docType, docNumber: String(d.docNumber ?? ""),
+        phone: String(d.phone ?? "").replace(/\D/g, ""), email: String(d.email ?? ""),
+        address: String(d.address ?? ""), city: String(d.city ?? ""), canon: String(d.canon ?? "").replace(/[^\d]/g, ""),
+        tenantName: String(d.tenantName ?? ""), hasCodebtor: has === "yes" ? "yes" : has === "no" ? "no" : "",
+        codebtorName: String(d.codebtorName ?? ""),
+      };
+      const draft = createContractDraft({ userId: user?.uid ?? "invitado", accessStatus: "free", isDemo: false });
+      setDraftId(draft.id); draftIdRef.current = draft.id;
+      setARaw(prefilled); setError(null); setI(0); setAiOpen(false); setMode("flow");
+    } catch {
+      setAiNote("Error de red al consultar el asistente.");
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
+  async function askAI() {
+    const t = askText.trim();
+    if (!t) return;
+    setAskBusy(true); setAskAns(null);
+    try {
+      const j = await callAssist("ask", t);
+      if (j.available === false) { setAskAns("El asistente IA aún no está configurado (falta la API key)."); return; }
+      const ans = j.answer || "No tengo una respuesta ahora.";
+      setAskAns(ans);
+      if (voiceModeRef.current) speak(ans);
+    } catch {
+      setAskAns("Error de red.");
+    } finally {
+      setAskBusy(false);
+    }
+  }
+
   const q = QUESTIONS[i];
 
   return (
@@ -276,6 +342,28 @@ export default function NuevoPage() {
                 <div className="col-span-full flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/70 p-3 text-sm text-slate-500 backdrop-blur">
                   🔒 <b className="text-[#17151F]">Tranquilo:</b> puedes pausar y seguir después; tus datos quedan guardados.
                 </div>
+                <div className="col-span-full">
+                  {!aiOpen ? (
+                    <button type="button" onClick={() => setAiOpen(true)} className="w-full rounded-2xl border-2 border-dashed border-violet-300 py-3 text-sm font-semibold text-violet-700 transition hover:bg-violet-50">
+                      ✨ Pre-llenar con IA — cuéntame tu caso y lleno los datos
+                    </button>
+                  ) : (
+                    <div className="rounded-2xl border border-violet-200 bg-white/85 p-4">
+                      <p className="text-sm font-semibold text-slate-800">Cuéntame tu caso en tus palabras</p>
+                      <textarea value={aiText} onChange={(e) => setAiText(e.target.value)} rows={3}
+                        placeholder="Ej.: Soy Juan Pérez, cédula 79000000, arriendo mi apartamento en la Calle 1 #2-3 de Bogotá por 1.500.000 a María López, con codeudor Pedro Gómez."
+                        className="mt-2 w-full rounded-xl border-2 border-slate-200 p-3 text-sm outline-none transition focus:border-violet-500" />
+                      {aiNote && <p className="mt-1 text-xs text-rose-600">{aiNote}</p>}
+                      <div className="mt-2 flex items-center gap-2">
+                        <button type="button" onClick={() => void prefillFromAI()} disabled={aiBusy} className="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-105 disabled:opacity-50">
+                          {aiBusy ? "Analizando…" : "Analizar y llenar"}
+                        </button>
+                        <button type="button" onClick={() => setAiOpen(false)} className="px-3 py-2.5 text-sm text-slate-500">Cancelar</button>
+                      </div>
+                      <p className="mt-2 text-[11px] text-slate-400">Revisas cada dato antes de continuar; la validación por paso sigue activa.</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.section>
           )}
@@ -309,6 +397,20 @@ export default function NuevoPage() {
               </div>
 
               <JourneyScene pct={pct} stepIndex={i} />
+
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-white/70 p-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-violet-600">✨</span>
+                  <input value={askText} onChange={(e) => setAskText(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") void askAI(); }}
+                    placeholder="¿Dudas de este paso? Pregúntame…"
+                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400" />
+                  <button type="button" onClick={() => void askAI()} disabled={askBusy || !askText.trim()} className="rounded-lg bg-violet-100 px-3 py-1.5 text-xs font-semibold text-violet-700 disabled:opacity-50">
+                    {askBusy ? "…" : "Preguntar"}
+                  </button>
+                </div>
+                {askAns && <p className="mt-2 border-t border-slate-100 pt-2 text-sm text-slate-700">{askAns}</p>}
+              </div>
             </motion.section>
           )}
 
