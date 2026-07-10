@@ -101,8 +101,8 @@ export default function AcercaDePage() {
           </p>
           <p className="mt-3 text-sm text-slate-700">
             Escríbenos a{" "}
-            <a href="mailto:clpezci@gmail.com" className="font-medium text-violet-700 underline">
-              clpezci@gmail.com
+            <a href="mailto:contacto@arriendoseguro.app" className="font-medium text-violet-700 underline">
+              contacto@arriendoseguro.app
             </a>{" "}
             · Proyecto operado desde <strong>Medellín, Colombia</strong>.
           </p>

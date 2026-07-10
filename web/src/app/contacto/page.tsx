@@ -21,8 +21,8 @@ export default function ContactoPage() {
           </p>
           <p className="mt-3 text-sm text-slate-700">
             También puedes escribirnos directamente a{" "}
-            <a href="mailto:clpezci@gmail.com" className="font-medium text-violet-700 underline">
-              clpezci@gmail.com
+            <a href="mailto:contacto@arriendoseguro.app" className="font-medium text-violet-700 underline">
+              contacto@arriendoseguro.app
             </a>
             . Proyecto operado desde <strong>Medellín, Colombia</strong>. Respondemos usualmente en 1–3 días hábiles.
           </p>

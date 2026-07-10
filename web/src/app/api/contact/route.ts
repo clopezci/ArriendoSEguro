@@ -28,7 +28,7 @@ const contactSchema = z.object({
 });
 
 function contactInbox(): string {
-  return process.env.CONTACT_INBOX_EMAIL?.trim() || "clpezci@gmail.com";
+  return process.env.CONTACT_INBOX_EMAIL?.trim() || "contacto@arriendoseguro.app";
 }
 
 function jsonError(message: string, status: number) {
