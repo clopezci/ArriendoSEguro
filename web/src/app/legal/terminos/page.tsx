@@ -24,10 +24,69 @@ export default function TerminosPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-900">1. Objeto de la plataforma</h2>
         <p>
-          {appConfig.name} es una plataforma digital que ayuda a personas que ya acordaron un arriendo entre sí a
-          organizar información, usar plantillas orientativas, registrar hitos (como inventario o pagos de forma
-          informativa) y, cuando aplique, apoyar procesos de firma electrónica simple, siempre dentro de los límites
-          técnicos y legales descritos aquí.
+          {appConfig.name} es una plataforma tecnológica (software como servicio) que acompaña a las personas que
+          arriendan directamente entre sí, sin inmobiliaria, en todo el ciclo del arriendo de vivienda urbana en
+          Colombia. Mediante un asistente guiado, fácil e intuitivo, la plataforma permite:
+        </p>
+        <ul className="list-inside list-disc space-y-1 text-slate-600">
+          <li>
+            <strong>Crear y personalizar el contrato de arrendamiento</strong> de vivienda urbana conforme a la
+            Ley 820 de 2003, paso a paso, con controles de calidad (validación del documento de identidad por tipo, del
+            teléfono y del <strong>tope legal del canon</strong> —1% del valor comercial, Ley 820—) que impiden avanzar
+            con datos inválidos o en blanco.
+          </li>
+          <li>
+            <strong>Herramientas de cálculo</strong>: canon máximo legal, reajuste anual por IPC, preaviso y garantía de
+            servicios públicos.
+          </li>
+          <li>
+            <strong>Sugerencias de cumplimiento normativo</strong> durante el diligenciamiento (topes, notificaciones,
+            garantías permitidas y formalidades aplicables).
+          </li>
+          <li>
+            <strong>Invitar a la otra parte</strong> (arrendatario y codeudor) para que ingrese sus propios datos y
+            acepte sus propias declaraciones y juramentos, con verificación por código de un solo uso (OTP).
+          </li>
+          <li>
+            <strong>Cargar y almacenar documentos soporte</strong> del expediente (por ejemplo, el poder del apoderado y
+            demás soportes), con versiones identificadas.
+          </li>
+          <li>
+            <strong>Firma electrónica simple con evidencia</strong> (fecha, IP y hash del documento) conforme a la
+            Ley 527 de 1999 y el Decreto 2364 de 2012, por el principio de equivalencia funcional.
+          </li>
+          <li>
+            <strong>Inventario guiado del inmueble</strong> con fotos por ambiente y generación del <strong>acta de
+            entrega</strong>.
+          </li>
+          <li>
+            <strong>Calendario y registro informativo de pagos</strong> del canon, con recordatorios al arrendatario,
+            carga de soportes de pago y escalamiento cuando el pago no se confirma.
+          </li>
+          <li>
+            <strong>Módulo de novedades y mantenimientos</strong> para registrar solicitudes, reparaciones y su
+            seguimiento entre las partes.
+          </li>
+          <li>
+            <strong>Alertas y notificaciones</strong> de vencimiento, terminación, renovación y reajuste por IPC, por
+            los canales habilitados.
+          </li>
+          <li>
+            <strong>Renovar el contrato</strong> a partir del expediente anterior.
+          </li>
+          <li>
+            <strong>Evaluación estructurada de la experiencia</strong> (calificación mutua entre las partes) y consulta
+            de reputación con el consentimiento del titular, conforme a la Ley 1581 de 2012 (Habeas Data).
+          </li>
+          <li>
+            <strong>Generar evidencia y exportables</strong> del expediente, además de plantillas y guías legales
+            orientativas.
+          </li>
+        </ul>
+        <p>
+          Todo lo anterior se ofrece dentro de los límites técnicos y legales descritos en estos términos. La
+          disponibilidad de cada función depende del plan contratado (ver cláusula 13) y de la configuración vigente de
+          la plataforma.
         </p>
       </section>
 
@@ -44,9 +103,13 @@ export default function TerminosPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-900">3. ArriendoSeguro como herramienta tecnológica</h2>
         <p>
-          La plataforma ofrece herramientas para cargar datos, generar borradores, almacenar versiones y documentos
-          asociados al expediente que usted crea. La validez y oportunidad de los actos jurídicos dependen de las
-          partes, del contenido acordado y de las formalidades que exija la ley para cada caso concreto.
+          La plataforma organiza en un <strong>expediente digital único</strong> los datos, borradores, versiones,
+          documentos soporte, firmas, inventario, acta de entrega, registros de pago, novedades, alertas y
+          calificaciones asociados al arriendo que usted gestiona, de modo que las partes tengan trazabilidad y
+          evidencia en un solo lugar. La plataforma automatiza cálculos, recordatorios y notificaciones, pero
+          <strong> no reemplaza la voluntad ni las decisiones de las partes</strong>: la validez y oportunidad de los
+          actos jurídicos dependen de las partes, del contenido acordado y de las formalidades que exija la ley para
+          cada caso concreto.
         </p>
       </section>
 
@@ -145,6 +208,15 @@ export default function TerminosPage() {
             una marca discreta «arriendoseguro.app» y recomendaciones, y es utilizable. La firma electrónica con validez
             y evidencia, el inventario y acta, el registro de pagos, los soportes, las novedades, las alertas de
             vencimiento y la calificación de reputación requieren Plan Plus.
+            <br />
+            <strong>El Plan Gratis es una oferta promocional de lanzamiento, de carácter temporal.</strong>{" "}
+            {appConfig.name} podrá, en cualquier momento y en la medida permitida por la ley, modificarlo,
+            condicionarlo (por ejemplo, a la visualización de publicidad), limitar su alcance o darlo por terminado, de
+            manera prospectiva y con aviso razonable a través de la plataforma, hasta que {appConfig.name} lo determine.
+            El uso del Plan Gratis <strong>no genera derechos adquiridos</strong> sobre su permanencia, su precio futuro
+            ni sus condiciones. En todo caso, el ejercicio de esta facultad <strong>no afecta los contratos que ya
+            hayas generado</strong> ni el Plan Plus que ya hayas adquirido, cuyas condiciones se respetan conforme a la
+            Ley 1480 de 2011.
           </li>
           <li>
             <strong>Plan Plus:</strong> pago único por contrato (sin mensualidades) que habilita la firma electrónica
