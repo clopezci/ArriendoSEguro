@@ -218,7 +218,7 @@ export default function MisArriendosPage() {
               type="button"
               onClick={onCreate}
               disabled={!canCreate}
-              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] disabled:opacity-45"
+              className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] disabled:opacity-45"
             >
               Crear expediente
             </button>
@@ -324,7 +324,7 @@ export default function MisArriendosPage() {
                       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:flex-col lg:items-end">
                         <Link
                           href={`/dashboard/contracts/${d.id}/preview`}
-                          className="inline-flex justify-center rounded-lg bg-violet-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-violet-500"
+                          className="inline-flex justify-center rounded-xl bg-[#5646E5] px-3 py-2 text-center text-sm font-medium text-white hover:brightness-105"
                         >
                           Ver / ir al final
                         </Link>

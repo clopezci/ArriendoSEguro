@@ -98,7 +98,7 @@ export default function LandlordStepPage() {
           <button
             type="button"
             onClick={applySavedData}
-            className="rounded-lg bg-violet-600 px-4 py-1.5 text-sm font-semibold text-white"
+            className="rounded-xl bg-[#5646E5] px-4 py-1.5 text-sm font-semibold text-white"
           >
             Usar mis datos
           </button>

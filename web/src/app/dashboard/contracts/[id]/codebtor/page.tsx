@@ -192,7 +192,7 @@ export default function CodebtorStepPage() {
     const base =
       "flex-1 rounded-lg px-4 py-3 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-violet-400 sm:flex-initial";
     if (active) {
-      return `${base} bg-violet-600 text-white shadow-[0_0_18px_rgba(139,92,246,0.45)]`;
+      return `${base} bg-[#5646E5] text-white shadow-[0_0_18px_rgba(139,92,246,0.45)]`;
     }
     return `${base} border-2 border-violet-500 bg-white/95 text-slate-900 hover:border-violet-300 hover:bg-slate-200`;
   }
@@ -364,7 +364,7 @@ export default function CodebtorStepPage() {
         {decision === "no" && (
           <Link
             href={`/dashboard/contracts/${id}/terms`}
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)]"
+            className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)]"
           >
             Continuar a las condiciones
           </Link>
@@ -374,7 +374,7 @@ export default function CodebtorStepPage() {
           <button
             form="wizard-form"
             type="submit"
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)]"
+            className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-medium text-white shadow-[0_0_16px_rgba(139,92,246,0.35)]"
           >
             Guardar codeudor y continuar
           </button>
