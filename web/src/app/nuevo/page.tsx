@@ -68,7 +68,7 @@ const QUESTIONS: Q[] = [
   { id: "docs", block: "Documentos del inquilino", prompt: "Documentos del inquilino", hint: "Los subes tú, o le pides al inquilino que los cargue por WhatsApp o correo.", kind: "docs", basic: false },
 ];
 
-const EMPTY: Answers = { contractType: "VIVIENDA_URBANA", name: "", docType: "CC", docNumber: "", phone: "", email: "", acting: "", proxyOath: false, address: "", city: "", registry: "", propertyType: "", registrySkip: false, canon: "", tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "", utilitiesParty: "", clauses: [], clauseOther: "", docMethod: "", docPhone: "", docEmail: "" };
+const EMPTY: Answers = { contractType: "VIVIENDA_URBANA", name: "", docType: "CC", docNumber: "", phone: "", email: "", acting: "", proxyOath: false, address: "", city: "", registry: "", propertyType: "", registrySkip: false, canon: "", commercialValue: "", noCommercialValue: false, tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "", utilitiesParty: "", clauses: [], clauseOther: "", docMethod: "", docPhone: "", docEmail: "" };
 
 const BASIC_TOTAL = QUESTIONS.filter((q) => q.basic).length;
 const EXTRA_TOTAL = QUESTIONS.length - BASIC_TOTAL;
@@ -141,6 +141,7 @@ export default function NuevoPage() {
     const draftId = draftIdRef.current;
     if (!draftId) return;
     const canonNum = Number(n.canon.replace(/[^\d]/g, "")) || 0;
+    const cvNum = Number(n.commercialValue.replace(/[^\d]/g, "")) || 0;
     updateDraft(draftId, (d) => ({
       ...d,
       contractType: (n.contractType || d.contractType) as typeof d.contractType,
@@ -167,6 +168,9 @@ export default function NuevoPage() {
         type: n.propertyType || d.property.type,
         registryNumber: n.registry.trim() || d.property.registryNumber,
         ...(canonNum > 0 ? { monthlyRentProposed: canonNum } : {}),
+        ...(cvNum > 0 ? { commercialValue: cvNum, legalRentCap: Math.round(cvNum * 0.01) } : {}),
+        commercialValueUnknown: n.noCommercialValue,
+        noCapAcknowledgement: n.noCommercialValue,
       },
       tenant: {
         ...d.tenant,
@@ -757,8 +761,35 @@ function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => v
           <InputMic autoComplete="address-level2" placeholder="Ciudad" value={a.city} onChange={(e) => setA({ ...a, city: e.target.value })} voice={(t) => setA({ ...a, city: t })} />
         </div>
       );
-    case "canon":
-      return <InputMic autoFocus inputMode="numeric" placeholder={q.ph} value={a.canon} onChange={(e) => setA({ ...a, canon: e.target.value })} voice={(t) => setA({ ...a, canon: onlyDigits(t) })} />;
+    case "canon": {
+      const canonN = Number((a.canon || "").replace(/[^\d]/g, "")) || 0;
+      const cvN = Number((a.commercialValue || "").replace(/[^\d]/g, "")) || 0;
+      const cap = cvN > 0 ? Math.round(cvN * 0.01) : 0;
+      const over = cap > 0 && canonN > cap;
+      return (
+        <div className="flex flex-col gap-2.5">
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-slate-600">Canon mensual</p>
+            <InputMic autoFocus inputMode="numeric" placeholder={q.ph} value={a.canon} onChange={(e) => setA({ ...a, canon: e.target.value })} voice={(t) => setA({ ...a, canon: onlyDigits(t) })} />
+          </div>
+          {!a.noCommercialValue && (
+            <div>
+              <p className="mb-1.5 text-sm font-medium text-slate-600">Valor comercial del inmueble</p>
+              <InputMic inputMode="numeric" placeholder="$ 200.000.000" value={a.commercialValue} onChange={(e) => setA({ ...a, commercialValue: e.target.value })} voice={(t) => setA({ ...a, commercialValue: onlyDigits(t) })} />
+              {cap > 0 && (
+                <p className={`mt-1.5 text-sm font-medium ${over ? "text-rose-700" : "text-emerald-700"}`}>
+                  {over ? "⚠️ " : "✓ "}Tope legal (1%, Ley 820): ${cap.toLocaleString("es-CO")} máx.{over ? " — el canon lo supera." : ""}
+                </p>
+              )}
+            </div>
+          )}
+          <label className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-600">
+            <input type="checkbox" checked={a.noCommercialValue} onChange={(e) => setA({ ...a, noCommercialValue: e.target.checked })} className="h-5 w-5 accent-[#5646E5]" />
+            <span>No conozco el valor comercial — <b>acepto seguir sin validar el tope</b>.</span>
+          </label>
+        </div>
+      );
+    }
     case "tenant":
       return (
         <>

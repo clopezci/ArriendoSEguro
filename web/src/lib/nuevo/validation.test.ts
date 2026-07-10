@@ -6,7 +6,7 @@ const base: Answers = {
   contractType: "VIVIENDA_URBANA",
   name: "", docType: "CC", docNumber: "", phone: "", email: "",
   acting: "", proxyOath: false, address: "", city: "",
-  registry: "", propertyType: "", registrySkip: false, canon: "",
+  registry: "", propertyType: "", registrySkip: false, canon: "", commercialValue: "", noCommercialValue: false,
   tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "",
   utilitiesParty: "", clauses: [], clauseOther: "",
   docMethod: "", docPhone: "", docEmail: "",
@@ -39,10 +39,17 @@ test("dirección: emoji/símbolos o sin letras → error; válida → ok", () =>
   assert.equal(validateStep("addr", a({ address: "Carrera 32 # 25-48", city: "Medellin" })), null);
 });
 
-test("canon: cero o texto → error; positivo → ok", () => {
+test("canon: cero/texto → error; sin valor comercial → pide valor o acuse; tope Ley 820", () => {
   assert.ok(validateStep("canon", a({ canon: "0" })));
   assert.ok(validateStep("canon", a({ canon: "abc" })));
-  assert.equal(validateStep("canon", a({ canon: "$ 1.500.000" })), null);
+  // canon válido pero sin valor comercial ni acuse → pide uno u otro
+  assert.ok(validateStep("canon", a({ canon: "1500000" })));
+  // acepta seguir sin validar el tope
+  assert.equal(validateStep("canon", a({ canon: "1500000", noCommercialValue: true })), null);
+  // canon supera el 1% del valor comercial → error
+  assert.ok(validateStep("canon", a({ canon: "3000000", commercialValue: "200000000" }))); // tope 2.000.000
+  // canon dentro del tope → ok
+  assert.equal(validateStep("canon", a({ canon: "1500000", commercialValue: "200000000" })), null);
 });
 
 test("codeudor: sin elegir → error; sí sin nombre → error; no → ok", () => {

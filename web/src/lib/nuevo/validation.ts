@@ -54,7 +54,7 @@ export type Answers = {
   acting: "" | "owner" | "proxy"; proxyOath: boolean; // calidad: dueño o apoderado
   address: string; city: string;
   registry: string; propertyType: string; registrySkip: boolean; // matrícula (saltable) + tipo
-  canon: string;
+  canon: string; commercialValue: string; noCommercialValue: boolean; // canon + tope legal (Ley 820)
   tenantMode: "self" | "invite"; tenantName: string;
   hasCodebtor: "" | "yes" | "no"; codebtorName: string;
   utilitiesParty: "" | "arrendatario" | "arrendador" | "mixto"; // servicios públicos
@@ -89,7 +89,17 @@ export function validateStep(kind: string, a: Answers): string | null {
       return addressError(a.address) ?? cityError(a.city);
     case "canon": {
       const n = Number((a.canon || "").replace(/[^\d]/g, ""));
-      return n > 0 ? null : "Indica el canon mensual (solo números, mayor a 0).";
+      if (!(n > 0)) return "Indica el canon mensual (solo números, mayor a 0).";
+      if (a.noCommercialValue) return null; // aceptó seguir sin validar el tope
+      const cv = Number((a.commercialValue || "").replace(/[^\d]/g, ""));
+      if (cv > 0) {
+        // Tope legal: el canon no puede exceder el 1% del valor comercial (Ley 820, art. 18).
+        const cap = Math.round(cv * 0.01);
+        if (n > cap)
+          return `El canon supera el tope legal: máximo 1% del valor comercial ($${cap.toLocaleString("es-CO")}). Baja el canon o corrige el valor comercial.`;
+        return null;
+      }
+      return "Indica el valor comercial del inmueble para validar el tope (Ley 820), o marca “No lo conozco”.";
     }
     case "utils":
       return a.utilitiesParty ? null : "Indica quién paga los servicios públicos.";
