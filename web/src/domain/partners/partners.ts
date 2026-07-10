@@ -149,7 +149,7 @@ export function validatePartnerInput(input: {
 
 /** Aliados de prueba (se siembran si el directorio está vacío; edítalos en /admin). */
 export function seedTestPartners(fallbackEmail: string): PartnerInput[] {
-  const email = EMAIL_RE.test(fallbackEmail) ? fallbackEmail.toLowerCase() : "aliados@arriendoseguro.app";
+  const email = EMAIL_RE.test(fallbackEmail) ? fallbackEmail.toLowerCase() : "contacto@arriendoseguro.app";
   const make = (name: string, category: PartnerCategory, description: string): PartnerInput => ({
     name,
     category,

@@ -119,6 +119,19 @@ export default function AvisoPrivacidadPage() {
 
       <section className="space-y-3">
         <h2 className="text-base font-semibold text-slate-900">8. Cómo eliminar tu cuenta o ejercer derechos</h2>
+        <div className="rounded-lg border border-violet-200 bg-violet-50/60 p-4">
+          <p className="text-sm font-medium text-slate-900">Derecho de acceso — descarga tus datos al instante</p>
+          <p className="mt-1 text-sm text-slate-700">
+            Con tu sesión iniciada puedes generar y descargar, sin correos ni esperas, una copia en tabla de los datos
+            personales que tenemos sobre ti.
+          </p>
+          <Link
+            href="/dashboard/cuenta/mis-datos"
+            className="mt-3 inline-block rounded-lg bg-violet-700 px-4 py-2 text-sm font-medium text-white hover:bg-violet-800"
+          >
+            Solicitar / descargar mis datos
+          </Link>
+        </div>
         <p>
           Puedes solicitar la eliminación de tu cuenta desde la aplicación, en la ruta{" "}
           <Link href="/dashboard/cuenta/eliminar" className="text-violet-600 underline">
@@ -126,8 +139,8 @@ export default function AvisoPrivacidadPage() {
           </Link>
           , cuando no existan bloqueos por contratos firmados en los que hayas participado. Si aplica retención legal,
           podrás canalizar supresión o anonimización vía{" "}
-          <a href="mailto:privacidad@arriendoseguro.com.co" className="text-violet-600 underline">
-            privacidad@arriendoseguro.com.co
+          <a href="mailto:contacto@arriendoseguro.app" className="text-violet-600 underline">
+            contacto@arriendoseguro.app
           </a>
           .
         </p>
@@ -159,8 +172,8 @@ export default function AvisoPrivacidadPage() {
         <h2 className="text-base font-semibold text-slate-900">Canal Habeas Data</h2>
         <p className="mt-2 text-sm">
           Consultas y solicitudes sobre datos personales:{" "}
-          <a href="mailto:privacidad@arriendoseguro.com.co" className="font-medium text-violet-700 underline">
-            privacidad@arriendoseguro.com.co
+          <a href="mailto:contacto@arriendoseguro.app" className="font-medium text-violet-700 underline">
+            contacto@arriendoseguro.app
           </a>
           .
         </p>

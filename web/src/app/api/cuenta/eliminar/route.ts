@@ -81,7 +81,7 @@ export async function POST(request: Request) {
             {
               field: "retention",
               message:
-                "No podemos eliminar la cuenta de forma automática mientras existan contratos firmados en los que participaste. Conservamos el expediente por obligaciones legales y de trazabilidad. Escríbenos a privacidad@arriendoseguro.com.co para solicitar supresión o anonimización cuando proceda.",
+                "No podemos eliminar la cuenta de forma automática mientras existan contratos firmados en los que participaste. Conservamos el expediente por obligaciones legales y de trazabilidad. Escríbenos a contacto@arriendoseguro.app para solicitar supresión o anonimización cuando proceda.",
             },
           ],
         },
@@ -118,7 +118,7 @@ export async function POST(request: Request) {
   } catch (err) {
     if (process.env.NODE_ENV !== "production") console.error("cuenta/eliminar", err);
     return NextResponse.json<Err>(
-      { success: false, errors: [{ field: "server", message: "No se pudo completar la eliminación. Intenta de nuevo o escribe a privacidad@arriendoseguro.com.co." }] },
+      { success: false, errors: [{ field: "server", message: "No se pudo completar la eliminación. Intenta de nuevo o escribe a contacto@arriendoseguro.app." }] },
       { status: 500 },
     );
   }

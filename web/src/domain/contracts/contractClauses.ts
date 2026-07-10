@@ -154,10 +154,19 @@ export const CONTRACT_TEMPLATE = `
     contrato.
   </p>
 
-  <h2>DÉCIMA CUARTA. EVALUACIÓN ESTRUCTURADA DE LA EXPERIENCIA ARRENDATICIA</h2>
+  <h2>DÉCIMA CUARTA. EVALUACIÓN ESTRUCTURADA DE LA EXPERIENCIA ARRENDATICIA Y REPUTACIÓN</h2>
   <p>
-    Las partes aceptan que podrán registrar una evaluación estructurada de la experiencia arrendaticia mediante
-    formularios cerrados. No constituye lista negra pública ni consulta libre por cédula.
+    EL ARRENDADOR, EL ARRENDATARIO y, cuando aplique, EL CODEUDOR SOLIDARIO <strong>aceptan y autorizan de forma
+    expresa, libre, previa e informada</strong> que, durante la ejecución del contrato y a su terminación, cada parte
+    podrá calificar a la otra mediante una evaluación estructurada de la experiencia arrendaticia, a través de
+    formularios cerrados (calificación por estrellas, sin texto libre difamatorio). La calificación es
+    <strong> recíproca</strong>: cada parte consiente ser evaluada por la otra en las mismas condiciones.
+  </p>
+  <p>
+    Dicha evaluación constituye tratamiento de datos personales y se autoriza conforme a la Ley 1581 de 2012 y al aviso
+    de privacidad: no constituye lista negra pública ni consulta libre por cédula, solo se mostrará agregada y con
+    autorización del titular, y cada titular podrá conocer, actualizar y rectificar la información y ejercer sus
+    derechos de habeas data.
   </p>
 
   <h2>DÉCIMA QUINTA. NOTIFICACIONES</h2>
