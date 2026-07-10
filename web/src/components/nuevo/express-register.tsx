@@ -62,9 +62,12 @@ function generatePassword(): string {
 export function ExpressRegister({
   defaultEmail,
   onAuthenticated,
+  onGoogleRedirect,
 }: {
   defaultEmail: string;
   onAuthenticated: (uid: string) => void;
+  /** En móvil el popup de Google falla; el padre guarda el avance y usa redirect. */
+  onGoogleRedirect?: () => Promise<void>;
 }) {
   const { signUp, signIn, signInWithGoogle } = useAuth();
   const [mode, setMode] = useState<"crear" | "iniciar">("crear");
@@ -118,6 +121,19 @@ export function ExpressRegister({
     if (!consent) {
       setConsentInvalid(true);
       setError("Marca la aceptación de tratamiento de datos para continuar con Google.");
+      return;
+    }
+    const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    // En móvil el popup de Google falla (auth/internal-error); usamos redirect:
+    // el padre guarda el avance y navega a Google. Al volver, continúa solo.
+    if (isMobile && onGoogleRedirect) {
+      setBusy(true);
+      try {
+        await onGoogleRedirect(); // navega fuera; la vuelta la maneja el padre
+      } catch (err) {
+        setError(googleError(err));
+        setBusy(false);
+      }
       return;
     }
     setBusy(true);

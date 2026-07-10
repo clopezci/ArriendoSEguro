@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { createContractDraft, updateDraft } from "@/features/contracts/wizard-state";
 import { flushDraftToServer, pullServerDraftsIntoLocal } from "@/features/contracts/draft-server-sync";
+import { getAuthClient } from "@/lib/firebase/client";
+import { CONSENT_CURRENT_VERSION } from "@/domain/consents/consentVersions";
 import { JourneyScene } from "@/components/nuevo/journey-scene";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { validateStep, type Answers } from "@/lib/nuevo/validation";
@@ -106,8 +108,10 @@ const EMPTY: Answers = {
 
 const BASIC_TOTAL = QUESTIONS.filter((q) => q.basic).length;
 
+const GOOGLE_RESUME_KEY = "nuevo_google_resume";
+
 export default function NuevoPage() {
-  const { user } = useAuth();
+  const { user, signInWithGoogleRedirect, consumeGoogleRedirect } = useAuth();
   const router = useRouter();
   const [mode, setMode] = useState<"home" | "flow" | "review" | "done">("home");
   const [reviewOath, setReviewOath] = useState(false); // juramento del inmueble
@@ -316,6 +320,50 @@ export default function NuevoPage() {
     setGate(null);
     setI(nextActiveIndex(BASIC_TOTAL - 1, aRef.current)); // primer paso adicional activo
   }, []);
+
+  // Google en móvil por REDIRECT: guardamos el avance (borrador + respuestas)
+  // antes de navegar a Google, para restaurarlo intacto al volver.
+  const startGoogleRedirect = useCallback(async () => {
+    try {
+      sessionStorage.setItem(GOOGLE_RESUME_KEY, JSON.stringify({ draftId: draftIdRef.current, answers: aRef.current }));
+      await signInWithGoogleRedirect();
+    } catch {
+      sessionStorage.removeItem(GOOGLE_RESUME_KEY);
+      throw new Error("google-redirect-failed");
+    }
+  }, [signInWithGoogleRedirect]);
+
+  // Al montar: si volvemos de Google (redirect), rehidratamos el recorrido y
+  // continuamos exactamente donde estábamos, con la sesión ya activa.
+  useEffect(() => {
+    const raw = typeof window !== "undefined" ? sessionStorage.getItem(GOOGLE_RESUME_KEY) : null;
+    if (!raw) return;
+    (async () => {
+      const uid = await consumeGoogleRedirect();
+      sessionStorage.removeItem(GOOGLE_RESUME_KEY);
+      if (!uid) return; // redirect no completado / falló → se queda en inicio
+      let saved: { draftId: string | null; answers: Answers } | null = null;
+      try { saved = JSON.parse(raw); } catch { saved = null; }
+      if (!saved?.draftId) return;
+      setDraftId(saved.draftId);
+      draftIdRef.current = saved.draftId;
+      setARaw(saved.answers);
+      // Consentimiento Habeas Data (aceptado antes de irse a Google).
+      try {
+        const cu = getAuthClient().currentUser;
+        if (cu) await fetch("/api/consents/register", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...(await buildAuthHeaders(cu)) },
+          body: JSON.stringify({ version: CONSENT_CURRENT_VERSION, surface: "REGISTRATION" }),
+        });
+      } catch { /* el wizard lo reintenta */ }
+      const updated = updateDraft(saved.draftId, (d) => ({ ...d, userId: uid }));
+      if (updated) void flushDraftToServer(updated).then(() => void pullServerDraftsIntoLocal());
+      setGate(null);
+      setMode("flow");
+      setI(nextActiveIndex(BASIC_TOTAL - 1, saved.answers));
+    })();
+  }, [consumeGoogleRedirect]);
 
   const back = useCallback(() => {
     setError(null);
@@ -610,7 +658,7 @@ export default function NuevoPage() {
               <ProgressBar pct={50} />
               <p className="mt-4 text-center text-sm font-semibold text-[#5646E5]">¡Lo básico está listo! 🎉</p>
               <div className="mt-4">
-                <ExpressRegister defaultEmail={a.email} onAuthenticated={onRegistered} />
+                <ExpressRegister defaultEmail={a.email} onAuthenticated={onRegistered} onGoogleRedirect={startGoogleRedirect} />
               </div>
               <div className="mt-4 text-center">
                 <button onClick={() => setGate(null)} className="text-sm font-bold text-slate-500 hover:text-[#17151F]">← Volver a revisar lo básico</button>

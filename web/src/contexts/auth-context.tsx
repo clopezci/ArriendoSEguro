@@ -3,11 +3,13 @@
 import { getAuthClient, isFirebaseClientConfigured } from "@/lib/firebase/client";
 import {
   createUserWithEmailAndPassword,
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
@@ -28,6 +30,10 @@ type AuthState = {
   signIn: (email: string, password: string) => Promise<string>;
   signUp: (email: string, password: string) => Promise<string>;
   signInWithGoogle: () => Promise<string>;
+  /** Acceso con Google por REDIRECT (fiable en móvil). Navega fuera y vuelve. */
+  signInWithGoogleRedirect: () => Promise<void>;
+  /** Al volver del redirect, devuelve el uid autenticado (o null si no aplica). */
+  consumeGoogleRedirect: () => Promise<string | null>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -74,6 +80,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return cred.user.uid;
   }, []);
 
+  const signInWithGoogleRedirect = useCallback(async () => {
+    if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    await signInWithRedirect(getAuthClient(), provider);
+  }, []);
+
+  const consumeGoogleRedirect = useCallback(async (): Promise<string | null> => {
+    if (!isFirebaseClientConfigured()) return null;
+    try {
+      const res = await getRedirectResult(getAuthClient());
+      return res?.user?.uid ?? null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const signOut = useCallback(async () => {
     if (!isFirebaseClientConfigured()) return;
     await firebaseSignOut(getAuthClient());
@@ -92,10 +115,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signInWithGoogle,
+      signInWithGoogleRedirect,
+      consumeGoogleRedirect,
       resetPassword,
       signOut,
     }),
-    [user, loading, configError, signIn, signUp, signInWithGoogle, resetPassword, signOut]
+    [user, loading, configError, signIn, signUp, signInWithGoogle, signInWithGoogleRedirect, consumeGoogleRedirect, resetPassword, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
