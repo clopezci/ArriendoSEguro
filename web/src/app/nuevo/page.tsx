@@ -92,7 +92,7 @@ export default function NuevoPage() {
   }, [i]);
 
   // --- Modo voz / accesibilidad ---
-  const { canSpeak, canListen, listening, speak, listen, stop } = useVoice();
+  const { canSpeak, canListen, listening, speak, listen, stop, requestMic } = useVoice();
   const [voiceMode, setVoiceMode] = useState(false);
   const aRef = useRef(a); aRef.current = a;
   const iRef = useRef(i); iRef.current = i;
@@ -229,8 +229,11 @@ export default function NuevoPage() {
     }
   }, [voiceMode, mode, canSpeak, speak]);
 
-  function toggleVoice() {
+  async function toggleVoice() {
     const nv = !voiceMode;
+    // Pide el permiso de micrófono DENTRO del gesto del clic (si el navegador
+    // escucha), para que salga el diálogo y luego el reconocimiento funcione.
+    if (nv && canListen) await requestMic();
     setVoiceMode(nv);
     if (!nv) { stop(); return; }
     if (mode === "home") {
@@ -353,7 +356,7 @@ export default function NuevoPage() {
           </Link>
           <div className="flex items-center gap-2">
             {canSpeak && (
-              <button type="button" onClick={toggleVoice} aria-pressed={voiceMode}
+              <button type="button" onClick={() => void toggleVoice()} aria-pressed={voiceMode}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${voiceMode ? "bg-[#5646E5] text-white" : "border border-slate-200 bg-white/70 text-slate-600 hover:border-[#5646E5]"}`}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" /><path d="M19 10a7 7 0 0 1-14 0M12 17v4" /></svg>
                 {voiceMode ? (canListen ? (listening ? "Escuchando…" : "Voz activa") : "Leyendo") : (canListen ? "Modo voz" : "Modo lectura")}
@@ -387,7 +390,10 @@ export default function NuevoPage() {
                     </button>
                   ) : (
                     <div className="rounded-2xl border border-violet-200 bg-white/85 p-4">
-                      <p className="text-sm font-semibold text-slate-800">Cuéntame tu caso en tus palabras</p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold text-slate-800">Cuéntame tu caso en tus palabras</p>
+                        <MicButton label="Dictar tu caso" onResult={(t) => setAiText((prev) => (prev ? `${prev} ${t}` : t))} />
+                      </div>
                       <textarea value={aiText} onChange={(e) => setAiText(e.target.value)} rows={3}
                         placeholder="Ej.: Soy Juan Pérez, cédula 79000000, arriendo mi apartamento en la Calle 1 #2-3 de Bogotá por 1.500.000 a María López, con codeudor Pedro Gómez."
                         className="mt-2 w-full rounded-xl border-2 border-slate-200 p-3 text-sm outline-none transition focus:border-violet-500" />
