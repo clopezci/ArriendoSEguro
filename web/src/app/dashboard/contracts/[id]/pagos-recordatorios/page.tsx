@@ -274,7 +274,7 @@ export default function PagosRecordatoriosPage() {
           type="button"
           disabled={busy}
           onClick={() => void save()}
-          className="mt-4 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          className="mt-4 rounded-xl bg-[#5646E5] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
         >
           {busy ? "Guardando…" : "Guardar y activar recordatorios"}
         </button>

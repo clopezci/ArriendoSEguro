@@ -48,7 +48,7 @@ export default function InventoryHomePage() {
         {inventoryState === "none" && (
           <Link
             href={`/dashboard/contracts/${id}/inventory/new?contractVersionId=${encodeURIComponent(contractVersionId)}`}
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white"
+            className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-medium text-white"
             onClick={(e) => {
               if (!contractVersionId) {
                 e.preventDefault();

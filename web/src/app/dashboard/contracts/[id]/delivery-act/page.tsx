@@ -85,7 +85,7 @@ export default function DeliveryActPage() {
         />
       </label>
       <div className="mt-3 flex flex-wrap gap-3">
-        <button type="button" onClick={generateAct} disabled={saving || !inventoryId || !contractVersionId} className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
+        <button type="button" onClick={generateAct} disabled={saving || !inventoryId || !contractVersionId} className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
           {saving ? "Generando y enviando..." : "Generar acta y enviar a las partes"}
         </button>
         <Link href={`/dashboard/contracts/${id}/inventory`} className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-800">Volver a inventario</Link>
