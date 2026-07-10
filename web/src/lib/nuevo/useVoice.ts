@@ -15,18 +15,29 @@ type RecognitionLike = {
   continuous: boolean;
   interimResults: boolean;
   onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void;
-  onerror: () => void;
+  onerror: (e: { error?: string }) => void;
   onend: () => void;
   start: () => void;
   stop: () => void;
   abort: () => void;
 };
 
+/** ¿El dispositivo es iPhone/iPad? (iOS no soporta dictado web; se usa el teclado). */
+function detectIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent || "";
+  const iOSClassic = /iPad|iPhone|iPod/.test(ua);
+  // iPadOS moderno se hace pasar por Mac; se detecta por pantalla táctil.
+  const iPadOS = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  return iOSClassic || iPadOS;
+}
+
 export function useVoice() {
   // `canSpeak`: puede LEER en voz alta (TTS) — incluye iPhone/Safari.
   // `canListen`: puede ESCUCHAR/dictar (STT) — Chrome/Edge/Android; NO iOS.
   const [canSpeak, setCanSpeak] = useState(false);
   const [canListen, setCanListen] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [listening, setListening] = useState(false);
   const recRef = useRef<RecognitionLike | null>(null);
@@ -35,6 +46,7 @@ export function useVoice() {
     const w = window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown };
     setCanSpeak("speechSynthesis" in window);
     setCanListen(Boolean(w.SpeechRecognition || w.webkitSpeechRecognition));
+    setIsIOS(detectIOS());
   }, []);
 
   const speak = useCallback((text: string, onEnd?: () => void) => {
@@ -70,36 +82,54 @@ export function useVoice() {
     }
   }, []);
 
-  const listen = useCallback((onResult: (t: string) => void, onEnd?: () => void) => {
-    const w = window as unknown as { SpeechRecognition?: new () => RecognitionLike; webkitSpeechRecognition?: new () => RecognitionLike };
-    const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
-    if (!SR) { onEnd?.(); return; }
-    try {
-      const rec = new SR();
-      rec.lang = "es-CO";
-      rec.continuous = false;
-      rec.interimResults = false;
-      let done = false;
-      const finish = () => { if (done) return; done = true; setListening(false); };
-      // Salvavidas: si en 15s no llega nada, se corta para no dejar el botón pegado.
-      const timer = setTimeout(() => { try { rec.abort(); } catch { /* noop */ } }, 15000);
-      rec.onresult = (e) => {
-        clearTimeout(timer);
-        const t = e.results?.[0]?.[0]?.transcript ?? "";
-        onResult(String(t));
-      };
-      rec.onerror = () => { clearTimeout(timer); finish(); onEnd?.(); };
-      rec.onend = () => { clearTimeout(timer); finish(); onEnd?.(); };
-      recRef.current = rec;
-      setListening(true);
-      // start() SÍNCRONO dentro del gesto del clic → dispara el permiso y evita el
-      // bloqueo silencioso que ocurría al iniciarlo tras una promesa.
-      rec.start();
-    } catch {
-      setListening(false);
-      onEnd?.();
-    }
-  }, []);
+  const listen = useCallback(
+    (onResult: (t: string) => void, onEnd?: () => void, onError?: (code: string) => void) => {
+      const w = window as unknown as { SpeechRecognition?: new () => RecognitionLike; webkitSpeechRecognition?: new () => RecognitionLike };
+      const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
+      if (!SR) { onError?.("unsupported"); onEnd?.(); return; }
+      try {
+        // Si ya había una escucha activa, córtala antes de abrir otra.
+        try { recRef.current?.abort(); } catch { /* noop */ }
+        const rec = new SR();
+        rec.lang = "es-CO";
+        rec.continuous = false;
+        rec.interimResults = false;
+        let done = false;
+        let gotResult = false;
+        const finish = () => { if (done) return; done = true; setListening(false); };
+        // Salvavidas: si en 15s no llega nada, se corta para no dejar el botón pegado.
+        const timer = setTimeout(() => { try { rec.abort(); } catch { /* noop */ } }, 15000);
+        rec.onresult = (e) => {
+          clearTimeout(timer);
+          gotResult = true;
+          const t = e.results?.[0]?.[0]?.transcript ?? "";
+          onResult(String(t));
+        };
+        rec.onerror = (e) => {
+          clearTimeout(timer);
+          finish();
+          onError?.(e?.error || "unknown"); // p.ej. not-allowed, no-speech, network, audio-capture
+          onEnd?.();
+        };
+        rec.onend = () => {
+          clearTimeout(timer);
+          finish();
+          if (!gotResult) onError?.("no-speech"); // terminó sin capturar nada
+          onEnd?.();
+        };
+        recRef.current = rec;
+        setListening(true);
+        // start() SÍNCRONO dentro del gesto del clic → dispara el permiso y evita el
+        // bloqueo silencioso que ocurría al iniciarlo tras una promesa.
+        rec.start();
+      } catch {
+        setListening(false);
+        onError?.("start-failed");
+        onEnd?.();
+      }
+    },
+    [],
+  );
 
   const stop = useCallback(() => {
     try { recRef.current?.abort(); } catch { /* noop */ }
@@ -108,5 +138,5 @@ export function useVoice() {
     setSpeaking(false);
   }, []);
 
-  return { canSpeak, canListen, speaking, listening, speak, listen, stop, requestMic };
+  return { canSpeak, canListen, isIOS, speaking, listening, speak, listen, stop, requestMic };
 }
