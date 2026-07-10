@@ -215,11 +215,21 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
     canales informados en el aviso de privacidad.
   </p>
 
-  <h2>DÉCIMA OCTAVA. EVALUACIÓN ESTRUCTURADA DE LA EXPERIENCIA ARRENDATICIA</h2>
+  <h2>DÉCIMA OCTAVA. EVALUACIÓN ESTRUCTURADA DE LA EXPERIENCIA ARRENDATICIA Y REPUTACIÓN</h2>
   <p>
-    Las partes aceptan que podrán registrar una evaluación estructurada de la experiencia arrendaticia mediante
-    formularios cerrados. La evaluación no constituye lista negra pública ni consulta libre por cédula, y solo se
-    publicará agregada en perfiles cuando lo permita la política de la plataforma.
+    EL ARRENDADOR, EL ARRENDATARIO y, cuando aplique, EL CODEUDOR SOLIDARIO <strong>aceptan y autorizan de forma
+    expresa, libre, previa e informada</strong> que, durante la ejecución del contrato y a su terminación, cada parte
+    podrá calificar a la otra mediante una evaluación estructurada de la experiencia arrendaticia, a través de
+    formularios cerrados (calificación por estrellas, sin texto libre difamatorio). La calificación es
+    <strong> recíproca</strong>: cada parte consiente ser evaluada por la otra en las mismas condiciones.
+  </p>
+  <p>
+    Las partes reconocen que dicha evaluación constituye tratamiento de datos personales y autorizan su recolección,
+    almacenamiento y uso por la plataforma Arriendo Seguro conforme a la Ley 1581 de 2012 y al aviso de privacidad, con
+    las siguientes garantías: (i) no constituye lista negra pública ni consulta libre por cédula; (ii) solo se mostrará
+    de forma agregada y a quien acredite una relación arrendaticia legítima con autorización del titular, cuando la
+    política de la plataforma lo permita; y (iii) cada titular podrá conocer, actualizar y rectificar la información y
+    ejercer sus derechos de habeas data por los canales informados.
   </p>
 
   <h2>DÉCIMA NOVENA. NOTIFICACIONES Y COMUNICACIONES</h2>

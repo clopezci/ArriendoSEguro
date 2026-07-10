@@ -51,7 +51,7 @@ export default function EliminarCuentaPage() {
     }
     if (signedCount !== null && signedCount > 0) {
       setErr(
-        "Mientras tengas contratos firmados en la plataforma, la eliminación automática no está disponible. Escríbenos a privacidad@arriendoseguro.com.co.",
+        "Mientras tengas contratos firmados en la plataforma, la eliminación automática no está disponible. Escríbenos a contacto@arriendoseguro.app.",
       );
       return;
     }
@@ -70,7 +70,7 @@ export default function EliminarCuentaPage() {
       if (res.status === 409 && data.code === "RETENTION_SIGNED_CONTRACTS") {
         setErr(
           data.errors?.[0]?.message ??
-            "Existen contratos firmados asociados a tu cuenta. Contacta privacidad@arriendoseguro.com.co.",
+            "Existen contratos firmados asociados a tu cuenta. Contacta contacto@arriendoseguro.app.",
         );
         return;
       }
@@ -123,8 +123,8 @@ export default function EliminarCuentaPage() {
             Detectamos <strong>{signedCount}</strong> contrato(s) firmado(s) en los que participaste con este correo.
             Conservamos la información del expediente conforme a la Ley 1581 de 2012 y la normativa aplicable. Para
             solicitar supresión o anonimización cuando proceda, escribe a{" "}
-            <a href="mailto:privacidad@arriendoseguro.com.co" className="font-medium underline">
-              privacidad@arriendoseguro.com.co
+            <a href="mailto:contacto@arriendoseguro.app" className="font-medium underline">
+              contacto@arriendoseguro.app
             </a>
             .
           </p>

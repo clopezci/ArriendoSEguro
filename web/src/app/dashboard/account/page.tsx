@@ -156,14 +156,27 @@ export default function AccountPage() {
           <li>Presentar queja ante la Superintendencia de Industria y Comercio cuando corresponda.</li>
           <li>Conocer las políticas de tratamiento y los canales habilitados.</li>
         </ul>
+        <div className="mt-4 rounded-lg border border-violet-200 bg-violet-50/60 p-3">
+          <p className="text-sm font-medium text-slate-900">Solicita tus datos al instante</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Ejerce tu <strong>derecho de acceso</strong> sin correos ni esperas: generamos y te entregamos una copia de
+            tus datos en tabla, lista para descargar.
+          </p>
+          <Link
+            href="/dashboard/cuenta/mis-datos"
+            className="mt-3 inline-block rounded-lg bg-violet-700 px-4 py-2 text-sm font-medium text-white hover:bg-violet-800"
+          >
+            Solicitar / descargar mis datos
+          </Link>
+        </div>
         <p className="mt-3 text-sm text-slate-700">
           Plazos orientativos de respuesta: hasta <strong>diez días hábiles</strong> para consultas y hasta{" "}
           <strong>quince días hábiles</strong> para reclamos, sin perjuicio de acuse de recibo y complejidad del caso.
         </p>
         <p className="mt-2 text-sm text-slate-700">
           Canal:{" "}
-          <a href="mailto:privacidad@arriendoseguro.com.co" className="text-violet-700 underline">
-            privacidad@arriendoseguro.com.co
+          <a href="mailto:contacto@arriendoseguro.app" className="text-violet-700 underline">
+            contacto@arriendoseguro.app
           </a>
           . Aviso completo:{" "}
           <Link href="/legal/aviso-privacidad" className="text-violet-700 hover:underline">
