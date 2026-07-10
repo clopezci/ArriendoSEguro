@@ -6,7 +6,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
-import { createContractDraft, updateDraft, getDraft } from "@/features/contracts/wizard-state";
+import { createContractDraft, updateDraft } from "@/features/contracts/wizard-state";
 import { flushDraftToServer, pullServerDraftsIntoLocal } from "@/features/contracts/draft-server-sync";
 import { JourneyScene } from "@/components/nuevo/journey-scene";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
@@ -36,23 +36,26 @@ const SUBPHRASES = [
   "Tú pones los datos; la ley la ponemos nosotros.",
 ];
 
-type Kind = "text" | "doc" | "contact" | "addr" | "canon" | "tenant" | "codebtor" | "docs";
+type Kind = "ctype" | "text" | "doc" | "contact" | "acting" | "addr" | "registry" | "canon" | "tenant" | "codebtor" | "docs";
 type Q = { id: string; block: string; prompt: string; hint: string; kind: Kind; ph?: string; basic: boolean };
 
-// Tramo básico (0-50%): dueño 3 + inmueble 2 + inquilino 1 = 6.
-// Tramo adicional (50-100%): codeudor (y en F3, documentos).
+// Tramo básico (0-50%): tipo + dueño 4 + inmueble 3 + inquilino 1 = 9.
+// Tramo adicional (50-100%): codeudor + documentos.
 const QUESTIONS: Q[] = [
+  { id: "ctype", block: "¿Qué vas a crear?", prompt: "¿Qué contrato vamos a crear?", hint: "Hoy generamos arrendamiento de vivienda urbana (Ley 820).", kind: "ctype", basic: true },
   { id: "name", block: "Datos del dueño", prompt: "¿Cómo se llama el arrendador?", hint: "Quien entrega el inmueble en arriendo.", kind: "text", ph: "Nombre completo", basic: true },
   { id: "doc", block: "Datos del dueño", prompt: "Su documento", hint: "Tipo y número.", kind: "doc", basic: true },
   { id: "contact", block: "Datos del dueño", prompt: "¿Cómo lo contactamos?", hint: "Celular y correo — para notificaciones y firma.", kind: "contact", basic: true },
+  { id: "acting", block: "Datos del dueño", prompt: "¿Eres el dueño o su apoderado?", hint: "Si actúas como apoderado, luego subes el poder.", kind: "acting", basic: true },
   { id: "addr", block: "Datos del inmueble", prompt: "¿Dónde queda el inmueble?", hint: "Dirección y ciudad que irán en el contrato.", kind: "addr", basic: true },
+  { id: "registry", block: "Datos del inmueble", prompt: "Matrícula y tipo del inmueble", hint: "La matrícula da certeza jurídica. Si no la tienes a la mano, puedes seguir.", kind: "registry", basic: true },
   { id: "canon", block: "Datos del inmueble", prompt: "¿Cuál es el canon mensual?", hint: "Después validamos el tope legal (Ley 820).", kind: "canon", ph: "$ 1.500.000", basic: true },
   { id: "tenant", block: "Datos del inquilino", prompt: "¿Quién será el arrendatario?", hint: "Lo llenas tú o se lo pides a él.", kind: "tenant", basic: true },
   { id: "codebtor", block: "¿Codeudor?", prompt: "¿Tendrá codeudor solidario?", hint: "Opcional. Añade respaldo si lo necesitas.", kind: "codebtor", basic: false },
   { id: "docs", block: "Documentos del inquilino", prompt: "Documentos del inquilino", hint: "Los subes tú, o le pides al inquilino que los cargue por WhatsApp o correo.", kind: "docs", basic: false },
 ];
 
-const EMPTY: Answers = { name: "", docType: "CC", docNumber: "", phone: "", email: "", address: "", city: "", canon: "", tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "", docMethod: "", docPhone: "", docEmail: "" };
+const EMPTY: Answers = { contractType: "VIVIENDA_URBANA", name: "", docType: "CC", docNumber: "", phone: "", email: "", acting: "", proxyOath: false, address: "", city: "", registry: "", propertyType: "", registrySkip: false, canon: "", tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "", docMethod: "", docPhone: "", docEmail: "" };
 
 const BASIC_TOTAL = QUESTIONS.filter((q) => q.basic).length;
 const EXTRA_TOTAL = QUESTIONS.length - BASIC_TOTAL;
@@ -60,7 +63,9 @@ const EXTRA_TOTAL = QUESTIONS.length - BASIC_TOTAL;
 export default function NuevoPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [mode, setMode] = useState<"home" | "flow" | "done">("home");
+  const [mode, setMode] = useState<"home" | "flow" | "review" | "done">("home");
+  const [reviewOath, setReviewOath] = useState(false); // juramento del inmueble
+  const [skipAck, setSkipAck] = useState(false); // acepta continuar sin la matrícula
   const [themes, setThemes] = useState<[[string, string], [string, string]]>([THEMES[0], THEMES[1]]);
   const [greeting, setGreeting] = useState(GREETINGS[0]);
   const [subIdx, setSubIdx] = useState(0);
@@ -112,6 +117,9 @@ export default function NuevoPage() {
     draftIdRef.current = draft.id;
     setARaw(EMPTY);
     setError(null);
+    setReviewOath(false);
+    setSkipAck(false);
+    setGate(null);
     setI(0);
     setMode("flow");
   }
@@ -122,6 +130,14 @@ export default function NuevoPage() {
     const canonNum = Number(n.canon.replace(/[^\d]/g, "")) || 0;
     updateDraft(draftId, (d) => ({
       ...d,
+      contractType: (n.contractType || d.contractType) as typeof d.contractType,
+      actingAs: n.acting === "owner" || n.acting === "proxy" ? n.acting : d.actingAs,
+      proxyDeclarationAcceptedAt:
+        n.acting === "proxy" && n.proxyOath
+          ? (d.proxyDeclarationAcceptedAt ?? new Date().toISOString())
+          : n.acting === "owner"
+            ? undefined
+            : d.proxyDeclarationAcceptedAt,
       hasSolidaryCoDebtor: n.hasCodebtor === "yes" ? true : n.hasCodebtor === "no" ? false : d.hasSolidaryCoDebtor,
       landlord: {
         ...d.landlord,
@@ -135,6 +151,8 @@ export default function NuevoPage() {
         ...d.property,
         address: n.address.trim() || d.property.address,
         city: n.city.trim() || d.property.city,
+        type: n.propertyType || d.property.type,
+        registryNumber: n.registry.trim() || d.property.registryNumber,
         ...(canonNum > 0 ? { monthlyRentProposed: canonNum } : {}),
       },
       tenant: {
@@ -161,16 +179,27 @@ export default function NuevoPage() {
     persist(aRef.current);
     // Al terminar lo básico (50%), si no hay sesión, exigimos crear cuenta.
     if (iRef.current === BASIC_TOTAL - 1 && !userRef.current) { setGate("register"); return; }
-    if (iRef.current >= QUESTIONS.length - 1) {
-      // Guarda en la cuenta AHORA (sin esperar el debounce) antes de cerrar.
-      const id = draftIdRef.current;
-      const d = id ? getDraft(id) : null;
-      if (d) void flushDraftToServer(d);
-      setMode("done");
-      return;
-    }
+    if (iRef.current >= QUESTIONS.length - 1) { setMode("review"); return; }
     setI(iRef.current + 1);
   }, [persist, speak, relisten]);
+
+  // Confirmación final: registra el juramento del inmueble, guarda en la cuenta
+  // AHORA (sin esperar debounce) y cierra. Los campos importantes que el usuario
+  // saltó (p. ej. matrícula) quedaron aceptados con su declaración en Revisión.
+  const confirmReview = useCallback(() => {
+    const id = draftIdRef.current;
+    if (id) {
+      const updated = updateDraft(id, (d) => ({
+        ...d,
+        property: { ...d.property, propertyOwnershipOath: true },
+        expedienteNotes: aRef.current.registrySkip
+          ? `${d.expedienteNotes || ""}\n[Nuevo flujo] El usuario continuó sin matrícula inmobiliaria, aceptando declaración el ${new Date().toISOString()}.`.trim()
+          : d.expedienteNotes,
+      }));
+      if (updated) void flushDraftToServer(updated);
+    }
+    setMode("done");
+  }, []);
 
   // Tras crear cuenta / iniciar sesión en el registro exprés: re-asocia el
   // borrador al usuario real, lo GUARDA en el servidor de inmediato (para que
@@ -198,6 +227,21 @@ export default function NuevoPage() {
     setError(null);
     setARaw((p) => {
       switch (kind) {
+        case "ctype": return { ...p, contractType: "VIVIENDA_URBANA" };
+        case "acting":
+          if (/due[ñn]o|propietario|dueno/.test(s)) return { ...p, acting: "owner", proxyOath: false };
+          if (/apoderado|poder|represent/.test(s)) return { ...p, acting: "proxy", proxyOath: true };
+          return p;
+        case "registry": {
+          if (/no la tengo|no tengo|saltar|sin matr|despu[eé]s/.test(s)) return { ...p, registrySkip: true, registry: "" };
+          if (/apartamento|apto/.test(s)) return { ...p, propertyType: "Apartamento" };
+          if (/casa/.test(s)) return { ...p, propertyType: "Casa" };
+          if (/habitaci/.test(s)) return { ...p, propertyType: "Habitación" };
+          if (/local/.test(s)) return { ...p, propertyType: "Local" };
+          if (/oficina/.test(s)) return { ...p, propertyType: "Oficina" };
+          if (raw.trim()) return { ...p, registry: raw.trim(), registrySkip: false };
+          return p;
+        }
         case "text": return { ...p, name: raw };
         case "doc":
           if (/c[eé]dula|\bc c\b|\bcc\b/.test(s)) return { ...p, docType: "CC" };
@@ -227,7 +271,10 @@ export default function NuevoPage() {
   const speakStep = useCallback(() => {
     const cq = QUESTIONS[iRef.current];
     let text = `${cq.prompt}. ${cq.hint}`;
+    if (cq.kind === "ctype") text += " Es vivienda urbana. Di: continuar.";
     if (cq.kind === "doc") text += " Di el tipo: cédula, extranjería, nit o pasaporte, y luego el número.";
+    if (cq.kind === "acting") text += " Di: soy dueño, o soy apoderado.";
+    if (cq.kind === "registry") text += " Di el tipo de inmueble y la matrícula; o di: no la tengo, para seguir sin ella.";
     if (cq.kind === "codebtor") text += " Responde sí o no.";
     if (cq.kind === "docs") text += " Di: yo, whatsapp, o correo.";
     text += canListen ? " Cuando termines, di: continuar. Para volver, di: atrás." : " Escribe tu respuesta y toca Continuar.";
@@ -500,6 +547,59 @@ export default function NuevoPage() {
             </motion.section>
           )}
 
+          {mode === "review" && (
+            <motion.section key="review" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
+              <ProgressBar pct={100} />
+              <h2 className="text-3xl font-extrabold tracking-tight">Revisa antes de continuar</h2>
+              <p className="mt-1.5 text-slate-500">Confirma lo esencial. Puedes volver a cualquier paso para corregir.</p>
+
+              <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
+                <ReviewItem label="Contrato" value="Vivienda urbana (Ley 820)" />
+                <ReviewItem label="Arrendador" value={`${a.name || "—"} · ${a.docType} ${a.docNumber || ""}`.trim()} />
+                <ReviewItem label="Calidad" value={a.acting === "proxy" ? "Apoderado" : a.acting === "owner" ? "Dueño" : "—"} />
+                <ReviewItem label="Inmueble" value={`${a.propertyType || "—"} · ${a.address || "—"}${a.city ? ", " + a.city : ""}`} />
+                <ReviewItem label="Canon" value={a.canon ? `$ ${Number(a.canon.replace(/[^\d]/g, "")).toLocaleString("es-CO")}` : "—"} />
+                <ReviewItem label="Arrendatario" value={a.tenantName || (a.tenantMode === "invite" ? "Por invitación" : "—")} />
+              </div>
+
+              {/* Campos importantes que el usuario saltó → aviso + juramento */}
+              {a.registrySkip && (
+                <div className="mt-5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4">
+                  <p className="flex items-center gap-2 text-sm font-bold text-amber-900">⚠️ Dato importante que quedó pendiente</p>
+                  <p className="mt-1 text-sm text-slate-700">La <b>matrícula inmobiliaria</b> da certeza jurídica del inmueble. Puedes completarla ahora o continuar sin ella.</p>
+                  <div className="mt-3 flex flex-wrap gap-2.5">
+                    <button type="button" onClick={() => { setMode("flow"); setI(QUESTIONS.findIndex((q) => q.id === "registry")); }}
+                      className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white hover:brightness-105">Completar ahora</button>
+                  </div>
+                  <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-sm text-slate-700">
+                    <input type="checkbox" checked={skipAck} onChange={(e) => setSkipAck(e.target.checked)} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
+                    <span>Declaro que <b>decido continuar sin la matrícula</b> por ahora, entendiendo su importancia; podré agregarla luego.</span>
+                  </label>
+                </div>
+              )}
+
+              {a.acting === "proxy" && (
+                <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">📎 Recuerda: como apoderado deberás <b>subir el poder</b> para la firma.</p>
+              )}
+
+              {/* Juramento del inmueble (obligatorio) */}
+              <label className="mt-5 flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-slate-200 bg-white p-4 text-sm text-slate-700">
+                <input type="checkbox" checked={reviewOath} onChange={(e) => setReviewOath(e.target.checked)} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
+                <span>Declaro <b>bajo la gravedad de juramento</b> que los datos del inmueble son correctos y que soy el propietario o cuento con poder vigente para arrendarlo.</span>
+              </label>
+
+              <div className="mt-6 flex items-center gap-3">
+                <button
+                  onClick={confirmReview}
+                  disabled={!reviewOath || (a.registrySkip && !skipAck)}
+                  className="rounded-2xl bg-[#FF6B4A] px-7 py-4 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50">
+                  Confirmar y continuar →
+                </button>
+                <button onClick={() => { setMode("flow"); setI(QUESTIONS.length - 1); }} className="px-3 py-4 text-base font-bold text-slate-500 hover:text-[#17151F]">Atrás</button>
+              </div>
+            </motion.section>
+          )}
+
           {mode === "done" && (
             <motion.section key="done" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
               <ProgressBar pct={100} />
@@ -539,8 +639,61 @@ function InputMic({ voice, className, ...props }: { voice: (t: string) => void }
 const onlyDigits = (t: string) => t.replace(/\D/g, "");
 const cleanEmail = (t: string) => t.replace(/\s/g, "").toLowerCase();
 
+const PROPERTY_TYPES = ["Apartamento", "Casa", "Habitación", "Local", "Oficina", "Otro"];
+
 function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => void; docs: { send: (m: "whatsapp" | "email") => void; status: string | null; busy: boolean } }) {
   switch (q.kind) {
+    case "ctype":
+      return (
+        <div className="flex flex-col gap-2.5">
+          <button type="button" onClick={() => setA({ ...a, contractType: "VIVIENDA_URBANA" })}
+            className={`flex items-center gap-3.5 rounded-2xl border-2 p-4 text-left transition ${a.contractType === "VIVIENDA_URBANA" ? "border-[#5646E5] bg-[#ECE9FB]" : "border-slate-200 bg-white hover:border-[#5646E5]"}`}>
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-[#5646E5] text-xl">🏠</span>
+            <span><b className="block text-[16px]">Arrendamiento de vivienda urbana</b><small className="text-[13.5px] text-slate-500">Casa, apartamento o habitación. Régimen de la Ley 820 de 2003.</small></span>
+          </button>
+          <div className="flex items-center gap-3.5 rounded-2xl border-2 border-dashed border-slate-200 p-4 text-left opacity-60">
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-slate-100 text-slate-400 text-xl">🏢</span>
+            <span><b className="block text-[16px] text-slate-500">Local comercial · habitación · otros</b><small className="text-[13.5px] text-slate-400">Próximamente.</small></span>
+          </div>
+        </div>
+      );
+    case "acting":
+      return (
+        <>
+          <div className="mb-3 flex flex-wrap gap-2.5">
+            <button type="button" onClick={() => setA({ ...a, acting: "owner", proxyOath: false })} className={chip(a.acting === "owner")}>Soy el dueño</button>
+            <button type="button" onClick={() => setA({ ...a, acting: "proxy" })} className={chip(a.acting === "proxy")}>Soy apoderado</button>
+          </div>
+          {a.acting === "proxy" && (
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
+              <input type="checkbox" checked={a.proxyOath} onChange={(e) => setA({ ...a, proxyOath: e.target.checked })} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
+              <span>Declaro que cuento con <b>poder vigente y facultad</b> para arrendar este inmueble a nombre del propietario. Sé que deberé subir el poder para la firma.</span>
+            </label>
+          )}
+        </>
+      );
+    case "registry":
+      return (
+        <div className="flex flex-col gap-3">
+          <div>
+            <p className="mb-2 text-sm font-medium text-slate-600">Tipo de inmueble</p>
+            <div className="flex flex-wrap gap-2.5">
+              {PROPERTY_TYPES.map((t) => (
+                <button key={t} type="button" onClick={() => setA({ ...a, propertyType: t })} className={chip(a.propertyType === t)}>{t}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-medium text-slate-600">Matrícula inmobiliaria</p>
+            <InputMic inputMode="text" placeholder="Ej. 050-123456" value={a.registry} disabled={a.registrySkip}
+              onChange={(e) => setA({ ...a, registry: e.target.value })} voice={(t) => setA({ ...a, registry: t })} />
+            <label className="mt-2.5 flex cursor-pointer items-center gap-2.5 text-sm text-slate-600">
+              <input type="checkbox" checked={a.registrySkip} onChange={(e) => setA({ ...a, registrySkip: e.target.checked, registry: e.target.checked ? "" : a.registry })} className="h-5 w-5 accent-[#5646E5]" />
+              <span>No la tengo ahora — <b>seguir sin la matrícula</b> (te la recordamos al final).</span>
+            </label>
+          </div>
+        </div>
+      );
     case "text":
       return <InputMic autoFocus autoComplete="name" placeholder={q.ph} value={a.name} onChange={(e) => setA({ ...a, name: e.target.value })} voice={(t) => setA({ ...a, name: t })} />;
     case "doc":
@@ -638,6 +791,15 @@ function DocOption({ sel, onClick, tone, title, desc, icon }: { sel: boolean; on
 
 function chip(sel: boolean) {
   return `rounded-2xl border-2 px-4 py-3 text-[15px] font-medium transition ${sel ? "border-[#5646E5] bg-[#ECE9FB] text-[#5646E5]" : "border-slate-200 bg-white hover:border-[#5646E5]"}`;
+}
+
+function ReviewItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+      <p className="mt-0.5 break-words text-[15px] font-medium text-slate-800">{value}</p>
+    </div>
+  );
 }
 
 function ProgressBar({ pct }: { pct: number }) {

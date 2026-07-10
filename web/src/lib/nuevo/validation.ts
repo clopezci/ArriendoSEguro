@@ -49,8 +49,12 @@ function docTypeToDomain(t: string): DocumentType {
 }
 
 export type Answers = {
+  contractType: string; // "VIVIENDA_URBANA" (único habilitado hoy)
   name: string; docType: string; docNumber: string; phone: string; email: string;
-  address: string; city: string; canon: string;
+  acting: "" | "owner" | "proxy"; proxyOath: boolean; // calidad: dueño o apoderado
+  address: string; city: string;
+  registry: string; propertyType: string; registrySkip: boolean; // matrícula (saltable) + tipo
+  canon: string;
   tenantMode: "self" | "invite"; tenantName: string;
   hasCodebtor: "" | "yes" | "no"; codebtorName: string;
   docMethod: "" | "self" | "whatsapp" | "email"; docPhone: string; docEmail: string;
@@ -59,6 +63,18 @@ export type Answers = {
 /** Devuelve el error del paso actual (o null si es válido y se puede avanzar). */
 export function validateStep(kind: string, a: Answers): string | null {
   switch (kind) {
+    case "ctype":
+      return a.contractType ? null : "Elige el tipo de contrato para continuar.";
+    case "acting":
+      if (a.acting === "") return "Indica si eres el dueño o actúas como apoderado.";
+      if (a.acting === "proxy" && !a.proxyOath)
+        return "Como apoderado, acepta la declaración para poder continuar.";
+      return null;
+    case "registry":
+      if (!a.propertyType) return "Elige el tipo de inmueble (apartamento, casa, local…).";
+      if (!a.registrySkip && a.registry.trim().length < 2)
+        return "Escribe la matrícula inmobiliaria, o marca “No la tengo ahora”.";
+      return null;
     case "text":
       return nameError(a.name);
     case "doc": {

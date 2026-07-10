@@ -3,7 +3,10 @@ import assert from "node:assert/strict";
 import { validateStep, type Answers } from "./validation";
 
 const base: Answers = {
-  name: "", docType: "CC", docNumber: "", phone: "", email: "", address: "", city: "", canon: "",
+  contractType: "VIVIENDA_URBANA",
+  name: "", docType: "CC", docNumber: "", phone: "", email: "",
+  acting: "", proxyOath: false, address: "", city: "",
+  registry: "", propertyType: "", registrySkip: false, canon: "",
   tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "", docMethod: "", docPhone: "", docEmail: "",
 };
 const a = (o: Partial<Answers>): Answers => ({ ...base, ...o });
@@ -52,4 +55,23 @@ test("documentos: sin método → error; WhatsApp con teléfono corto → error;
   assert.ok(validateStep("docs", a({ docMethod: "whatsapp", docPhone: "300" })));
   assert.equal(validateStep("docs", a({ docMethod: "self" })), null);
   assert.equal(validateStep("docs", a({ docMethod: "whatsapp", docPhone: "3001234567" })), null);
+});
+
+test("tipo de contrato: con valor → ok", () => {
+  assert.ok(validateStep("ctype", a({ contractType: "" })));
+  assert.equal(validateStep("ctype", a({ contractType: "VIVIENDA_URBANA" })), null);
+});
+
+test("calidad: sin elegir → error; apoderado sin juramento → error; dueño → ok", () => {
+  assert.ok(validateStep("acting", a({ acting: "" })));
+  assert.ok(validateStep("acting", a({ acting: "proxy", proxyOath: false })));
+  assert.equal(validateStep("acting", a({ acting: "proxy", proxyOath: true })), null);
+  assert.equal(validateStep("acting", a({ acting: "owner" })), null);
+});
+
+test("matrícula/tipo: sin tipo → error; sin matrícula y sin saltar → error; saltar → ok", () => {
+  assert.ok(validateStep("registry", a({ propertyType: "", registry: "050-1" })));
+  assert.ok(validateStep("registry", a({ propertyType: "Casa", registry: "", registrySkip: false })));
+  assert.equal(validateStep("registry", a({ propertyType: "Casa", registry: "", registrySkip: true })), null);
+  assert.equal(validateStep("registry", a({ propertyType: "Casa", registry: "050-123456" })), null);
 });
