@@ -70,6 +70,14 @@ export function ReadAloudProvider({ children }: { children: React.ReactNode }) {
   const idxRef = useRef(0);
   const rateRef = useRef(1);
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
+  /**
+   * "Generación" de lectura. Cada vez que iniciamos, reiniciamos o detenemos
+   * una lectura, incrementamos este contador. Los callbacks `onend`/`onerror`
+   * de una locución que NOSOTROS cancelamos (p. ej. al cambiar la velocidad o
+   * al pausar) quedan con una generación vieja y se ignoran, para que un
+   * `cancel()` propio no dispare `idle` ni haga desaparecer la barra.
+   */
+  const genRef = useRef(0);
 
   useEffect(() => {
     const ok = typeof window !== "undefined" && "speechSynthesis" in window;
@@ -92,10 +100,18 @@ export function ReadAloudProvider({ children }: { children: React.ReactNode }) {
 
   const speakFrom = useCallback((index: number) => {
     const synth = window.speechSynthesis;
+    const gen = ++genRef.current; // invalida los handlers de la locución anterior
     synth.cancel();
+    // Chrome a veces queda "pausado" tras un cancel; asegúrate de reanudar el motor.
+    try {
+      synth.resume();
+    } catch {
+      /* noop */
+    }
     idxRef.current = index;
     const voice = voiceRef.current ?? pickSpanishVoice(synth.getVoices());
     const next = () => {
+      if (gen !== genRef.current) return; // esta lectura fue superada/cancelada por nosotros
       if (idxRef.current >= chunksRef.current.length) {
         setStatus("idle");
         setActiveId(null);
@@ -107,10 +123,12 @@ export function ReadAloudProvider({ children }: { children: React.ReactNode }) {
       u.rate = rateRef.current;
       u.pitch = 1;
       u.onend = () => {
+        if (gen !== genRef.current) return; // cancelada por nosotros: no avanzar
         idxRef.current += 1;
         next();
       };
       u.onerror = () => {
+        if (gen !== genRef.current) return; // cancelada por nosotros: no apagar la barra
         setStatus("idle");
         setActiveId(null);
       };
@@ -132,8 +150,11 @@ export function ReadAloudProvider({ children }: { children: React.ReactNode }) {
   );
 
   const pause = useCallback(() => {
+    // En vez de speechSynthesis.pause() (poco fiable en móvil/iOS, donde resume()
+    // no reanuda), invalidamos la locución actual y recordamos el fragmento.
+    genRef.current++;
     try {
-      window.speechSynthesis.pause();
+      window.speechSynthesis.cancel();
     } catch {
       /* noop */
     }
@@ -141,15 +162,13 @@ export function ReadAloudProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const resume = useCallback(() => {
-    try {
-      window.speechSynthesis.resume();
-    } catch {
-      /* noop */
-    }
-    setStatus("playing");
-  }, []);
+    if (chunksRef.current.length === 0) return;
+    // Reanuda releyendo el fragmento actual (≤220 chars): funciona en todos los navegadores.
+    speakFrom(idxRef.current);
+  }, [speakFrom]);
 
   const stop = useCallback(() => {
+    genRef.current++;
     try {
       window.speechSynthesis.cancel();
     } catch {
@@ -165,8 +184,9 @@ export function ReadAloudProvider({ children }: { children: React.ReactNode }) {
     (r: number) => {
       rateRef.current = r;
       setRateState(r);
-      // La velocidad no se puede cambiar en curso: reiniciamos el fragmento actual.
-      if (chunksRef.current.length > 0 && (status === "playing" || status === "paused")) {
+      // La velocidad no se puede cambiar en curso: reiniciamos el fragmento actual
+      // solo si está sonando. Si está en pausa, se aplica al continuar.
+      if (chunksRef.current.length > 0 && status === "playing") {
         speakFrom(idxRef.current);
       }
     },
