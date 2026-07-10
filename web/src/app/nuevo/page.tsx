@@ -481,7 +481,7 @@ const inputCls = "w-full rounded-2xl border-2 border-slate-200 bg-white px-[18px
 function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => void; docs: { send: (m: "whatsapp" | "email") => void; status: string | null; busy: boolean } }) {
   switch (q.kind) {
     case "text":
-      return <input autoFocus className={inputCls} placeholder={q.ph} value={a.name} onChange={(e) => setA({ ...a, name: e.target.value })} />;
+      return <input autoFocus autoComplete="name" className={inputCls} placeholder={q.ph} value={a.name} onChange={(e) => setA({ ...a, name: e.target.value })} />;
     case "doc":
       return (
         <>
@@ -496,15 +496,15 @@ function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => v
     case "contact":
       return (
         <div className="flex flex-col gap-2.5 sm:flex-row">
-          <input autoFocus className={inputCls} placeholder="📱 Celular" value={a.phone} onChange={(e) => setA({ ...a, phone: e.target.value })} />
-          <input className={inputCls} placeholder="✉️ Correo" value={a.email} onChange={(e) => setA({ ...a, email: e.target.value })} />
+          <input autoFocus type="tel" autoComplete="tel" className={inputCls} placeholder="📱 Celular" value={a.phone} onChange={(e) => setA({ ...a, phone: e.target.value })} />
+          <input type="email" autoComplete="email" className={inputCls} placeholder="✉️ Correo" value={a.email} onChange={(e) => setA({ ...a, email: e.target.value })} />
         </div>
       );
     case "addr":
       return (
         <div className="flex flex-col gap-2.5">
-          <input autoFocus className={inputCls} placeholder="Calle 00 # 00-00" value={a.address} onChange={(e) => setA({ ...a, address: e.target.value })} />
-          <input className={inputCls} placeholder="Ciudad" value={a.city} onChange={(e) => setA({ ...a, city: e.target.value })} />
+          <input autoFocus autoComplete="street-address" className={inputCls} placeholder="Calle 00 # 00-00" value={a.address} onChange={(e) => setA({ ...a, address: e.target.value })} />
+          <input autoComplete="address-level2" className={inputCls} placeholder="Ciudad" value={a.city} onChange={(e) => setA({ ...a, city: e.target.value })} />
         </div>
       );
     case "canon":

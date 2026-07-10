@@ -59,23 +59,43 @@ export function useVoice() {
     const w = window as unknown as { SpeechRecognition?: new () => RecognitionLike; webkitSpeechRecognition?: new () => RecognitionLike };
     const SR = w.SpeechRecognition || w.webkitSpeechRecognition;
     if (!SR) { onEnd?.(); return; }
-    try {
-      const rec = new SR();
-      rec.lang = "es-CO";
-      rec.continuous = false;
-      rec.interimResults = false;
-      rec.onresult = (e) => {
-        const t = e.results?.[0]?.[0]?.transcript ?? "";
-        onResult(String(t));
-      };
-      rec.onerror = () => {};
-      rec.onend = () => { setListening(false); onEnd?.(); };
-      recRef.current = rec;
-      setListening(true);
-      rec.start();
-    } catch {
-      setListening(false);
-      onEnd?.();
+
+    const startRec = () => {
+      try {
+        const rec = new SR();
+        rec.lang = "es-CO";
+        rec.continuous = false;
+        rec.interimResults = false;
+        let done = false;
+        const finish = () => { if (done) return; done = true; setListening(false); };
+        // Salvavidas: si en 12s no llega nada (sin audio/permiso colgado), se corta
+        // para que el botón no quede pegado en "Escuchando".
+        const timer = setTimeout(() => { try { rec.abort(); } catch { /* noop */ } }, 12000);
+        rec.onresult = (e) => {
+          clearTimeout(timer);
+          const t = e.results?.[0]?.[0]?.transcript ?? "";
+          onResult(String(t));
+        };
+        rec.onerror = () => { clearTimeout(timer); finish(); onEnd?.(); };
+        rec.onend = () => { clearTimeout(timer); finish(); onEnd?.(); };
+        recRef.current = rec;
+        setListening(true);
+        rec.start();
+      } catch {
+        setListening(false);
+        onEnd?.();
+      }
+    };
+
+    // Pide permiso de micrófono EXPLÍCITO: así el navegador muestra el diálogo de
+    // aceptación. Sin esto, el reconocimiento a veces queda esperando en silencio.
+    const md = (navigator as unknown as { mediaDevices?: { getUserMedia?: (c: unknown) => Promise<{ getTracks: () => { stop: () => void }[] }> } }).mediaDevices;
+    if (md?.getUserMedia) {
+      md.getUserMedia({ audio: true })
+        .then((stream) => { stream.getTracks().forEach((t) => t.stop()); startRec(); })
+        .catch(() => { setListening(false); onEnd?.(); });
+    } else {
+      startRec();
     }
   }, []);
 

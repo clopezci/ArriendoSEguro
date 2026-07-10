@@ -56,48 +56,49 @@ export async function POST(request: Request) {
   }
 
   const baseUrl = (process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/$/, "");
-  const model = process.env.AI_MODEL?.trim() || "llama-3.1-8b-instant";
   const isExtract = parsed.data.mode === "extract";
+  // Intenta el modelo configurado y, si falla por modelo, cae a alternativos
+  // estables de Groq. Maximiza que "siempre funcione" sin cambiar de proveedor.
+  const candidates = [...new Set(([process.env.AI_MODEL?.trim(), "llama-3.3-70b-versatile", "llama-3.1-8b-instant"].filter(Boolean)) as string[])];
 
-  try {
-    const res = await fetch(`${baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
-      cache: "no-store",
-      body: JSON.stringify({
-        model,
-        temperature: isExtract ? 0 : 0.4,
-        max_tokens: isExtract ? 500 : 220,
-        messages: [
-          { role: "system", content: isExtract ? EXTRACT_SYSTEM : ASK_SYSTEM },
-          { role: "user", content: parsed.data.text },
-        ],
-      }),
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      return NextResponse.json(
-        { success: false, available: true, error: "provider_error", detail: `HTTP ${res.status}: ${body.slice(0, 220)}` },
-        { status: 502 },
-      );
-    }
-    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const content = json.choices?.[0]?.message?.content ?? "";
-
-    if (isExtract) {
-      let data: Record<string, unknown> = {};
-      try {
-        data = JSON.parse(extractJsonBlock(content)) as Record<string, unknown>;
-      } catch {
-        return NextResponse.json(
-          { success: false, available: true, error: "parse_error", detail: content.slice(0, 220) },
-          { status: 502 },
-        );
+  let lastDetail = "sin respuesta del proveedor";
+  for (const model of candidates) {
+    try {
+      const res = await fetch(`${baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
+        cache: "no-store",
+        body: JSON.stringify({
+          model,
+          temperature: isExtract ? 0 : 0.4,
+          max_tokens: isExtract ? 500 : 220,
+          messages: [
+            { role: "system", content: isExtract ? EXTRACT_SYSTEM : ASK_SYSTEM },
+            { role: "user", content: parsed.data.text },
+          ],
+        }),
+      });
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        lastDetail = `HTTP ${res.status} (${model}): ${body.slice(0, 180)}`;
+        if (res.status === 401 || res.status === 403) break; // key inválida: no reintentar
+        continue;
       }
-      return NextResponse.json({ success: true, available: true, data });
+      const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+      const content = json.choices?.[0]?.message?.content ?? "";
+      if (isExtract) {
+        try {
+          const data = JSON.parse(extractJsonBlock(content)) as Record<string, unknown>;
+          return NextResponse.json({ success: true, available: true, data });
+        } catch {
+          lastDetail = `respuesta no-JSON (${model})`;
+          continue;
+        }
+      }
+      return NextResponse.json({ success: true, available: true, answer: content.trim() });
+    } catch (e) {
+      lastDetail = `red (${model}): ${e instanceof Error ? e.message : "error"}`;
     }
-    return NextResponse.json({ success: true, available: true, answer: content.trim() });
-  } catch {
-    return NextResponse.json({ success: false, available: true, error: "network_error" }, { status: 502 });
   }
+  return NextResponse.json({ success: false, available: true, error: "provider_error", detail: lastDetail }, { status: 502 });
 }
