@@ -703,7 +703,7 @@ export default function PreviewStepPage() {
           type="button"
           onClick={requestPreview}
           disabled={loadingPreview}
-          className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loadingPreview
             ? "Generando vista previa…"
@@ -779,7 +779,7 @@ export default function PreviewStepPage() {
               type="button"
               onClick={() => void saveDraftVersion({ force: Boolean(savedVersion) })}
               disabled={savingVersion || !previewHtml}
-              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {savingVersion
                 ? "Guardando…"
@@ -866,7 +866,7 @@ export default function PreviewStepPage() {
               type="button"
               onClick={() => void generatePdf()}
               disabled={generatingPdf || savingVersion || !previewHtml}
-              className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-xl border-2 border-[#5646E5] px-4 py-2 text-sm font-bold text-[#5646E5] transition hover:bg-[#ECE9FB] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {generatingPdf ? "Generando PDF…" : savingVersion ? "Guardando…" : "Generar PDF"}
             </button>
@@ -875,7 +875,7 @@ export default function PreviewStepPage() {
                 href={pdfInfo.pdfUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg border border-emerald-500 px-4 py-2 text-sm font-medium text-emerald-700"
+                className="rounded-xl border-2 border-[#12B886] px-4 py-2 text-sm font-bold text-[#0B6E4E] transition hover:bg-[#12B886]/10"
               >
                 Descargar PDF
               </a>
@@ -1173,7 +1173,7 @@ export default function PreviewStepPage() {
               </p>
               <Link
                 href={`/dashboard/contracts/${id}/adicionales`}
-                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] hover:bg-violet-500"
+                className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[#5646E5] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95"
               >
                 Ir a la posventa →
               </Link>
@@ -1197,7 +1197,7 @@ export default function PreviewStepPage() {
               </ul>
               <Link
                 href="/dashboard/plans"
-                className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] hover:bg-violet-500"
+                className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[#5646E5] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95"
               >
                 Activar Plan Plus →
               </Link>
