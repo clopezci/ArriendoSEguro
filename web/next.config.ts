@@ -52,7 +52,10 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          // microphone=(self): habilita el dictado por voz en el propio sitio
+          // (antes estaba en () = deshabilitado para todos, y el navegador nunca
+          // pedía permiso ni aparecía "Micrófono" en los ajustes del sitio).
+          { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
           ...(process.env.NODE_ENV === "production"
             ? ([{ key: "Content-Security-Policy", value: csp }] as const)
             : []),
