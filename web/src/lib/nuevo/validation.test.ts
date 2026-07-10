@@ -4,10 +4,16 @@ import { validateStep, type Answers } from "./validation";
 
 const base: Answers = {
   contractType: "VIVIENDA_URBANA",
-  name: "", docType: "CC", docNumber: "", phone: "", email: "",
-  acting: "", proxyOath: false, address: "", city: "",
-  registry: "", propertyType: "", registrySkip: false, canon: "", commercialValue: "", noCommercialValue: false,
-  tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "",
+  name: "", docType: "CC", docNumber: "", phone: "", email: "", ownerCity: "",
+  acting: "", proxyOath: false,
+  address: "", city: "", department: "",
+  registry: "", propertyType: "",
+  canon: "", commercialValue: "", noCommercialValue: false,
+  startDate: "", termMonths: "12", paymentDay: "5",
+  tenantMode: "self", tenantName: "",
+  tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false,
+  hasCodebtor: "", codebtorName: "",
+  codebtorDocType: "CC", codebtorDocNumber: "", codebtorCity: "", codebtorEmail: "", codebtorPhone: "", codebtorAuth: false,
   utilitiesParty: "", clauses: [], clauseOther: "",
   docMethod: "", docPhone: "", docEmail: "",
 };
@@ -27,16 +33,16 @@ test("documento CC: vacío, con letras o corto → error; válido → ok", () =>
 });
 
 test("contacto: teléfono con menos de 10 dígitos → error; correo inválido → error", () => {
-  assert.ok(validateStep("contact", a({ phone: "3001234", email: "a@b.com" })));       // teléfono corto
-  assert.ok(validateStep("contact", a({ phone: "3001234567", email: "correo-malo" }))); // correo inválido
-  assert.equal(validateStep("contact", a({ phone: "3001234567", email: "a@b.com" })), null);
+  assert.ok(validateStep("contact", a({ phone: "3001234", email: "a@b.com", ownerCity: "Cali" })));       // teléfono corto
+  assert.ok(validateStep("contact", a({ phone: "3001234567", email: "correo-malo", ownerCity: "Cali" }))); // correo inválido
+  assert.equal(validateStep("contact", a({ phone: "3001234567", email: "a@b.com", ownerCity: "Cali" })), null);
 });
 
 test("dirección: emoji/símbolos o sin letras → error; válida → ok", () => {
-  assert.ok(validateStep("addr", a({ address: "Calle 32 😀", city: "Medellin" })));   // emoji
-  assert.ok(validateStep("addr", a({ address: "1234", city: "Medellin" })));           // sin letras
-  assert.ok(validateStep("addr", a({ address: "cr", city: "Medellin" })));             // muy corta
-  assert.equal(validateStep("addr", a({ address: "Carrera 32 # 25-48", city: "Medellin" })), null);
+  assert.ok(validateStep("addr", a({ address: "Calle 32 😀", city: "Medellin", department: "Antioquia" })));   // emoji
+  assert.ok(validateStep("addr", a({ address: "1234", city: "Medellin", department: "Antioquia" })));           // sin letras
+  assert.ok(validateStep("addr", a({ address: "cr", city: "Medellin", department: "Antioquia" })));             // muy corta
+  assert.equal(validateStep("addr", a({ address: "Carrera 32 # 25-48", city: "Medellin", department: "Antioquia" })), null);
 });
 
 test("canon: cero/texto → error; sin valor comercial → pide valor o acuse; tope Ley 820", () => {
@@ -78,11 +84,32 @@ test("calidad: sin elegir → error; apoderado sin juramento → error; dueño �
   assert.equal(validateStep("acting", a({ acting: "owner" })), null);
 });
 
-test("matrícula/tipo: sin tipo → error; sin matrícula y sin saltar → error; saltar → ok", () => {
+test("matrícula/tipo: sin tipo → error; sin matrícula → error (obligatoria); completa → ok", () => {
   assert.ok(validateStep("registry", a({ propertyType: "", registry: "050-1" })));
-  assert.ok(validateStep("registry", a({ propertyType: "Casa", registry: "", registrySkip: false })));
-  assert.equal(validateStep("registry", a({ propertyType: "Casa", registry: "", registrySkip: true })), null);
+  assert.ok(validateStep("registry", a({ propertyType: "Casa", registry: "" })));
   assert.equal(validateStep("registry", a({ propertyType: "Casa", registry: "050-123456" })), null);
+});
+
+test("contacto del dueño exige ciudad además de teléfono y correo", () => {
+  assert.ok(validateStep("contact", a({ phone: "3001234567", email: "a@b.com", ownerCity: "" })));
+  assert.equal(validateStep("contact", a({ phone: "3001234567", email: "a@b.com", ownerCity: "Medellín" })), null);
+});
+
+test("inmueble exige departamento además de dirección y ciudad", () => {
+  assert.ok(validateStep("addr", a({ address: "Calle 32 # 25-48", city: "Medellín", department: "" })));
+  assert.equal(validateStep("addr", a({ address: "Calle 32 # 25-48", city: "Medellín", department: "Antioquia" })), null);
+});
+
+test("términos: exige fecha, duración válida y día de pago 1-31", () => {
+  assert.ok(validateStep("lease", a({ startDate: "", termMonths: "12", paymentDay: "5" })));
+  assert.ok(validateStep("lease", a({ startDate: "2026-01-01", termMonths: "0", paymentDay: "5" })));
+  assert.ok(validateStep("lease", a({ startDate: "2026-01-01", termMonths: "12", paymentDay: "40" })));
+  assert.equal(validateStep("lease", a({ startDate: "2026-01-01", termMonths: "12", paymentDay: "5" })), null);
+});
+
+test("datos completos del inquilino: doc/ciudad/correo/tel + autorización", () => {
+  assert.ok(validateStep("tenantfull", a({ tenantDocNumber: "79000000", tenantCity: "Cali", tenantEmail: "t@b.com", tenantPhone: "3001234567", tenantAuth: false }))); // falta auth
+  assert.equal(validateStep("tenantfull", a({ tenantDocNumber: "79000000", tenantCity: "Cali", tenantEmail: "t@b.com", tenantPhone: "3001234567", tenantAuth: true })), null);
 });
 
 test("servicios: sin elegir → error; con responsable → ok", () => {
