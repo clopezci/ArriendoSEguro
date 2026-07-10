@@ -7,7 +7,9 @@ const base: Answers = {
   name: "", docType: "CC", docNumber: "", phone: "", email: "",
   acting: "", proxyOath: false, address: "", city: "",
   registry: "", propertyType: "", registrySkip: false, canon: "",
-  tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "", docMethod: "", docPhone: "", docEmail: "",
+  tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "",
+  utilitiesParty: "", clauses: [], clauseOther: "",
+  docMethod: "", docPhone: "", docEmail: "",
 };
 const a = (o: Partial<Answers>): Answers => ({ ...base, ...o });
 
@@ -74,4 +76,16 @@ test("matrícula/tipo: sin tipo → error; sin matrícula y sin saltar → error
   assert.ok(validateStep("registry", a({ propertyType: "Casa", registry: "", registrySkip: false })));
   assert.equal(validateStep("registry", a({ propertyType: "Casa", registry: "", registrySkip: true })), null);
   assert.equal(validateStep("registry", a({ propertyType: "Casa", registry: "050-123456" })), null);
+});
+
+test("servicios: sin elegir → error; con responsable → ok", () => {
+  assert.ok(validateStep("utils", a({ utilitiesParty: "" })));
+  assert.equal(validateStep("utils", a({ utilitiesParty: "arrendatario" })), null);
+});
+
+test("cláusulas: opcionales; 'Otra' sin texto → error; con texto → ok", () => {
+  assert.equal(validateStep("clauses", a({ clauses: [] })), null);
+  assert.equal(validateStep("clauses", a({ clauses: ["MASCOTAS"] })), null);
+  assert.ok(validateStep("clauses", a({ clauses: ["OTRA"], clauseOther: "" })));
+  assert.equal(validateStep("clauses", a({ clauses: ["OTRA"], clauseOther: "Prohibido subarrendar" })), null);
 });

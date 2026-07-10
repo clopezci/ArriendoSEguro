@@ -36,7 +36,18 @@ const SUBPHRASES = [
   "Tú pones los datos; la ley la ponemos nosotros.",
 ];
 
-type Kind = "ctype" | "text" | "doc" | "contact" | "acting" | "addr" | "registry" | "canon" | "tenant" | "codebtor" | "docs";
+type Kind = "ctype" | "text" | "doc" | "contact" | "acting" | "addr" | "registry" | "canon" | "tenant" | "codebtor" | "utils" | "clauses" | "docs";
+
+// Catálogo de cláusulas especiales (mismos ids que el dominio) + "Otra".
+const CLAUSE_CATALOG: { id: string; title: string }[] = [
+  { id: "MASCOTAS", title: "🐾 Mascotas" },
+  { id: "FUMADORES", title: "🚭 No fumar" },
+  { id: "PARQUEADERO", title: "🚗 Parqueadero" },
+  { id: "TELETRABAJO", title: "💻 Teletrabajo" },
+  { id: "MOBILIARIO", title: "🛋️ Amoblado" },
+  { id: "ZONAS_VERDES", title: "🌿 Zonas verdes" },
+  { id: "SEGURIDAD", title: "🔒 Seguridad" },
+];
 type Q = { id: string; block: string; prompt: string; hint: string; kind: Kind; ph?: string; basic: boolean };
 
 // Tramo básico (0-50%): tipo + dueño 4 + inmueble 3 + inquilino 1 = 9.
@@ -52,10 +63,12 @@ const QUESTIONS: Q[] = [
   { id: "canon", block: "Datos del inmueble", prompt: "¿Cuál es el canon mensual?", hint: "Después validamos el tope legal (Ley 820).", kind: "canon", ph: "$ 1.500.000", basic: true },
   { id: "tenant", block: "Datos del inquilino", prompt: "¿Quién será el arrendatario?", hint: "Lo llenas tú o se lo pides a él.", kind: "tenant", basic: true },
   { id: "codebtor", block: "¿Codeudor?", prompt: "¿Tendrá codeudor solidario?", hint: "Opcional. Añade respaldo si lo necesitas.", kind: "codebtor", basic: false },
+  { id: "utils", block: "Servicios y cláusulas", prompt: "¿Quién paga los servicios públicos?", hint: "Agua, luz, gas e internet del inmueble.", kind: "utils", basic: false },
+  { id: "clauses", block: "Servicios y cláusulas", prompt: "¿Añades cláusulas especiales?", hint: "Opcional. Toca las que apliquen; puedes seguir sin ninguna.", kind: "clauses", basic: false },
   { id: "docs", block: "Documentos del inquilino", prompt: "Documentos del inquilino", hint: "Los subes tú, o le pides al inquilino que los cargue por WhatsApp o correo.", kind: "docs", basic: false },
 ];
 
-const EMPTY: Answers = { contractType: "VIVIENDA_URBANA", name: "", docType: "CC", docNumber: "", phone: "", email: "", acting: "", proxyOath: false, address: "", city: "", registry: "", propertyType: "", registrySkip: false, canon: "", tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "", docMethod: "", docPhone: "", docEmail: "" };
+const EMPTY: Answers = { contractType: "VIVIENDA_URBANA", name: "", docType: "CC", docNumber: "", phone: "", email: "", acting: "", proxyOath: false, address: "", city: "", registry: "", propertyType: "", registrySkip: false, canon: "", tenantMode: "self", tenantName: "", hasCodebtor: "", codebtorName: "", utilitiesParty: "", clauses: [], clauseOther: "", docMethod: "", docPhone: "", docEmail: "" };
 
 const BASIC_TOTAL = QUESTIONS.filter((q) => q.basic).length;
 const EXTRA_TOTAL = QUESTIONS.length - BASIC_TOTAL;
@@ -164,6 +177,18 @@ export default function NuevoPage() {
       solidaryCoDebtor: n.hasCodebtor === "yes"
         ? { ...d.solidaryCoDebtor, fullName: n.codebtorName.trim() || d.solidaryCoDebtor.fullName }
         : d.solidaryCoDebtor,
+      utilities: {
+        ...d.utilities,
+        responsibleParty: n.utilitiesParty || d.utilities.responsibleParty,
+      },
+      specialClauses: n.clauses.length > 0
+        ? {
+            enabled: true,
+            selected: n.clauses,
+            freeText: n.clauses.includes("OTRA") ? n.clauseOther.trim() || undefined : undefined,
+            costNotified: n.clauses.includes("OTRA"),
+          }
+        : { enabled: false, selected: [], freeText: undefined, costNotified: false },
     }));
   }, []);
 
@@ -257,6 +282,13 @@ export default function NuevoPage() {
           if (/\bno\b|sin codeudor/.test(s)) return { ...p, hasCodebtor: "no" };
           if (/\bs[ií]\b|con codeudor/.test(s)) return { ...p, hasCodebtor: "yes" };
           return p;
+        case "utils":
+          if (/inquilino|arrendatario/.test(s)) return { ...p, utilitiesParty: "arrendatario" };
+          if (/due[ñn]o|arrendador/.test(s)) return { ...p, utilitiesParty: "arrendador" };
+          if (/reparte|mixto|ambos/.test(s)) return { ...p, utilitiesParty: "mixto" };
+          return p;
+        case "clauses":
+          return p; // selección por toque; opcional
         case "docs":
           if (/whatsapp|wasap/.test(s)) return { ...p, docMethod: "whatsapp" };
           if (/correo|email|mail/.test(s)) return { ...p, docMethod: "email" };
@@ -276,6 +308,8 @@ export default function NuevoPage() {
     if (cq.kind === "acting") text += " Di: soy dueño, o soy apoderado.";
     if (cq.kind === "registry") text += " Di el tipo de inmueble y la matrícula; o di: no la tengo, para seguir sin ella.";
     if (cq.kind === "codebtor") text += " Responde sí o no.";
+    if (cq.kind === "utils") text += " Di: los paga el inquilino, el dueño, o se reparten.";
+    if (cq.kind === "clauses") text += " Es opcional. Toca las que apliquen, o di: continuar.";
     if (cq.kind === "docs") text += " Di: yo, whatsapp, o correo.";
     text += canListen ? " Cuando termines, di: continuar. Para volver, di: atrás." : " Escribe tu respuesta y toca Continuar.";
     speak(text, relisten);
@@ -560,6 +594,8 @@ export default function NuevoPage() {
                 <ReviewItem label="Inmueble" value={`${a.propertyType || "—"} · ${a.address || "—"}${a.city ? ", " + a.city : ""}`} />
                 <ReviewItem label="Canon" value={a.canon ? `$ ${Number(a.canon.replace(/[^\d]/g, "")).toLocaleString("es-CO")}` : "—"} />
                 <ReviewItem label="Arrendatario" value={a.tenantName || (a.tenantMode === "invite" ? "Por invitación" : "—")} />
+                <ReviewItem label="Servicios públicos" value={a.utilitiesParty === "arrendatario" ? "Los paga el inquilino" : a.utilitiesParty === "arrendador" ? "Los paga el dueño" : a.utilitiesParty === "mixto" ? "Se reparten" : "—"} />
+                <ReviewItem label="Cláusulas especiales" value={a.clauses.length ? `${a.clauses.length} seleccionada(s)${a.clauses.includes("OTRA") ? " · incluye Otra" : ""}` : "Ninguna"} />
               </div>
 
               {/* Campos importantes que el usuario saltó → aviso + juramento */}
@@ -745,6 +781,40 @@ function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => v
           )}
         </>
       );
+    case "utils":
+      return (
+        <div className="flex flex-wrap gap-2.5">
+          <button type="button" onClick={() => setA({ ...a, utilitiesParty: "arrendatario" })} className={chip(a.utilitiesParty === "arrendatario")}>Los paga el inquilino</button>
+          <button type="button" onClick={() => setA({ ...a, utilitiesParty: "arrendador" })} className={chip(a.utilitiesParty === "arrendador")}>Los paga el dueño</button>
+          <button type="button" onClick={() => setA({ ...a, utilitiesParty: "mixto" })} className={chip(a.utilitiesParty === "mixto")}>Se reparten</button>
+        </div>
+      );
+    case "clauses": {
+      const toggle = (id: string) => {
+        const has = a.clauses.includes(id);
+        setA({ ...a, clauses: has ? a.clauses.filter((c) => c !== id) : [...a.clauses, id] });
+      };
+      const otraOn = a.clauses.includes("OTRA");
+      return (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2.5">
+            {CLAUSE_CATALOG.map((c) => (
+              <button key={c.id} type="button" onClick={() => toggle(c.id)} className={chip(a.clauses.includes(c.id))}>{c.title}</button>
+            ))}
+            <button type="button" onClick={() => toggle("OTRA")} className={chip(otraOn)}>✍️ Otra…</button>
+          </div>
+          {otraOn && (
+            <div className="rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4">
+              <textarea value={a.clauseOther} onChange={(e) => setA({ ...a, clauseOther: e.target.value })} rows={3}
+                placeholder="Describe la cláusula acordada entre las partes…"
+                className="w-full rounded-xl border-2 border-slate-200 p-3 text-sm outline-none transition focus:border-[#5646E5]" />
+              <p className="mt-2 text-xs font-medium text-amber-800">La cláusula «Otra» (texto libre) tiene un <b>costo adicional que se suma al Plan Plus</b>; se confirma al pagar.</p>
+            </div>
+          )}
+          <p className="text-xs text-slate-500">Puedes continuar sin cláusulas especiales. Las que elijas se redactan con texto legal en el contrato.</p>
+        </div>
+      );
+    }
     case "docs":
       return (
         <div className="flex flex-col gap-2.5">

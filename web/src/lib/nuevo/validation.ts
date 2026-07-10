@@ -57,6 +57,8 @@ export type Answers = {
   canon: string;
   tenantMode: "self" | "invite"; tenantName: string;
   hasCodebtor: "" | "yes" | "no"; codebtorName: string;
+  utilitiesParty: "" | "arrendatario" | "arrendador" | "mixto"; // servicios públicos
+  clauses: string[]; clauseOther: string; // cláusulas especiales (catálogo + "Otra")
   docMethod: "" | "self" | "whatsapp" | "email"; docPhone: string; docEmail: string;
 };
 
@@ -89,6 +91,12 @@ export function validateStep(kind: string, a: Answers): string | null {
       const n = Number((a.canon || "").replace(/[^\d]/g, ""));
       return n > 0 ? null : "Indica el canon mensual (solo números, mayor a 0).";
     }
+    case "utils":
+      return a.utilitiesParty ? null : "Indica quién paga los servicios públicos.";
+    case "clauses":
+      if (a.clauses.includes("OTRA") && !a.clauseOther.trim())
+        return "Describe la cláusula “Otra”, o quítala de la selección.";
+      return null; // las cláusulas son opcionales
     case "tenant":
       return nameError(a.tenantName);
     case "codebtor":
