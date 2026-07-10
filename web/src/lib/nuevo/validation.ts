@@ -35,6 +35,15 @@ function cityError(v: string): string | null {
   return r.success ? null : (r.error.issues[0]?.message ?? "Ciudad inválida.");
 }
 
+function addressError(v: string): string | null {
+  const t = (v || "").trim();
+  if (t.length < 5) return "Indica la dirección del inmueble (mínimo 5 caracteres).";
+  // Solo letras, números, espacios y signos típicos de dirección; rechaza emojis y símbolos raros.
+  if (!/^[a-zA-Z0-9áéíóúñÁÉÍÓÚÑ\s.,#\-°º/]+$/.test(t)) return "La dirección tiene caracteres no válidos (evita emojis o símbolos).";
+  if (!/[a-zA-Z]/.test(t)) return "La dirección debe incluir letras (ej. Calle 32 # 25-48).";
+  return null;
+}
+
 function docTypeToDomain(t: string): DocumentType {
   return (t === "Pasaporte" ? "PASAPORTE" : t) as DocumentType;
 }
@@ -59,7 +68,7 @@ export function validateStep(kind: string, a: Answers): string | null {
     case "contact":
       return phoneError(a.phone) ?? emailError(a.email);
     case "addr":
-      return (a.address || "").trim().length < 4 ? "Indica la dirección del inmueble (mínimo 4 caracteres)." : cityError(a.city);
+      return addressError(a.address) ?? cityError(a.city);
     case "canon": {
       const n = Number((a.canon || "").replace(/[^\d]/g, ""));
       return n > 0 ? null : "Indica el canon mensual (solo números, mayor a 0).";

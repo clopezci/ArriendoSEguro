@@ -27,6 +27,13 @@ test("contacto: teléfono con menos de 10 dígitos → error; correo inválido �
   assert.equal(validateStep("contact", a({ phone: "3001234567", email: "a@b.com" })), null);
 });
 
+test("dirección: emoji/símbolos o sin letras → error; válida → ok", () => {
+  assert.ok(validateStep("addr", a({ address: "Calle 32 😀", city: "Medellin" })));   // emoji
+  assert.ok(validateStep("addr", a({ address: "1234", city: "Medellin" })));           // sin letras
+  assert.ok(validateStep("addr", a({ address: "cr", city: "Medellin" })));             // muy corta
+  assert.equal(validateStep("addr", a({ address: "Carrera 32 # 25-48", city: "Medellin" })), null);
+});
+
 test("canon: cero o texto → error; positivo → ok", () => {
   assert.ok(validateStep("canon", a({ canon: "0" })));
   assert.ok(validateStep("canon", a({ canon: "abc" })));

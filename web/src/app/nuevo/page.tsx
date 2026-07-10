@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
@@ -11,6 +11,7 @@ import { JourneyScene } from "@/components/nuevo/journey-scene";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { validateStep, type Answers } from "@/lib/nuevo/validation";
 import { useVoice } from "@/lib/nuevo/useVoice";
+import { MicButton } from "@/components/nuevo/mic-button";
 
 /**
  * F1+F2 del rediseño "Un paso a la vez" (rama rediseno-frontend-v2).
@@ -478,10 +479,22 @@ export default function NuevoPage() {
 
 const inputCls = "w-full rounded-2xl border-2 border-slate-200 bg-white px-[18px] py-4 text-lg outline-none transition focus:border-[#5646E5] focus:ring-4 focus:ring-[#ECE9FB]";
 
+function InputMic({ voice, className, ...props }: { voice: (t: string) => void } & InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div className="flex gap-2">
+      <input className={`${inputCls} min-w-0 flex-1 ${className ?? ""}`} {...props} />
+      <MicButton onResult={voice} />
+    </div>
+  );
+}
+
+const onlyDigits = (t: string) => t.replace(/\D/g, "");
+const cleanEmail = (t: string) => t.replace(/\s/g, "").toLowerCase();
+
 function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => void; docs: { send: (m: "whatsapp" | "email") => void; status: string | null; busy: boolean } }) {
   switch (q.kind) {
     case "text":
-      return <input autoFocus autoComplete="name" className={inputCls} placeholder={q.ph} value={a.name} onChange={(e) => setA({ ...a, name: e.target.value })} />;
+      return <InputMic autoFocus autoComplete="name" placeholder={q.ph} value={a.name} onChange={(e) => setA({ ...a, name: e.target.value })} voice={(t) => setA({ ...a, name: t })} />;
     case "doc":
       return (
         <>
@@ -490,25 +503,25 @@ function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => v
               <button key={t} type="button" onClick={() => setA({ ...a, docType: t })} className={chip(a.docType === t)}>{t}</button>
             ))}
           </div>
-          <input autoFocus className={inputCls} placeholder="Número de documento" value={a.docNumber} onChange={(e) => setA({ ...a, docNumber: e.target.value })} />
+          <InputMic autoFocus placeholder="Número de documento" value={a.docNumber} onChange={(e) => setA({ ...a, docNumber: e.target.value })} voice={(t) => setA({ ...a, docNumber: onlyDigits(t) || t })} />
         </>
       );
     case "contact":
       return (
-        <div className="flex flex-col gap-2.5 sm:flex-row">
-          <input autoFocus type="tel" autoComplete="tel" className={inputCls} placeholder="📱 Celular" value={a.phone} onChange={(e) => setA({ ...a, phone: e.target.value })} />
-          <input type="email" autoComplete="email" className={inputCls} placeholder="✉️ Correo" value={a.email} onChange={(e) => setA({ ...a, email: e.target.value })} />
+        <div className="flex flex-col gap-2.5">
+          <InputMic autoFocus type="tel" autoComplete="tel" placeholder="📱 Celular" value={a.phone} onChange={(e) => setA({ ...a, phone: e.target.value })} voice={(t) => setA({ ...a, phone: onlyDigits(t) })} />
+          <InputMic type="email" autoComplete="email" placeholder="✉️ Correo" value={a.email} onChange={(e) => setA({ ...a, email: e.target.value })} voice={(t) => setA({ ...a, email: cleanEmail(t) })} />
         </div>
       );
     case "addr":
       return (
         <div className="flex flex-col gap-2.5">
-          <input autoFocus autoComplete="street-address" className={inputCls} placeholder="Calle 00 # 00-00" value={a.address} onChange={(e) => setA({ ...a, address: e.target.value })} />
-          <input autoComplete="address-level2" className={inputCls} placeholder="Ciudad" value={a.city} onChange={(e) => setA({ ...a, city: e.target.value })} />
+          <InputMic autoFocus autoComplete="street-address" placeholder="Calle 00 # 00-00" value={a.address} onChange={(e) => setA({ ...a, address: e.target.value })} voice={(t) => setA({ ...a, address: t })} />
+          <InputMic autoComplete="address-level2" placeholder="Ciudad" value={a.city} onChange={(e) => setA({ ...a, city: e.target.value })} voice={(t) => setA({ ...a, city: t })} />
         </div>
       );
     case "canon":
-      return <input autoFocus inputMode="numeric" className={inputCls} placeholder={q.ph} value={a.canon} onChange={(e) => setA({ ...a, canon: e.target.value })} />;
+      return <InputMic autoFocus inputMode="numeric" placeholder={q.ph} value={a.canon} onChange={(e) => setA({ ...a, canon: e.target.value })} voice={(t) => setA({ ...a, canon: onlyDigits(t) })} />;
     case "tenant":
       return (
         <>
@@ -516,7 +529,7 @@ function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => v
             <button type="button" onClick={() => setA({ ...a, tenantMode: "self" })} className={chip(a.tenantMode === "self")}>Lo lleno yo</button>
             <button type="button" onClick={() => setA({ ...a, tenantMode: "invite" })} className={chip(a.tenantMode === "invite")}>Se lo pido a él</button>
           </div>
-          <input autoFocus className={inputCls} placeholder="Nombre del arrendatario" value={a.tenantName} onChange={(e) => setA({ ...a, tenantName: e.target.value })} />
+          <InputMic autoFocus placeholder="Nombre del arrendatario" value={a.tenantName} onChange={(e) => setA({ ...a, tenantName: e.target.value })} voice={(t) => setA({ ...a, tenantName: t })} />
         </>
       );
     case "codebtor":
@@ -527,7 +540,7 @@ function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => v
             <button type="button" onClick={() => setA({ ...a, hasCodebtor: "no" })} className={chip(a.hasCodebtor === "no")}>No</button>
           </div>
           {a.hasCodebtor === "yes" && (
-            <input autoFocus className={inputCls} placeholder="Nombre del codeudor" value={a.codebtorName} onChange={(e) => setA({ ...a, codebtorName: e.target.value })} />
+            <InputMic autoFocus placeholder="Nombre del codeudor" value={a.codebtorName} onChange={(e) => setA({ ...a, codebtorName: e.target.value })} voice={(t) => setA({ ...a, codebtorName: t })} />
           )}
         </>
       );
@@ -539,7 +552,7 @@ function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => v
           <DocOption sel={a.docMethod === "email"} onClick={() => setA({ ...a, docMethod: "email" })} tone="em" title="Enviar por correo" desc="El mismo enlace, por email." icon={mailIcon} />
           {a.docMethod === "whatsapp" && (
             <div className="mt-1 flex flex-col gap-2 sm:flex-row">
-              <input className={inputCls} inputMode="tel" placeholder="📱 Celular del inquilino" value={a.docPhone} onChange={(e) => setA({ ...a, docPhone: e.target.value })} />
+              <InputMic inputMode="tel" placeholder="📱 Celular del inquilino" value={a.docPhone} onChange={(e) => setA({ ...a, docPhone: e.target.value })} voice={(t) => setA({ ...a, docPhone: onlyDigits(t) })} />
               <button type="button" disabled={docs.busy || a.docPhone.replace(/\D/g, "").length < 7} onClick={() => docs.send("whatsapp")}
                 className="whitespace-nowrap rounded-2xl bg-[#25D366] px-5 py-4 text-base font-bold text-white transition hover:brightness-105 active:scale-95 disabled:opacity-50">
                 {docs.busy ? "Generando…" : "Enviar por WhatsApp"}
@@ -548,7 +561,7 @@ function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => v
           )}
           {a.docMethod === "email" && (
             <div className="mt-1 flex flex-col gap-2 sm:flex-row">
-              <input className={inputCls} inputMode="email" placeholder="✉️ Correo del inquilino" value={a.docEmail} onChange={(e) => setA({ ...a, docEmail: e.target.value })} />
+              <InputMic inputMode="email" placeholder="✉️ Correo del inquilino" value={a.docEmail} onChange={(e) => setA({ ...a, docEmail: e.target.value })} voice={(t) => setA({ ...a, docEmail: cleanEmail(t) })} />
               <button type="button" disabled={docs.busy || !a.docEmail.trim()} onClick={() => docs.send("email")}
                 className="whitespace-nowrap rounded-2xl bg-[#5646E5] px-5 py-4 text-base font-bold text-white transition hover:brightness-105 active:scale-95 disabled:opacity-50">
                 {docs.busy ? "Enviando…" : "Enviar por correo"}
