@@ -1,120 +1,146 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
 /**
- * Tabla de transliteración para caracteres que NO están en `WinAnsiEncoding`
- * (la codificación que usan las fuentes estándar Helvetica/Times de PDF).
- *
- * Si dejamos pasar uno solo de estos caracteres al `page.drawText`, pdf-lib
- * lanza un error tipo `WinAnsi cannot encode "…"` y el endpoint de
- * generación de PDF responde con un genérico "No se pudo generar el PDF".
- *
- * Estos chars aparecen en la plantilla de contrato (puntos suspensivos
- * tipográficos, comillas españolas, guion largo, etc.). Aquí los mapeamos
- * a sus equivalentes ASCII más cercanos para que el PDF se pueda generar
- * siempre. La copia en pantalla del contrato sigue mostrando el carácter
- * original; el reemplazo solo aplica para el texto plano que se imprime
- * en el PDF a través de Helvetica estándar.
+ * Renderiza el contrato a PDF con pdf-lib (JS puro, sin navegador headless: es
+ * rápido y liviano en serverless). Como pdf-lib NO interpreta HTML/CSS, aquí
+ * convertimos el HTML del contrato en una lista de BLOQUES con estilo
+ * (títulos, párrafos, viñetas, filas de tabla) y los dibujamos con la fuente,
+ * el tamaño y el espaciado adecuados, con salto de línea por ANCHO REAL. Así el
+ * PDF sale ordenado y parecido a la vista previa (antes se aplanaba a texto
+ * corrido, sin títulos ni espacios y con líneas cortadas).
  */
+
 const WINANSI_REPLACEMENTS: Record<string, string> = {
-  "\u2026": "...", // …
-  "\u2014": "-", // —
-  "\u2013": "-", // –
-  "\u2212": "-", // − (signo menos)
-  "\u00AB": '"', // «
-  "\u00BB": '"', // »
-  "\u201C": '"', // “
-  "\u201D": '"', // ”
-  "\u201E": '"', // „
-  "\u2018": "'", // ‘
-  "\u2019": "'", // ’
-  "\u201A": "'", // ‚
-  "\u2022": "-", // • (viñeta)
-  "\u00B7": ".", // ·
-  "\u00A0": " ", // espacio no separable
-  "\u202F": " ", // espacio fino
-  "\u200B": "", // zero-width space
-  "\u00B4": "'", // ´
-  "\u02CB": "'", // ˋ
-  "\u2192": "->",
-  "\u2190": "<-",
+  "…": "...", // …
+  "—": "-", // —
+  "–": "-", // –
+  "−": "-", // − (signo menos)
+  "«": '"', // «
+  "»": '"', // »
+  "“": '"', // “
+  "”": '"', // ”
+  "„": '"', // „
+  "‘": "'", // ‘
+  "’": "'", // ’
+  "‚": "'", // ‚
+  "•": "-", // • (viñeta)
+  "·": ".", // ·
+  " ": " ", // espacio no separable
+  " ": " ", // espacio fino
+  "​": "", // zero-width space
+  "´": "'", // ´
+  "ˋ": "'", // ˋ
+  "→": "->",
+  "←": "<-",
 };
 
 function sanitizeForWinAnsi(input: string): string {
   let out = "";
   for (const ch of input) {
     const replacement = WINANSI_REPLACEMENTS[ch];
-    if (replacement !== undefined) {
-      out += replacement;
-      continue;
-    }
+    if (replacement !== undefined) { out += replacement; continue; }
     const code = ch.codePointAt(0) ?? 0;
-    // WinAnsi cubre 0x20..0x7E (ASCII imprimible) + 0xA0..0xFF (Latin-1).
-    // Cualquier otro punto Unicode no es codificable. Lo reemplazamos por
-    // "?" para no romper el render del PDF.
-    if (code === 0x09 || code === 0x0A || code === 0x0D) {
-      out += ch;
-    } else if (code >= 0x20 && code <= 0x7e) {
-      out += ch;
-    } else if (code >= 0xa0 && code <= 0xff) {
-      out += ch;
-    } else {
-      out += "?";
-    }
+    if (code === 0x09 || code === 0x0a || code === 0x0d) out += ch;
+    else if (code >= 0x20 && code <= 0x7e) out += ch;
+    else if (code >= 0xa0 && code <= 0xff) out += ch;
+    else out += "?";
   }
   return out;
 }
 
-function htmlToText(html: string): string {
-  return html
-    .replaceAll(/<style[\s\S]*?<\/style>/gi, " ")
-    .replaceAll(/<script[\s\S]*?<\/script>/gi, " ")
-    // Bloques (títulos, párrafos): separación de párrafo = línea en blanco.
-    .replaceAll(/<\/(h1|h2|h3|h4|p|article|div|section)>/gi, "\n\n")
-    // Ítems de lista: un salto simple (no doble) para que la lista quede compacta.
-    .replaceAll(/<\/(li|ol|ul)>/gi, "\n")
-    .replaceAll(/<br\s*\/?>/gi, "\n")
-    .replaceAll(/<[^>]+>/g, " ")
-    .replaceAll(/&nbsp;/g, " ")
-    .replaceAll(/&amp;/g, "&")
-    .replaceAll(/&lt;/g, "<")
-    .replaceAll(/&gt;/g, ">")
-    .replaceAll(/&laquo;/g, '"')
-    .replaceAll(/&raquo;/g, '"')
-    .replaceAll(/&ldquo;/g, '"')
-    .replaceAll(/&rdquo;/g, '"')
-    .replaceAll(/&lsquo;/g, "'")
-    .replaceAll(/&rsquo;/g, "'")
-    .replaceAll(/&hellip;/g, "...")
-    .replaceAll(/&mdash;/g, "-")
-    .replaceAll(/&ndash;/g, "-")
-    .replaceAll(/\s+\n/g, "\n")
-    .replaceAll(/\n{3,}/g, "\n\n")
-    .trim();
+function decodeEntities(s: string): string {
+  return s
+    .replaceAll(/&nbsp;/gi, " ").replaceAll(/&amp;/gi, "&").replaceAll(/&lt;/gi, "<").replaceAll(/&gt;/gi, ">")
+    .replaceAll(/&laquo;/gi, '"').replaceAll(/&raquo;/gi, '"').replaceAll(/&ldquo;/gi, '"').replaceAll(/&rdquo;/gi, '"')
+    .replaceAll(/&lsquo;/gi, "'").replaceAll(/&rsquo;/gi, "'").replaceAll(/&hellip;/gi, "...").replaceAll(/&mdash;/gi, "-")
+    .replaceAll(/&ndash;/gi, "-").replaceAll(/&deg;/gi, "°").replaceAll(/&ordm;/gi, "º").replaceAll(/&middot;/gi, "-")
+    .replaceAll(/&#(\d+);/g, (_m, n: string) => { try { return String.fromCodePoint(Number(n)); } catch { return ""; } })
+    .replaceAll(/&#x([0-9a-f]+);/gi, (_m, n: string) => { try { return String.fromCodePoint(parseInt(n, 16)); } catch { return ""; } });
 }
 
-function wrapText(input: string, maxChars = 92): string[] {
-  const lines: string[] = [];
-  const paragraphs = input.split("\n");
-  for (const paragraph of paragraphs) {
-    const text = paragraph.trim();
-    if (!text) {
-      lines.push("");
-      continue;
+function stripTags(s: string): string {
+  return decodeEntities(s.replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+}
+
+type BlockKind = "H1" | "H2" | "H3" | "P" | "LI" | "ROW";
+type Block = { kind: BlockKind; text: string };
+
+const OPEN = "";
+const CLOSE = "";
+
+/** Convierte el HTML del contrato en bloques ordenados con su tipo. */
+export function htmlToBlocks(html: string): Block[] {
+  let s = html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<head[\s\S]*?<\/head>/gi, "");
+
+  // Tablas → una fila por bloque, con las celdas unidas por un separador.
+  s = s.replace(/<tr[^>]*>([\s\S]*?)<\/tr>/gi, (_m, inner: string) => {
+    const cells = [...inner.matchAll(/<(?:td|th)[^>]*>([\s\S]*?)<\/(?:td|th)>/gi)]
+      .map((c) => stripTags(c[1]))
+      .filter(Boolean);
+    return cells.length ? `${OPEN}ROW|${cells.join("   ·   ")}${CLOSE}` : "";
+  });
+  s = s.replace(/<\/?(table|tbody|thead|tfoot|colgroup|col)[^>]*>/gi, " ");
+  s = s.replace(/<br\s*\/?>/gi, "\n");
+
+  const tagKind: Record<string, BlockKind> = { h1: "H1", h2: "H2", h3: "H3", h4: "H3", h5: "H3", h6: "H3", p: "P", li: "LI" };
+  s = s.replace(/<(h[1-6]|p|li)[^>]*>/gi, (_m, tag: string) => `${OPEN}${tagKind[tag.toLowerCase()]}|`);
+  s = s.replace(/<\/(h[1-6]|p|li)>/gi, CLOSE);
+  s = s.replace(/<[^>]+>/g, " "); // resto de etiquetas → espacio
+  s = decodeEntities(s);
+
+  const blocks: Block[] = [];
+  const kindRe = new RegExp(`${OPEN}(H1|H2|H3|P|LI|ROW)\\|([\\s\\S]*)`);
+  for (const part of s.split(CLOSE)) {
+    const m = part.match(kindRe);
+    if (m) {
+      const text = m[2].replace(/[ \t]+/g, " ").replace(/ ?\n ?/g, "\n").trim();
+      if (text) blocks.push({ kind: m[1] as BlockKind, text });
+    } else {
+      const text = part.split(OPEN).join("").replace(/[ \t]+/g, " ").trim();
+      if (text) blocks.push({ kind: "P", text });
     }
-    let current = "";
-    for (const word of text.split(/\s+/)) {
-      const candidate = current ? `${current} ${word}` : word;
-      if (candidate.length <= maxChars) {
-        current = candidate;
+  }
+  return blocks;
+}
+
+/** Ajuste de línea por ANCHO real de la fuente (no por conteo de caracteres). */
+function wrapByWidth(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
+  const out: string[] = [];
+  for (const para of text.split("\n")) {
+    const words = para.trim().split(/\s+/).filter(Boolean);
+    if (!words.length) continue;
+    let cur = "";
+    for (const w of words) {
+      const candidate = cur ? `${cur} ${w}` : w;
+      if (font.widthOfTextAtSize(sanitizeForWinAnsi(candidate), size) <= maxWidth) {
+        cur = candidate;
       } else {
-        lines.push(current);
-        current = word;
+        if (cur) out.push(cur);
+        cur = w;
+        while (font.widthOfTextAtSize(sanitizeForWinAnsi(cur), size) > maxWidth && cur.length > 1) {
+          let cut = cur.length - 1;
+          while (cut > 1 && font.widthOfTextAtSize(sanitizeForWinAnsi(cur.slice(0, cut)), size) > maxWidth) cut--;
+          out.push(cur.slice(0, cut));
+          cur = cur.slice(cut);
+        }
       }
     }
-    if (current) lines.push(current);
+    if (cur) out.push(cur);
   }
-  return lines;
+  return out;
 }
+
+const STYLE: Record<BlockKind, { bold: boolean; size: number; before: number; after: number; bullet?: boolean }> = {
+  H1: { bold: true, size: 15, before: 12, after: 6 },
+  H2: { bold: true, size: 12, before: 10, after: 4 },
+  H3: { bold: true, size: 10.5, before: 8, after: 3 },
+  P: { bold: false, size: 9.5, before: 0, after: 6 },
+  LI: { bold: false, size: 9.5, before: 0, after: 3, bullet: true },
+  ROW: { bold: false, size: 9, before: 0, after: 3 },
+};
 
 export async function renderContractPdfFromHtml(params: {
   html: string;
@@ -130,62 +156,53 @@ export async function renderContractPdfFromHtml(params: {
 
   const pageWidth = 595.28;
   const pageHeight = 841.89;
-  const margin = 42;
-  const lineHeight = 14;
-
-  const normalizedText = sanitizeForWinAnsi(htmlToText(params.html));
-  const headerLines = [
-    "Arriendo Seguro - Contrato de arrendamiento",
-    `Contrato: ${params.contractId}`,
-    `Version ID: ${params.contractVersionId}`,
-    `Version numero: ${params.versionNumber}`,
-    `Hash documental: ${params.documentHash}`,
-    `Fecha de generacion PDF: ${params.generatedAt}`,
-    "",
-  ].map((entry) => sanitizeForWinAnsi(entry));
-  const bodyLines = wrapText(normalizedText).map((entry) => sanitizeForWinAnsi(entry));
-  const lines = [...headerLines, ...bodyLines];
+  const margin = 46;
+  const ink = rgb(0.08, 0.11, 0.15);
+  const gray = rgb(0.45, 0.47, 0.52);
 
   let page = pdf.addPage([pageWidth, pageHeight]);
   let y = pageHeight - margin;
 
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i] ?? "";
-    if (y <= margin) {
-      page = pdf.addPage([pageWidth, pageHeight]);
-      y = pageHeight - margin;
-    }
-    const isHeader = i < headerLines.length - 1;
+  const draw = (text: string, x: number, size: number, f: PDFFont, color = ink) => {
+    let line = sanitizeForWinAnsi(text);
     try {
-      // Sin `maxWidth`: el ajuste de línea ya lo hace `wrapText` por palabras.
-      // Dejar que pdf-lib re-envuelva aquí causaba cortes a mitad de frase y
-      // líneas superpuestas (porque la posición vertical la controlamos nosotros).
-      page.drawText(line, {
-        x: margin,
-        y,
-        size: isHeader ? 10 : 9,
-        font: isHeader ? fontBold : font,
-        color: rgb(0.08, 0.11, 0.15),
-      });
-    } catch (drawError) {
-      // Defensa adicional: si pdf-lib aún no logra codificar la línea
-      // (p. ej. por un Unicode que escapó al sanitizador), forzamos un
-      // fallback ASCII puro para no abortar todo el PDF.
-      const ascii = line.replace(/[^\x20-\x7E]/g, "?");
-      if (process.env.NODE_ENV !== "production") {
-        console.warn("renderContractPdfFromHtml: line fell back to ASCII", drawError);
-      }
-      page.drawText(ascii, {
-        x: margin,
-        y,
-        size: isHeader ? 10 : 9,
-        font: isHeader ? fontBold : font,
-        color: rgb(0.08, 0.11, 0.15),
-      });
+      page.drawText(line, { x, y, size, font: f, color });
+    } catch {
+      line = line.replace(/[^\x20-\x7E]/g, "?");
+      page.drawText(line, { x, y, size, font: f, color });
     }
-    y -= lineHeight;
+  };
+  const feed = (h: number) => {
+    y -= h;
+    if (y <= margin) { page = pdf.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
+  };
+
+  // Encabezado técnico (pequeño, gris).
+  const header = [
+    `Contrato ${params.contractId} · version ${params.versionNumber}`,
+    `Hash documental: ${params.documentHash}`,
+    `Generado: ${params.generatedAt}`,
+  ];
+  for (const h of header) { draw(h, margin, 8, font, gray); feed(11); }
+  feed(8);
+
+  const usableFull = pageWidth - 2 * margin;
+  for (const block of htmlToBlocks(params.html)) {
+    const st = STYLE[block.kind];
+    const f = st.bold ? fontBold : font;
+    const indent = st.bullet ? 14 : 0;
+    const lines = wrapByWidth(block.text, f, st.size, usableFull - indent);
+    if (!lines.length) continue;
+    feed(st.before);
+    const lh = st.size * 1.36;
+    lines.forEach((ln, k) => {
+      if (y - lh <= margin) { page = pdf.addPage([pageWidth, pageHeight]); y = pageHeight - margin; }
+      if (st.bullet && k === 0) draw("·", margin, st.size, f);
+      draw(ln, margin + indent, st.size, f);
+      y -= lh;
+    });
+    feed(st.after);
   }
 
   return pdf.save();
 }
-
