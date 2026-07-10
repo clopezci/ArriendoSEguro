@@ -130,6 +130,8 @@ export function validateStep(kind: string, a: Answers): string | null {
     case "codebtorfull":
       return docError(a.codebtorDocType, a.codebtorDocNumber) ?? cityError(a.codebtorCity) ?? emailError(a.codebtorEmail) ?? phoneError(a.codebtorPhone)
         ?? (a.codebtorAuth ? null : "Confirma que tienes autorización del codeudor para ingresar sus datos.");
+    case "credit":
+      return null; // opcional: herramientas externas de verificación
     case "utils":
       return a.utilitiesParty ? null : "Indica quién paga los servicios públicos.";
     case "clauses":

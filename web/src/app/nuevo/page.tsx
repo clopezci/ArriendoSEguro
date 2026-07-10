@@ -37,7 +37,7 @@ const SUBPHRASES = [
   "Tú pones los datos; la ley la ponemos nosotros.",
 ];
 
-type Kind = "ctype" | "text" | "doc" | "contact" | "acting" | "addr" | "registry" | "canon" | "lease" | "tenant" | "tenantfull" | "codebtor" | "codebtorfull" | "utils" | "clauses" | "docs";
+type Kind = "ctype" | "text" | "doc" | "contact" | "acting" | "addr" | "registry" | "canon" | "lease" | "tenant" | "tenantfull" | "codebtor" | "codebtorfull" | "credit" | "utils" | "clauses" | "docs";
 
 // Catálogo de cláusulas especiales (mismos ids que el dominio) + "Otra".
 const CLAUSE_CATALOG: { id: string; title: string }[] = [
@@ -69,6 +69,7 @@ const QUESTIONS: Q[] = [
   { id: "lease", block: "Términos del arriendo", prompt: "¿Cuándo y cómo se paga?", hint: "Inicio, duración y día de pago del canon.", kind: "lease", basic: false },
   { id: "codebtor", block: "¿Codeudor?", prompt: "¿Tendrá codeudor solidario?", hint: "Opcional. Añade respaldo si lo necesitas.", kind: "codebtor", basic: false },
   { id: "codebtorfull", block: "Codeudor solidario", prompt: "Datos del codeudor", hint: "Documento, ciudad y contacto.", kind: "codebtorfull", basic: false, skipWhen: (a) => a.hasCodebtor !== "yes" },
+  { id: "credit", block: "Verificación (opcional)", prompt: "¿Quieres verificar el historial?", hint: "Herramientas externas para evaluar al inquilino y codeudor. Es opcional.", kind: "credit", basic: false },
   { id: "utils", block: "Servicios y cláusulas", prompt: "¿Quién paga los servicios públicos?", hint: "Agua, luz, gas e internet del inmueble.", kind: "utils", basic: false },
   { id: "clauses", block: "Servicios y cláusulas", prompt: "¿Añades cláusulas especiales?", hint: "Opcional. Toca las que apliquen; puedes seguir sin ninguna.", kind: "clauses", basic: false },
   { id: "docs", block: "Documentos del inquilino", prompt: "Documentos del inquilino", hint: "Los subes tú, o le pides al inquilino que los cargue por WhatsApp o correo.", kind: "docs", basic: false },
@@ -920,6 +921,22 @@ function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => v
           authLabel="Declaro que tengo autorización del codeudor para ingresar sus datos personales (Ley 1581 de 2012)."
           onChange={(patch) => setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth })}
         />
+      );
+    case "credit":
+      return (
+        <div className="flex flex-col gap-2.5">
+          <a href="https://www.midatacredito.com/" target="_blank" rel="noopener noreferrer"
+            className="flex items-start gap-3.5 rounded-2xl border-2 border-slate-200 bg-white p-4 text-left transition hover:border-[#5646E5]">
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">📊</span>
+            <span><b className="block text-[15px]">Historial crediticio (MiDataCrédito)</b><small className="text-[13px] text-slate-500">La consulta es personal: la hace el titular (o con su autorización) y te comparte el reporte por un canal privado.</small></span>
+          </a>
+          <a href="https://eris.contaduria.gov.co/BDME/" target="_blank" rel="noopener noreferrer"
+            className="flex items-start gap-3.5 rounded-2xl border-2 border-slate-200 bg-white p-4 text-left transition hover:border-[#5646E5]">
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">🏛️</span>
+            <span><b className="block text-[15px]">Deudas con el Estado (BDME)</b><small className="text-[13px] text-slate-500">Boletín de Deudores Morosos del Estado (Contaduría). Úsalo solo para evaluar el arriendo.</small></span>
+          </a>
+          <p className="text-xs text-slate-500">ArriendoSeguro no ejecuta la consulta ni guarda reportes: son herramientas de terceros. Trata cualquier dato con confidencialidad (Ley 1581). Es un paso <b>opcional</b>: puedes continuar.</p>
+        </div>
       );
     case "utils":
       return (
