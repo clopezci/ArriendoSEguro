@@ -3,9 +3,11 @@
 import { getAuthClient, isFirebaseClientConfigured } from "@/lib/firebase/client";
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
@@ -25,6 +27,7 @@ type AuthState = {
   configError: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -60,6 +63,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await createUserWithEmailAndPassword(getAuthClient(), email.trim(), password);
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    // Popup (no redirect) para no perder el estado del recorrido en el que está.
+    await signInWithPopup(getAuthClient(), provider);
+  }, []);
+
   const signOut = useCallback(async () => {
     if (!isFirebaseClientConfigured()) return;
     await firebaseSignOut(getAuthClient());
@@ -77,10 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       configError,
       signIn,
       signUp,
+      signInWithGoogle,
       resetPassword,
       signOut,
     }),
-    [user, loading, configError, signIn, signUp, resetPassword, signOut]
+    [user, loading, configError, signIn, signUp, signInWithGoogle, resetPassword, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

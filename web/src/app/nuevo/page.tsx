@@ -6,7 +6,8 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
-import { createContractDraft, updateDraft } from "@/features/contracts/wizard-state";
+import { createContractDraft, updateDraft, getDraft } from "@/features/contracts/wizard-state";
+import { flushDraftToServer, pullServerDraftsIntoLocal } from "@/features/contracts/draft-server-sync";
 import { JourneyScene } from "@/components/nuevo/journey-scene";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { validateStep, type Answers } from "@/lib/nuevo/validation";
@@ -160,15 +161,27 @@ export default function NuevoPage() {
     persist(aRef.current);
     // Al terminar lo básico (50%), si no hay sesión, exigimos crear cuenta.
     if (iRef.current === BASIC_TOTAL - 1 && !userRef.current) { setGate("register"); return; }
-    if (iRef.current >= QUESTIONS.length - 1) { setMode("done"); return; }
+    if (iRef.current >= QUESTIONS.length - 1) {
+      // Guarda en la cuenta AHORA (sin esperar el debounce) antes de cerrar.
+      const id = draftIdRef.current;
+      const d = id ? getDraft(id) : null;
+      if (d) void flushDraftToServer(d);
+      setMode("done");
+      return;
+    }
     setI(iRef.current + 1);
   }, [persist, speak, relisten]);
 
   // Tras crear cuenta / iniciar sesión en el registro exprés: re-asocia el
-  // borrador al usuario real y continúa con el tramo adicional.
+  // borrador al usuario real, lo GUARDA en el servidor de inmediato (para que
+  // no dependa del debounce y no se pierdan los datos ya diligenciados) y trae
+  // lo que hubiera del servidor. Luego continúa con el tramo adicional.
   const onRegistered = useCallback((uid: string) => {
     const id = draftIdRef.current;
-    if (id) updateDraft(id, (d) => ({ ...d, userId: uid }));
+    if (id) {
+      const updated = updateDraft(id, (d) => ({ ...d, userId: uid }));
+      if (updated) void flushDraftToServer(updated).then(() => void pullServerDraftsIntoLocal());
+    }
     setGate(null);
     setI(BASIC_TOTAL);
   }, []);

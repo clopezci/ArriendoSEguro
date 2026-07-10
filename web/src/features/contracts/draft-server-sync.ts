@@ -46,6 +46,31 @@ async function putDraft(draft: ContractDraft): Promise<void> {
   }
 }
 
+/**
+ * Empuja el borrador al servidor AHORA (sin debounce) y espera la respuesta.
+ * Se usa en momentos críticos —registro y fin del recorrido— para asegurar que
+ * los datos quedan guardados en la cuenta antes de navegar, sin depender del
+ * temporizador. Cancela cualquier debounce pendiente del mismo borrador.
+ */
+export async function flushDraftToServer(draft: ContractDraft): Promise<boolean> {
+  if (typeof window === "undefined" || !draft?.id || draft.isDemo) return false;
+  const prev = pendingTimers.get(draft.id);
+  if (prev) { clearTimeout(prev); pendingTimers.delete(draft.id); }
+  const headers = await currentAuthHeaders();
+  if (!headers) return false;
+  try {
+    const res = await fetch("/api/contracts/drafts", {
+      method: "PUT",
+      headers: { "content-type": "application/json", ...headers },
+      body: JSON.stringify({ draft }),
+      keepalive: true,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 /** Empuja el borrador al servidor con debounce por id (no bloquea la UI). */
 export function syncDraftToServer(draft: ContractDraft): void {
   if (typeof window === "undefined") return;
