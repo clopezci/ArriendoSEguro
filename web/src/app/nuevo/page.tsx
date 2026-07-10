@@ -12,6 +12,7 @@ import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { validateStep, type Answers } from "@/lib/nuevo/validation";
 import { useVoice } from "@/lib/nuevo/useVoice";
 import { MicButton } from "@/components/nuevo/mic-button";
+import { ExpressRegister } from "@/components/nuevo/express-register";
 
 /**
  * F1+F2 del rediseño "Un paso a la vez" (rama rediseno-frontend-v2).
@@ -67,6 +68,10 @@ export default function NuevoPage() {
   const [i, setI] = useState(0);
   const [a, setARaw] = useState<Answers>(EMPTY);
   const [error, setError] = useState<string | null>(null);
+  // F7 — registro exprés al 50%: cuando alguien sin sesión termina lo básico,
+  // pedimos crear cuenta + consentimiento antes de seguir con lo adicional.
+  const [gate, setGate] = useState<"register" | null>(null);
+  const userRef = useRef(user); userRef.current = user;
 
   // Al editar cualquier campo, limpiamos el error visible.
   function setA(n: Answers) { setARaw(n); if (error) setError(null); }
@@ -153,9 +158,20 @@ export default function NuevoPage() {
     if (e) { setError(e); if (voiceModeRef.current) speak(e, relisten); return; } // no avanza con datos inválidos/en blanco
     setError(null);
     persist(aRef.current);
+    // Al terminar lo básico (50%), si no hay sesión, exigimos crear cuenta.
+    if (iRef.current === BASIC_TOTAL - 1 && !userRef.current) { setGate("register"); return; }
     if (iRef.current >= QUESTIONS.length - 1) { setMode("done"); return; }
     setI(iRef.current + 1);
   }, [persist, speak, relisten]);
+
+  // Tras crear cuenta / iniciar sesión en el registro exprés: re-asocia el
+  // borrador al usuario real y continúa con el tramo adicional.
+  const onRegistered = useCallback((uid: string) => {
+    const id = draftIdRef.current;
+    if (id) updateDraft(id, (d) => ({ ...d, userId: uid }));
+    setGate(null);
+    setI(BASIC_TOTAL);
+  }, []);
 
   const back = useCallback(() => {
     setError(null);
@@ -412,7 +428,20 @@ export default function NuevoPage() {
             </motion.section>
           )}
 
-          {mode === "flow" && (
+          {mode === "flow" && gate === "register" && (
+            <motion.section key="gate" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+              <ProgressBar pct={50} />
+              <p className="mt-4 text-center text-sm font-semibold text-[#5646E5]">¡Lo básico está listo! 🎉</p>
+              <div className="mt-4">
+                <ExpressRegister defaultEmail={a.email} onAuthenticated={onRegistered} />
+              </div>
+              <div className="mt-4 text-center">
+                <button onClick={() => setGate(null)} className="text-sm font-bold text-slate-500 hover:text-[#17151F]">← Volver a revisar lo básico</button>
+              </div>
+            </motion.section>
+          )}
+
+          {mode === "flow" && gate !== "register" && (
             <motion.section key="flow" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
               <ProgressBar pct={pct} />
               <span className="inline-flex items-center gap-2 rounded-full bg-[#5646E5] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white">{q.block}</span>
