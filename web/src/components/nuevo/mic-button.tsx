@@ -14,7 +14,7 @@ import { useState } from "react";
  * Siempre se muestra, para que el usuario nunca quede sin salida.
  */
 export function MicButton({ onResult, label = "Dictar por voz" }: { onResult: (t: string) => void; label?: string }) {
-  const { canListen, isIOS, listening, listen } = useVoice();
+  const { canListen, isIOS, listening, listen, requestMic } = useVoice();
   const [help, setHelp] = useState<VoiceHelpReason | null>(null);
   const [hint, setHint] = useState<string | null>(null);
 
@@ -23,11 +23,19 @@ export function MicButton({ onResult, label = "Dictar por voz" }: { onResult: (t
     setTimeout(() => setHint(null), 3500);
   }
 
-  function handleClick() {
+  async function handleClick() {
     setHint(null);
     // iPhone/iPad: no hay dictado web; guiamos al micrófono del teclado.
     if (isIOS || !canListen) {
       setHelp(isIOS ? "ios" : "unsupported");
+      return;
+    }
+    // Pide el permiso con getUserMedia PRIMERO: en celular esto SÍ abre el diálogo
+    // de permiso (a diferencia de SpeechRecognition.start(), que a veces solo falla).
+    // Concedido el permiso, rec.start() ya no necesita un gesto nuevo.
+    const granted = await requestMic();
+    if (!granted) {
+      setHelp("blocked");
       return;
     }
     listen(
@@ -53,7 +61,7 @@ export function MicButton({ onResult, label = "Dictar por voz" }: { onResult: (t
           type="button"
           aria-label={label}
           title={label}
-          onClick={handleClick}
+          onClick={() => void handleClick()}
           className={`grid h-[54px] w-12 place-items-center rounded-2xl border-2 transition ${
             listening ? "animate-pulse border-[#5646E5] bg-[#ECE9FB] text-[#5646E5]" : "border-slate-200 bg-white text-slate-500 hover:border-[#5646E5]"
           }`}

@@ -45,14 +45,14 @@ export function VoiceHelp({ reason, onClose }: { reason: VoiceHelpReason; onClos
       : reason === "blocked"
         ? {
             title: "Activa el micrófono",
-            intro: "El navegador tiene el micrófono bloqueado. Actívalo así:",
+            intro: "Cuando aparezca el aviso de permiso, toca “Permitir”. Si no aparece o ya lo bloqueaste, actívalo así en tu celular:",
             steps: [
-              "Toca el candado 🔒 (o el ícono a la izquierda de la dirección web, arriba).",
-              "Entra a “Permisos del sitio” y busca “Micrófono”.",
-              "Cámbialo a “Permitir”.",
+              "Arriba, a la IZQUIERDA de la dirección web, toca el ícono de controles (unas rayitas ⚙️/🎚️ o un candado).",
+              "Toca “Permisos” o “Configuración del sitio”.",
+              "Busca “Micrófono” y ponlo en “Permitir”. (Si no aparece “Micrófono”, es que aún no lo has pedido: cierra esto y toca de nuevo el micrófono para que salga el aviso.)",
               "Recarga la página y vuelve a tocar el micrófono.",
             ],
-            foot: "En Android/Chrome también puedes ir a Ajustes del navegador → Configuración del sitio → Micrófono. Y revisa que el navegador tenga permiso de micrófono en los ajustes del teléfono.",
+            foot: "En PC el ícono es un candado 🔒 a la izquierda de la dirección. También revisa que el navegador (Chrome) tenga permiso de micrófono en los ajustes del teléfono. Siempre puedes escribir a mano: el dictado es solo una ayuda.",
           }
         : {
             title: "Tu navegador no permite dictado",

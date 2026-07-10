@@ -25,9 +25,9 @@ type AuthState = {
   user: User | null;
   loading: boolean;
   configError: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<string>;
+  signUp: (email: string, password: string) => Promise<string>;
+  signInWithGoogle: () => Promise<string>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -53,22 +53,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsub();
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string): Promise<string> => {
     if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
-    await signInWithEmailAndPassword(getAuthClient(), email.trim(), password);
+    const cred = await signInWithEmailAndPassword(getAuthClient(), email.trim(), password);
+    return cred.user.uid;
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string): Promise<string> => {
     if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
-    await createUserWithEmailAndPassword(getAuthClient(), email.trim(), password);
+    const cred = await createUserWithEmailAndPassword(getAuthClient(), email.trim(), password);
+    return cred.user.uid;
   }, []);
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (): Promise<string> => {
     if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
     // Popup (no redirect) para no perder el estado del recorrido en el que está.
-    await signInWithPopup(getAuthClient(), provider);
+    const cred = await signInWithPopup(getAuthClient(), provider);
+    return cred.user.uid;
   }, []);
 
   const signOut = useCallback(async () => {

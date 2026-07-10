@@ -646,15 +646,15 @@ export default function NuevoPage() {
               <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 12 }} className="mx-auto mt-4 grid h-20 w-20 place-items-center rounded-full bg-[#12B886] shadow-xl shadow-emerald-500/40">
                 <svg width="38" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><path d="M5 13l4 4L19 7" /></svg>
               </motion.div>
-              <h2 className="mt-4 text-3xl font-extrabold tracking-tight">¡Lo básico está listo!</h2>
+              <h2 className="mt-4 text-3xl font-extrabold tracking-tight">¡Tu expediente está listo!</h2>
               <p className="mx-auto mt-2 max-w-md text-slate-500">
-                Guardamos dueño, inmueble, inquilino y codeudor en tu expediente. Continúa con documentos y firma en el asistente — cada parte acepta sus juramentos al firmar.
+                Guardamos todo: tipo, dueño, inmueble, canon, inquilino, servicios y cláusulas. Ahora revisa tu contrato y fírmalo — cada parte acepta sus juramentos al firmar.
               </p>
               <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <button onClick={() => draftId && router.push(`/dashboard/contracts/${draftId}/contract-type`)} className="rounded-2xl bg-[#5646E5] px-7 py-4 text-base font-bold text-white shadow-lg shadow-violet-500/30 transition hover:brightness-105 active:scale-95">
-                  Continuar en el asistente →
+                <button onClick={() => draftId && router.push(`/dashboard/contracts/${draftId}/preview`)} className="rounded-2xl bg-[#5646E5] px-7 py-4 text-base font-bold text-white shadow-lg shadow-violet-500/30 transition hover:brightness-105 active:scale-95">
+                  Ver y firmar mi contrato →
                 </button>
-                <button onClick={() => setMode("home")} className="rounded-2xl border border-slate-300 px-5 py-4 text-base font-semibold text-slate-600">Inicio</button>
+                <button onClick={() => router.push("/nuevo/contratos")} className="rounded-2xl border border-slate-300 px-5 py-4 text-base font-semibold text-slate-600">Mis contratos</button>
               </div>
               <JourneyScene pct={100} stepIndex={QUESTIONS.length} />
             </motion.section>

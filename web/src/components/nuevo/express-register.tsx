@@ -18,6 +18,18 @@ import { useMemo, useState } from "react";
  * contexto de auth y POST /api/consents/register) para no divergir.
  */
 
+/** Mensajes claros para fallos típicos del acceso con Google (móvil incluido). */
+function googleError(err: unknown): string {
+  const code = (err as { code?: string })?.code ?? "";
+  if (code.includes("popup-blocked") || code.includes("popup-closed") || code.includes("cancelled-popup"))
+    return "El navegador bloqueó la ventana de Google. Permite ventanas emergentes, o crea tu cuenta con correo y contraseña aquí abajo.";
+  if (code.includes("unauthorized-domain"))
+    return "Este enlace aún no está autorizado para Google. Por ahora crea tu cuenta con correo y contraseña.";
+  if (code.includes("internal-error") || code.includes("network"))
+    return "Google no está disponible aquí en este momento. Crea tu cuenta con correo y contraseña (funciona igual de bien).";
+  return (err as { message?: string })?.message || "No se pudo entrar con Google. Usa tu correo y contraseña.";
+}
+
 function scorePassword(pw: string): { score: number; label: string; color: string } {
   let s = 0;
   if (pw.length >= 8) s++;
@@ -110,16 +122,11 @@ export function ExpressRegister({
     }
     setBusy(true);
     try {
-      await signInWithGoogle();
+      const uid = await signInWithGoogle();
       await recordConsent();
-      const uid = getAuthClient().currentUser?.uid;
-      if (!uid) {
-        setError("No se pudo confirmar la sesión con Google. Intenta de nuevo.");
-        return;
-      }
-      onAuthenticated(uid); // ya quedó logueado
+      onAuthenticated(uid); // ya quedó logueado, seguimos en el recorrido
     } catch (err) {
-      setError(mapFirebaseAuthError(err));
+      setError(googleError(err));
     } finally {
       setBusy(false);
     }
@@ -143,18 +150,10 @@ export function ExpressRegister({
     }
     setBusy(true);
     try {
-      if (mode === "iniciar") {
-        await signIn(mail, password);
-      } else {
-        await signUp(mail, password);
-        await recordConsent();
-      }
-      const uid = getAuthClient().currentUser?.uid;
-      if (!uid) {
-        setError("No se pudo confirmar la sesión. Intenta de nuevo.");
-        return;
-      }
-      onAuthenticated(uid);
+      const uid = mode === "iniciar"
+        ? await signIn(mail, password)
+        : await (async () => { const u = await signUp(mail, password); await recordConsent(); return u; })();
+      onAuthenticated(uid); // continúa el recorrido con la sesión ya activa
     } catch (err) {
       setError(mapFirebaseAuthError(err));
     } finally {
