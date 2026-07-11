@@ -14,6 +14,7 @@ import { JourneyScene } from "@/components/nuevo/journey-scene";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { validateStep, type Answers } from "@/lib/nuevo/validation";
 import { pesosEnLetras } from "@/lib/nuevo/pesos-en-letras";
+import { captureOathEvidence } from "@/lib/nuevo/oath-evidence";
 import { useVoice } from "@/lib/nuevo/useVoice";
 import { MicButton } from "@/components/nuevo/mic-button";
 import { ExpressRegister } from "@/components/nuevo/express-register";
@@ -812,7 +813,7 @@ export default function NuevoPage() {
                       className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white hover:brightness-105">Completar ahora</button>
                   </div>
                   <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-sm text-slate-700">
-                    <input type="checkbox" checked={skipAck} onChange={(e) => setSkipAck(e.target.checked)} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
+                    <input type="checkbox" checked={skipAck} onChange={(e) => { const v = e.target.checked; if (v && !skipAck) void captureOathEvidence("registry_skip_declaration", draftId ?? undefined); setSkipAck(v); }} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
                     <span>Entiendo que <b>sin la matrícula el contrato aún no se puede generar</b>, y decido continuar por ahora para agregarla más adelante.</span>
                   </label>
                 </div>
@@ -820,8 +821,10 @@ export default function NuevoPage() {
 
               {/* Juramento del inmueble (obligatorio) */}
               <label className="mt-5 flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-slate-200 bg-white p-4 text-sm text-slate-700">
-                <input type="checkbox" checked={reviewOath} onChange={(e) => setReviewOath(e.target.checked)} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
-                <span>Declaro <b>bajo la gravedad de juramento</b> que los datos del inmueble son correctos y que soy el propietario o cuento con poder vigente para arrendarlo.</span>
+                <input type="checkbox" checked={reviewOath} onChange={(e) => { const v = e.target.checked; if (v && !reviewOath) void captureOathEvidence("property_ownership_oath", draftId ?? undefined); setReviewOath(v); }} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
+                <span>Declaro <b>bajo la gravedad de juramento</b> que los datos del inmueble son correctos y que soy el propietario o cuento con poder vigente para arrendarlo.
+                  <span className="mt-1 block text-[11px] font-normal text-slate-400">🔒 Al aceptar, queda registrada la evidencia (fecha, IP y dispositivo) como soporte del expediente.</span>
+                </span>
               </label>
 
               <div className="mt-6 flex items-center gap-3">
@@ -902,7 +905,7 @@ function Field({ q, a, setA, docs, party }: { q: Q; a: Answers; setA: (a: Answer
           </div>
           {a.acting === "proxy" && (
             <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
-              <input type="checkbox" checked={a.proxyOath} onChange={(e) => setA({ ...a, proxyOath: e.target.checked })} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
+              <input type="checkbox" checked={a.proxyOath} onChange={(e) => { const v = e.target.checked; if (v && !a.proxyOath) void captureOathEvidence("proxy_declaration", party.draftId); setA({ ...a, proxyOath: v }); }} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
               <span>Declaro que cuento con <b>poder vigente y facultad</b> para arrendar este inmueble a nombre del propietario. Sé que deberé subir el poder para la firma.</span>
             </label>
           )}
@@ -1007,7 +1010,7 @@ function Field({ q, a, setA, docs, party }: { q: Q; a: Answers; setA: (a: Answer
             <PartyFields
               docType={a.tenantDocType} docNumber={a.tenantDocNumber} city={a.tenantCity} email={a.tenantEmail} phone={a.tenantPhone} auth={a.tenantAuth}
               authLabel="Declaro que tengo autorización del arrendatario para ingresar sus datos personales (Ley 1581 de 2012)."
-              onChange={(patch) => setA({ ...a, tenantDocType: patch.docType, tenantDocNumber: patch.docNumber, tenantCity: patch.city, tenantEmail: patch.email, tenantPhone: patch.phone, tenantAuth: patch.auth })}
+              onChange={(patch) => { if (patch.auth && !a.tenantAuth) void captureOathEvidence("tenant_third_party_authorization", party.draftId); setA({ ...a, tenantDocType: patch.docType, tenantDocNumber: patch.docNumber, tenantCity: patch.city, tenantEmail: patch.email, tenantPhone: patch.phone, tenantAuth: patch.auth }); }}
             />
           ) : (
             <PartyInvitePanel contractDraftId={party.draftId} role="tenant" roleLabel="Arrendatario (inquilino)" inviterName={party.inviterName}
@@ -1063,7 +1066,7 @@ function Field({ q, a, setA, docs, party }: { q: Q; a: Answers; setA: (a: Answer
             <PartyFields
               docType={a.codebtorDocType} docNumber={a.codebtorDocNumber} city={a.codebtorCity} email={a.codebtorEmail} phone={a.codebtorPhone} auth={a.codebtorAuth}
               authLabel="Declaro que tengo autorización del codeudor para ingresar sus datos personales (Ley 1581 de 2012)."
-              onChange={(patch) => setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth })}
+              onChange={(patch) => { if (patch.auth && !a.codebtorAuth) void captureOathEvidence("codebtor_third_party_authorization", party.draftId); setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth }); }}
             />
           ) : (
             <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
