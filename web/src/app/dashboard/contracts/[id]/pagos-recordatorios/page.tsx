@@ -175,7 +175,7 @@ export default function PagosRecordatoriosPage() {
       <ExpedientePostWizardNav contractId={id} />
 
       <RequiresSavedContract id={id}>
-      <section className="rounded-xl border border-slate-300 bg-white/95 p-4">
+      <section className="rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)]/95 p-4">
         <fieldset>
           <legend className="text-sm font-semibold text-slate-900">¿Cómo te paga el inquilino?</legend>
           <div className="mt-2 grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Método de pago">
@@ -204,18 +204,18 @@ export default function PagosRecordatoriosPage() {
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <label className="text-sm">
               <span className="mb-1 block text-slate-700">Entidad bancaria</span>
-              <input value={bank} onChange={(e) => setBank(e.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="Ej. Bancolombia" />
+              <input value={bank} onChange={(e) => setBank(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] px-3 py-2 text-sm" placeholder="Ej. Bancolombia" />
             </label>
             <label className="text-sm">
               <span className="mb-1 block text-slate-700">Tipo de cuenta</span>
-              <select value={accountType} onChange={(e) => setAccountType(e.target.value as AccountType)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+              <select value={accountType} onChange={(e) => setAccountType(e.target.value as AccountType)} className="w-full rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] px-3 py-2 text-sm">
                 <option value="ahorros">Ahorros</option>
                 <option value="corriente">Corriente</option>
               </select>
             </label>
             <label className="text-sm sm:col-span-2">
               <span className="mb-1 block text-slate-700">Número de cuenta</span>
-              <input value={accountNumber} inputMode="numeric" onChange={(e) => setAccountNumber(e.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="Solo dígitos" />
+              <input value={accountNumber} inputMode="numeric" onChange={(e) => setAccountNumber(e.target.value)} className="w-full rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] px-3 py-2 text-sm" placeholder="Solo dígitos" />
             </label>
           </div>
         )}
@@ -231,7 +231,7 @@ export default function PagosRecordatoriosPage() {
         )}
 
         {method !== "none" && (
-          <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
+          <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
             <label className="flex cursor-pointer items-start gap-2">
               <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4 accent-amber-500" />
               <span>

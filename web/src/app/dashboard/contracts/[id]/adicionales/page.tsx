@@ -147,7 +147,7 @@ export default function PosventaHubPage() {
       </header>
 
       {!saved && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
           La posventa se habilita cuando <strong>guardes tu contrato</strong> en la vista previa.{" "}
           <Link href={`/dashboard/contracts/${id}/preview`} className="font-semibold underline">
             Termina y guarda tu contrato →

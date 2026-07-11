@@ -152,7 +152,7 @@ export default function SpecialClausesStepPage() {
 
       <form id="wizard-form" className="mt-4 space-y-4" onSubmit={onSubmit}>
         <fieldset
-          className="rounded-xl border border-slate-300 bg-white/95 p-4"
+          className="rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)]/95 p-4"
           aria-describedby="special-clauses-help"
         >
           <legend className="px-1 text-sm font-medium text-slate-800">
@@ -197,13 +197,13 @@ export default function SpecialClausesStepPage() {
           <>
             <div
               role="note"
-              className="rounded-lg border border-emerald-300 bg-emerald-100/60 p-4 text-sm text-emerald-800"
+              className="rounded-2xl border border-emerald-300 bg-emerald-100/60 p-4 text-sm text-emerald-800"
             >
               <p className="font-semibold">Cláusulas del catálogo — sin costo</p>
               <p className="mt-1">{SPECIAL_CLAUSES_FREE_NOTICE}</p>
             </div>
 
-            <fieldset className="rounded-xl border border-slate-300 bg-white/95 p-4">
+            <fieldset className="rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)]/95 p-4">
               <legend className="px-1 text-sm font-medium text-slate-800">
                 Selecciona las cláusulas que aplican
               </legend>
@@ -287,7 +287,7 @@ export default function SpecialClausesStepPage() {
         {errors.length > 0 && (
           <div
             role="alert"
-            className="rounded-lg border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
+            className="rounded-2xl border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
           >
             <p className="font-semibold">Revisa lo siguiente:</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">

@@ -333,7 +333,7 @@ export default function PropertyStepPage() {
                 onValueChange={(v) => setCommercialValuePreview(Number(v || 0))}
                 hint="Avalúo comercial estimado del inmueble."
               />
-              <div className="rounded-lg border border-slate-300 bg-white/95 px-3 py-2 text-xs text-slate-700">
+              <div className="rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] px-3 py-2 text-xs text-slate-700">
                 <p className="text-slate-600">Tope legal estimado (1%):</p>
                 <p className="mt-1 text-base font-semibold text-violet-800">
                   {formatCOP(estimatedCap)}
@@ -345,7 +345,7 @@ export default function PropertyStepPage() {
             </div>
           )}
 
-          <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-slate-300 bg-white/90 px-3 py-2 text-xs text-slate-800">
+          <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)]/90 px-3 py-2 text-xs text-slate-800">
             <input
               type="checkbox"
               name="commercialValueUnknown"
@@ -359,7 +359,7 @@ export default function PropertyStepPage() {
           </label>
 
           {valueUnknown && (
-            <div className="mt-3 rounded-lg border border-amber-300 bg-amber-100/60 p-3 text-xs leading-relaxed text-amber-800">
+            <div className="mt-3 rounded-2xl border border-amber-300 bg-amber-100/60 p-3 text-xs leading-relaxed text-amber-800">
               {!noCapAccepted && (
                 <>
                   <p className="font-semibold">Declaración del arrendador (dueño)</p>
@@ -449,7 +449,7 @@ export default function PropertyStepPage() {
             contractDraftId={id}
           />
           {!ownershipOath && (
-            <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+            <p className="mt-3 rounded-2xl border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
               <span aria-hidden="true">📎</span> Podrás <strong>cargar la escritura, el certificado de libertad o el
               poder autenticado</strong> en la sección «Documentos de propiedad / poder» (Evidencias del expediente),
               después de guardar la versión del contrato.
@@ -458,7 +458,7 @@ export default function PropertyStepPage() {
         </div>
 
         {appliedSavedId ? (
-          <div className="sm:col-span-2 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800">
+          <div className="sm:col-span-2 rounded-2xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800">
             <p className="font-medium">
               ✓ Este inmueble ya está guardado{propLabel ? ` como «${propLabel}»` : ""}.
             </p>
@@ -496,7 +496,7 @@ export default function PropertyStepPage() {
         {errors.length > 0 && (
           <div
             role="alert"
-            className="sm:col-span-2 rounded-lg border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
+            className="sm:col-span-2 rounded-2xl border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
           >
             <p className="font-semibold">Revisa estos campos antes de continuar:</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">

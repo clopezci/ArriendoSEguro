@@ -189,7 +189,7 @@ export default function PaymentsPage() {
       </section>
 
       {scheduledPayments.length === 0 ? (
-        <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+        <div className="mt-3 rounded-2xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
           Aún no has generado el calendario de pagos. Genéralo en{" "}
           <Link href={`/dashboard/contracts/${id}/payment-schedule`} className="font-semibold underline">
             Calendario y recordatorios
@@ -242,7 +242,7 @@ export default function PaymentsPage() {
             </button>
           </div>
           {tenantLinkQr && (
-            <div className="mt-3 flex flex-col items-center gap-1 rounded-lg border border-slate-200 bg-white p-3 sm:w-fit">
+            <div className="mt-3 flex flex-col items-center gap-1 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3 sm:w-fit">
               <p className="text-[11px] font-medium text-slate-700">O que escanee este QR:</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={tenantLinkQr} alt="Código QR del enlace de pago" className="h-40 w-40" />

@@ -40,7 +40,7 @@ export default function InventoryHomePage() {
   return (
     <WizardShell title="Inventario y entrega" currentStep={11} contractId={id} variant="extra" macroStep="acta">
       {error && <p className="mb-3 text-sm text-rose-700">{error}</p>}
-      <div className="rounded-lg border border-slate-300 bg-white/95 p-4 text-sm text-slate-700">
+      <div className="rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-sm text-slate-700">
         <p>Estado del inventario inicial: <strong>{inventoryState === "none" ? "Sin inventario" : inventoryState === "draft" ? "Inventario en borrador" : "Inventario completado"}</strong></p>
         <p className="mt-1">Estado del acta de entrega: <strong>{deliveryActGenerated ? "Acta generada" : inventoryState === "completed" ? "Lista para generar" : "Pendiente"}</strong></p>
       </div>
@@ -69,7 +69,7 @@ export default function InventoryHomePage() {
             </Link>
             <Link
               href={`/dashboard/contracts/${id}/inventory/preview?inventoryId=${encodeURIComponent(inventoryId)}`}
-              className="rounded-lg border border-emerald-500 px-4 py-2 text-sm text-emerald-700"
+              className="rounded-2xl border border-emerald-500 px-4 py-2 text-sm text-emerald-700"
             >
               Ver inventario
             </Link>

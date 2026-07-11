@@ -45,7 +45,7 @@ export default function InventoryPreviewPage() {
         <p className="text-sm text-slate-700">El inventario aún no está completado.</p>
       ) : (
         <>
-          <div className="max-h-[70vh] overflow-auto rounded-lg border border-slate-300 bg-white p-4 text-slate-900">
+          <div className="max-h-[70vh] overflow-auto rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-slate-900">
             <div dangerouslySetInnerHTML={{ __html: html }} />
           </div>
           <p className="mt-2 text-xs text-slate-600">Hash inventario: {hash}</p>

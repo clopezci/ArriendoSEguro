@@ -785,7 +785,7 @@ export default function InventoryNewPage() {
       )}
 
       {inventoryReportHtml && (
-        <div className="mt-5 rounded-lg border border-emerald-400 bg-emerald-50 p-4">
+        <div className="mt-5 rounded-2xl border border-emerald-400 bg-emerald-50 p-4">
           <h3 className="text-sm font-semibold text-emerald-900">
             Inventario inicial generado correctamente
           </h3>

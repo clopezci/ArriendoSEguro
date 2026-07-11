@@ -125,13 +125,13 @@ export default function NovedadesExpedientePage() {
 
         <RequiresSavedContract id={id}>
         {!user && (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <p className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             Inicia sesión para ver y registrar novedades.
           </p>
         )}
 
         {error && (
-          <p className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800" role="alert">
+          <p className="rounded-2xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800" role="alert">
             {error}
           </p>
         )}
