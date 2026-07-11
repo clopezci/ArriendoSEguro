@@ -17,6 +17,8 @@ import { pesosEnLetras } from "@/lib/nuevo/pesos-en-letras";
 import { useVoice } from "@/lib/nuevo/useVoice";
 import { MicButton } from "@/components/nuevo/mic-button";
 import { ExpressRegister } from "@/components/nuevo/express-register";
+import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
+import type { PartyDraft } from "@/features/contracts/draft-types";
 
 /**
  * F1+F2 del rediseño "Un paso a la vez" (rama rediseno-frontend-v2).
@@ -67,7 +69,7 @@ const QUESTIONS: Q[] = [
   { id: "registry", block: "Datos del inmueble", prompt: "Matrícula y tipo del inmueble", hint: "La matrícula da certeza jurídica. Si no la tienes a la mano, puedes seguir.", kind: "registry", basic: true },
   { id: "canon", block: "Datos del inmueble", prompt: "¿Cuál es el canon mensual?", hint: "Validamos el tope legal (Ley 820).", kind: "canon", ph: "$ 1.500.000", basic: true },
   { id: "tenant", block: "Datos del inquilino", prompt: "¿Quién será el arrendatario?", hint: "Lo llenas tú o se lo pides a él.", kind: "tenant", basic: true },
-  { id: "tenantfull", block: "Datos del inquilino", prompt: "Datos del arrendatario", hint: "Documento, ciudad y contacto que irán en el contrato.", kind: "tenantfull", basic: false, skipWhen: (a) => a.tenantMode !== "self" },
+  { id: "tenantfull", block: "Datos del inquilino", prompt: "Datos del arrendatario", hint: "Los ingresas tú, o le envías un enlace para que los complete él mismo.", kind: "tenantfull", basic: false },
   { id: "lease", block: "Términos del arriendo", prompt: "¿Cuándo y cómo se paga?", hint: "Inicio, duración y día de pago del canon.", kind: "lease", basic: false },
   { id: "codebtor", block: "¿Codeudor?", prompt: "¿Tendrá codeudor solidario?", hint: "Opcional. Añade respaldo si lo necesitas.", kind: "codebtor", basic: false },
   { id: "codebtorfull", block: "Codeudor solidario", prompt: "Datos del codeudor", hint: "Documento, ciudad y contacto.", kind: "codebtorfull", basic: false, skipWhen: (a) => a.hasCodebtor !== "yes" },
@@ -100,7 +102,7 @@ const EMPTY: Answers = {
   startDate: "", termMonths: "12", paymentDay: "5",
   tenantMode: "self", tenantName: "",
   tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false,
-  hasCodebtor: "", codebtorName: "",
+  hasCodebtor: "", codebtorName: "", codebtorMode: "self",
   codebtorDocType: "CC", codebtorDocNumber: "", codebtorCity: "", codebtorEmail: "", codebtorPhone: "", codebtorAuth: false,
   utilitiesParty: "", clauses: [], clauseOther: "",
   docMethod: "", docPhone: "", docEmail: "",
@@ -238,7 +240,9 @@ export default function NuevoPage() {
       },
       tenant: {
         ...d.tenant,
-        fullName: n.tenantName.trim() || d.tenant.fullName,
+        // En invitación, el propio inquilino da su nombre real al completar; no lo
+        // pisamos con el nombre tentativo que puso el dueño.
+        fullName: n.tenantMode === "invite" ? (d.tenant.fullName || n.tenantName.trim()) : (n.tenantName.trim() || d.tenant.fullName),
         ...(n.tenantMode === "self"
           ? {
               documentType: n.tenantDocType || d.tenant.documentType,
@@ -256,12 +260,16 @@ export default function NuevoPage() {
       solidaryCoDebtor: n.hasCodebtor === "yes"
         ? {
             ...d.solidaryCoDebtor,
-            fullName: n.codebtorName.trim() || d.solidaryCoDebtor.fullName,
-            documentType: n.codebtorDocType || d.solidaryCoDebtor.documentType,
-            documentNumber: n.codebtorDocNumber.trim() || d.solidaryCoDebtor.documentNumber,
-            city: n.codebtorCity.trim() || d.solidaryCoDebtor.city,
-            email: n.codebtorEmail.trim() || d.solidaryCoDebtor.email,
-            phone: n.codebtorPhone.trim() || d.solidaryCoDebtor.phone,
+            fullName: n.codebtorMode === "invite" ? (d.solidaryCoDebtor.fullName || n.codebtorName.trim()) : (n.codebtorName.trim() || d.solidaryCoDebtor.fullName),
+            // En invitación los datos vienen del enlace del codeudor (importados);
+            // aquí solo escribimos si el dueño los ingresó (self).
+            ...(n.codebtorMode === "self" ? {
+              documentType: n.codebtorDocType || d.solidaryCoDebtor.documentType,
+              documentNumber: n.codebtorDocNumber.trim() || d.solidaryCoDebtor.documentNumber,
+              city: n.codebtorCity.trim() || d.solidaryCoDebtor.city,
+              email: n.codebtorEmail.trim() || d.solidaryCoDebtor.email,
+              phone: n.codebtorPhone.trim() || d.solidaryCoDebtor.phone,
+            } : {}),
           }
         : d.solidaryCoDebtor,
       utilities: {
@@ -283,6 +291,17 @@ export default function NuevoPage() {
   const relisten = useCallback(() => {
     if (voiceModeRef.current && canListen) listen((t) => onTranscriptRef.current(t));
   }, [listen, canListen]);
+
+  // Cuando el invitado (inquilino/codeudor) completa sus datos por su enlace y el
+  // dueño los importa, se escriben en el borrador con su attestation/evidencia.
+  const onImportParty = useCallback((role: "tenant" | "solidaryCoDebtor", party: PartyDraft) => {
+    const id = draftIdRef.current;
+    if (!id) return;
+    const updated = updateDraft(id, (d) => role === "tenant"
+      ? { ...d, tenant: { ...d.tenant, ...party } }
+      : { ...d, hasSolidaryCoDebtor: true, solidaryCoDebtor: { ...d.solidaryCoDebtor, ...party } });
+    if (updated) void flushDraftToServer(updated);
+  }, []);
 
   const next = useCallback(() => {
     const cq = QUESTIONS[iRef.current];
@@ -720,7 +739,7 @@ export default function NuevoPage() {
                   <motion.div key={q.id} initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
                     <h2 className="text-balance text-3xl font-extrabold tracking-tight">{q.prompt}</h2>
                     <p className="mt-1.5 mb-5 text-slate-500">{q.hint}</p>
-                    <Field q={q} a={a} setA={setA} docs={{ send: sendInvite, status: inviteStatus, busy: inviteBusy, waUrl: inviteWaUrl, link: inviteLink }} />
+                    <Field q={q} a={a} setA={setA} docs={{ send: sendInvite, status: inviteStatus, busy: inviteBusy, waUrl: inviteWaUrl, link: inviteLink }} party={{ draftId: draftId ?? "", inviterName: a.name.trim() || user?.email || "El arrendador", onImport: onImportParty }} />
                     {error && (
                       <p className="mt-3 flex items-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5v.01" /></svg>
@@ -858,7 +877,7 @@ const cleanEmail = (t: string) => t.replace(/\s/g, "").toLowerCase();
 
 const PROPERTY_TYPES = ["Apartamento", "Casa", "Habitación", "Local", "Oficina", "Otro"];
 
-function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => void; docs: { send: (m: "whatsapp" | "email") => void; status: string | null; busy: boolean; waUrl: string | null; link: string | null } }) {
+function Field({ q, a, setA, docs, party }: { q: Q; a: Answers; setA: (a: Answers) => void; docs: { send: (m: "whatsapp" | "email") => void; status: string | null; busy: boolean; waUrl: string | null; link: string | null }; party: { draftId: string; inviterName: string; onImport: (role: "tenant" | "solidaryCoDebtor", p: PartyDraft) => void } }) {
   switch (q.kind) {
     case "ctype":
       return (
@@ -973,21 +992,28 @@ function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => v
     case "tenant":
       return (
         <>
-          <div className="mb-3 flex flex-wrap gap-2.5">
-            <button type="button" onClick={() => setA({ ...a, tenantMode: "self" })} className={chip(a.tenantMode === "self")}>Lo lleno yo</button>
-            <button type="button" onClick={() => setA({ ...a, tenantMode: "invite" })} className={chip(a.tenantMode === "invite")}>Se lo pido a él</button>
-          </div>
           <InputMic autoFocus placeholder="Nombre del arrendatario" value={a.tenantName} onChange={(e) => setA({ ...a, tenantName: e.target.value })} voice={(t) => setA({ ...a, tenantName: t })} />
-          {a.tenantMode === "invite" && <p className="mt-2 text-xs text-slate-500">Al final le enviarás un enlace para que complete sus propios datos y suba documentos.</p>}
+          <p className="mt-2 text-xs text-slate-500">En el siguiente paso eliges si <b>ingresas tú</b> sus datos o le <b>envías un enlace</b> para que los complete él mismo (con su firma y evidencia).</p>
         </>
       );
     case "tenantfull":
       return (
-        <PartyFields
-          docType={a.tenantDocType} docNumber={a.tenantDocNumber} city={a.tenantCity} email={a.tenantEmail} phone={a.tenantPhone} auth={a.tenantAuth}
-          authLabel="Declaro que tengo autorización del arrendatario para ingresar sus datos personales (Ley 1581 de 2012)."
-          onChange={(patch) => setA({ ...a, tenantDocType: patch.docType, tenantDocNumber: patch.docNumber, tenantCity: patch.city, tenantEmail: patch.email, tenantPhone: patch.phone, tenantAuth: patch.auth })}
-        />
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2.5">
+            <button type="button" onClick={() => setA({ ...a, tenantMode: "self" })} className={chip(a.tenantMode === "self")}>Los ingreso yo</button>
+            <button type="button" onClick={() => setA({ ...a, tenantMode: "invite" })} className={chip(a.tenantMode === "invite")}>Se lo pido a él/ella</button>
+          </div>
+          {a.tenantMode === "self" ? (
+            <PartyFields
+              docType={a.tenantDocType} docNumber={a.tenantDocNumber} city={a.tenantCity} email={a.tenantEmail} phone={a.tenantPhone} auth={a.tenantAuth}
+              authLabel="Declaro que tengo autorización del arrendatario para ingresar sus datos personales (Ley 1581 de 2012)."
+              onChange={(patch) => setA({ ...a, tenantDocType: patch.docType, tenantDocNumber: patch.docNumber, tenantCity: patch.city, tenantEmail: patch.email, tenantPhone: patch.phone, tenantAuth: patch.auth })}
+            />
+          ) : (
+            <PartyInvitePanel contractDraftId={party.draftId} role="tenant" roleLabel="Arrendatario (inquilino)" inviterName={party.inviterName}
+              onImport={(p) => party.onImport("tenant", p)} />
+          )}
+        </div>
       );
     case "lease": {
       const canonN = Number((a.canon || "").replace(/[^\d]/g, "")) || 0;
@@ -1028,11 +1054,22 @@ function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => v
       );
     case "codebtorfull":
       return (
-        <PartyFields
-          docType={a.codebtorDocType} docNumber={a.codebtorDocNumber} city={a.codebtorCity} email={a.codebtorEmail} phone={a.codebtorPhone} auth={a.codebtorAuth}
-          authLabel="Declaro que tengo autorización del codeudor para ingresar sus datos personales (Ley 1581 de 2012)."
-          onChange={(patch) => setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth })}
-        />
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2.5">
+            <button type="button" onClick={() => setA({ ...a, codebtorMode: "self" })} className={chip(a.codebtorMode === "self")}>Los ingreso yo</button>
+            <button type="button" onClick={() => setA({ ...a, codebtorMode: "invite" })} className={chip(a.codebtorMode === "invite")}>Se lo pido a él/ella</button>
+          </div>
+          {a.codebtorMode === "self" ? (
+            <PartyFields
+              docType={a.codebtorDocType} docNumber={a.codebtorDocNumber} city={a.codebtorCity} email={a.codebtorEmail} phone={a.codebtorPhone} auth={a.codebtorAuth}
+              authLabel="Declaro que tengo autorización del codeudor para ingresar sus datos personales (Ley 1581 de 2012)."
+              onChange={(patch) => setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth })}
+            />
+          ) : (
+            <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
+              onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
+          )}
+        </div>
       );
     case "credit":
       return (

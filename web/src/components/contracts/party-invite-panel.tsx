@@ -114,15 +114,15 @@ export function PartyInvitePanel({
   }
 
   return (
-    <div className="mb-4 rounded-xl border border-violet-300 bg-violet-50/50 p-4">
-      <p className="text-sm font-semibold text-violet-900">¿Quién ingresa los datos del {roleLabel.toLowerCase()}?</p>
-      <div className="mt-2 flex flex-wrap gap-2" role="radiogroup">
+    <div className="rounded-3xl border-2 border-[#5646E5]/20 bg-[#ECE9FB]/40 p-4">
+      <p className="text-sm font-bold text-[#5646E5]">¿Quién ingresa los datos del {roleLabel.toLowerCase()}?</p>
+      <div className="mt-2 flex flex-wrap gap-2.5" role="radiogroup">
         <button
           type="button"
           role="radio"
           aria-checked={mode === "self"}
           onClick={() => setMode("self")}
-          className={`rounded-lg border px-3 py-1.5 text-sm ${mode === "self" ? "border-violet-500 bg-violet-100/70 text-violet-800" : "border-slate-300 text-slate-800"}`}
+          className={`rounded-2xl border-2 px-4 py-2.5 text-sm font-medium transition ${mode === "self" ? "border-[#5646E5] bg-[#ECE9FB] text-[#5646E5]" : "border-slate-200 bg-white text-slate-700 hover:border-[#5646E5]"}`}
         >
           Los ingreso yo
         </button>
@@ -131,7 +131,7 @@ export function PartyInvitePanel({
           role="radio"
           aria-checked={mode === "invite"}
           onClick={() => setMode("invite")}
-          className={`rounded-lg border px-3 py-1.5 text-sm ${mode === "invite" ? "border-violet-500 bg-violet-100/70 text-violet-800" : "border-slate-300 text-slate-800"}`}
+          className={`rounded-2xl border-2 px-4 py-2.5 text-sm font-medium transition ${mode === "invite" ? "border-[#5646E5] bg-[#ECE9FB] text-[#5646E5]" : "border-slate-200 bg-white text-slate-700 hover:border-[#5646E5]"}`}
         >
           Enviar enlace a la persona
         </button>
@@ -170,7 +170,7 @@ export function PartyInvitePanel({
                 type="button"
                 disabled={busy || !email.includes("@")}
                 onClick={() => void sendInvite()}
-                className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:opacity-50"
               >
                 {busy ? "Enviando…" : status === "active" ? "Reenviar enlace" : "Enviar invitación"}
               </button>
@@ -184,7 +184,7 @@ export function PartyInvitePanel({
           )}
 
           {status === "completed" && contribution && (
-            <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800">
+            <div className="rounded-2xl border-2 border-[#12B886]/40 bg-[#12B886]/10 p-3 text-sm text-emerald-800">
               <p className="font-semibold">La persona completó sus datos ✓</p>
               {attestation ? (
                 attestation.mode === "third_party" ? (
@@ -209,7 +209,7 @@ export function PartyInvitePanel({
                     truthfulnessOathAccepted: Boolean(attestation?.truthfulnessOathAccepted),
                   })
                 }
-                className="mt-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+                className="mt-2 rounded-xl bg-[#12B886] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105"
               >
                 Importar sus datos al contrato
               </button>
