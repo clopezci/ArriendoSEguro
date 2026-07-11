@@ -7,7 +7,7 @@ const base: Answers = {
   name: "", docType: "CC", docNumber: "", phone: "", email: "", ownerCity: "",
   acting: "", proxyOath: false,
   address: "", city: "", department: "",
-  registry: "", propertyType: "",
+  registry: "", propertyType: "", registrySkip: false,
   canon: "", commercialValue: "", noCommercialValue: false,
   startDate: "", termMonths: "12", paymentDay: "5",
   tenantMode: "self", tenantName: "",
@@ -85,9 +85,10 @@ test("calidad: sin elegir → error; apoderado sin juramento → error; dueño �
 });
 
 test("matrícula/tipo: sin tipo → error; sin matrícula → error (obligatoria); completa → ok", () => {
-  assert.ok(validateStep("registry", a({ propertyType: "", registry: "050-1" })));
-  assert.ok(validateStep("registry", a({ propertyType: "Casa", registry: "" })));
-  assert.equal(validateStep("registry", a({ propertyType: "Casa", registry: "050-123456" })), null);
+  assert.ok(validateStep("registry", a({ propertyType: "", registry: "050-1" })));                       // sin tipo → error
+  assert.ok(validateStep("registry", a({ propertyType: "Casa", registry: "", registrySkip: false })));    // sin matrícula y sin saltar → error
+  assert.equal(validateStep("registry", a({ propertyType: "Casa", registry: "", registrySkip: true })), null); // saltable → ok
+  assert.equal(validateStep("registry", a({ propertyType: "Casa", registry: "050-123456" })), null);      // con matrícula → ok
 });
 
 test("contacto del dueño exige ciudad además de teléfono y correo", () => {
