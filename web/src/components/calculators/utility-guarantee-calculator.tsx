@@ -65,7 +65,7 @@ export function UtilityGuaranteeCalculator() {
           Al crear tu contrato en ArriendoSeguro puedes pactar esta garantía con su constancia. Generarlo es gratis.
         </p>
         <Link
-          href="/crear-cuenta"
+          href="/nuevo"
           className="mt-3 inline-flex rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
         >
           Crear mi contrato

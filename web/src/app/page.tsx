@@ -65,16 +65,16 @@ export default function Home() {
           ))}
         </ol>
 
-        {/* Acceso */}
+        {/* Acceso — entra directo al recorrido "Un paso a la vez" (bento). */}
         <div className="flex flex-col gap-2.5">
           <Link
-            href="/crear-cuenta"
+            href="/nuevo"
             className="inline-flex min-h-12 items-center justify-center rounded-xl bg-violet-600 px-6 text-base font-semibold text-white shadow-[0_8px_24px_rgba(124,58,237,0.35)] transition hover:bg-violet-700"
           >
-            Crear cuenta gratis
+            Crear mi contrato gratis
           </Link>
           <Link
-            href="/ingresar"
+            href="/ingresar?redirect=/nuevo"
             className="inline-flex min-h-12 items-center justify-center rounded-xl border border-violet-400 px-6 text-base font-semibold text-violet-700 transition hover:bg-violet-50"
           >
             Ya tengo cuenta

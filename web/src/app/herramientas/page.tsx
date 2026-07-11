@@ -166,7 +166,7 @@ export default function HerramientasPage() {
 
         <p className="text-sm text-slate-600">
           ¿Listo para formalizar?{" "}
-          <Link href="/crear-cuenta" className="text-violet-700 underline">
+          <Link href="/nuevo" className="text-violet-700 underline">
             Crea tu contrato gratis
           </Link>{" "}
           o{" "}

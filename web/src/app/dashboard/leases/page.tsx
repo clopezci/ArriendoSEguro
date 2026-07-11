@@ -159,10 +159,9 @@ export default function MisArriendosPage() {
 
   function onCreate() {
     if (!user || !canCreate) return;
-    // Delegamos en /dashboard/contracts/new la creación real del expediente:
-    // ahí se consulta entitlements/me otra vez y, si hay Plus, se consume el
-    // crédito antes de crear el draft (atomicidad y trazabilidad).
-    router.push("/dashboard/contracts/new");
+    // Recorrido nuevo "Un paso a la vez" (bento). Crea el expediente y, para Plus,
+    // el crédito se valida en el backend al firmar/generar.
+    router.push("/nuevo");
   }
 
   function refresh() {

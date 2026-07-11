@@ -108,7 +108,7 @@ export default function MisPropiedadesPage() {
             )}
           </section>
 
-          <Link href="/dashboard/contracts/new" className="inline-flex text-sm font-semibold text-violet-700 underline">
+          <Link href="/nuevo" className="inline-flex text-sm font-semibold text-violet-700 underline">
             Crear un contrato nuevo →
           </Link>
         </>

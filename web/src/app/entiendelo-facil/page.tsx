@@ -367,7 +367,7 @@ export default async function EntiendeloFacilPage() {
               Responder encuesta
             </Link>
             <Link
-              href="/crear-cuenta"
+              href="/nuevo"
               className="rounded-lg bg-sky-700 px-5 py-2.5 text-sm font-medium text-white shadow-[0_0_18px_rgba(56,189,248,0.35)] hover:bg-sky-600"
             >
               Crear cuenta
