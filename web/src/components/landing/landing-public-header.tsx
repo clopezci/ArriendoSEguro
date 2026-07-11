@@ -10,16 +10,16 @@ export function LandingPublicHeader() {
         </Link>
         <div className="flex items-center justify-end gap-2">
           <Link
-            href="/ingresar"
+            href="/ingresar?redirect=/nuevo"
             className="rounded-md px-2.5 py-1.5 text-sm font-medium text-slate-700 transition hover:text-violet-700"
           >
             Acceder
           </Link>
           <Link
-            href="/crear-cuenta"
+            href="/nuevo"
             className="rounded-lg border border-violet-500 bg-violet-600 px-3.5 py-1.5 text-sm font-semibold text-white shadow-[0_0_12px_rgba(139,92,246,0.25)] transition hover:bg-violet-700"
           >
-            Crear cuenta
+            Crear contrato
           </Link>
         </div>
       </div>

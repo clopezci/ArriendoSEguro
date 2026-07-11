@@ -88,7 +88,7 @@ export function HomeDashboardPanel() {
     const step = MACRO_STEPS[index];
     if (index === 0) {
       if (id) setStep1Choice(true);
-      else router.push("/dashboard/contracts/new");
+      else router.push("/nuevo");
       return;
     }
     if (!id) {
@@ -237,7 +237,7 @@ export function HomeDashboardPanel() {
                 type="button"
                 onClick={() => {
                   setStep1Choice(false);
-                  router.push("/dashboard/contracts/new");
+                  router.push("/nuevo");
                 }}
                 className="w-full rounded-lg border border-violet-400 px-4 py-2.5 text-sm font-semibold text-violet-700 hover:bg-violet-50"
               >
