@@ -683,8 +683,11 @@ export default function NuevoPage() {
               <span className="inline-flex items-center gap-2 rounded-full bg-[#5646E5] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white">{q.block}</span>
 
               <div className="relative mt-4 min-h-[240px]">
-                <AnimatePresence mode="wait">
-                  <motion.div key={q.id} initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.35 }}>
+                {/* Sin mode="wait" ni animación de salida: al cambiar de pregunta
+                    el paso nuevo entra de inmediato (la salida no puede colgar el
+                    avance en equipos lentos / pestañas en segundo plano). */}
+                <AnimatePresence initial={false}>
+                  <motion.div key={q.id} initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
                     <h2 className="text-balance text-3xl font-extrabold tracking-tight">{q.prompt}</h2>
                     <p className="mt-1.5 mb-5 text-slate-500">{q.hint}</p>
                     <Field q={q} a={a} setA={setA} docs={{ send: sendInvite, status: inviteStatus, busy: inviteBusy, waUrl: inviteWaUrl, link: inviteLink }} />
