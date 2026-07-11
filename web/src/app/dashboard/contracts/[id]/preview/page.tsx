@@ -625,8 +625,12 @@ export default function PreviewStepPage() {
           variant="banner"
         />
       </div>
-      <div className="mb-4 rounded-2xl border border-slate-200 bg-white/85 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-sm text-slate-800">
-        <h2 className="font-semibold text-slate-900">¿Quieres autenticar el contrato? (opcional)</h2>
+      <details className="group mb-4 rounded-2xl border border-slate-200 bg-white/85 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-sm text-slate-800">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-semibold text-slate-900">
+          <span>🏛️ ¿Autenticar el contrato? (opcional)</span>
+          <span className="text-xs font-normal text-slate-500 group-open:hidden">Toca para ver ▾</span>
+        </summary>
+        <div className="mt-2">
         <p className="mt-1 text-xs text-slate-600">
           La firma electrónica que hacen aquí (código OTP + evidencia de fecha, IP y hash) ya tiene validez legal en
           Colombia (Ley 527 de 1999). Si además quieren un respaldo extra, tienen dos caminos. Puedes elegir{" "}
@@ -697,7 +701,8 @@ export default function PreviewStepPage() {
           Elijas lo que elijas (o nada), continúa abajo para revisar, guardar y firmar el contrato. El paso a paso
           completo y la carga del PDF firmado están en el paso de <strong>Notaría</strong> del expediente.
         </p>
-      </div>
+        </div>
+      </details>
       <div id="preview-acciones" className="mb-4 flex flex-wrap items-center gap-3 scroll-mt-24">
         <button
           type="button"

@@ -75,11 +75,13 @@ export default function GestionarContratosPage() {
                     </span>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2.5">
-                    <button onClick={() => router.push(`/dashboard/contracts/${d.id}/contract-type`)} className="rounded-xl bg-[#5646E5] px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-105 active:scale-95">Continuar</button>
-                    <button onClick={() => router.push(`/dashboard/contracts/${d.id}/preview`)} className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-[#5646E5]">Vista previa</button>
+                    {/* "Continuar" va a finalizar (vista previa/firma); ya NO al
+                        asistente viejo (que volvía a pedir los mismos datos). */}
+                    <button onClick={() => router.push(`/dashboard/contracts/${d.id}/preview`)} className="rounded-xl bg-[#5646E5] px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-105 active:scale-95">Continuar / finalizar →</button>
                     {complete && (
                       <button onClick={() => router.push(`/nuevo/gestionar/${d.id}`)} className="rounded-xl border border-[#12B886] bg-[#12B886]/10 px-5 py-2.5 text-sm font-bold text-[#0B7A55] transition hover:bg-[#12B886]/20">Gestionar (posventa)</button>
                     )}
+                    <button onClick={() => router.push(`/dashboard/contracts/${d.id}/contract-type`)} className="rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-medium text-slate-500 transition hover:border-[#5646E5]">Editar datos</button>
                   </div>
                 </motion.div>
               );
