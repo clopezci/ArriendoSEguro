@@ -68,7 +68,7 @@ export type Answers = {
   tenantMode: "self" | "invite"; tenantName: string;
   tenantDocType: string; tenantDocNumber: string; tenantCity: string; tenantEmail: string; tenantPhone: string; tenantAuth: boolean;
   // Codeudor
-  hasCodebtor: "" | "yes" | "no"; codebtorName: string;
+  hasCodebtor: "" | "yes" | "no"; codebtorName: string; codebtorMode: "self" | "invite";
   codebtorDocType: string; codebtorDocNumber: string; codebtorCity: string; codebtorEmail: string; codebtorPhone: string; codebtorAuth: boolean;
   // Servicios y cláusulas
   utilitiesParty: "" | "arrendatario" | "arrendador" | "compartido";
@@ -124,6 +124,9 @@ export function validateStep(kind: string, a: Answers): string | null {
     case "tenant":
       return nameError(a.tenantName);
     case "tenantfull":
+      // Por invitación, la persona completa sus propios datos (con OTP + juramento
+      // + evidencia); aquí no exigimos nada y se puede continuar.
+      if (a.tenantMode === "invite") return null;
       return docError(a.tenantDocType, a.tenantDocNumber) ?? cityError(a.tenantCity) ?? emailError(a.tenantEmail) ?? phoneError(a.tenantPhone)
         ?? (a.tenantAuth ? null : "Confirma que tienes autorización del arrendatario para ingresar sus datos.");
     case "codebtor":
@@ -131,6 +134,7 @@ export function validateStep(kind: string, a: Answers): string | null {
       if (a.hasCodebtor === "yes") return nameError(a.codebtorName);
       return null;
     case "codebtorfull":
+      if (a.codebtorMode === "invite") return null; // la persona completa por su enlace
       return docError(a.codebtorDocType, a.codebtorDocNumber) ?? cityError(a.codebtorCity) ?? emailError(a.codebtorEmail) ?? phoneError(a.codebtorPhone)
         ?? (a.codebtorAuth ? null : "Confirma que tienes autorización del codeudor para ingresar sus datos.");
     case "credit":

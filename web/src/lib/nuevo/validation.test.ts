@@ -12,7 +12,7 @@ const base: Answers = {
   startDate: "", termMonths: "12", paymentDay: "5",
   tenantMode: "self", tenantName: "",
   tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false,
-  hasCodebtor: "", codebtorName: "",
+  hasCodebtor: "", codebtorName: "", codebtorMode: "self",
   codebtorDocType: "CC", codebtorDocNumber: "", codebtorCity: "", codebtorEmail: "", codebtorPhone: "", codebtorAuth: false,
   utilitiesParty: "", clauses: [], clauseOther: "",
   docMethod: "", docPhone: "", docEmail: "",
