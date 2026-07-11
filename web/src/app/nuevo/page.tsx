@@ -64,7 +64,7 @@ const QUESTIONS: Q[] = [
   { id: "contact", block: "Datos del dueño", prompt: "¿Cómo lo contactamos?", hint: "Celular, correo y ciudad — para notificaciones y firma.", kind: "contact", basic: true },
   { id: "acting", block: "Datos del dueño", prompt: "¿Eres el dueño o su apoderado?", hint: "Si actúas como apoderado, luego subes el poder.", kind: "acting", basic: true },
   { id: "addr", block: "Datos del inmueble", prompt: "¿Dónde queda el inmueble?", hint: "Dirección, ciudad y departamento que irán en el contrato.", kind: "addr", basic: true },
-  { id: "registry", block: "Datos del inmueble", prompt: "Matrícula y tipo del inmueble", hint: "La matrícula inmobiliaria es obligatoria para el contrato.", kind: "registry", basic: true },
+  { id: "registry", block: "Datos del inmueble", prompt: "Matrícula y tipo del inmueble", hint: "La matrícula da certeza jurídica. Si no la tienes a la mano, puedes seguir.", kind: "registry", basic: true },
   { id: "canon", block: "Datos del inmueble", prompt: "¿Cuál es el canon mensual?", hint: "Validamos el tope legal (Ley 820).", kind: "canon", ph: "$ 1.500.000", basic: true },
   { id: "tenant", block: "Datos del inquilino", prompt: "¿Quién será el arrendatario?", hint: "Lo llenas tú o se lo pides a él.", kind: "tenant", basic: true },
   { id: "tenantfull", block: "Datos del inquilino", prompt: "Datos del arrendatario", hint: "Documento, ciudad y contacto que irán en el contrato.", kind: "tenantfull", basic: false, skipWhen: (a) => a.tenantMode !== "self" },
@@ -95,7 +95,7 @@ const EMPTY: Answers = {
   name: "", docType: "CC", docNumber: "", phone: "", email: "", ownerCity: "",
   acting: "", proxyOath: false,
   address: "", city: "", department: "",
-  registry: "", propertyType: "",
+  registry: "", propertyType: "", registrySkip: false,
   canon: "", commercialValue: "", noCommercialValue: false,
   startDate: "", termMonths: "12", paymentDay: "5",
   tenantMode: "self", tenantName: "",
@@ -115,6 +115,7 @@ export default function NuevoPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"home" | "flow" | "review" | "done">("home");
   const [reviewOath, setReviewOath] = useState(false); // juramento del inmueble
+  const [skipAck, setSkipAck] = useState(false); // acepta continuar sin la matrícula
   const [themes, setThemes] = useState<[[string, string], [string, string]]>([THEMES[0], THEMES[1]]);
   const [greeting, setGreeting] = useState(GREETINGS[0]);
   const [subIdx, setSubIdx] = useState(0);
@@ -160,6 +161,8 @@ export default function NuevoPage() {
   const [voiceMode, setVoiceMode] = useState(false);
   const aRef = useRef(a); aRef.current = a;
   const iRef = useRef(i); iRef.current = i;
+  const modeRef = useRef(mode); modeRef.current = mode;
+  const gateRef = useRef(gate); gateRef.current = gate;
   const voiceModeRef = useRef(voiceMode); voiceModeRef.current = voiceMode;
   const draftIdRef = useRef<string | null>(null);
   const onTranscriptRef = useRef<(t: string) => void>(() => {});
@@ -171,6 +174,7 @@ export default function NuevoPage() {
     setARaw(EMPTY);
     setError(null);
     setReviewOath(false);
+    setSkipAck(false);
     setGate(null);
     setI(0);
     setMode("flow");
@@ -372,6 +376,31 @@ export default function NuevoPage() {
     setI(pi);
   }, []);
 
+  // Botón/gesto "atrás" del celular: retrocede UN paso del recorrido en vez de
+  // salir de la app (el flujo es una sola URL, así que sin esto el atrás nativo
+  // te sacaba al inicio y perdías el avance). Cada pantalla del recorrido empuja
+  // un estado en el historial; al tocar atrás lo "consumimos" como paso atrás.
+  useEffect(() => {
+    if (mode === "flow" || mode === "review") {
+      window.history.pushState({ asNuevoStep: true }, "");
+    }
+  }, [mode, i, gate]);
+
+  useEffect(() => {
+    const onPop = () => {
+      // Estamos en el recorrido → interceptamos el atrás nativo.
+      if (modeRef.current === "review") { setMode("flow"); setI(prevActiveIndex(QUESTIONS.length, aRef.current)); return; }
+      if (modeRef.current === "flow") {
+        if (gateRef.current === "register") { setGate(null); return; }
+        back(); // un paso atrás (o a inicio si es el primero)
+        return;
+      }
+      // en "home"/"done": dejamos que el atrás navegue normalmente (no re-empujamos)
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [back]);
+
   // Rellena por voz según el tipo de paso.
   const fillByVoice = useCallback((kind: string, s: string, raw: string) => {
     const digits = raw.replace(/\D/g, "");
@@ -384,6 +413,7 @@ export default function NuevoPage() {
           if (/apoderado|poder|represent/.test(s)) return { ...p, acting: "proxy", proxyOath: true };
           return p;
         case "registry": {
+          if (/no la tengo|no tengo|saltar|sin matr|despu[eé]s/.test(s)) return { ...p, registrySkip: true, registry: "" };
           if (/apartamento|apto/.test(s)) return { ...p, propertyType: "Apartamento" };
           if (/casa/.test(s)) return { ...p, propertyType: "Casa" };
           if (/habitaci/.test(s)) return { ...p, propertyType: "Habitación" };
@@ -705,7 +735,7 @@ export default function NuevoPage() {
                 <button onClick={next} className="rounded-2xl bg-[#FF6B4A] px-7 py-4 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95">
                   {i >= QUESTIONS.length - 1 ? "Finalizar →" : i === BASIC_TOTAL - 1 ? "Terminar lo básico →" : "Continuar"}
                 </button>
-                <button onClick={back} className="px-3 py-4 text-base font-bold text-slate-500 hover:text-[#17151F]">Atrás</button>
+                <button onClick={back} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-base font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5] active:scale-95">← Atrás</button>
               </div>
 
               <JourneyScene pct={pct} stepIndex={i} />
@@ -753,6 +783,22 @@ export default function NuevoPage() {
                 <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">📎 Recuerda: como apoderado deberás <b>subir el poder</b> para la firma.</p>
               )}
 
+              {/* Dato importante que quedó pendiente: matrícula saltada → aviso + declaración */}
+              {a.registrySkip && (
+                <div className="mt-4 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4">
+                  <p className="flex items-center gap-2 text-sm font-bold text-amber-900">⚠️ Dato importante pendiente</p>
+                  <p className="mt-1 text-sm text-slate-700">La <b>matrícula inmobiliaria</b> da certeza jurídica y se necesita para <b>generar el contrato</b>. Puedes completarla ahora o continuar y agregarla luego.</p>
+                  <div className="mt-3">
+                    <button type="button" onClick={() => { setMode("flow"); setI(QUESTIONS.findIndex((q) => q.id === "registry")); }}
+                      className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white hover:brightness-105">Completar ahora</button>
+                  </div>
+                  <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-sm text-slate-700">
+                    <input type="checkbox" checked={skipAck} onChange={(e) => setSkipAck(e.target.checked)} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
+                    <span>Entiendo que <b>sin la matrícula el contrato aún no se puede generar</b>, y decido continuar por ahora para agregarla más adelante.</span>
+                  </label>
+                </div>
+              )}
+
               {/* Juramento del inmueble (obligatorio) */}
               <label className="mt-5 flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-slate-200 bg-white p-4 text-sm text-slate-700">
                 <input type="checkbox" checked={reviewOath} onChange={(e) => setReviewOath(e.target.checked)} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
@@ -762,11 +808,11 @@ export default function NuevoPage() {
               <div className="mt-6 flex items-center gap-3">
                 <button
                   onClick={confirmReview}
-                  disabled={!reviewOath}
+                  disabled={!reviewOath || (a.registrySkip && !skipAck)}
                   className="rounded-2xl bg-[#FF6B4A] px-7 py-4 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50">
                   Confirmar y continuar →
                 </button>
-                <button onClick={() => { setMode("flow"); setI(prevActiveIndex(QUESTIONS.length, a)); }} className="px-3 py-4 text-base font-bold text-slate-500 hover:text-[#17151F]">Atrás</button>
+                <button onClick={() => { setMode("flow"); setI(prevActiveIndex(QUESTIONS.length, a)); }} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-base font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5] active:scale-95">← Atrás</button>
               </div>
             </motion.section>
           )}
@@ -856,9 +902,13 @@ function Field({ q, a, setA, docs }: { q: Q; a: Answers; setA: (a: Answers) => v
           </div>
           <div>
             <p className="mb-2 text-sm font-medium text-slate-600">Matrícula inmobiliaria</p>
-            <InputMic inputMode="text" placeholder="Ej. 050-123456" value={a.registry}
+            <InputMic inputMode="text" placeholder="Ej. 050-123456" value={a.registry} disabled={a.registrySkip}
               onChange={(e) => setA({ ...a, registry: e.target.value })} voice={(t) => setA({ ...a, registry: t })} />
-            <p className="mt-1.5 text-xs text-slate-500">Está en el certificado de tradición y libertad del inmueble. Es obligatoria para el contrato.</p>
+            <p className="mt-1.5 text-xs text-slate-500">Está en el certificado de tradición y libertad del inmueble.</p>
+            <label className="mt-2.5 flex cursor-pointer items-center gap-2.5 text-sm text-slate-600">
+              <input type="checkbox" checked={a.registrySkip} onChange={(e) => setA({ ...a, registrySkip: e.target.checked, registry: e.target.checked ? "" : a.registry })} className="h-5 w-5 accent-[#5646E5]" />
+              <span>No la tengo ahora — <b>seguir sin la matrícula</b> (te la recordamos al final).</span>
+            </label>
           </div>
         </div>
       );
