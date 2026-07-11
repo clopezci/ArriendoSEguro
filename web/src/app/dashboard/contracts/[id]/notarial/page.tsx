@@ -184,7 +184,7 @@ export default function NotarialOptionalPage() {
       <RequiresSavedContract id={id}>
       {loading && <p className="text-sm text-slate-600">Cargando…</p>}
       {error && (
-        <p className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800" role="alert">
+        <p className="rounded-2xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800" role="alert">
           {error}
         </p>
       )}
@@ -203,7 +203,7 @@ export default function NotarialOptionalPage() {
               <strong>opcional</strong> y se hace por fuera de la app: cada parte firma su copia y la pasa a la siguiente.
             </p>
 
-            <div className="mt-3 rounded-lg border border-emerald-300 bg-white/70 p-3">
+            <div className="mt-3 rounded-2xl border border-emerald-300 bg-white/70 p-3">
               <p className="text-xs font-semibold text-emerald-950">Cómo firmar entre todas las partes (paso a paso):</p>
               <ol className="mt-2 space-y-1.5 pl-5 text-xs text-slate-700 [list-style:decimal]">
                 <li>Descarga el <strong>PDF del contrato</strong> (botón de abajo, sección «Descargas para el trámite»).</li>
@@ -245,7 +245,7 @@ export default function NotarialOptionalPage() {
           </section>
 
           {!versionId && (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
               Primero guarda una versión del contrato en la vista previa. Sin versión no podemos asociar el archivo
               autenticado al expediente.
             </p>
@@ -295,7 +295,7 @@ export default function NotarialOptionalPage() {
                   <li>✓ Verificamos que sea un <strong>PDF real</strong> y que pese menos de 15 MB.</li>
                   <li>✓ Lo dejamos <strong>vinculado a esta versión</strong> del contrato, con autor y fecha, dentro del paquete de evidencia.</li>
                 </ul>
-                <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900">
+                <p className="mt-2 rounded-2xl border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900">
                   Nota: al firmar, el archivo cambia respecto al original (es normal). Por eso no comparamos byte a byte;
                   la validez de la firma la respalda la propia Agencia Nacional Digital dentro del PDF.
                 </p>

@@ -119,10 +119,10 @@ export default function RenovarPage() {
       </header>
 
       {loading && <p className="text-sm text-slate-600">Cargando…</p>}
-      {error && <p className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
+      {error && <p className="rounded-2xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800">{error}</p>}
 
       {!loading && !isActive && (
-        <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <p className="rounded-2xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           La renovación solo está disponible para <strong>contratos activos (firmados)</strong>. Este contrato aún no
           está firmado.
         </p>
@@ -153,7 +153,7 @@ export default function RenovarPage() {
             </button>
           </div>
 
-          <section className="space-y-3 rounded-xl border border-slate-300 bg-white p-4">
+          <section className="space-y-3 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
             <p className="text-xs text-slate-600">
               Canon actual: <strong>{money(Number(lease.monthlyRent ?? 0))}</strong> · Vence:{" "}
               <strong>{lease.endDate ?? "—"}</strong> · Reajuste IPC sugerido: <strong>{IPC_REFERENCE.percent}%</strong>

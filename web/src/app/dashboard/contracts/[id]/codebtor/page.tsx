@@ -206,7 +206,7 @@ export default function CodebtorStepPage() {
         <p className="text-xs text-slate-500">
           ¿Sin codeudor? No hay problema: elige «Continuar sin codeudor» y sigues con las condiciones del contrato.
         </p>
-        <p className="rounded-lg border border-slate-300 bg-white/95 p-3 text-sm text-slate-700">
+        <p className="rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3 text-sm text-slate-700">
           Un codeudor solidario es una persona que acepta respaldar las obligaciones del
           arrendatario (inquilino) dentro del contrato. Si eliges esta opción, esa persona deberá
           ingresar sus datos, aceptar el tratamiento de datos y firmar electrónicamente el contrato.
@@ -322,7 +322,7 @@ export default function CodebtorStepPage() {
           {errors.length > 0 && (
             <div
               role="alert"
-              className="sm:col-span-2 rounded-lg border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
+              className="sm:col-span-2 rounded-2xl border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
             >
               <p className="font-semibold">Revisa estos campos antes de continuar:</p>
               <ul className="mt-1 list-disc space-y-0.5 pl-5">

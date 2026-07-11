@@ -165,7 +165,7 @@ export default function EvidenciaExpedientePage() {
 
       {loading && <p className="text-sm text-slate-600">Cargando…</p>}
       {error && (
-        <p className="rounded-lg border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800" role="alert">
+        <p className="rounded-2xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800" role="alert">
           {error}
         </p>
       )}
@@ -173,7 +173,7 @@ export default function EvidenciaExpedientePage() {
       {!loading && !error && (
         <div className="space-y-6">
           {!versionId && (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <p className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
               Aún no hay una versión guardada del contrato. Guarda una versión en la vista previa para habilitar las
               descargas.
             </p>

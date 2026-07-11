@@ -208,7 +208,7 @@ export default function TermsStepPage() {
         {errors.length > 0 && (
           <div
             role="alert"
-            className="sm:col-span-2 rounded-lg border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
+            className="sm:col-span-2 rounded-2xl border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
           >
             <p className="font-semibold">Revisa estos campos antes de continuar:</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">

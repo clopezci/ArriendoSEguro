@@ -43,7 +43,7 @@ export default function DocumentosPropiedadPage() {
       <ExpedientePostWizardNav contractId={id} />
 
       {isProxy && (
-        <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <p className="rounded-2xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           Indicaste que actúas como <strong>apoderado</strong>: recuerda subir aquí el <strong>poder autenticado</strong>{" "}
           que te faculta para arrendar a nombre del propietario.
         </p>

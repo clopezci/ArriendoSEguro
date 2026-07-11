@@ -614,7 +614,7 @@ export default function PreviewStepPage() {
 
   return (
     <WizardShell title="Vista previa del contrato" currentStep={10} contractId={id}>
-      <p className="mb-4 rounded-lg border border-slate-300 bg-white/95 p-3 text-sm text-slate-700">
+      <p className="mb-4 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3 text-sm text-slate-700">
         Esta es una vista previa. El contrato solo quedará listo para firma cuando ambas partes
         revisen y acepten la versión final.
       </p>
@@ -625,7 +625,7 @@ export default function PreviewStepPage() {
           variant="banner"
         />
       </div>
-      <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50/80 p-4 text-sm text-slate-800">
+      <div className="mb-4 rounded-2xl border border-slate-200 bg-white/85 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-sm text-slate-800">
         <h2 className="font-semibold text-slate-900">¿Quieres autenticar el contrato? (opcional)</h2>
         <p className="mt-1 text-xs text-slate-600">
           La firma electrónica que hacen aquí (código OTP + evidencia de fecha, IP y hash) ya tiene validez legal en
@@ -635,7 +635,7 @@ export default function PreviewStepPage() {
         </p>
 
         {/* Opción A · Notaría digital gratuita (firma del Estado) */}
-        <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+        <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3">
           <input
             type="checkbox"
             checked={wantsDigitalNotaryUi}
@@ -665,7 +665,7 @@ export default function PreviewStepPage() {
         </label>
 
         {/* Opción B · Notaría física (con costo) */}
-        <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 bg-white/70 p-3">
+        <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-2xl border border-slate-200 bg-white/85 p-3">
           <input
             type="checkbox"
             checked={wantsNotarizationUi}
@@ -720,7 +720,7 @@ export default function PreviewStepPage() {
       {renderErrors.length > 0 && (
         <div
           role="alert"
-          className="mb-3 rounded-lg border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
+          className="mb-3 rounded-2xl border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
         >
           <p className="font-semibold">Revisa estos puntos antes de continuar:</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5">
@@ -740,13 +740,13 @@ export default function PreviewStepPage() {
               descendientes con `position:fixed` (p. ej. marca de agua o CSS propio del
               contrato inyectado): así el HTML del contrato NUNCA escapa del recuadro ni
               se monta sobre el menú/encabezado. `overflow-auto` mantiene el scroll interno. */}
-          <div className="relative z-0 max-h-[70vh] overflow-auto rounded-lg border border-slate-300 bg-white p-4 text-slate-900 [transform:translateZ(0)]">
+          <div className="relative z-0 max-h-[70vh] overflow-auto rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-slate-900 [transform:translateZ(0)]">
             <div ref={contractRef} dangerouslySetInnerHTML={{ __html: previewHtml }} />
           </div>
         </>
       )}
       {versionInfo && (
-        <div className="mt-3 rounded-lg border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3 text-xs text-slate-700">
           <p>Hash: {versionInfo.documentHash}</p>
           <p>Versión draft: {versionInfo.versionNumber}</p>
           <p>Generado: {new Date(versionInfo.generatedAt).toLocaleString("es-CO")}</p>
@@ -760,7 +760,7 @@ export default function PreviewStepPage() {
         </div>
 
         {/* Paso 1 · Guardar */}
-        <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3">
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3">
           <p className="text-sm font-semibold text-slate-900">Paso 1 · Guarda tu contrato</p>
           <p className="mt-0.5 text-xs text-slate-600">
             {savedVersion
@@ -799,7 +799,7 @@ export default function PreviewStepPage() {
         </div>
 
         {/* Paso 2 · Firmar (Plan Plus) */}
-        <div className="mt-2 rounded-lg border border-slate-200 bg-white p-3">
+        <div className="mt-2 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3">
           <p className="text-sm font-semibold text-slate-900">
             Paso 2 · Firma electrónica <span className="text-violet-700">(Plan Plus)</span>
           </p>
@@ -856,7 +856,7 @@ export default function PreviewStepPage() {
         </div>
 
         {/* Paso 3 · PDF (disponible para todos; gratis sale con marca de agua) */}
-        <div className="mt-2 rounded-lg border border-slate-200 bg-white p-3">
+        <div className="mt-2 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3">
           <p className="text-sm font-semibold text-slate-900">Paso 3 · Descarga el PDF</p>
           <p className="mt-0.5 text-xs text-slate-600">
             Genera el PDF de tu contrato. Si aún no lo guardaste, lo hacemos por ti automáticamente.
@@ -949,7 +949,7 @@ export default function PreviewStepPage() {
         </div>
       )}
       {signatureRows.length > 0 && (
-        <section className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4">
+        <section className="mt-4 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-slate-900">
               Estado de firmas
@@ -969,7 +969,7 @@ export default function PreviewStepPage() {
 
           {/* Guía de qué sigue, según cómo va la ronda. */}
           {hasAllSigned ? (
-            <div className="mt-2 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-900">
+            <div className="mt-2 rounded-2xl border border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-900">
               <p className="font-semibold">¡Todas las partes firmaron! 🎉</p>
               <p className="mt-0.5">
                 El contrato quedó firmado con su evidencia (fecha, IP y hash). Cada parte recibió el aviso por correo.
@@ -995,7 +995,7 @@ export default function PreviewStepPage() {
           )}
 
           {signatureRows.some((s) => s.signingUrl) && (
-            <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+            <div className="mt-2 rounded-2xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
               <p className="font-semibold">Modo prueba (correo sin configurar)</p>
               <p className="mt-0.5">
                 El correo aún no está activo, así que aquí tienes los enlaces para <strong>firmar cada parte tú
@@ -1056,14 +1056,14 @@ export default function PreviewStepPage() {
         </section>
       )}
       {pdfInfo && (
-        <div className="mt-3 rounded-lg border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3 text-xs text-slate-700">
           <p>PDF generado: {new Date(pdfInfo.pdfGeneratedAt).toLocaleString("es-CO")}</p>
           <p>Versión: {pdfInfo.versionNumber}</p>
           <p>Hash: {pdfInfo.documentHash}</p>
         </div>
       )}
       {hasAllSigned && (
-        <section className="mt-4 rounded-lg border border-emerald-500 bg-emerald-50 p-4 text-sm text-emerald-700">
+        <section className="mt-4 rounded-2xl border border-emerald-500 bg-emerald-50 p-4 text-sm text-emerald-700">
           <p className="font-semibold">Contrato firmado</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {evidenceAnnex?.htmlContent && (
@@ -1099,7 +1099,7 @@ export default function PreviewStepPage() {
         </section>
       )}
       {savedVersion && (
-        <section className="mt-4 rounded-lg border border-slate-300 bg-white/95 p-4">
+        <section className="mt-4 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
           <h3 className="text-sm font-semibold text-slate-900">Anexos del contrato</h3>
           <div className="mt-2 overflow-auto">
             <table className="min-w-full text-xs text-slate-700">

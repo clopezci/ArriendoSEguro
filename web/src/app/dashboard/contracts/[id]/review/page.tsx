@@ -226,7 +226,7 @@ export default function ReviewStepPage() {
       </div>
 
       {draft.actingAs === "proxy" && (
-        <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="mt-4 rounded-2xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           Estás arrendando como <strong>apoderado</strong>. Después de guardar tu contrato, recuerda subir el{" "}
           <strong>poder autenticado</strong> en «Documentos de propiedad / poder» (te lo indicaremos en el siguiente
           paso).
@@ -283,7 +283,7 @@ export default function ReviewStepPage() {
 
 function Card({ title, children, editHref }: { title: string; children: React.ReactNode; editHref?: string }) {
   return (
-    <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
+    <div className="rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)]/95 p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-violet-700">{title}</h3>
         {editHref && (

@@ -213,7 +213,7 @@ export default function ContractTypeStepPage() {
             type="button"
             onClick={() => setShowOthers((v) => !v)}
             aria-expanded={showOthers}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-violet-500 hover:text-violet-800"
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] px-3 py-2 text-sm font-medium text-slate-700 hover:border-violet-500 hover:text-violet-800"
           >
             {showOthers ? "Ocultar otras modalidades" : `Ver otras modalidades (${otherOptions.length}, próximamente)`}
             <span aria-hidden="true">{showOthers ? "▲" : "▼"}</span>
@@ -229,7 +229,7 @@ export default function ContractTypeStepPage() {
       {unavailableNotice && (
         <div
           role="alert"
-          className="mt-4 rounded-lg border border-amber-300 bg-amber-100/60 p-4 text-sm text-amber-800"
+          className="mt-4 rounded-2xl border border-amber-300 bg-amber-100/60 p-4 text-sm text-amber-800"
         >
           <p className="font-semibold">
             {unavailableNotice.label}: próximamente disponible
@@ -281,7 +281,7 @@ export default function ContractTypeStepPage() {
         </div>
 
         {acting === "proxy" && (
-          <div className="mt-3 rounded-lg border border-amber-300 bg-amber-100/60 p-3 text-xs leading-relaxed text-amber-900">
+          <div className="mt-3 rounded-2xl border border-amber-300 bg-amber-100/60 p-3 text-xs leading-relaxed text-amber-900">
             <label className="flex cursor-pointer items-start gap-2">
               <input
                 type="checkbox"
