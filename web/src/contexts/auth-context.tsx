@@ -3,9 +3,13 @@
 import { getAuthClient, isFirebaseClientConfigured } from "@/lib/firebase/client";
 import {
   createUserWithEmailAndPassword,
+  getRedirectResult,
+  GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  signInWithRedirect,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
@@ -23,8 +27,13 @@ type AuthState = {
   user: User | null;
   loading: boolean;
   configError: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<string>;
+  signUp: (email: string, password: string) => Promise<string>;
+  signInWithGoogle: () => Promise<string>;
+  /** Acceso con Google por REDIRECT (fiable en móvil). Navega fuera y vuelve. */
+  signInWithGoogleRedirect: () => Promise<void>;
+  /** Al volver del redirect, devuelve el uid autenticado (o null si no aplica). */
+  consumeGoogleRedirect: () => Promise<string | null>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -50,14 +59,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsub();
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string): Promise<string> => {
     if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
-    await signInWithEmailAndPassword(getAuthClient(), email.trim(), password);
+    const cred = await signInWithEmailAndPassword(getAuthClient(), email.trim(), password);
+    return cred.user.uid;
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string): Promise<string> => {
     if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
-    await createUserWithEmailAndPassword(getAuthClient(), email.trim(), password);
+    const cred = await createUserWithEmailAndPassword(getAuthClient(), email.trim(), password);
+    return cred.user.uid;
+  }, []);
+
+  const signInWithGoogle = useCallback(async (): Promise<string> => {
+    if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    // Popup (no redirect) para no perder el estado del recorrido en el que está.
+    const cred = await signInWithPopup(getAuthClient(), provider);
+    return cred.user.uid;
+  }, []);
+
+  const signInWithGoogleRedirect = useCallback(async () => {
+    if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    await signInWithRedirect(getAuthClient(), provider);
+  }, []);
+
+  const consumeGoogleRedirect = useCallback(async (): Promise<string | null> => {
+    if (!isFirebaseClientConfigured()) return null;
+    try {
+      const res = await getRedirectResult(getAuthClient());
+      return res?.user?.uid ?? null;
+    } catch {
+      return null;
+    }
   }, []);
 
   const signOut = useCallback(async () => {
@@ -77,10 +114,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       configError,
       signIn,
       signUp,
+      signInWithGoogle,
+      signInWithGoogleRedirect,
+      consumeGoogleRedirect,
       resetPassword,
       signOut,
     }),
-    [user, loading, configError, signIn, signUp, resetPassword, signOut]
+    [user, loading, configError, signIn, signUp, signInWithGoogle, signInWithGoogleRedirect, consumeGoogleRedirect, resetPassword, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

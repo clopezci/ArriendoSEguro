@@ -24,7 +24,7 @@ export default function DashboardDemoPage() {
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <Link
             href="/demo"
-            className="inline-flex items-center justify-center rounded-lg bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(139,92,246,0.35)] hover:bg-violet-500"
+            className="inline-flex items-center justify-center rounded-xl bg-[#5646E5] px-4 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(139,92,246,0.35)] hover:brightness-105"
           >
             Abrir demo guiado
           </Link>

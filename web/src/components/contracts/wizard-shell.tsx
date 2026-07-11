@@ -57,9 +57,9 @@ export function WizardShell({
     return (
       <div className="space-y-5">
         <SaveFlash />
-        <div className="rounded-2xl border border-slate-300 bg-white/95 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.2)]">
+        <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-[0_10px_30px_rgba(86,70,229,0.10)] backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 px-4 py-3 text-2xl font-extrabold tracking-tight text-white shadow-[0_6px_18px_rgba(139,92,246,0.35)] sm:text-3xl">
+            <h1 className="rounded-2xl bg-gradient-to-r from-[#5646E5] to-[#8B6BFF] px-4 py-3 text-2xl font-black tracking-tight text-white shadow-[0_6px_18px_rgba(86,70,229,0.35)] sm:text-3xl">
               {title}
             </h1>
             <Link
@@ -79,7 +79,7 @@ export function WizardShell({
             <StepGuide currentStep={clamped} variant="extra" />
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-300 bg-white p-5 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
+        <div className="rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-[0_10px_30px_rgba(86,70,229,0.10)]">
           {children}
         </div>
       </div>
@@ -89,8 +89,8 @@ export function WizardShell({
   return (
     <div className="space-y-5">
       <SaveFlash />
-      <div className="rounded-2xl border border-slate-300 bg-white/95 p-5 shadow-[0_12px_30px_rgba(139,92,246,0.2)]">
-        <h1 className="rounded-xl bg-gradient-to-r from-violet-600 to-violet-500 px-4 py-3 text-2xl font-extrabold tracking-tight text-white shadow-[0_6px_18px_rgba(139,92,246,0.35)] sm:text-3xl">
+      <div className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-[0_10px_30px_rgba(86,70,229,0.10)] backdrop-blur">
+        <h1 className="rounded-2xl bg-gradient-to-r from-[#5646E5] to-[#8B6BFF] px-4 py-3 text-2xl font-black tracking-tight text-white shadow-[0_6px_18px_rgba(86,70,229,0.35)] sm:text-3xl">
               {title}
             </h1>
         <div className="mt-3">
@@ -100,7 +100,7 @@ export function WizardShell({
           <StepGuide currentStep={clamped} variant="wizard" />
         </div>
       </div>
-      <div className="rounded-2xl border border-slate-300 bg-white p-5 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
+      <div className="rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-[0_10px_30px_rgba(86,70,229,0.10)]">
         {children}
       </div>
     </div>

@@ -461,7 +461,7 @@ export default function PlansPage() {
             type="button"
             onClick={() => void createPlusOrder()}
             disabled={loading}
-            className="mt-6 w-full rounded-lg bg-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(139,92,246,0.35)] hover:bg-violet-500 disabled:opacity-50"
+            className="mt-6 w-full rounded-xl bg-[#5646E5] px-4 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(139,92,246,0.35)] hover:brightness-105 disabled:opacity-50"
           >
             {cart && cart.hasCostedClause
               ? `Pagar ${formatCopPlain(cart.totalCop)} COP`

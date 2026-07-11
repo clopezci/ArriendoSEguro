@@ -154,7 +154,7 @@ export default function NewPaymentPage() {
         <textarea className="mt-1 min-h-24 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={notes} onChange={(e) => setNotes(e.target.value)} />
       </label>
       <div className="mt-4 flex gap-2">
-        <button type="button" onClick={onSubmit} disabled={saving} className="rounded bg-violet-600 px-4 py-2 text-sm text-white">{saving ? "Guardando..." : "Guardar pago"}</button>
+        <button type="button" onClick={onSubmit} disabled={saving} className="rounded bg-[#5646E5] px-4 py-2 text-sm text-white">{saving ? "Guardando..." : "Guardar pago"}</button>
       </div>
     </WizardShell>
   );

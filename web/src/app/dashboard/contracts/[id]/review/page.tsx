@@ -253,7 +253,7 @@ export default function ReviewStepPage() {
               updateDraft(id, (d) => appendAudit(d, "contract_draft_saved"));
               router.push(`/dashboard/contracts/${id}/preview`);
             }}
-            className="mt-3 inline-flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] hover:bg-violet-500"
+            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#5646E5] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)] hover:brightness-105"
           >
             Continuar a la vista previa →
           </button>

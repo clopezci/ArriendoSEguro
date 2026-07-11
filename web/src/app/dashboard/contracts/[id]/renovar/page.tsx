@@ -188,7 +188,7 @@ export default function RenovarPage() {
             type="button"
             onClick={() => void renew()}
             disabled={busy || !newStart || !newEnd || !newRent}
-            className="rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-60"
+            className="rounded-xl bg-[#5646E5] px-5 py-2.5 text-sm font-semibold text-white hover:brightness-105 disabled:opacity-60"
           >
             {busy ? "Renovando y enviando…" : "Renovar y enviar a las partes"}
           </button>

@@ -207,7 +207,7 @@ export default function PaymentsPage() {
       )}
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link href={`/dashboard/contracts/${id}/payment-schedule`} className="rounded bg-violet-600 px-3 py-2 text-sm font-semibold text-white">
+        <Link href={`/dashboard/contracts/${id}/payment-schedule`} className="rounded bg-[#5646E5] px-3 py-2 text-sm font-semibold text-white">
           Calendario y recordatorios
         </Link>
         <Link href={`/dashboard/contracts/${id}/payments/new?contractVersionId=${encodeURIComponent(contractVersionId)}`} className="rounded border border-slate-300 px-3 py-2 text-sm text-slate-800">

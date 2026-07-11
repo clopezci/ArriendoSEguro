@@ -48,8 +48,24 @@ export function useDraftGuard(id: string) {
         if (cancelled) return;
         const allowed = res.ok && data.success && (data.plusActive || data.demoActive);
         if (!allowed) {
-          router.replace("/dashboard/leases");
-          return;
+          // Tier gratis: si está habilitado, el usuario PUEDE ver/editar su
+          // expediente y generar el contrato con marca de agua (firma y posventa
+          // siguen siendo Plus, gatadas en el backend). Solo lo mandamos a "Mis
+          // arriendos" si el tier gratis está apagado. Sin este chequeo, quien
+          // crea por el flujo nuevo (gratis) rebotaba en bucle a "Mis arriendos".
+          let freeEnabled = false;
+          try {
+            const ft = (await fetch("/api/free-tier").then((r) => r.json())) as { success?: boolean; enabled?: boolean };
+            freeEnabled = Boolean(ft?.success && ft?.enabled);
+          } catch {
+            /* sin red: no bloqueamos al dueño de su propio expediente */
+            freeEnabled = true;
+          }
+          if (cancelled) return;
+          if (!freeEnabled) {
+            router.replace("/dashboard/leases");
+            return;
+          }
         }
       } catch {
         if (cancelled) return;

@@ -191,7 +191,7 @@ export default function EvidenciaExpedientePage() {
                   type="button"
                   disabled={zipBusy || !user}
                   onClick={() => void downloadEvidenceZip()}
-                  className="mt-3 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-3 rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-medium text-white shadow-sm hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {zipBusy ? "Generando ZIP…" : "Descargar ZIP de evidencia"}
                 </button>

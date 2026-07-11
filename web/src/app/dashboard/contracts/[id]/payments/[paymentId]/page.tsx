@@ -143,7 +143,7 @@ export default function PaymentDetailPage() {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <button type="button" onClick={saveChanges} disabled={saving} className="rounded bg-violet-600 px-4 py-2 text-sm text-white">{saving ? "Guardando..." : "Guardar cambios"}</button>
+        <button type="button" onClick={saveChanges} disabled={saving} className="rounded bg-[#5646E5] px-4 py-2 text-sm text-white">{saving ? "Guardando..." : "Guardar cambios"}</button>
       </div>
 
       <div className="mt-5 rounded border border-amber-400 p-3">

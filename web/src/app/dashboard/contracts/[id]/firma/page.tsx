@@ -17,11 +17,11 @@ export default function FirmaOptionsPage() {
   const preview = `/dashboard/contracts/${id}/preview`;
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-6 text-slate-900">
+    <main className="mx-auto max-w-3xl space-y-6 text-[#17151F]">
       <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Paso 4 de 5 · Firma</p>
-        <h1 className="text-2xl font-bold tracking-tight">Firma de las partes</h1>
-        <p className="text-sm text-slate-600">
+        <span className="inline-flex items-center gap-2 rounded-full bg-[#ECE9FB] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#5646E5]">Paso 4 de 5 · Firma</span>
+        <h1 className="text-balance text-3xl font-black tracking-tight sm:text-4xl">Firma de las partes</h1>
+        <p className="text-slate-500">
           Tu contrato ya está listo y lo puedes <strong>descargar gratis</strong>. Para firmarlo con respaldo legal
           (Ley 527: firma con evidencia), elige el camino que prefieras.
         </p>
@@ -33,65 +33,71 @@ export default function FirmaOptionsPage() {
       <RequiresSavedContract id={id}>
         <div className="grid gap-4">
           {/* Opción A — gratis por 3 invitaciones (recomendada) */}
-          <section className="rounded-2xl border border-emerald-300 bg-emerald-50/70 p-5 shadow-sm">
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-semibold text-white">GRATIS</span>
-              <h2 className="text-base font-bold text-emerald-950">Invita a 3 personas y firma sin costo</h2>
+          <section className="rounded-3xl border-2 border-[#12B886] bg-[#12B886]/[0.06] p-6 shadow-[0_10px_30px_rgba(18,184,134,0.14)]">
+            <div className="flex items-start gap-4">
+              <span className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-[#12B886]/15 text-2xl">🎁</span>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-[#12B886] px-2.5 py-0.5 text-[11px] font-bold text-white">GRATIS · RECOMENDADO</span>
+                  <h2 className="text-lg font-black text-[#0B6E4E]">Invita a 3 personas y firma sin costo</h2>
+                </div>
+                <p className="mt-2 text-sm text-slate-600">
+                  Comparte ArriendoSeguro. Cuando <strong>3 personas invitadas usen la aplicación</strong>, se te activa la
+                  firma con respaldo, sin pagar nada. Es nuestra forma de crecer contigo.
+                </p>
+                <Link href="/dashboard/plans" className="mt-4 inline-flex rounded-2xl bg-[#12B886] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">
+                  Invitar y activar gratis →
+                </Link>
+              </div>
             </div>
-            <p className="mt-2 text-sm text-emerald-900/90">
-              Comparte ArriendoSeguro. Cuando <strong>3 personas invitadas usen la aplicación</strong>, se te activa la
-              firma con respaldo, sin pagar nada. Es nuestra forma de crecer contigo.
-            </p>
-            <Link
-              href="/dashboard/plans"
-              className="mt-3 inline-flex rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500"
-            >
-              Invitar y activar gratis
-            </Link>
           </section>
 
           {/* Opción B — micropago */}
-          <section className="rounded-2xl border border-violet-300 bg-white p-5 shadow-sm">
-            <h2 className="text-base font-bold text-slate-900">Firma al instante por $10.000</h2>
-            <p className="mt-2 text-sm text-slate-700">
-              ¿Necesitas firmar ya? Actívala con un <strong>pago único de $10.000</strong> para este contrato, sin
-              suscripción.
-            </p>
-            <Link
-              href="/dashboard/plans?intent=firma-unica"
-              className="mt-3 inline-flex rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
-            >
-              Pagar y firmar
-            </Link>
-            <p className="mt-2 text-[11px] text-slate-500">
-              La pasarela de pago se activa en breve; por ahora el equipo habilita el pago manualmente al elegir esta
-              opción.
-            </p>
+          <section className="rounded-3xl border-2 border-slate-200 bg-white/95 p-6 shadow-[0_10px_30px_rgba(86,70,229,0.10)]">
+            <div className="flex items-start gap-4">
+              <span className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-[#ECE9FB] text-2xl">⚡</span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-black">Firma al instante por $10.000</h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  ¿Necesitas firmar ya? Actívala con un <strong>pago único de $10.000</strong> para este contrato, sin
+                  suscripción.
+                </p>
+                <Link href="/dashboard/plans?intent=firma-unica" className="mt-4 inline-flex rounded-2xl bg-[#5646E5] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95">
+                  Pagar y firmar →
+                </Link>
+                <p className="mt-2 text-[11px] text-slate-400">
+                  La pasarela de pago se activa en breve; por ahora el equipo habilita el pago manualmente al elegir esta
+                  opción.
+                </p>
+              </div>
+            </div>
           </section>
 
           {/* Opción C — Plus */}
-          <section className="rounded-2xl border border-slate-300 bg-white p-5 shadow-sm">
-            <h2 className="text-base font-bold text-slate-900">Hazlo todo con Plan Plus</h2>
-            <p className="mt-2 text-sm text-slate-700">
-              Además de la firma, el Plan Plus habilita <strong>inventario, posventa, recordatorios y todo el
-              respaldo</strong> por una fracción de lo que cuesta tu arriendo.
-            </p>
-            <Link
-              href="/dashboard/plans"
-              className="mt-3 inline-flex rounded-lg border border-violet-500 px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-50"
-            >
-              Ver Plan Plus
-            </Link>
+          <section className="rounded-3xl border-2 border-slate-200 bg-white/95 p-6 shadow-[0_10px_30px_rgba(86,70,229,0.10)]">
+            <div className="flex items-start gap-4">
+              <span className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-[#FFEDE7] text-2xl">⭐</span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-black">Hazlo todo con Plan Plus</h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Además de la firma, el Plan Plus habilita <strong>inventario, posventa, recordatorios y todo el
+                  respaldo</strong> por una fracción de lo que cuesta tu arriendo.
+                </p>
+                <Link href="/dashboard/plans" className="mt-4 inline-flex rounded-2xl border-2 border-[#5646E5] px-5 py-2.5 text-sm font-bold text-[#5646E5] transition hover:bg-[#ECE9FB]">
+                  Ver Plan Plus →
+                </Link>
+              </div>
+            </div>
           </section>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+          <div className="rounded-3xl border border-slate-200 bg-white/70 p-5 text-sm text-slate-600">
             <p>
               ¿Ya tienes la firma habilitada?{" "}
-              <Link href={preview} className="font-semibold text-violet-700 underline">
+              <Link href={preview} className="font-bold text-[#5646E5] underline">
                 Ir a firmar en la vista previa →
               </Link>
             </p>
-            <p className="mt-1 text-[12px] text-slate-500">
+            <p className="mt-1 text-[12px] text-slate-400">
               También desde la vista previa puedes <strong>descargar el PDF gratis</strong> antes de firmar.
             </p>
           </div>

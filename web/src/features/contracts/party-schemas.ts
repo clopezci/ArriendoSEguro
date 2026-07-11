@@ -8,7 +8,7 @@ import { validateDocumentNumber } from "@/domain/colombia/document-validation";
 
 const DOCUMENT_ENUM = z.enum(["CC", "CE", "PASAPORTE", "NIT", "OTRO"]);
 
-const zPhoneCo = z.preprocess(
+export const zPhoneCo = z.preprocess(
   (v) => String(v ?? "").replace(/\D/g, ""),
   z
     .string()
@@ -16,7 +16,7 @@ const zPhoneCo = z.preprocess(
     .regex(/^\d{10}$/, "El teléfono solo debe contener números."),
 );
 
-const citySchema = z
+export const citySchema = z
   .string()
   .min(2, "Indica la ciudad.")
   .max(60)

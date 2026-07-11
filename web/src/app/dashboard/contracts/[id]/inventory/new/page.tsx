@@ -352,7 +352,7 @@ export default function InventoryNewPage() {
             type="button"
             onClick={saveZoneSelection}
             disabled={saving || selectedZones.length === 0}
-            className="mt-4 rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white"
+            className="mt-4 rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-medium text-white"
           >
             {saving ? "Guardando..." : "Guardar selección y continuar"}
           </button>
@@ -709,7 +709,7 @@ export default function InventoryNewPage() {
                     type="button"
                     onClick={() => void completeInventory()}
                     disabled={saving}
-                    className="rounded bg-violet-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+                    className="rounded bg-[#5646E5] px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
                   >
                     Guardar y finalizar inventario
                   </button>
@@ -804,7 +804,7 @@ export default function InventoryNewPage() {
             <button
               type="button"
               onClick={() => router.push(`/dashboard/contracts/${id}/adicionales`)}
-              className="rounded-lg bg-violet-600 px-4 py-2 text-xs font-medium text-white"
+              className="rounded-xl bg-[#5646E5] px-4 py-2 text-xs font-medium text-white"
             >
               Regresar a la posventa
             </button>
