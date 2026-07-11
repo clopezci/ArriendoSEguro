@@ -82,6 +82,13 @@ test("render incluye a TODOS los codeudores en el HTML", () => {
 
 test("render sin codeudor no deja placeholders de codeudor sueltos", () => {
   const out = renderResidentialLeaseContract(baseInput({}));
-  assert.equal(out.html.includes("[NOMBRE_CODEUDOR"), false);
-  assert.equal(out.html.includes("CODEUDOR SOLIDARIO"), false);
+  // No deben quedar placeholders sin reemplazar (ej. [NOMBRE_CODEUDOR], y en
+  // general ningún token [..._CODEUDOR...]) ni condicionales sin resolver.
+  assert.equal(/\[[^\]]*CODEUDOR[^\]]*\]/.test(out.html), false);
+  // No debe aparecer la SECCIÓN dedicada del codeudor (comparecencia/cláusula/
+  // notificación/firma). Nota: la frase "cuando aplique, EL CODEUDOR SOLIDARIO"
+  // sí puede aparecer legítimamente en cláusulas generales (juramento, datos,
+  // reputación), por eso no se prohíbe la frase suelta.
+  assert.equal(out.html.includes("CLÁUSULA DE CODEUDOR SOLIDARIO"), false);
+  assert.equal(out.html.includes("EL CODEUDOR SOLIDARIO:"), false); // encabezado de notificación
 });
