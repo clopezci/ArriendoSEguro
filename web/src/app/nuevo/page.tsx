@@ -560,7 +560,15 @@ export default function NuevoPage() {
       const res = await fetch("/api/nuevo/invite", {
         method: "POST",
         headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
-        body: JSON.stringify({ contractDraftId: draftId, method, phone: aRef.current.docPhone, email: aRef.current.docEmail, name: aRef.current.tenantName }),
+        // Solo enviamos el canal correspondiente: mandar email:"" en modo
+        // WhatsApp hacía que el validador (.email()) devolviera "Invalid Email".
+        body: JSON.stringify({
+          contractDraftId: draftId,
+          method,
+          phone: method === "whatsapp" ? aRef.current.docPhone : undefined,
+          email: method === "email" ? aRef.current.docEmail : undefined,
+          name: aRef.current.tenantName || undefined,
+        }),
       });
       if (res.status === 401) { setInviteStatus("Inicia sesión para enviar el enlace al inquilino."); return; }
       const j = (await res.json()) as { success?: boolean; invitationUrl?: string; emailStatus?: string; errors?: { message?: string }[] };

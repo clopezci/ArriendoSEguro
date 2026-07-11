@@ -20,7 +20,7 @@ const schema = z
   .object({
     contractDraftId: z.string().min(1),
     method: z.enum(["whatsapp", "email"]),
-    email: z.string().email().optional(),
+    email: z.string().email().optional().or(z.literal("")),
     phone: z.string().optional(),
     name: z.string().max(120).optional(),
   })

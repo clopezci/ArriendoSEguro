@@ -319,18 +319,18 @@ export default function MisArriendosPage() {
                     </div>
                     <div className="flex shrink-0 flex-col gap-2 lg:items-end">
                       <p className="text-[11px] text-slate-500 lg:text-right">
-                        Tú eliges: ve directo al final para verlo/firmar, o edítalo desde el inicio.
+                        Continúa donde quedaste: te llevamos al resumen, que muestra lo que falta y te deja completar, generar o firmar.
                       </p>
                       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap lg:flex-col lg:items-end">
                         <Link
                           href={`/dashboard/contracts/${d.id}/preview`}
-                          className="inline-flex justify-center rounded-xl bg-[#5646E5] px-3 py-2 text-center text-sm font-medium text-white hover:brightness-105"
+                          className="inline-flex justify-center rounded-xl bg-[#5646E5] px-4 py-2.5 text-center text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95"
                         >
-                          Ver / ir al final
+                          Continuar con el proceso →
                         </Link>
                         <Link
                           href={`/dashboard/contracts/${d.id}/contract-type`}
-                          className="inline-flex justify-center rounded-lg border border-violet-400 px-3 py-2 text-center text-sm font-medium text-violet-700 hover:bg-violet-50"
+                          className="inline-flex justify-center rounded-xl border border-violet-400 px-3 py-2 text-center text-sm font-medium text-violet-700 hover:bg-violet-50"
                         >
                           Editar desde el inicio
                         </Link>
