@@ -620,7 +620,10 @@ export default function NuevoPage() {
           {mode === "flow" ? `${q.block}. ${q.prompt}. ${q.hint}` : ""}{error ? `. Error: ${error}` : ""}
         </div>
 
-        <AnimatePresence mode="wait">
+        {/* Sin mode="wait": si la animación de SALIDA de una sección se cuelga
+            (renderizadores lentos/pestañas en segundo plano), el siguiente bloque
+            debe montar igual. Antes, el flujo no aparecía al tocar "Empezar". */}
+        <AnimatePresence>
           {mode === "home" && (
             <motion.section key="home" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#5646E5]">Hola 👋</p>
