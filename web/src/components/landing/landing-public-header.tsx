@@ -3,21 +3,21 @@ import Link from "next/link";
 
 export function LandingPublicHeader() {
   return (
-    <header className="shrink-0 border-b border-slate-300 bg-slate-100/90 shadow-[0_6px_20px_rgba(139,92,246,0.12)] backdrop-blur">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2 sm:px-6">
-        <Link href="/" className="text-sm font-semibold tracking-tight text-violet-700 sm:text-base">
+    <header className="sticky top-0 z-50 shrink-0 border-b border-slate-200/70 bg-white/70 backdrop-blur">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2.5 sm:px-6">
+        <Link href="/" className="text-sm font-semibold tracking-tight text-[#5646E5] sm:text-base">
           <BrandLockup />
         </Link>
         <div className="flex items-center justify-end gap-2">
           <Link
             href="/ingresar?redirect=/nuevo"
-            className="rounded-md px-2.5 py-1.5 text-sm font-medium text-slate-700 transition hover:text-violet-700"
+            className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:text-[#5646E5]"
           >
             Acceder
           </Link>
           <Link
             href="/nuevo"
-            className="rounded-lg border border-violet-500 bg-violet-600 px-3.5 py-1.5 text-sm font-semibold text-white shadow-[0_0_12px_rgba(139,92,246,0.25)] transition hover:bg-violet-700"
+            className="rounded-xl bg-[#5646E5] px-4 py-1.5 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95"
           >
             Crear contrato
           </Link>
