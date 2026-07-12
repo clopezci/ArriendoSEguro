@@ -613,18 +613,21 @@ export default function PreviewStepPage() {
   if (state !== "ready" || !activeDraft) return <p className="text-sm text-slate-700">Cargando…</p>;
 
   return (
-    <WizardShell title="Vista previa del contrato" currentStep={10} contractId={id}>
-      <p className="mb-4 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3 text-sm text-slate-700">
-        Esta es una vista previa. El contrato solo quedará listo para firma cuando ambas partes
-        revisen y acepten la versión final.
+    <WizardShell title="Revisa y finaliza tu contrato" currentStep={10} contractId={id}>
+      <p className="mb-4 flex items-start gap-2 text-xs text-slate-500">
+        <span aria-hidden="true">👀</span>
+        <span>Esta es tu vista previa. Queda listo para firma cuando ambas partes revisen y acepten la versión final.</span>
       </p>
-      <div className="mb-4">
-        <ExpedienteNotesCard
-          draftId={id}
-          initialNotes={activeDraft.expedienteNotes ?? ""}
-          variant="banner"
-        />
-      </div>
+      {/* Notas del expediente: secundario → plegado para no saturar el cierre. */}
+      <details className="group mb-4 rounded-2xl border border-slate-200 bg-white/85 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-slate-900">
+          <span>📝 Anotaciones del expediente (opcional)</span>
+          <span className="text-xs font-normal text-slate-500 group-open:hidden">Toca para ver ▾</span>
+        </summary>
+        <div className="mt-3">
+          <ExpedienteNotesCard draftId={id} initialNotes={activeDraft.expedienteNotes ?? ""} variant="banner" />
+        </div>
+      </details>
       <details className="group mb-4 rounded-2xl border border-slate-200 bg-white/85 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-sm text-slate-800">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-semibold text-slate-900">
           <span>🏛️ ¿Autenticar el contrato? (opcional)</span>
@@ -723,16 +726,15 @@ export default function PreviewStepPage() {
         )}
       </div>
       {renderErrors.length > 0 && (
-        <div
-          role="alert"
-          className="mb-3 rounded-2xl border border-rose-300 bg-rose-100/60 p-3 text-sm text-rose-800"
-        >
-          <p className="font-semibold">Revisa estos puntos antes de continuar:</p>
-          <ul className="mt-1 list-disc space-y-0.5 pl-5">
+        <div role="alert" className="mb-4 rounded-3xl border-2 border-amber-300 bg-amber-50/70 p-5 text-sm text-amber-950 shadow-[0_6px_20px_rgba(245,165,36,0.12)]">
+          <p className="flex items-center gap-2 text-base font-black">📋 Falta completar para poder generar</p>
+          <p className="mt-0.5 text-xs text-amber-900/80">Estos datos son necesarios para el contrato. Vuelve al asistente para completarlos.</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
             {renderErrors.map((msg, i) => (
               <li key={i}>{msg}</li>
             ))}
           </ul>
+          <Link href={`/dashboard/contracts/${id}/contract-type`} className="mt-3 inline-flex rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105">Completar datos →</Link>
         </div>
       )}
       {previewHtml && (
@@ -751,17 +753,20 @@ export default function PreviewStepPage() {
         </>
       )}
       {versionInfo && (
-        <div className="mt-3 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3 text-xs text-slate-700">
-          <p>Hash: {versionInfo.documentHash}</p>
-          <p>Versión draft: {versionInfo.versionNumber}</p>
-          <p>Generado: {new Date(versionInfo.generatedAt).toLocaleString("es-CO")}</p>
-        </div>
+        <details className="group mt-3 rounded-2xl border border-slate-200 bg-white/85 p-3 text-xs text-slate-600">
+          <summary className="cursor-pointer list-none font-medium text-slate-500">🔐 Datos técnicos de la versión (hash) <span className="group-open:hidden">▾</span></summary>
+          <div className="mt-2 space-y-0.5 break-all">
+            <p>Hash: {versionInfo.documentHash}</p>
+            <p>Versión draft: {versionInfo.versionNumber}</p>
+            <p>Generado: {new Date(versionInfo.generatedAt).toLocaleString("es-CO")}</p>
+          </div>
+        </details>
       )}
-      {/* ¿Qué sigue? — flujo lineal guiado: Guarda → Firma (Plus) → PDF */}
-      <section className="mt-6 rounded-xl border border-violet-200 bg-violet-50/40 p-4">
+      {/* Finalizar — flujo guiado en 3 pasos: Guarda → Firma (Plus) → PDF */}
+      <section className="mt-6 rounded-3xl border-2 border-[#5646E5]/20 bg-[#ECE9FB]/40 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-bold text-slate-900">¿Qué sigue?</h3>
-          <p className="text-xs font-medium text-slate-600">Guarda → Firma (Plan Plus) → PDF</p>
+          <h3 className="text-lg font-black text-[#17151F]">✅ Finaliza tu contrato</h3>
+          <p className="rounded-full bg-white/70 px-3 py-1 text-[11px] font-bold text-[#5646E5]">Guarda → Firma → PDF</p>
         </div>
 
         {/* Paso 1 · Guardar */}
