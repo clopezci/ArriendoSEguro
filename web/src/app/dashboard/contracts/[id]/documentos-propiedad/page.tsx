@@ -49,7 +49,7 @@ export default function DocumentosPropiedadPage() {
         </p>
       )}
 
-      <p className="rounded-lg border border-slate-300 bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">
+      <p className="rounded-lg border border-slate-300 bg-white/75 p-3 text-xs leading-relaxed text-slate-600">
         <strong>Privacidad:</strong> sube solo los documentos necesarios para el contrato. Si un archivo incluye datos
         de <strong>terceros</strong> o de <strong>menores de edad</strong> (por ejemplo, otros nombres en una escritura),
         asegúrate de contar con autorización para tratarlos. Tratamos esta información conforme a la Ley 1581 de 2012 y

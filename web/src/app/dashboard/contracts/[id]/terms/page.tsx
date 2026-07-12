@@ -195,7 +195,7 @@ export default function TermsStepPage() {
             </span>
           </label>
         ) : (
-          <div className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-500">
+          <div className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-slate-200 bg-white/75 p-3 text-sm text-slate-500">
             <input type="checkbox" disabled aria-disabled="true" className="mt-0.5 h-4 w-4" />
             <span>
               <strong>Recordatorios de terminación o renovación</strong> (por correo y SMS, antes del preaviso legal de

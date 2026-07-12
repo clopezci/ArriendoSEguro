@@ -216,7 +216,7 @@ export default function NovedadesExpedientePage() {
                     ? `/api/contracts/novedades/attachment?contractId=${encodeURIComponent(id)}&novedadId=${encodeURIComponent(r.id)}`
                     : null);
                 return (
-                  <li key={r.id} className="rounded-lg border border-slate-100 bg-slate-50/80 p-3 text-sm">
+                  <li key={r.id} className="rounded-lg border border-slate-100 bg-white/75 p-3 text-sm">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <span className="font-medium text-slate-900">{label}</span>
                       <span className="text-xs text-slate-500">

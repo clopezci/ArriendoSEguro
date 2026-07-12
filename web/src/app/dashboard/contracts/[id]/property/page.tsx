@@ -467,7 +467,7 @@ export default function PropertyStepPage() {
             </p>
           </div>
         ) : (
-          <div className="sm:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+          <div className="sm:col-span-2 rounded-lg border border-slate-200 bg-white/75 p-3 text-sm text-slate-700">
             <label className="flex items-start gap-2">
               <input
                 type="checkbox"

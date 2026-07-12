@@ -144,7 +144,7 @@ export default function ReviewStepPage() {
                 SPECIAL_CLAUSE_OTHER_ID,
               ) &&
                 draft.specialClauses.freeText && (
-                  <p className="mt-2 rounded border border-slate-300 bg-slate-100/60 p-2 text-xs text-slate-700">
+                  <p className="mt-2 rounded border border-slate-300 bg-white/75 p-2 text-xs text-slate-700">
                     <span className="font-semibold text-violet-700">
                       Otra:
                     </span>{" "}

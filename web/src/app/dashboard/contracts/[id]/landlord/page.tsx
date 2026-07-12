@@ -120,7 +120,7 @@ export default function LandlordStepPage() {
           contractDraftId={id}
         />
 
-        <label className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+        <label className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-slate-200 bg-white/75 p-3 text-sm text-slate-700">
           <input
             type="checkbox"
             checked={saveForReuse}

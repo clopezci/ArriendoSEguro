@@ -249,7 +249,7 @@ export default function PagosRecordatoriosPage() {
           </div>
         )}
 
-        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <div className="mt-4 rounded-lg border border-slate-200 bg-white/75 p-3">
           <label className="text-sm font-medium text-slate-800">
             Avisar al inquilino con cuántos días de anticipación
             <div className="mt-1 flex items-center gap-2">
