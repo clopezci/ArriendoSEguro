@@ -83,8 +83,19 @@ export function PartyInvitePanel({
     return () => clearInterval(t);
   }, [mode, status, refreshStatus]);
 
-  async function sendInvite() {
-    if (!user) return;
+  // Crea (o reutiliza) la invitación y devuelve su enlace. El correo con el
+  // código de verificación (OTP) siempre se envía desde el servidor. `channel`
+  // solo cambia el mensaje que ve el dueño.
+  async function ensureInvite(channel: "email" | "whatsapp"): Promise<string | null> {
+    if (!user) return null;
+    if (!email.includes("@")) {
+      setMsg("Ingresa un correo válido de la persona (allí llega el código de verificación).");
+      return null;
+    }
+    if (inviteUrl && status === "active") {
+      if (channel === "email") setMsg(`Reenviado por correo a ${email.trim()}.`);
+      return inviteUrl;
+    }
     setBusy(true);
     setMsg("");
     try {
@@ -101,25 +112,38 @@ export function PartyInvitePanel({
       };
       if (!res.ok || !j.success) {
         setMsg(j.errors?.[0]?.message ?? "No se pudo crear la invitación.");
-        return;
+        return null;
       }
       setStatus("active");
-      setInviteUrl(j.invitationUrl ?? "");
-      if (j.emailStatus === "sent") {
+      const url = j.invitationUrl ?? "";
+      setInviteUrl(url);
+      if (channel === "whatsapp") {
+        setMsg("Enlace listo para WhatsApp. El código de verificación va aparte, al correo de la persona.");
+      } else if (j.emailStatus === "sent") {
         setMsg(`Enviamos el enlace por correo a ${email.trim()}. Si no llega en unos minutos, revisa spam y pulsa «Actualizar».`);
       } else if (j.emailStatus === "mock") {
-        setMsg(
-          "Modo prueba: en este entorno el correo NO está configurado (Resend), así que no se envió correo. Copia el enlace de abajo para probar.",
-        );
+        setMsg("Modo prueba: el correo no está configurado aquí. Usa WhatsApp o copia el enlace de abajo.");
       } else {
-        setMsg(
-          "La invitación quedó creada, pero el correo no se pudo enviar. Revisa «Admin → Diagnóstico de correos». Mientras tanto, comparte el enlace de abajo.",
-        );
+        setMsg("La invitación quedó creada, pero el correo no se pudo enviar. Envíala por WhatsApp o comparte el enlace de abajo.");
       }
+      return url || null;
     } catch {
       setMsg("Error de red.");
+      return null;
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function sendByEmail() {
+    await ensureInvite("email");
+  }
+
+  async function sendByWhatsApp() {
+    const url = await ensureInvite("whatsapp");
+    if (url) {
+      const msgTxt = `Hola 👋 Te comparto el enlace para completar tus datos del contrato de arriendo en ArriendoSeguro: ${url}`;
+      window.open(buildWhatsAppUrl(phone, msgTxt), "_blank", "noopener,noreferrer");
     }
   }
 
@@ -156,34 +180,60 @@ export function PartyInvitePanel({
             </p>
           )}
           {status !== "completed" && (
-            <div className="flex flex-wrap items-end gap-2">
-              <label className="text-xs text-slate-700">
-                <span className="mb-1 block">Correo de la persona</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="correo@ejemplo.com"
-                  className="w-56 rounded border border-slate-300 px-2 py-1.5 text-sm"
-                />
-              </label>
-              <label className="text-xs text-slate-700">
-                <span className="mb-1 block">Nombre (opcional)</span>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Nombre"
-                  className="w-44 rounded border border-slate-300 px-2 py-1.5 text-sm"
-                />
-              </label>
-              <button
-                type="button"
-                disabled={busy || !email.includes("@")}
-                onClick={() => void sendInvite()}
-                className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:opacity-50"
-              >
-                {busy ? "Enviando…" : status === "active" ? "Reenviar enlace" : "Enviar invitación"}
-              </button>
+            <div className="rounded-2xl border border-slate-200 bg-white/70 p-3">
+              <div className="flex flex-wrap items-end gap-2">
+                <label className="text-xs text-slate-700">
+                  <span className="mb-1 block">Correo de la persona <span className="text-rose-500">*</span></span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="correo@ejemplo.com"
+                    className="w-56 rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  />
+                </label>
+                <label className="text-xs text-slate-700">
+                  <span className="mb-1 block">Nombre (opcional)</span>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Nombre"
+                    className="w-40 rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  />
+                </label>
+                <label className="text-xs text-slate-700">
+                  <span className="mb-1 block">Celular (para WhatsApp)</span>
+                  <input
+                    inputMode="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                    placeholder="3001234567"
+                    className="w-44 rounded border border-slate-300 px-2 py-1.5 text-sm"
+                  />
+                </label>
+              </div>
+              <p className="mt-2 text-[11px] text-slate-500">
+                El <b>código de verificación</b> siempre llega al <b>correo</b>. Elige cómo enviarle el enlace:
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  disabled={busy || !email.includes("@")}
+                  onClick={() => void sendByEmail()}
+                  className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105 disabled:opacity-50"
+                >
+                  {busy ? "Enviando…" : status === "active" ? "📧 Reenviar por correo" : "📧 Enviar por correo"}
+                </button>
+                <button
+                  type="button"
+                  disabled={busy || !email.includes("@") || phone.length < 7}
+                  onClick={() => void sendByWhatsApp()}
+                  className="rounded-xl bg-[#25D366] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105 disabled:opacity-50"
+                  title={phone.length < 7 ? "Escribe el celular para enviar por WhatsApp" : undefined}
+                >
+                  💬 Enviar por WhatsApp
+                </button>
+              </div>
             </div>
           )}
 
@@ -241,37 +291,23 @@ export function PartyInvitePanel({
 
           {msg && <p className="text-xs text-slate-700">{msg}</p>}
 
-          {/* Enviar también por WhatsApp: el usuario elige el medio. */}
+          {/* Respaldo por si el navegador bloqueó la apertura automática de WhatsApp. */}
           {inviteUrl && status !== "completed" && (
-            <div className="rounded-2xl border-2 border-[#25D366]/40 bg-[#25D366]/[0.06] p-3">
-              <p className="text-sm font-bold text-[#0B6E4E]">💬 Enviar el enlace por WhatsApp</p>
-              <p className="mt-0.5 text-[11px] text-slate-600">Además del correo, puedes mandarle el enlace por WhatsApp. El código de verificación igual le llega al correo.</p>
-              <div className="mt-2 flex flex-wrap items-end gap-2">
-                <input
-                  inputMode="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
-                  placeholder="📱 Celular (ej. 3001234567)"
-                  className="w-52 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-                <a
-                  href={buildWhatsAppUrl(phone, `Hola 👋 Te comparto el enlace para completar tus datos del contrato de arriendo en ArriendoSeguro: ${inviteUrl}`)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`rounded-xl px-4 py-2 text-sm font-bold text-white transition ${phone.length >= 7 ? "bg-[#25D366] hover:brightness-105" : "pointer-events-none bg-slate-300"}`}
-                >
-                  Enviar por WhatsApp
-                </a>
-              </div>
-            </div>
-          )}
-
-          {inviteUrl && (
             <div className="rounded-2xl border border-slate-200 bg-white/85 p-2 text-[11px] text-slate-600">
               <p className="font-semibold">Enlace de la invitación (copiar / compartir):</p>
               <a href={inviteUrl} target="_blank" rel="noreferrer" className="mt-0.5 block break-all font-mono text-[#5646E5] underline">
                 {inviteUrl}
               </a>
+              {phone.length >= 7 && (
+                <a
+                  href={buildWhatsAppUrl(phone, `Hola 👋 Te comparto el enlace para completar tus datos del contrato de arriendo en ArriendoSeguro: ${inviteUrl}`)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-block rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-bold text-white transition hover:brightness-105"
+                >
+                  💬 Abrir WhatsApp con el enlace
+                </a>
+              )}
             </div>
           )}
           <p className="text-[11px] text-slate-500">

@@ -348,10 +348,12 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
   const [inviteUrl, setInviteUrl] = useState("");
   const [phone, setPhone] = useState("");
 
-  async function sendInvite() {
+  // Crea la invitación del codeudor y devuelve su enlace. El correo con el
+  // código (OTP) se envía desde el servidor; `channel` solo cambia el mensaje.
+  async function ensureCodebtorInvite(): Promise<string | null> {
     if (!email.includes("@")) {
-      setMsg("Ingresa un correo válido del codeudor.");
-      return;
+      setMsg("Ingresa un correo válido del codeudor (allí le llega el código de verificación).");
+      return null;
     }
     setBusy(true);
     setMsg("");
@@ -369,14 +371,29 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
       };
       if (!res.ok || !j.success) {
         setMsg(j.errors?.[0]?.message ?? "No se pudo enviar la invitación al codeudor.");
-        return;
+        return null;
       }
-      if (j.invitationUrl) setInviteUrl(j.invitationUrl);
+      const url = j.invitationUrl ?? "";
+      if (url) setInviteUrl(url);
       setDone("invited");
+      return url || null;
     } catch {
       setMsg("Error de red.");
+      return null;
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function sendByEmail() {
+    await ensureCodebtorInvite();
+  }
+
+  async function sendByWhatsApp() {
+    const url = await ensureCodebtorInvite();
+    if (url) {
+      const msgTxt = `Hola 👋 Te comparto el enlace para completar tus datos como codeudor del contrato de arriendo en ArriendoSeguro: ${url}`;
+      window.open(buildWhatsAppUrl(phone, msgTxt), "_blank", "noopener,noreferrer");
     }
   }
 
@@ -484,7 +501,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
           onClick={() => setMode("invite")}
           className={`rounded-lg border px-3 py-1.5 text-sm ${mode === "invite" ? "border-violet-500 bg-violet-100/70 text-violet-800" : "border-slate-300 text-slate-800"}`}
         >
-          Invitar al codeudor por correo
+          Invitar al codeudor (correo o WhatsApp)
         </button>
         <button
           type="button"
@@ -503,34 +520,60 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
       </div>
 
       {mode === "invite" && (
-        <div className="mt-3 flex flex-wrap items-end gap-2">
-          <label className="text-xs text-slate-700">
-            <span className="mb-1 block">Correo del codeudor</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="correo@ejemplo.com"
-              className="w-56 rounded border border-slate-300 px-2 py-1.5 text-sm"
-            />
-          </label>
-          <label className="text-xs text-slate-700">
-            <span className="mb-1 block">Nombre (opcional)</span>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nombre"
-              className="w-44 rounded border border-slate-300 px-2 py-1.5 text-sm"
-            />
-          </label>
-          <button
-            type="button"
-            disabled={busy || !email.includes("@")}
-            onClick={() => void sendInvite()}
-            className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            {busy ? "Enviando…" : "Enviar invitación"}
-          </button>
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-white/70 p-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="text-xs text-slate-700">
+              <span className="mb-1 block">Correo del codeudor <span className="text-rose-500">*</span></span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="correo@ejemplo.com"
+                className="w-56 rounded border border-slate-300 px-2 py-1.5 text-sm"
+              />
+            </label>
+            <label className="text-xs text-slate-700">
+              <span className="mb-1 block">Nombre (opcional)</span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nombre"
+                className="w-40 rounded border border-slate-300 px-2 py-1.5 text-sm"
+              />
+            </label>
+            <label className="text-xs text-slate-700">
+              <span className="mb-1 block">Celular (para WhatsApp)</span>
+              <input
+                inputMode="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                placeholder="3001234567"
+                className="w-44 rounded border border-slate-300 px-2 py-1.5 text-sm"
+              />
+            </label>
+          </div>
+          <p className="mt-2 text-[11px] text-slate-500">
+            El <b>código de verificación</b> siempre llega al <b>correo</b>. Elige cómo enviarle el enlace:
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy || !email.includes("@")}
+              onClick={() => void sendByEmail()}
+              className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105 disabled:opacity-50"
+            >
+              {busy ? "Enviando…" : "📧 Enviar por correo"}
+            </button>
+            <button
+              type="button"
+              disabled={busy || !email.includes("@") || phone.length < 7}
+              onClick={() => void sendByWhatsApp()}
+              className="rounded-xl bg-[#25D366] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105 disabled:opacity-50"
+              title={phone.length < 7 ? "Escribe el celular para enviar por WhatsApp" : undefined}
+            >
+              💬 Enviar por WhatsApp
+            </button>
+          </div>
         </div>
       )}
 
