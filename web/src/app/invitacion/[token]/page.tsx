@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { sanitizePartyFromForm } from "@/features/contracts/party-sanitize";
+import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
 type Info = {
@@ -345,6 +346,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
   const [msg, setMsg] = useState("");
   const [done, setDone] = useState<"invited" | "entered" | "none" | null>(null);
   const [inviteUrl, setInviteUrl] = useState("");
+  const [phone, setPhone] = useState("");
 
   async function sendInvite() {
     if (!email.includes("@")) {
@@ -436,13 +438,33 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
             : "Quien te invitó los verá e incluirá. El codeudor confirmará al firmar. Ya puedes cerrar esta página."}
         </p>
         {done === "invited" && inviteUrl && (
-          <div className="mt-2 rounded-2xl border-2 border-amber-200 bg-amber-50/70 p-2 text-[11px] text-amber-900">
-            <p className="font-semibold">
-              El correo no salió automáticamente (o está en modo prueba). Comparte este enlace con el codeudor:
-            </p>
-            <a href={inviteUrl} target="_blank" rel="noreferrer" className="mt-0.5 block break-all font-mono text-violet-800 underline">
-              {inviteUrl}
-            </a>
+          <div className="mt-2 space-y-2">
+            <div className="rounded-2xl border-2 border-[#25D366]/40 bg-[#25D366]/[0.06] p-3 text-slate-700">
+              <p className="text-sm font-bold text-[#0B6E4E]">💬 También puedes enviárselo por WhatsApp</p>
+              <div className="mt-2 flex flex-wrap items-end gap-2">
+                <input
+                  inputMode="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                  placeholder="📱 Celular (ej. 3001234567)"
+                  className="w-52 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+                <a
+                  href={buildWhatsAppUrl(phone, `Hola 👋 Te comparto el enlace para completar tus datos como codeudor del contrato de arriendo en ArriendoSeguro: ${inviteUrl}`)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`rounded-xl px-4 py-2 text-sm font-bold text-white transition ${phone.length >= 7 ? "bg-[#25D366] hover:brightness-105" : "pointer-events-none bg-slate-300"}`}
+                >
+                  Enviar por WhatsApp
+                </a>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white/85 p-2 text-[11px] text-slate-600">
+              <p className="font-semibold">Enlace de la invitación (copiar / compartir):</p>
+              <a href={inviteUrl} target="_blank" rel="noreferrer" className="mt-0.5 block break-all font-mono text-[#5646E5] underline">
+                {inviteUrl}
+              </a>
+            </div>
           </div>
         )}
       </div>
