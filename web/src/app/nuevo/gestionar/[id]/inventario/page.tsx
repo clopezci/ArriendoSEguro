@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { useSavedContract } from "@/components/contracts/requires-saved-contract";
+import { InventoryZonePhotos } from "@/components/contracts/inventory-zone-photos";
 import { GUIDED_ZONE_OPTIONS } from "@/domain/inventory/inventoryRules";
 
 /**
@@ -20,7 +21,7 @@ const CLEANLINESS = ["Limpio", "Aceptable", "Sucio", "No aplica"] as const;
 
 type Phase = "loading" | "locked" | "intro" | "zones" | "fill" | "review" | "done";
 type ZoneRow = { id: string; zoneName: string };
-type ZoneData = { generalCondition: string; cleanlinessStatus: string; observations: string };
+type ZoneData = { generalCondition: string; cleanlinessStatus: string; observations: string; photoUrls: string[] };
 
 function chip(sel: boolean) {
   return `rounded-2xl border-2 px-4 py-2.5 text-sm font-medium transition ${sel ? "border-[#5646E5] bg-[#ECE9FB] text-[#5646E5]" : "border-slate-200 bg-white text-slate-700 hover:border-[#5646E5]"}`;
@@ -101,9 +102,24 @@ export default function InventarioBentoPage() {
       if (!r.ok || !j.success) { setMsg(j.errors?.[0]?.message ?? "No se pudieron guardar las zonas."); return; }
       // Releer para obtener los ids reales de cada zona.
       const dr = await fetch(`/api/inventory/detail?inventoryId=${encodeURIComponent(inventoryId)}`, { headers: h });
-      const dj = (await dr.json()) as { success?: boolean; selectedZones?: Array<{ id: string; zoneName: string; status?: string }> };
+      const dj = (await dr.json()) as {
+        success?: boolean;
+        selectedZones?: Array<{ id: string; zoneName: string; status?: string }>;
+        zoneDetails?: Array<{ selectedZoneId: string; generalCondition?: string; cleanlinessStatus?: string; observations?: string; photoUrls?: string[] }>;
+      };
       const rows = (dj.selectedZones ?? []).filter((z) => z.status !== "skipped").map((z) => ({ id: z.id, zoneName: z.zoneName }));
       if (rows.length === 0) { setMsg("No se pudieron cargar las zonas."); return; }
+      // Prellenar lo que ya se hubiera guardado (para retomar sin perder fotos/estado).
+      const prefill: Record<string, ZoneData> = {};
+      for (const zd of dj.zoneDetails ?? []) {
+        prefill[zd.selectedZoneId] = {
+          generalCondition: zd.generalCondition ?? "",
+          cleanlinessStatus: zd.cleanlinessStatus ?? "",
+          observations: zd.observations ?? "",
+          photoUrls: Array.isArray(zd.photoUrls) ? zd.photoUrls : [],
+        };
+      }
+      setData(prefill);
       setZones(rows);
       setZi(0);
       setPhase("fill");
@@ -115,7 +131,7 @@ export default function InventarioBentoPage() {
   }
 
   const cur = zones[zi];
-  const curData = (cur && data[cur.id]) || { generalCondition: "", cleanlinessStatus: "", observations: "" };
+  const curData = (cur && data[cur.id]) || { generalCondition: "", cleanlinessStatus: "", observations: "", photoUrls: [] };
   function setCur(patch: Partial<ZoneData>) {
     if (!cur) return;
     setData((d) => ({ ...d, [cur.id]: { ...curData, ...patch } }));
@@ -128,7 +144,7 @@ export default function InventarioBentoPage() {
     try {
       const r = await fetch("/api/inventory/save-zone-detail", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ inventoryId, selectedZoneId: cur.id, generalCondition: curData.generalCondition, cleanlinessStatus: curData.cleanlinessStatus, observations: curData.observations, status: "completed" }),
+        body: JSON.stringify({ inventoryId, selectedZoneId: cur.id, generalCondition: curData.generalCondition, cleanlinessStatus: curData.cleanlinessStatus, observations: curData.observations, photoUrls: curData.photoUrls, status: "completed" }),
       });
       const j = (await r.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!r.ok || !j.success) { setMsg(j.errors?.[0]?.message ?? "No se pudo guardar la zona."); return; }
@@ -237,6 +253,10 @@ export default function InventarioBentoPage() {
             <p className="mt-4 mb-1.5 text-sm font-medium text-slate-600">Observaciones (opcional)</p>
             <textarea value={curData.observations} onChange={(e) => setCur({ observations: e.target.value })} rows={3} placeholder="Daños, detalles, elementos entregados…" className="w-full rounded-2xl border-2 border-slate-200 p-3 text-sm outline-none focus:border-[#5646E5]" />
 
+            <div className="mt-4 rounded-2xl border-2 border-slate-200 bg-white/70 p-3">
+              <InventoryZonePhotos inventoryId={inventoryId} zoneId={cur.id} photoUrls={curData.photoUrls} onChange={(next) => setCur({ photoUrls: next })} />
+            </div>
+
             <div className="mt-5 flex items-center gap-3">
               <button onClick={() => void saveZoneAndNext()} disabled={busy} className="rounded-2xl bg-[#5646E5] px-7 py-4 text-base font-bold text-white transition hover:brightness-105 active:scale-95 disabled:opacity-50">
                 {busy ? "Guardando…" : zi < zones.length - 1 ? "Guardar y siguiente →" : "Guardar y finalizar →"}
@@ -254,7 +274,7 @@ export default function InventarioBentoPage() {
                 {zones.map((z) => (
                   <li key={z.id} className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2">
                     <span>{z.zoneName}</span>
-                    <span className="text-xs text-slate-500">{data[z.id]?.generalCondition || "—"} · {data[z.id]?.cleanlinessStatus || "—"}</span>
+                    <span className="text-xs text-slate-500">{data[z.id]?.generalCondition || "—"} · {data[z.id]?.cleanlinessStatus || "—"}{(data[z.id]?.photoUrls?.length ?? 0) > 0 ? ` · 📷 ${data[z.id]?.photoUrls.length}` : ""}</span>
                   </li>
                 ))}
               </ul>
