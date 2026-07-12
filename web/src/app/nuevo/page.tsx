@@ -675,6 +675,20 @@ export default function NuevoPage() {
   const [askText, setAskText] = useState("");
   const [askAns, setAskAns] = useState<string | null>(null);
   const [askBusy, setAskBusy] = useState(false);
+  // Precio vigente de la cláusula «Otra» (administrable desde /admin). Se muestra
+  // en el aviso de costo adicional del paso de cláusulas.
+  const [clausePriceCop, setClausePriceCop] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch("/api/contracts/special-clause");
+        const j = (await res.json()) as { success?: boolean; priceCop?: number };
+        if (!cancelled && res.ok && j.success && typeof j.priceCop === "number") setClausePriceCop(j.priceCop);
+      } catch { /* si falla, mostramos el aviso sin cifra */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   async function callAssist(mode: "extract" | "ask", text: string) {
     const res = await fetch("/api/nuevo/assist", {
@@ -884,7 +898,7 @@ export default function NuevoPage() {
                   <motion.div key={q.id} initial={{ opacity: 0, x: 28 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
                     <h2 className="text-balance text-3xl font-extrabold tracking-tight">{q.prompt}</h2>
                     <p className="mt-1.5 mb-5 text-slate-500">{q.hint}</p>
-                    <Field q={q} a={a} setA={setA} docs={{ send: sendInvite, status: inviteStatus, busy: inviteBusy, waUrl: inviteWaUrl, link: inviteLink }} party={{ draftId: draftId ?? "", inviterName: a.name.trim() || user?.email || "El arrendador", onImport: onImportParty }} />
+                    <Field q={q} a={a} setA={setA} clausePriceCop={clausePriceCop} docs={{ send: sendInvite, status: inviteStatus, busy: inviteBusy, waUrl: inviteWaUrl, link: inviteLink }} party={{ draftId: draftId ?? "", inviterName: a.name.trim() || user?.email || "El arrendador", onImport: onImportParty }} />
                     {error && (
                       <p className="mt-3 flex items-center gap-1.5 rounded-xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><circle cx="12" cy="12" r="9" /><path d="M12 8v5M12 16.5v.01" /></svg>
@@ -1025,7 +1039,7 @@ const cleanEmail = (t: string) => t.replace(/\s/g, "").toLowerCase();
 
 const PROPERTY_TYPES = ["Apartamento", "Casa", "Habitación", "Local", "Oficina", "Otro"];
 
-function Field({ q, a, setA, docs, party }: { q: Q; a: Answers; setA: (a: Answers) => void; docs: { send: (m: "whatsapp" | "email") => void; status: string | null; busy: boolean; waUrl: string | null; link: string | null }; party: { draftId: string; inviterName: string; onImport: (role: "tenant" | "solidaryCoDebtor", p: PartyDraft) => void } }) {
+function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; setA: (a: Answers) => void; clausePriceCop: number | null; docs: { send: (m: "whatsapp" | "email") => void; status: string | null; busy: boolean; waUrl: string | null; link: string | null }; party: { draftId: string; inviterName: string; onImport: (role: "tenant" | "solidaryCoDebtor", p: PartyDraft) => void } }) {
   switch (q.kind) {
     case "ctype":
       return (
@@ -1276,7 +1290,11 @@ function Field({ q, a, setA, docs, party }: { q: Q; a: Answers; setA: (a: Answer
               <textarea value={a.clauseOther} onChange={(e) => setA({ ...a, clauseOther: e.target.value })} rows={3}
                 placeholder="Describe la cláusula acordada entre las partes…"
                 className="w-full rounded-xl border-2 border-slate-200 p-3 text-sm outline-none transition focus:border-[#5646E5]" />
-              <p className="mt-2 text-xs font-medium text-amber-800">La cláusula «Otra» (texto libre) tiene un <b>costo adicional que se suma al Plan Plus</b>; se confirma al pagar.</p>
+              <p className="mt-2 text-xs font-medium text-amber-800">
+                La cláusula «Otra» (texto libre) tiene un <b>costo adicional que se suma al Plan Plus</b>
+                {clausePriceCop != null ? <> de <b>${clausePriceCop.toLocaleString("es-CO")}</b></> : null}
+                {" "}(la revisa un abogado). Se confirma al pagar.
+              </p>
             </div>
           )}
           <p className="text-xs text-slate-500">Puedes continuar sin cláusulas especiales. Las que elijas se redactan con texto legal en el contrato.</p>
