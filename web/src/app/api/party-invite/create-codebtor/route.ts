@@ -89,10 +89,12 @@ export async function POST(request: Request) {
     emailStatus = "failed";
   }
 
+  // Devolvemos SIEMPRE el enlace para poder compartirlo también por WhatsApp
+  // (el inquilino elige el medio); el correo sigue llevando el código (OTP).
   return NextResponse.json({
     success: true,
     status: invite.status,
     emailStatus,
-    ...(emailStatus === "sent" ? {} : { invitationUrl }),
+    invitationUrl,
   });
 }
