@@ -371,7 +371,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
         setMsg(j.errors?.[0]?.message ?? "No se pudo enviar la invitación al codeudor.");
         return;
       }
-      if (j.emailStatus !== "sent" && j.invitationUrl) setInviteUrl(j.invitationUrl);
+      if (j.invitationUrl) setInviteUrl(j.invitationUrl);
       setDone("invited");
     } catch {
       setMsg("Error de red.");

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
-import { createContractDraft, updateDraft } from "@/features/contracts/wizard-state";
+import { createContractDraft, updateDraft, getDraft, type ContractDraft } from "@/features/contracts/wizard-state";
 import { flushDraftToServer, pullServerDraftsIntoLocal } from "@/features/contracts/draft-server-sync";
 import { getAuthClient } from "@/lib/firebase/client";
 import { CONSENT_CURRENT_VERSION } from "@/domain/consents/consentVersions";
@@ -114,6 +114,89 @@ const EMPTY: Answers = {
 const BASIC_TOTAL = QUESTIONS.filter((q) => q.basic).length;
 
 const GOOGLE_RESUME_KEY = "nuevo_google_resume";
+const RESUME_PREFIX = "nuevo_resume_";
+
+/** Guarda un snapshot de las respuestas del recorrido para poder RETOMAR el
+ * mismo borrador paso a paso (desde "Mis contratos" → Continuar), en vez de
+ * saltar a la vista final llena de faltantes. */
+function saveResume(id: string | null, answers: Answers, step: number): void {
+  if (!id || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(RESUME_PREFIX + id, JSON.stringify({ answers, step }));
+  } catch {
+    /* almacenamiento lleno/no disponible: no rompemos el flujo */
+  }
+}
+
+function loadResume(id: string): { answers: Answers; step: number } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(RESUME_PREFIX + id);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { answers?: Partial<Answers>; step?: number };
+    if (!parsed?.answers) return null;
+    return { answers: { ...EMPTY, ...parsed.answers }, step: typeof parsed.step === "number" ? parsed.step : 0 };
+  } catch {
+    return null;
+  }
+}
+
+/** Primer paso ACTIVO (no saltado) que aún está incompleto. Si todo está
+ * completo devuelve QUESTIONS.length (→ ir a revisión). */
+function firstIncompleteIndex(answers: Answers): number {
+  for (let k = 0; k < QUESTIONS.length; k++) {
+    const q = QUESTIONS[k];
+    if (isSkipped(q, answers)) continue;
+    if (validateStep(q.kind, answers)) return k;
+  }
+  return QUESTIONS.length;
+}
+
+/** Reconstruye las respuestas desde un borrador guardado (respaldo cuando no hay
+ * snapshot local, p. ej. borrador creado en otro dispositivo). Espeja el mapeo
+ * de `persist`. */
+function answersFromDraft(d: ContractDraft): Answers {
+  const num = (v: unknown) => (typeof v === "number" && v > 0 ? String(v) : "");
+  return {
+    ...EMPTY,
+    contractType: d.contractType || EMPTY.contractType,
+    name: d.landlord?.fullName || "",
+    docType: d.landlord?.documentType || EMPTY.docType,
+    docNumber: d.landlord?.documentNumber || "",
+    phone: d.landlord?.phone || "",
+    email: d.landlord?.email || "",
+    ownerCity: d.landlord?.city || "",
+    acting: d.actingAs || "",
+    proxyOath: Boolean(d.proxyDeclarationAcceptedAt),
+    address: d.property?.address || "",
+    city: d.property?.city || "",
+    department: d.property?.department || "",
+    registry: d.property?.registryNumber || "",
+    propertyType: d.property?.type || "",
+    canon: num(d.lease?.monthlyRent ?? d.property?.monthlyRentProposed),
+    commercialValue: num(d.property?.commercialValue),
+    noCommercialValue: Boolean(d.property?.commercialValueUnknown),
+    startDate: d.lease?.startDate || "",
+    termMonths: d.lease?.termMonths ? String(d.lease.termMonths) : EMPTY.termMonths,
+    paymentDay: d.lease?.paymentDueDay ? String(d.lease.paymentDueDay) : EMPTY.paymentDay,
+    tenantName: d.tenant?.fullName || "",
+    tenantDocType: d.tenant?.documentType || EMPTY.tenantDocType,
+    tenantDocNumber: d.tenant?.documentNumber || "",
+    tenantCity: d.tenant?.city || "",
+    tenantEmail: d.tenant?.email || "",
+    tenantPhone: d.tenant?.phone || "",
+    hasCodebtor: d.hasSolidaryCoDebtor ? "yes" : "no",
+    codebtorName: d.solidaryCoDebtor?.fullName || "",
+    codebtorDocType: d.solidaryCoDebtor?.documentType || EMPTY.codebtorDocType,
+    codebtorDocNumber: d.solidaryCoDebtor?.documentNumber || "",
+    codebtorCity: d.solidaryCoDebtor?.city || "",
+    codebtorEmail: d.solidaryCoDebtor?.email || "",
+    codebtorPhone: d.solidaryCoDebtor?.phone || "",
+    utilitiesParty: (d.utilities?.responsibleParty as Answers["utilitiesParty"]) || "",
+    clauses: d.specialClauses?.selected ? [...d.specialClauses.selected] : [],
+    clauseOther: d.specialClauses?.freeText || "",
+  };
+}
 
 export default function NuevoPage() {
   const { user, signInWithGoogleRedirect, consumeGoogleRedirect } = useAuth();
@@ -312,6 +395,8 @@ export default function NuevoPage() {
     if (e) { setError(e); if (voiceModeRef.current) speak(e, relisten); return; } // no avanza con datos inválidos/en blanco
     setError(null);
     persist(aRef.current);
+    // Guarda un snapshot para poder RETOMAR este borrador paso a paso luego.
+    saveResume(draftIdRef.current, aRef.current, iRef.current);
     // Al terminar lo básico (50%), si no hay sesión, exigimos crear cuenta.
     if (iRef.current === BASIC_TOTAL - 1 && !userRef.current) { setGate("register"); return; }
     const ni = nextActiveIndex(iRef.current, aRef.current);
@@ -390,6 +475,29 @@ export default function NuevoPage() {
       setI(nextActiveIndex(BASIC_TOTAL - 1, saved.answers));
     })();
   }, [consumeGoogleRedirect]);
+
+  // Al montar: si venimos con ?id=... (desde "Mis contratos" → Continuar),
+  // RETOMAMOS ese borrador en el mismo recorrido paso a paso, en el primer dato
+  // que falte — en vez de mandar al usuario a la vista final llena de faltantes.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Si hay resume de Google en curso, ese efecto tiene prioridad.
+    if (sessionStorage.getItem(GOOGLE_RESUME_KEY)) return;
+    const id = new URLSearchParams(window.location.search).get("id");
+    if (!id) return;
+    const draft = getDraft(id);
+    if (!draft) return; // el borrador ya no existe localmente
+    // Preferimos el snapshot exacto del recorrido; si no hay, reconstruimos
+    // desde el borrador guardado (respaldo).
+    const resumed = loadResume(id) ?? { answers: answersFromDraft(draft), step: 0 };
+    setDraftId(id);
+    draftIdRef.current = id;
+    setARaw(resumed.answers);
+    const target = firstIncompleteIndex(resumed.answers);
+    setI(target >= QUESTIONS.length ? Math.max(0, QUESTIONS.length - 1) : target);
+    if (target >= QUESTIONS.length) setMode("review");
+    else setMode("flow");
+  }, []);
 
   const back = useCallback(() => {
     setError(null);

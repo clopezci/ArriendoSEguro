@@ -72,13 +72,13 @@ export async function POST(request: Request) {
     emailStatus = "failed";
   }
 
-  // Si el correo NO salió de verdad (prueba/mock o falló), devolvemos el enlace
-  // para poder continuar la prueba sin correo. Con correo real (`sent`) NO se
-  // expone (llega por correo a la persona).
+  // Devolvemos SIEMPRE el enlace: el dueño está autenticado y es su propio
+  // contrato, así puede además compartirlo por WhatsApp (elige el medio), no
+  // solo por correo. El correo sigue llevando el código de verificación (OTP).
   return NextResponse.json({
     success: true,
     status: invite.status,
     emailStatus,
-    ...(emailStatus === "sent" ? {} : { invitationUrl }),
+    invitationUrl,
   });
 }
