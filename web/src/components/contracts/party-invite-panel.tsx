@@ -18,12 +18,14 @@ export function PartyInvitePanel({
   role,
   roleLabel,
   inviterName,
+  monthlyRent,
   onImport,
 }: {
   contractDraftId: string;
   role: "tenant" | "solidaryCoDebtor";
   roleLabel: string;
   inviterName: string;
+  monthlyRent?: number;
   onImport: (party: PartyDraft) => void;
 }) {
   const { user } = useAuth();
@@ -101,7 +103,7 @@ export function PartyInvitePanel({
       const res = await fetch("/api/party-invite/create", {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ contractDraftId, role, inviteeEmail: email.trim(), inviteeName: name.trim(), inviterName }),
+        body: JSON.stringify({ contractDraftId, role, inviteeEmail: email.trim(), inviteeName: name.trim(), inviterName, ...(monthlyRent && monthlyRent > 0 ? { monthlyRent } : {}) }),
       });
       const j = (await res.json()) as {
         success?: boolean;

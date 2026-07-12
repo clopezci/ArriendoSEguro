@@ -777,6 +777,7 @@ export default function NuevoPage() {
           phone: method === "whatsapp" ? aRef.current.docPhone : undefined,
           email: method === "email" ? aRef.current.docEmail : undefined,
           name: aRef.current.tenantName || undefined,
+          monthlyRent: Number((aRef.current.canon || "").replace(/[^\d]/g, "")) || undefined,
         }),
       });
       if (res.status === 401) { setInviteStatus("Inicia sesión para enviar el enlace al inquilino."); return; }
@@ -1193,6 +1194,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
         />
       ) : (
         <PartyInvitePanel contractDraftId={party.draftId} role="tenant" roleLabel="Arrendatario (inquilino)" inviterName={party.inviterName}
+          monthlyRent={Number((a.canon || "").replace(/[^\d]/g, "")) || 0}
           onImport={(p) => party.onImport("tenant", p)} />
       );
     case "lease": {
@@ -1264,6 +1266,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
           ) : (
             <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
+              monthlyRent={Number((a.canon || "").replace(/[^\d]/g, "")) || 0}
               onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
           )}
           {/* El dueño ve los documentos que el codeudor subió por su enlace. */}

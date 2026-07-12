@@ -23,6 +23,7 @@ const schema = z
     email: z.string().email().optional().or(z.literal("")),
     phone: z.string().optional(),
     name: z.string().max(120).optional(),
+    monthlyRent: z.number().int().nonnegative().optional(),
   })
   .superRefine((d, ctx) => {
     if (d.method === "email" && !d.email) {
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
     inviterUid: auth.user.uid,
     inviterEmail: auth.user.email ?? "",
     inviterName: auth.user.email || "El arrendador",
+    monthlyRent: parsed.data.monthlyRent,
   });
 
   const base = appConfig.publicUrl.replace(/\/$/, "");

@@ -24,6 +24,7 @@ export type CreateInviteParams = {
   inviterUid: string;
   inviterEmail: string;
   inviterName: string;
+  monthlyRent?: number;
 };
 
 /**
@@ -47,7 +48,12 @@ export async function createInvite(firestore: Firestore, params: CreateInvitePar
     const doc = existing.docs[0];
     const data = doc.data() as PartyInviteDoc;
     if (normalizeEmail(data.inviteeEmail) === newEmail) {
-      return data; // mismo destinatario → mismo enlace
+      // Mismo destinatario → mismo enlace. Actualizamos el canon si cambió/faltaba.
+      if (typeof params.monthlyRent === "number" && params.monthlyRent > 0 && data.monthlyRent !== params.monthlyRent) {
+        await doc.ref.set({ monthlyRent: params.monthlyRent }, { merge: true });
+        return { ...data, monthlyRent: params.monthlyRent };
+      }
+      return data;
     }
     // Correo distinto (otra persona): invalidamos el enlace anterior y creamos
     // uno nuevo abajo, para que el correo llegue al destinatario correcto.
@@ -66,6 +72,7 @@ export async function createInvite(firestore: Firestore, params: CreateInvitePar
     inviterUid: params.inviterUid,
     inviterEmail: params.inviterEmail,
     inviterName: params.inviterName,
+    ...(typeof params.monthlyRent === "number" && params.monthlyRent > 0 ? { monthlyRent: params.monthlyRent } : {}),
     status: "active",
     otpVerifyAttempts: 0,
     contribution: null,
