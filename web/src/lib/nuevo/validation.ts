@@ -68,7 +68,7 @@ export type Answers = {
   tenantMode: "self" | "invite"; tenantName: string;
   tenantDocType: string; tenantDocNumber: string; tenantCity: string; tenantEmail: string; tenantPhone: string; tenantAuth: boolean;
   // Codeudor
-  hasCodebtor: "" | "yes" | "no"; codebtorName: string; codebtorMode: "self" | "invite";
+  hasCodebtor: "" | "yes" | "no"; codebtorName: string; codebtorMode: "self" | "invite" | "tenant";
   codebtorDocType: string; codebtorDocNumber: string; codebtorCity: string; codebtorEmail: string; codebtorPhone: string; codebtorAuth: boolean;
   // Servicios y cláusulas
   utilitiesParty: "" | "arrendatario" | "arrendador" | "compartido";
@@ -134,7 +134,10 @@ export function validateStep(kind: string, a: Answers): string | null {
       if (a.hasCodebtor === "yes") return nameError(a.codebtorName);
       return null;
     case "codebtorfull":
-      if (a.codebtorMode === "invite") return null; // la persona completa por su enlace
+      // "invite": el codeudor completa por su enlace. "tenant": lo gestiona el
+      // inquilino desde su propia invitación (invitarlo o ingresar sus datos con
+      // autorización). En ambos casos el dueño puede continuar y luego importar.
+      if (a.codebtorMode === "invite" || a.codebtorMode === "tenant") return null;
       return docError(a.codebtorDocType, a.codebtorDocNumber) ?? cityError(a.codebtorCity) ?? emailError(a.codebtorEmail) ?? phoneError(a.codebtorPhone)
         ?? (a.codebtorAuth ? null : "Confirma que tienes autorización del codeudor para ingresar sus datos.");
     case "credit":
