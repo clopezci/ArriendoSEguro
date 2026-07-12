@@ -115,6 +115,10 @@ const BASIC_TOTAL = QUESTIONS.filter((q) => q.basic).length;
 
 const GOOGLE_RESUME_KEY = "nuevo_google_resume";
 const RESUME_PREFIX = "nuevo_resume_";
+/** Id del borrador que el usuario tiene abierto ahora mismo en el recorrido.
+ * Sirve para que, si RECARGA la página (o hace pull-to-refresh), vuelva justo
+ * donde estaba en vez de irse al inicio. Se limpia al finalizar. */
+const ACTIVE_KEY = "nuevo_active_draft";
 
 /** Guarda un snapshot de las respuestas del recorrido para poder RETOMAR el
  * mismo borrador paso a paso (desde "Mis contratos" → Continuar), en vez de
@@ -415,6 +419,8 @@ export default function NuevoPage() {
       }));
       if (updated) void flushDraftToServer(updated);
     }
+    // Terminó: soltamos el puntero activo (una recarga ya no reingresa aquí).
+    try { window.localStorage.removeItem(ACTIVE_KEY); } catch { /* noop */ }
     setMode("done");
   }, []);
 
@@ -476,33 +482,56 @@ export default function NuevoPage() {
     })();
   }, [consumeGoogleRedirect]);
 
-  // Al montar: si venimos con ?id=... (desde "Mis contratos" → Continuar),
-  // RETOMAMOS ese borrador en el mismo recorrido paso a paso, en el primer dato
-  // que falte — en vez de mandar al usuario a la vista final llena de faltantes.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    // Si hay resume de Google en curso, ese efecto tiene prioridad.
-    if (sessionStorage.getItem(GOOGLE_RESUME_KEY)) return;
-    const id = new URLSearchParams(window.location.search).get("id");
-    if (!id) return;
+  // Restaura un borrador en el recorrido. Con snapshot usa el paso EXACTO donde
+  // quedó (para "Continuar" y para recargas); sin snapshot reconstruye desde el
+  // borrador y salta al primer dato incompleto.
+  const restoreDraft = useCallback((id: string): boolean => {
     const draft = getDraft(id);
-    if (!draft) return; // el borrador ya no existe localmente
-    // Preferimos el snapshot exacto del recorrido; si no hay, reconstruimos
-    // desde el borrador guardado (respaldo).
-    const resumed = loadResume(id) ?? { answers: answersFromDraft(draft), step: 0 };
+    if (!draft) return false; // el borrador ya no existe localmente
+    const snap = loadResume(id);
+    const answers = snap?.answers ?? answersFromDraft(draft);
     setDraftId(id);
     draftIdRef.current = id;
-    setARaw(resumed.answers);
-    const target = firstIncompleteIndex(resumed.answers);
-    setI(target >= QUESTIONS.length ? Math.max(0, QUESTIONS.length - 1) : target);
-    if (target >= QUESTIONS.length) setMode("review");
-    else setMode("flow");
+    setARaw(answers);
+    const step = snap && typeof snap.step === "number" ? snap.step : firstIncompleteIndex(answers);
+    if (step >= QUESTIONS.length) { setI(Math.max(0, QUESTIONS.length - 1)); setMode("review"); }
+    else { setI(Math.max(0, step)); setMode("flow"); }
+    try { window.localStorage.setItem(ACTIVE_KEY, id); } catch { /* noop */ }
+    return true;
   }, []);
+
+  // Al montar: (1) si venimos con ?id=... (desde "Mis contratos" → Continuar),
+  // retomamos ese borrador; (2) si NO hay ?id= pero había un borrador activo
+  // (p. ej. el usuario RECARGÓ / hizo pull-to-refresh), lo restauramos para
+  // dejarlo donde estaba en vez de mandarlo al inicio.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem(GOOGLE_RESUME_KEY)) return; // Google tiene prioridad
+    const id = new URLSearchParams(window.location.search).get("id");
+    if (id) { restoreDraft(id); return; }
+    const active = window.localStorage.getItem(ACTIVE_KEY);
+    if (active) restoreDraft(active);
+  }, [restoreDraft]);
+
+  // Mientras el usuario avanza (o edita), guardamos snapshot + puntero activo en
+  // CADA cambio, para que una recarga lo devuelva al paso exacto.
+  useEffect(() => {
+    if (mode !== "flow" && mode !== "review") return;
+    if (!draftId) return;
+    saveResume(draftId, a, mode === "review" ? QUESTIONS.length : i);
+    try { window.localStorage.setItem(ACTIVE_KEY, draftId); } catch { /* noop */ }
+  }, [mode, a, i, draftId]);
 
   const back = useCallback(() => {
     setError(null);
     const pi = prevActiveIndex(iRef.current, aRef.current);
-    if (pi < 0) { setMode("home"); return; }
+    if (pi < 0) {
+      // Salió al inicio a propósito: soltamos el puntero activo para que una
+      // recarga se quede en el inicio (no lo reingrese al recorrido).
+      try { window.localStorage.removeItem(ACTIVE_KEY); } catch { /* noop */ }
+      setMode("home");
+      return;
+    }
     setI(pi);
   }, []);
 
