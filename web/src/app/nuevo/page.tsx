@@ -22,6 +22,7 @@ import { ExpressRegister } from "@/components/nuevo/express-register";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
 import { CodebtorViaTenantPanel } from "@/components/contracts/codebtor-via-tenant-panel";
 import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-owner-list";
+import { IncomeSuggestion } from "@/components/contracts/income-suggestion";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
 /**
@@ -105,9 +106,9 @@ const EMPTY: Answers = {
   canon: "", commercialValue: "", noCommercialValue: false,
   startDate: "", termMonths: "12", paymentDay: "5",
   tenantMode: "self", tenantName: "",
-  tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false,
+  tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false, tenantIncome: "",
   hasCodebtor: "", codebtorName: "", codebtorMode: "self",
-  codebtorDocType: "CC", codebtorDocNumber: "", codebtorCity: "", codebtorEmail: "", codebtorPhone: "", codebtorAuth: false,
+  codebtorDocType: "CC", codebtorDocNumber: "", codebtorCity: "", codebtorEmail: "", codebtorPhone: "", codebtorAuth: false, codebtorIncome: "",
   utilitiesParty: "", clauses: [], clauseOther: "",
   docMethod: "", docPhone: "", docEmail: "",
 };
@@ -278,6 +279,8 @@ export default function NuevoPage() {
     if (!draftId) return;
     const canonNum = Number(n.canon.replace(/[^\d]/g, "")) || 0;
     const cvNum = Number(n.commercialValue.replace(/[^\d]/g, "")) || 0;
+    const tenantIncomeNum = Number((n.tenantIncome || "").replace(/[^\d]/g, "")) || 0;
+    const codebtorIncomeNum = Number((n.codebtorIncome || "").replace(/[^\d]/g, "")) || 0;
     const months = Number(n.termMonths) || 0;
     // Fecha de fin = inicio + duración en meses (el contrato exige endDate).
     let endDate = "";
@@ -300,6 +303,7 @@ export default function NuevoPage() {
           ? (d.proxyDeclarationAcceptedAt ?? new Date().toISOString())
           : n.acting === "owner" ? undefined : d.proxyDeclarationAcceptedAt,
       hasSolidaryCoDebtor: n.hasCodebtor === "yes" ? true : n.hasCodebtor === "no" ? false : d.hasSolidaryCoDebtor,
+      ...(tenantIncomeNum > 0 ? { tenantMonthlyIncome: tenantIncomeNum } : {}),
       landlord: {
         ...d.landlord,
         fullName: n.name.trim() || d.landlord.fullName,
@@ -360,6 +364,7 @@ export default function NuevoPage() {
               city: n.codebtorCity.trim() || d.solidaryCoDebtor.city,
               email: n.codebtorEmail.trim() || d.solidaryCoDebtor.email,
               phone: n.codebtorPhone.trim() || d.solidaryCoDebtor.phone,
+              ...(codebtorIncomeNum > 0 ? { economicSupport: { ...d.solidaryCoDebtor.economicSupport, monthlyIncome: codebtorIncomeNum } } : {}),
             } : {}),
           }
         : d.solidaryCoDebtor,
@@ -1145,9 +1150,18 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               )}
             </div>
           )}
-          <label className="flex cursor-pointer items-center gap-2.5 text-sm text-slate-600">
-            <input type="checkbox" checked={a.noCommercialValue} onChange={(e) => setA({ ...a, noCommercialValue: e.target.checked })} className="h-5 w-5 accent-[#5646E5]" />
-            <span>No conozco el valor comercial — <b>acepto seguir sin validar el tope</b>.</span>
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={a.noCommercialValue}
+              onChange={(e) => { const v = e.target.checked; if (v && !a.noCommercialValue) void captureOathEvidence("property_no_cap_acknowledgement", party.draftId); setA({ ...a, noCommercialValue: v }); }}
+              className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]"
+            />
+            <span>
+              No conozco el valor comercial del inmueble. <b>Declaro bajo mi responsabilidad</b> que el canon no supera el
+              <b> 1% del valor comercial real</b> (Ley 820 de 2003) y asumo las consecuencias de excederlo; ArriendoSeguro
+              no valida el tope en este caso. Queda registrado con evidencia (fecha e IP).
+            </span>
           </label>
         </div>
       );
@@ -1173,6 +1187,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
       return a.tenantMode === "self" ? (
         <PartyFields
           docType={a.tenantDocType} docNumber={a.tenantDocNumber} city={a.tenantCity} email={a.tenantEmail} phone={a.tenantPhone} auth={a.tenantAuth}
+          income={a.tenantIncome} onIncome={(v) => setA({ ...a, tenantIncome: v })} rentReference={Number((a.canon || "").replace(/[^\d]/g, "")) || 0} who="el inquilino"
           authLabel="Declaro que tengo autorización del arrendatario para ingresar sus datos personales (Ley 1581 de 2012)."
           onChange={(patch) => { if (patch.auth && !a.tenantAuth) void captureOathEvidence("tenant_third_party_authorization", party.draftId); setA({ ...a, tenantDocType: patch.docType, tenantDocNumber: patch.docNumber, tenantCity: patch.city, tenantEmail: patch.email, tenantPhone: patch.phone, tenantAuth: patch.auth }); }}
         />
@@ -1237,6 +1252,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
           <InputMic autoFocus placeholder="Nombre del codeudor" value={a.codebtorName} onChange={(e) => setA({ ...a, codebtorName: e.target.value })} voice={(t) => setA({ ...a, codebtorName: t })} />
           <PartyFields
             docType={a.codebtorDocType} docNumber={a.codebtorDocNumber} city={a.codebtorCity} email={a.codebtorEmail} phone={a.codebtorPhone} auth={a.codebtorAuth}
+            income={a.codebtorIncome} onIncome={(v) => setA({ ...a, codebtorIncome: v })} rentReference={Number((a.canon || "").replace(/[^\d]/g, "")) || 0} who="el codeudor"
             authLabel="Declaro que tengo autorización del codeudor para ingresar sus datos personales (Ley 1581 de 2012)."
             onChange={(patch) => { if (patch.auth && !a.codebtorAuth) void captureOathEvidence("codebtor_third_party_authorization", party.draftId); setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth }); }}
           />
@@ -1374,8 +1390,9 @@ function chip(sel: boolean) {
 }
 
 type PartyPatch = { docType: string; docNumber: string; city: string; email: string; phone: string; auth: boolean };
-function PartyFields({ docType, docNumber, city, email, phone, auth, authLabel, onChange }: PartyPatch & { authLabel: string; onChange: (p: PartyPatch) => void }) {
+function PartyFields({ docType, docNumber, city, email, phone, auth, authLabel, income, onIncome, rentReference, who, onChange }: PartyPatch & { authLabel: string; income: string; onIncome: (v: string) => void; rentReference: number; who: "el inquilino" | "el codeudor"; onChange: (p: PartyPatch) => void }) {
   const base = { docType, docNumber, city, email, phone, auth };
+  const incomeNum = Number((income || "").replace(/[^\d]/g, "")) || 0;
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex flex-wrap gap-2.5">
@@ -1387,6 +1404,10 @@ function PartyFields({ docType, docNumber, city, email, phone, auth, authLabel, 
       <InputMic autoComplete="address-level2" placeholder="Ciudad" value={city} onChange={(e) => onChange({ ...base, city: e.target.value })} voice={(t) => onChange({ ...base, city: t })} />
       <InputMic type="email" autoComplete="email" placeholder="✉️ Correo" value={email} onChange={(e) => onChange({ ...base, email: e.target.value })} voice={(t) => onChange({ ...base, email: cleanEmail(t) })} />
       <InputMic type="tel" autoComplete="tel" placeholder="📱 Celular" value={phone} onChange={(e) => onChange({ ...base, phone: e.target.value })} voice={(t) => onChange({ ...base, phone: onlyDigits(t) })} />
+      <div>
+        <InputMic inputMode="numeric" placeholder="💵 Ingreso mensual aproximado" value={income} onChange={(e) => onIncome(onlyDigits(e.target.value))} voice={(t) => onIncome(onlyDigits(t))} />
+        <IncomeSuggestion rentReference={rentReference} income={incomeNum} who={who} />
+      </div>
       <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
         <input type="checkbox" checked={auth} onChange={(e) => onChange({ ...base, auth: e.target.checked })} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
         <span>{authLabel}</span>

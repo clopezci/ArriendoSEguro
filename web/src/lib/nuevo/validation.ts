@@ -53,6 +53,21 @@ function docError(type: string, number: string): string | null {
   return r.ok ? null : r.message;
 }
 
+const toNum = (v: string) => Number((v || "").replace(/[^\d]/g, "")) || 0;
+
+/**
+ * Ingreso de la persona frente al canon. BLOQUEANTE si el ingreso declarado es
+ * INFERIOR al canon (no podría pagar el arriendo). El aviso de "≥2× sugerido"
+ * (warning ámbar / verde) es solo orientación en la UI y no bloquea.
+ */
+function incomeError(canon: string, income: string, who: string): string | null {
+  const rent = toNum(canon);
+  const inc = toNum(income);
+  if (inc <= 0) return `Indica el ingreso mensual ${who} (para evaluar solvencia).`;
+  if (rent > 0 && inc < rent) return `El ingreso ${who} es inferior al canon. Corrígelo para continuar.`;
+  return null;
+}
+
 export type Answers = {
   contractType: string;
   // Arrendador
@@ -66,10 +81,10 @@ export type Answers = {
   startDate: string; termMonths: string; paymentDay: string;
   // Inquilino
   tenantMode: "self" | "invite"; tenantName: string;
-  tenantDocType: string; tenantDocNumber: string; tenantCity: string; tenantEmail: string; tenantPhone: string; tenantAuth: boolean;
+  tenantDocType: string; tenantDocNumber: string; tenantCity: string; tenantEmail: string; tenantPhone: string; tenantAuth: boolean; tenantIncome: string;
   // Codeudor
   hasCodebtor: "" | "yes" | "no"; codebtorName: string; codebtorMode: "self" | "invite" | "tenant";
-  codebtorDocType: string; codebtorDocNumber: string; codebtorCity: string; codebtorEmail: string; codebtorPhone: string; codebtorAuth: boolean;
+  codebtorDocType: string; codebtorDocNumber: string; codebtorCity: string; codebtorEmail: string; codebtorPhone: string; codebtorAuth: boolean; codebtorIncome: string;
   // Servicios y cláusulas
   utilitiesParty: "" | "arrendatario" | "arrendador" | "compartido";
   clauses: string[]; clauseOther: string;
@@ -131,6 +146,7 @@ export function validateStep(kind: string, a: Answers): string | null {
       // + evidencia); aquí no exigimos nada y se puede continuar.
       if (a.tenantMode === "invite") return null;
       return docError(a.tenantDocType, a.tenantDocNumber) ?? cityError(a.tenantCity) ?? emailError(a.tenantEmail) ?? phoneError(a.tenantPhone)
+        ?? incomeError(a.canon, a.tenantIncome, "del arrendatario")
         ?? (a.tenantAuth ? null : "Confirma que tienes autorización del arrendatario para ingresar sus datos.");
     case "codebtor":
       // Este paso decide si hay codeudor y, si sí, QUIÉN ingresa sus datos. El
@@ -144,6 +160,7 @@ export function validateStep(kind: string, a: Answers): string | null {
       // luego importa. Solo en "self" pedimos nombre + documento + contacto.
       if (a.codebtorMode === "invite" || a.codebtorMode === "tenant") return null;
       return nameError(a.codebtorName) ?? docError(a.codebtorDocType, a.codebtorDocNumber) ?? cityError(a.codebtorCity) ?? emailError(a.codebtorEmail) ?? phoneError(a.codebtorPhone)
+        ?? incomeError(a.canon, a.codebtorIncome, "del codeudor")
         ?? (a.codebtorAuth ? null : "Confirma que tienes autorización del codeudor para ingresar sus datos.");
     case "credit":
       return null; // opcional: herramientas externas de verificación
