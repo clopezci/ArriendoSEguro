@@ -122,6 +122,9 @@ export function validateStep(kind: string, a: Answers): string | null {
       return null;
     }
     case "tenant":
+      // Ahora este paso elige el MODO primero. Si el dueño los ingresa, pedimos
+      // el nombre aquí; por invitación no hace falta (la persona lo pone al llenar).
+      if (a.tenantMode === "invite") return null;
       return nameError(a.tenantName);
     case "tenantfull":
       // Por invitación, la persona completa sus propios datos (con OTP + juramento
@@ -130,15 +133,17 @@ export function validateStep(kind: string, a: Answers): string | null {
       return docError(a.tenantDocType, a.tenantDocNumber) ?? cityError(a.tenantCity) ?? emailError(a.tenantEmail) ?? phoneError(a.tenantPhone)
         ?? (a.tenantAuth ? null : "Confirma que tienes autorización del arrendatario para ingresar sus datos.");
     case "codebtor":
+      // Este paso decide si hay codeudor y, si sí, QUIÉN ingresa sus datos. El
+      // nombre y los datos se piden en el siguiente paso solo cuando el dueño los
+      // ingresa (self); por invitación o gestión del inquilino no se piden aquí.
       if (a.hasCodebtor === "") return "Elige si el contrato tendrá codeudor.";
-      if (a.hasCodebtor === "yes") return nameError(a.codebtorName);
       return null;
     case "codebtorfull":
       // "invite": el codeudor completa por su enlace. "tenant": lo gestiona el
-      // inquilino desde su propia invitación (invitarlo o ingresar sus datos con
-      // autorización). En ambos casos el dueño puede continuar y luego importar.
+      // inquilino desde su propia invitación. En ambos casos el dueño continúa y
+      // luego importa. Solo en "self" pedimos nombre + documento + contacto.
       if (a.codebtorMode === "invite" || a.codebtorMode === "tenant") return null;
-      return docError(a.codebtorDocType, a.codebtorDocNumber) ?? cityError(a.codebtorCity) ?? emailError(a.codebtorEmail) ?? phoneError(a.codebtorPhone)
+      return nameError(a.codebtorName) ?? docError(a.codebtorDocType, a.codebtorDocNumber) ?? cityError(a.codebtorCity) ?? emailError(a.codebtorEmail) ?? phoneError(a.codebtorPhone)
         ?? (a.codebtorAuth ? null : "Confirma que tienes autorización del codeudor para ingresar sus datos.");
     case "credit":
       return null; // opcional: herramientas externas de verificación

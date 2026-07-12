@@ -71,11 +71,11 @@ const QUESTIONS: Q[] = [
   { id: "addr", block: "Datos del inmueble", prompt: "¿Dónde queda el inmueble?", hint: "Dirección, ciudad y departamento que irán en el contrato.", kind: "addr", basic: true },
   { id: "registry", block: "Datos del inmueble", prompt: "Matrícula y tipo del inmueble", hint: "La matrícula da certeza jurídica. Si no la tienes a la mano, puedes seguir.", kind: "registry", basic: true },
   { id: "canon", block: "Datos del inmueble", prompt: "¿Cuál es el canon mensual?", hint: "Validamos el tope legal (Ley 820).", kind: "canon", ph: "$ 1.500.000", basic: true },
-  { id: "tenant", block: "Datos del inquilino", prompt: "¿Quién será el arrendatario?", hint: "Lo llenas tú o se lo pides a él.", kind: "tenant", basic: true },
-  { id: "tenantfull", block: "Datos del inquilino", prompt: "Datos del arrendatario", hint: "Los ingresas tú, o le envías un enlace para que los complete él mismo.", kind: "tenantfull", basic: false },
+  { id: "tenant", block: "Datos del inquilino", prompt: "¿Quién ingresa los datos del arrendatario?", hint: "Elige primero: los ingresas tú, o le envías un enlace para que los complete él mismo.", kind: "tenant", basic: true },
+  { id: "tenantfull", block: "Datos del inquilino", prompt: "Datos del arrendatario", hint: "Documento, ciudad y contacto — o el enlace de invitación.", kind: "tenantfull", basic: false },
   { id: "lease", block: "Términos del arriendo", prompt: "¿Cuándo y cómo se paga?", hint: "Inicio, duración y día de pago del canon.", kind: "lease", basic: false },
-  { id: "codebtor", block: "¿Codeudor?", prompt: "¿Tendrá codeudor solidario?", hint: "Opcional. Añade respaldo si lo necesitas.", kind: "codebtor", basic: false },
-  { id: "codebtorfull", block: "Codeudor solidario", prompt: "Datos del codeudor", hint: "Documento, ciudad y contacto.", kind: "codebtorfull", basic: false, skipWhen: (a) => a.hasCodebtor !== "yes" },
+  { id: "codebtor", block: "¿Codeudor?", prompt: "¿Tendrá codeudor solidario?", hint: "Opcional. Si sí, eliges quién ingresa sus datos.", kind: "codebtor", basic: false },
+  { id: "codebtorfull", block: "Codeudor solidario", prompt: "Datos del codeudor", hint: "Documento, ciudad y contacto — o el enlace de invitación.", kind: "codebtorfull", basic: false, skipWhen: (a) => a.hasCodebtor !== "yes" },
   { id: "credit", block: "Verificación (opcional)", prompt: "¿Quieres verificar el historial?", hint: "Herramientas externas para evaluar al inquilino y codeudor. Es opcional.", kind: "credit", basic: false },
   { id: "utils", block: "Servicios y cláusulas", prompt: "¿Quién paga los servicios públicos?", hint: "Agua, luz, gas e internet del inmueble.", kind: "utils", basic: false },
   { id: "clauses", block: "Servicios y cláusulas", prompt: "¿Añades cláusulas especiales?", hint: "Opcional. Toca las que apliquen; puedes seguir sin ninguna.", kind: "clauses", basic: false },
@@ -911,6 +911,7 @@ export default function NuevoPage() {
                     onKeyDown={(e) => { if (e.key === "Enter") void askAI(); }}
                     placeholder="¿Dudas de este paso? Pregúntame…"
                     className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400" />
+                  <MicButton label="Dictar tu pregunta" onResult={(t) => setAskText((prev) => (prev ? `${prev} ${t}` : t))} />
                   <button type="button" onClick={() => void askAI()} disabled={askBusy || !askText.trim()} className="rounded-lg bg-violet-100 px-3 py-1.5 text-xs font-semibold text-violet-700 disabled:opacity-50">
                     {askBusy ? "…" : "Preguntar"}
                   </button>
@@ -1138,29 +1139,31 @@ function Field({ q, a, setA, docs, party }: { q: Q; a: Answers; setA: (a: Answer
     }
     case "tenant":
       return (
-        <>
-          <InputMic autoFocus placeholder="Nombre del arrendatario" value={a.tenantName} onChange={(e) => setA({ ...a, tenantName: e.target.value })} voice={(t) => setA({ ...a, tenantName: t })} />
-          <p className="mt-2 text-xs text-slate-500">En el siguiente paso eliges si <b>ingresas tú</b> sus datos o le <b>envías un enlace</b> para que los complete él mismo (con su firma y evidencia).</p>
-        </>
-      );
-    case "tenantfull":
-      return (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-2.5">
             <button type="button" onClick={() => setA({ ...a, tenantMode: "self" })} className={chip(a.tenantMode === "self")}>Los ingreso yo</button>
             <button type="button" onClick={() => setA({ ...a, tenantMode: "invite" })} className={chip(a.tenantMode === "invite")}>Se lo pido a él/ella</button>
           </div>
           {a.tenantMode === "self" ? (
-            <PartyFields
-              docType={a.tenantDocType} docNumber={a.tenantDocNumber} city={a.tenantCity} email={a.tenantEmail} phone={a.tenantPhone} auth={a.tenantAuth}
-              authLabel="Declaro que tengo autorización del arrendatario para ingresar sus datos personales (Ley 1581 de 2012)."
-              onChange={(patch) => { if (patch.auth && !a.tenantAuth) void captureOathEvidence("tenant_third_party_authorization", party.draftId); setA({ ...a, tenantDocType: patch.docType, tenantDocNumber: patch.docNumber, tenantCity: patch.city, tenantEmail: patch.email, tenantPhone: patch.phone, tenantAuth: patch.auth }); }}
-            />
+            <>
+              <InputMic autoFocus placeholder="Nombre del arrendatario" value={a.tenantName} onChange={(e) => setA({ ...a, tenantName: e.target.value })} voice={(t) => setA({ ...a, tenantName: t })} />
+              <p className="text-xs text-slate-500">En el siguiente paso completas su documento y contacto.</p>
+            </>
           ) : (
-            <PartyInvitePanel contractDraftId={party.draftId} role="tenant" roleLabel="Arrendatario (inquilino)" inviterName={party.inviterName}
-              onImport={(p) => party.onImport("tenant", p)} />
+            <p className="text-xs text-slate-500">En el siguiente paso le envías el <b>enlace</b> (correo o WhatsApp) para que complete sus datos con su firma y evidencia.</p>
           )}
         </div>
+      );
+    case "tenantfull":
+      return a.tenantMode === "self" ? (
+        <PartyFields
+          docType={a.tenantDocType} docNumber={a.tenantDocNumber} city={a.tenantCity} email={a.tenantEmail} phone={a.tenantPhone} auth={a.tenantAuth}
+          authLabel="Declaro que tengo autorización del arrendatario para ingresar sus datos personales (Ley 1581 de 2012)."
+          onChange={(patch) => { if (patch.auth && !a.tenantAuth) void captureOathEvidence("tenant_third_party_authorization", party.draftId); setA({ ...a, tenantDocType: patch.docType, tenantDocNumber: patch.docNumber, tenantCity: patch.city, tenantEmail: patch.email, tenantPhone: patch.phone, tenantAuth: patch.auth }); }}
+        />
+      ) : (
+        <PartyInvitePanel contractDraftId={party.draftId} role="tenant" roleLabel="Arrendatario (inquilino)" inviterName={party.inviterName}
+          onImport={(p) => party.onImport("tenant", p)} />
       );
     case "lease": {
       const canonN = Number((a.canon || "").replace(/[^\d]/g, "")) || 0;
@@ -1189,38 +1192,46 @@ function Field({ q, a, setA, docs, party }: { q: Q; a: Answers; setA: (a: Answer
     }
     case "codebtor":
       return (
-        <>
-          <div className="mb-3 flex flex-wrap gap-2.5">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-2.5">
             <button type="button" onClick={() => setA({ ...a, hasCodebtor: "yes" })} className={chip(a.hasCodebtor === "yes")}>Sí, con codeudor</button>
             <button type="button" onClick={() => setA({ ...a, hasCodebtor: "no" })} className={chip(a.hasCodebtor === "no")}>No</button>
           </div>
           {a.hasCodebtor === "yes" && (
-            <InputMic autoFocus placeholder="Nombre del codeudor" value={a.codebtorName} onChange={(e) => setA({ ...a, codebtorName: e.target.value })} voice={(t) => setA({ ...a, codebtorName: t })} />
-          )}
-        </>
-      );
-    case "codebtorfull":
-      return (
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap gap-2.5">
-            <button type="button" onClick={() => setA({ ...a, codebtorMode: "self" })} className={chip(a.codebtorMode === "self")}>Los ingreso yo</button>
-            <button type="button" onClick={() => setA({ ...a, codebtorMode: "invite" })} className={chip(a.codebtorMode === "invite")}>Se lo pido a él/ella</button>
-            <button type="button" onClick={() => setA({ ...a, codebtorMode: "tenant" })} className={chip(a.codebtorMode === "tenant")}>Lo gestiona el inquilino</button>
-          </div>
-          {a.codebtorMode === "self" ? (
-            <PartyFields
-              docType={a.codebtorDocType} docNumber={a.codebtorDocNumber} city={a.codebtorCity} email={a.codebtorEmail} phone={a.codebtorPhone} auth={a.codebtorAuth}
-              authLabel="Declaro que tengo autorización del codeudor para ingresar sus datos personales (Ley 1581 de 2012)."
-              onChange={(patch) => { if (patch.auth && !a.codebtorAuth) void captureOathEvidence("codebtor_third_party_authorization", party.draftId); setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth }); }}
-            />
-          ) : a.codebtorMode === "tenant" ? (
-            <CodebtorViaTenantPanel contractDraftId={party.draftId} tenantInvited={a.tenantMode === "invite"}
-              onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
-          ) : (
-            <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
-              onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
+            <>
+              <p className="text-sm font-medium text-slate-600">¿Quién ingresa sus datos?</p>
+              <div className="flex flex-wrap gap-2.5">
+                <button type="button" onClick={() => setA({ ...a, codebtorMode: "self" })} className={chip(a.codebtorMode === "self")}>Los ingreso yo</button>
+                <button type="button" onClick={() => setA({ ...a, codebtorMode: "invite" })} className={chip(a.codebtorMode === "invite")}>Se lo pido a él/ella</button>
+                <button type="button" onClick={() => setA({ ...a, codebtorMode: "tenant" })} className={chip(a.codebtorMode === "tenant")}>Lo gestiona el inquilino</button>
+              </div>
+              <p className="text-xs text-slate-500">
+                {a.codebtorMode === "self"
+                  ? "En el siguiente paso ingresas su nombre, documento y contacto."
+                  : a.codebtorMode === "tenant"
+                  ? "El inquilino lo gestionará desde su invitación; tú solo esperas a que quede listo."
+                  : "En el siguiente paso le envías el enlace para que complete sus datos."}
+              </p>
+            </>
           )}
         </div>
+      );
+    case "codebtorfull":
+      return a.codebtorMode === "self" ? (
+        <div className="flex flex-col gap-3">
+          <InputMic autoFocus placeholder="Nombre del codeudor" value={a.codebtorName} onChange={(e) => setA({ ...a, codebtorName: e.target.value })} voice={(t) => setA({ ...a, codebtorName: t })} />
+          <PartyFields
+            docType={a.codebtorDocType} docNumber={a.codebtorDocNumber} city={a.codebtorCity} email={a.codebtorEmail} phone={a.codebtorPhone} auth={a.codebtorAuth}
+            authLabel="Declaro que tengo autorización del codeudor para ingresar sus datos personales (Ley 1581 de 2012)."
+            onChange={(patch) => { if (patch.auth && !a.codebtorAuth) void captureOathEvidence("codebtor_third_party_authorization", party.draftId); setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth }); }}
+          />
+        </div>
+      ) : a.codebtorMode === "tenant" ? (
+        <CodebtorViaTenantPanel contractDraftId={party.draftId} tenantInvited={a.tenantMode === "invite"}
+          onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
+      ) : (
+        <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
+          onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
       );
     case "credit":
       return (
