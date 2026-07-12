@@ -21,6 +21,7 @@ import { MicButton } from "@/components/nuevo/mic-button";
 import { ExpressRegister } from "@/components/nuevo/express-register";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
 import { CodebtorViaTenantPanel } from "@/components/contracts/codebtor-via-tenant-panel";
+import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-owner-list";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
 /**
@@ -1240,12 +1241,18 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
             onChange={(patch) => { if (patch.auth && !a.codebtorAuth) void captureOathEvidence("codebtor_third_party_authorization", party.draftId); setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth }); }}
           />
         </div>
-      ) : a.codebtorMode === "tenant" ? (
-        <CodebtorViaTenantPanel contractDraftId={party.draftId} tenantInvited={a.tenantMode === "invite"}
-          onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
       ) : (
-        <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
-          onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
+        <div className="flex flex-col gap-3">
+          {a.codebtorMode === "tenant" ? (
+            <CodebtorViaTenantPanel contractDraftId={party.draftId} tenantInvited={a.tenantMode === "invite"}
+              onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
+          ) : (
+            <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
+              onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
+          )}
+          {/* El dueño ve los documentos que el codeudor subió por su enlace. */}
+          <InviteSupportsOwnerList contractDraftId={party.draftId} role="solidaryCoDebtor" title="Documentos que subió el codeudor" />
+        </div>
       );
     case "credit":
       return (
@@ -1342,6 +1349,8 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
             </div>
           )}
           <p className="mt-1 text-xs text-slate-500">El enlace es único de este contrato: el inquilino completa sus datos y sube documentos. También puedes elegir “los subo yo”.</p>
+          {/* El dueño ve aquí lo que el inquilino ya subió por su enlace (se actualiza solo). */}
+          <InviteSupportsOwnerList contractDraftId={party.draftId} role="tenant" title="Documentos que subió el inquilino" />
         </div>
       );
   }
