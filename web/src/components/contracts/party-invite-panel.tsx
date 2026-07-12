@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import type { InviteAttestation, PartyDraft } from "@/features/contracts/draft-types";
 
 type Mode = "self" | "invite";
@@ -35,6 +36,7 @@ export function PartyInvitePanel({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
+  const [phone, setPhone] = useState("");
   const [currentInviteeEmail, setCurrentInviteeEmail] = useState("");
 
   const refreshStatus = useCallback(async () => {
@@ -238,10 +240,36 @@ export function PartyInvitePanel({
           )}
 
           {msg && <p className="text-xs text-slate-700">{msg}</p>}
+
+          {/* Enviar también por WhatsApp: el usuario elige el medio. */}
+          {inviteUrl && status !== "completed" && (
+            <div className="rounded-2xl border-2 border-[#25D366]/40 bg-[#25D366]/[0.06] p-3">
+              <p className="text-sm font-bold text-[#0B6E4E]">💬 Enviar el enlace por WhatsApp</p>
+              <p className="mt-0.5 text-[11px] text-slate-600">Además del correo, puedes mandarle el enlace por WhatsApp. El código de verificación igual le llega al correo.</p>
+              <div className="mt-2 flex flex-wrap items-end gap-2">
+                <input
+                  inputMode="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+                  placeholder="📱 Celular (ej. 3001234567)"
+                  className="w-52 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+                <a
+                  href={buildWhatsAppUrl(phone, `Hola 👋 Te comparto el enlace para completar tus datos del contrato de arriendo en ArriendoSeguro: ${inviteUrl}`)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`rounded-xl px-4 py-2 text-sm font-bold text-white transition ${phone.length >= 7 ? "bg-[#25D366] hover:brightness-105" : "pointer-events-none bg-slate-300"}`}
+                >
+                  Enviar por WhatsApp
+                </a>
+              </div>
+            </div>
+          )}
+
           {inviteUrl && (
-            <div className="rounded-lg border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900">
-              <p className="font-semibold">Enlace de la invitación (para probar / compartir):</p>
-              <a href={inviteUrl} target="_blank" rel="noreferrer" className="mt-0.5 block break-all font-mono text-violet-800 underline">
+            <div className="rounded-2xl border border-slate-200 bg-white/85 p-2 text-[11px] text-slate-600">
+              <p className="font-semibold">Enlace de la invitación (copiar / compartir):</p>
+              <a href={inviteUrl} target="_blank" rel="noreferrer" className="mt-0.5 block break-all font-mono text-[#5646E5] underline">
                 {inviteUrl}
               </a>
             </div>
