@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { DeleteContractModal } from "@/components/nuevo/delete-contract-modal";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
@@ -17,14 +18,16 @@ export default function GestionarContratosPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [drafts, setDrafts] = useState<ContractDraft[] | null>(null);
+  const [deleting, setDeleting] = useState<ContractDraft | null>(null);
 
-  useEffect(() => {
-    // localStorage: solo en cliente.
+  const load = useCallback(() => {
     const all = getAllDrafts()
       .filter((d) => !user || d.userId === user.uid)
       .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime());
     setDrafts(all);
   }, [user]);
+
+  useEffect(() => { load(); }, [load]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#F5F3EF] text-[#17151F]">
@@ -82,6 +85,7 @@ export default function GestionarContratosPage() {
                       <button onClick={() => router.push(`/nuevo/gestionar/${d.id}`)} className="rounded-xl border border-[#12B886] bg-[#12B886]/10 px-5 py-2.5 text-sm font-bold text-[#0B7A55] transition hover:bg-[#12B886]/20">Gestionar (posventa)</button>
                     )}
                     <button onClick={() => router.push(`/dashboard/contracts/${d.id}/contract-type`)} className="rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-medium text-slate-500 transition hover:border-[#5646E5]">Editar datos</button>
+                    <button onClick={() => setDeleting(d)} className="rounded-xl border border-rose-200 px-4 py-2.5 text-xs font-semibold text-rose-600 transition hover:border-rose-400 hover:bg-rose-50">🗑️ Eliminar</button>
                   </div>
                 </motion.div>
               );
@@ -92,6 +96,15 @@ export default function GestionarContratosPage() {
           </div>
         )}
       </div>
+
+      {deleting && (
+        <DeleteContractModal
+          contractId={deleting.id}
+          ownerName={(deleting.landlord?.fullName || "").trim()}
+          onClose={() => setDeleting(null)}
+          onDeleted={() => { setDeleting(null); load(); }}
+        />
+      )}
     </div>
   );
 }
