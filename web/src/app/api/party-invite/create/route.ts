@@ -14,7 +14,9 @@ export const runtime = "nodejs";
 const schema = z.object({
   contractDraftId: z.string().min(1),
   role: z.string(),
-  inviteeEmail: z.string().email(),
+  // El correo es OPCIONAL: si el dueño envía por WhatsApp puede no tenerlo. En
+  // ese caso la persona ingresa su correo al abrir el enlace (para el código).
+  inviteeEmail: z.string().email().or(z.literal("")).optional(),
   inviteeName: z.string().max(120).optional(),
   inviterName: z.string().max(120).optional(),
 });
@@ -42,7 +44,7 @@ export async function POST(request: Request) {
   const invite = await createInvite(firestore, {
     contractDraftId: parsed.data.contractDraftId,
     role: parsed.data.role,
-    inviteeEmail: parsed.data.inviteeEmail,
+    inviteeEmail: parsed.data.inviteeEmail ?? "",
     inviteeName: parsed.data.inviteeName ?? "",
     inviterUid: auth.user.uid,
     inviterEmail: auth.user.email ?? "",
@@ -52,24 +54,28 @@ export async function POST(request: Request) {
   const base = appConfig.publicUrl.replace(/\/$/, "");
   const invitationUrl = `${base}/invitacion/${invite.token}`;
   let emailStatus: "sent" | "failed" | "mock" | "skipped" = "skipped";
-  try {
-    const tpl = inviteCounterpartyEmail({
-      inviterName: invite.inviterName,
-      contractLabel: "un contrato de arrendamiento",
-      invitationUrl,
-    });
-    const r = await sendEmail({
-      to: invite.inviteeEmail,
-      subject: tpl.subject,
-      html: tpl.html,
-      text: tpl.text,
-      templateCode: "inviteCounterpartyEmail",
-      relatedEntityType: "party_invite",
-      relatedEntityId: invite.token,
-    });
-    emailStatus = r.status;
-  } catch {
-    emailStatus = "failed";
+  // Solo enviamos correo si hay correo (por WhatsApp puede no haberlo; la persona
+  // lo ingresará al abrir el enlace para recibir el código).
+  if (invite.inviteeEmail) {
+    try {
+      const tpl = inviteCounterpartyEmail({
+        inviterName: invite.inviterName,
+        contractLabel: "un contrato de arrendamiento",
+        invitationUrl,
+      });
+      const r = await sendEmail({
+        to: invite.inviteeEmail,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
+        templateCode: "inviteCounterpartyEmail",
+        relatedEntityType: "party_invite",
+        relatedEntityId: invite.token,
+      });
+      emailStatus = r.status;
+    } catch {
+      emailStatus = "failed";
+    }
   }
 
   // Devolvemos SIEMPRE el enlace: el dueño está autenticado y es su propio

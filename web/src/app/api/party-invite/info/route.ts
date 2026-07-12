@@ -35,6 +35,7 @@ export async function GET(request: Request) {
     roleLabel: partyRoleLabel(invite.role),
     inviterName: invite.inviterName,
     inviteeName: invite.inviteeName,
+    hasEmail: Boolean((invite.inviteeEmail ?? "").trim()),
     emailMasked: maskEmail(invite.inviteeEmail),
   });
 }

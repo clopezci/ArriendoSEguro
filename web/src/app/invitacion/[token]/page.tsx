@@ -15,6 +15,7 @@ type Info = {
   roleLabel?: string;
   inviterName?: string;
   inviteeName?: string;
+  hasEmail?: boolean;
   emailMasked?: string;
 };
 
@@ -25,6 +26,9 @@ export default function InvitacionPage() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [info, setInfo] = useState<Info | null>(null);
   const [code, setCode] = useState("");
+  // Correo que ingresa la persona cuando el enlace llegó por WhatsApp (sin correo
+  // pre-registrado): sirve para enviarle el código de verificación.
+  const [otpEmail, setOtpEmail] = useState("");
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [party, setParty] = useState<PartyDraft>({});
@@ -66,7 +70,9 @@ export default function InvitacionPage() {
       const res = await fetch("/api/party-invite/request-otp", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ token }),
+        // Si la invitación no traía correo (llegó por WhatsApp), mandamos el que
+        // escribió la persona para que le llegue el código.
+        body: JSON.stringify({ token, ...(otpEmail.includes("@") ? { email: otpEmail.trim() } : {}) }),
       });
       const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
       setMsg(res.ok && j.success ? "Te enviamos un código a tu correo." : j.errors?.[0]?.message ?? "No se pudo enviar el código.");
@@ -75,7 +81,7 @@ export default function InvitacionPage() {
     } finally {
       setBusy(false);
     }
-  }, [token]);
+  }, [token, otpEmail]);
 
   async function verifyOtp() {
     setBusy(true);
@@ -183,12 +189,24 @@ export default function InvitacionPage() {
         <section className="space-y-3 rounded-3xl border border-slate-200 bg-white/95 shadow-[0_10px_30px_rgba(86,70,229,0.08)] p-4">
           <p className="text-sm text-slate-700">
             Para validar que eres tú, te enviaremos un <strong>código</strong> a tu correo
-            {info?.emailMasked ? ` (${info.emailMasked})` : ""}.
+            {info?.hasEmail && info?.emailMasked ? ` (${info.emailMasked})` : ""}.
           </p>
+          {!info?.hasEmail && (
+            <label className="block text-sm">
+              <span className="mb-1 block text-slate-700">Tu correo (para recibir el código)</span>
+              <input
+                type="email"
+                value={otpEmail}
+                onChange={(e) => setOtpEmail(e.target.value)}
+                placeholder="tucorreo@ejemplo.com"
+                className="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </label>
+          )}
           <button
             type="button"
             onClick={() => void requestOtp()}
-            disabled={busy}
+            disabled={busy || (!info?.hasEmail && !otpEmail.includes("@"))}
             className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {busy ? "Enviando…" : "Enviar código a mi correo"}
@@ -350,9 +368,11 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
 
   // Crea la invitación del codeudor y devuelve su enlace. El correo con el
   // código (OTP) se envía desde el servidor; `channel` solo cambia el mensaje.
-  async function ensureCodebtorInvite(): Promise<string | null> {
-    if (!email.includes("@")) {
-      setMsg("Ingresa un correo válido del codeudor (allí le llega el código de verificación).");
+  async function ensureCodebtorInvite(channel: "email" | "whatsapp"): Promise<string | null> {
+    // Por correo se necesita el correo; por WhatsApp no (el codeudor lo ingresa
+    // al abrir el enlace para recibir el código). Envío a elección del usuario.
+    if (channel === "email" && !email.includes("@")) {
+      setMsg("Para enviar por correo, escribe un correo válido del codeudor.");
       return null;
     }
     setBusy(true);
@@ -386,11 +406,11 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
   }
 
   async function sendByEmail() {
-    await ensureCodebtorInvite();
+    await ensureCodebtorInvite("email");
   }
 
   async function sendByWhatsApp() {
-    const url = await ensureCodebtorInvite();
+    const url = await ensureCodebtorInvite("whatsapp");
     if (url) {
       const msgTxt = `Hola 👋 Te comparto el enlace para completar tus datos como codeudor del contrato de arriendo en ArriendoSeguro: ${url}`;
       window.open(buildWhatsAppUrl(phone, msgTxt), "_blank", "noopener,noreferrer");
@@ -523,7 +543,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
         <div className="mt-3 rounded-2xl border border-slate-200 bg-white/70 p-3">
           <div className="flex flex-wrap items-end gap-2">
             <label className="text-xs text-slate-700">
-              <span className="mb-1 block">Correo del codeudor <span className="text-rose-500">*</span></span>
+              <span className="mb-1 block">Correo del codeudor</span>
               <input
                 type="email"
                 value={email}
@@ -553,7 +573,8 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
             </label>
           </div>
           <p className="mt-2 text-[11px] text-slate-500">
-            El <b>código de verificación</b> siempre llega al <b>correo</b>. Elige cómo enviarle el enlace:
+            Elige cómo enviarle el enlace. <b>Por correo</b>: escribe su correo. <b>Por WhatsApp</b>: basta el
+            celular — el codeudor escribirá su correo al abrir el enlace para recibir el <b>código</b>.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
@@ -566,7 +587,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
             </button>
             <button
               type="button"
-              disabled={busy || !email.includes("@") || phone.length < 7}
+              disabled={busy || phone.length < 7}
               onClick={() => void sendByWhatsApp()}
               className="rounded-xl bg-[#25D366] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105 disabled:opacity-50"
               title={phone.length < 7 ? "Escribe el celular para enviar por WhatsApp" : undefined}

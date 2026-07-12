@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getInvite } from "@/lib/party-invite/inviteStore";
-import { PARTY_INVITES_COLLECTION, isInviteUsable } from "@/domain/party-invite/partyInvite";
+import { PARTY_INVITES_COLLECTION, isInviteUsable, normalizeEmail } from "@/domain/party-invite/partyInvite";
 import {
   generateSixDigitOtpCode,
   hashOtpForSignature,
@@ -15,7 +15,12 @@ import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequ
 
 export const runtime = "nodejs";
 
-const schema = z.object({ token: z.string().min(8) });
+const schema = z.object({
+  token: z.string().min(8),
+  // Correo que ingresa la persona cuando el enlace se envió por WhatsApp (sin
+  // correo pre-registrado). Se guarda en la invitación y se le envía el código.
+  email: z.string().email().optional(),
+});
 
 /** Envía un código (OTP) al correo del invitado para validar su identidad. */
 export async function POST(request: Request) {
@@ -33,6 +38,18 @@ export async function POST(request: Request) {
   const invite = await getInvite(firestore, parsed.data.token);
   if (!isInviteUsable(invite, Date.now()) || !invite) {
     return NextResponse.json({ success: false, errors: [{ field: "token", message: "El enlace no es válido o expiró." }] }, { status: 410 });
+  }
+
+  // Destino del código: el correo pre-registrado o, si no hay (invitación por
+  // WhatsApp), el que ingrese la persona ahora. Sin correo no hay a dónde enviarlo.
+  const existingEmail = (invite.inviteeEmail ?? "").trim();
+  const providedEmail = normalizeEmail(parsed.data.email ?? "");
+  const targetEmail = existingEmail || providedEmail;
+  if (!targetEmail) {
+    return NextResponse.json(
+      { success: false, errors: [{ field: "email", message: "Escribe tu correo para enviarte el código de verificación." }] },
+      { status: 422 },
+    );
   }
 
   const last = Date.parse(invite.otpLastSentAt ?? "");
@@ -53,6 +70,9 @@ export async function POST(request: Request) {
       otpExpiresAt: new Date(Date.now() + SIGNATURE_OTP_TTL_MS).toISOString(),
       otpVerifyAttempts: 0,
       otpLastSentAt: nowIso,
+      // Si la invitación no tenía correo (llegó por WhatsApp), guardamos el que
+      // ingresó la persona para futuros reenvíos y notificaciones.
+      ...(existingEmail ? {} : { inviteeEmail: targetEmail }),
     },
     { merge: true },
   );
@@ -64,7 +84,7 @@ export async function POST(request: Request) {
       minutesValid: Math.round(SIGNATURE_OTP_TTL_MS / 60000),
     });
     await sendEmail({
-      to: invite.inviteeEmail,
+      to: targetEmail,
       subject: tpl.subject,
       html: tpl.html,
       text: tpl.text,

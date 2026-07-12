@@ -12,7 +12,9 @@ export const runtime = "nodejs";
 
 const schema = z.object({
   tenantToken: z.string().min(8),
-  inviteeEmail: z.string().email(),
+  // Opcional: por WhatsApp puede no haber correo; el codeudor lo ingresa al
+  // abrir el enlace para recibir el código de verificación.
+  inviteeEmail: z.string().email().or(z.literal("")).optional(),
   inviteeName: z.string().max(120).optional(),
 });
 
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
   const invite = await createInvite(firestore, {
     contractDraftId: tenantInvite.contractDraftId,
     role: "solidaryCoDebtor",
-    inviteeEmail: parsed.data.inviteeEmail,
+    inviteeEmail: parsed.data.inviteeEmail ?? "",
     inviteeName: parsed.data.inviteeName ?? "",
     inviterUid: tenantInvite.inviterUid, // el dueño: para que él lo importe
     inviterEmail: tenantInvite.inviterEmail,
@@ -69,24 +71,26 @@ export async function POST(request: Request) {
   const base = appConfig.publicUrl.replace(/\/$/, "");
   const invitationUrl = `${base}/invitacion/${invite.token}`;
   let emailStatus: "sent" | "failed" | "mock" | "skipped" = "skipped";
-  try {
-    const tpl = inviteCounterpartyEmail({
-      inviterName: tenantName,
-      contractLabel: "un contrato de arrendamiento (como codeudor solidario)",
-      invitationUrl,
-    });
-    const r = await sendEmail({
-      to: invite.inviteeEmail,
-      subject: tpl.subject,
-      html: tpl.html,
-      text: tpl.text,
-      templateCode: "inviteCounterpartyEmail",
-      relatedEntityType: "party_invite",
-      relatedEntityId: invite.token,
-    });
-    emailStatus = r.status;
-  } catch {
-    emailStatus = "failed";
+  if (invite.inviteeEmail) {
+    try {
+      const tpl = inviteCounterpartyEmail({
+        inviterName: tenantName,
+        contractLabel: "un contrato de arrendamiento (como codeudor solidario)",
+        invitationUrl,
+      });
+      const r = await sendEmail({
+        to: invite.inviteeEmail,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
+        templateCode: "inviteCounterpartyEmail",
+        relatedEntityType: "party_invite",
+        relatedEntityId: invite.token,
+      });
+      emailStatus = r.status;
+    } catch {
+      emailStatus = "failed";
+    }
   }
 
   // Devolvemos SIEMPRE el enlace para poder compartirlo también por WhatsApp

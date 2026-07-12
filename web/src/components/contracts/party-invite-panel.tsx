@@ -88,13 +88,12 @@ export function PartyInvitePanel({
   // solo cambia el mensaje que ve el dueño.
   async function ensureInvite(channel: "email" | "whatsapp"): Promise<string | null> {
     if (!user) return null;
-    if (!email.includes("@")) {
-      setMsg("Ingresa un correo válido de la persona (allí llega el código de verificación).");
+    // Por correo, el correo es necesario (allí va el enlace + el código). Por
+    // WhatsApp NO: la persona ingresa su correo al abrir el enlace para recibir
+    // el código; así el envío es de elección del usuario.
+    if (channel === "email" && !email.includes("@")) {
+      setMsg("Para enviar por correo, escribe un correo válido de la persona.");
       return null;
-    }
-    if (inviteUrl && status === "active") {
-      if (channel === "email") setMsg(`Reenviado por correo a ${email.trim()}.`);
-      return inviteUrl;
     }
     setBusy(true);
     setMsg("");
@@ -183,7 +182,7 @@ export function PartyInvitePanel({
             <div className="rounded-2xl border border-slate-200 bg-white/70 p-3">
               <div className="flex flex-wrap items-end gap-2">
                 <label className="text-xs text-slate-700">
-                  <span className="mb-1 block">Correo de la persona <span className="text-rose-500">*</span></span>
+                  <span className="mb-1 block">Correo de la persona</span>
                   <input
                     type="email"
                     value={email}
@@ -213,7 +212,8 @@ export function PartyInvitePanel({
                 </label>
               </div>
               <p className="mt-2 text-[11px] text-slate-500">
-                El <b>código de verificación</b> siempre llega al <b>correo</b>. Elige cómo enviarle el enlace:
+                Elige cómo enviarle el enlace. <b>Por correo</b>: escribe su correo. <b>Por WhatsApp</b>: basta el
+                celular — la persona escribirá su correo al abrir el enlace para recibir el <b>código</b>.
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button
@@ -226,7 +226,7 @@ export function PartyInvitePanel({
                 </button>
                 <button
                   type="button"
-                  disabled={busy || !email.includes("@") || phone.length < 7}
+                  disabled={busy || phone.length < 7}
                   onClick={() => void sendByWhatsApp()}
                   className="rounded-xl bg-[#25D366] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105 disabled:opacity-50"
                   title={phone.length < 7 ? "Escribe el celular para enviar por WhatsApp" : undefined}
