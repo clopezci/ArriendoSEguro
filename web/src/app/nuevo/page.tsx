@@ -20,6 +20,7 @@ import { useVoice } from "@/lib/nuevo/useVoice";
 import { MicButton } from "@/components/nuevo/mic-button";
 import { ExpressRegister } from "@/components/nuevo/express-register";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
+import { CodebtorViaTenantPanel } from "@/components/contracts/codebtor-via-tenant-panel";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
 /**
@@ -262,8 +263,8 @@ export default function NuevoPage() {
       solidaryCoDebtor: n.hasCodebtor === "yes"
         ? {
             ...d.solidaryCoDebtor,
-            fullName: n.codebtorMode === "invite" ? (d.solidaryCoDebtor.fullName || n.codebtorName.trim()) : (n.codebtorName.trim() || d.solidaryCoDebtor.fullName),
-            // En invitación los datos vienen del enlace del codeudor (importados);
+            fullName: n.codebtorMode !== "self" ? (d.solidaryCoDebtor.fullName || n.codebtorName.trim()) : (n.codebtorName.trim() || d.solidaryCoDebtor.fullName),
+            // Por invitación o gestión del inquilino, los datos vienen importados;
             // aquí solo escribimos si el dueño los ingresó (self).
             ...(n.codebtorMode === "self" ? {
               documentType: n.codebtorDocType || d.solidaryCoDebtor.documentType,
@@ -796,7 +797,7 @@ export default function NuevoPage() {
                 <ReviewItem label="Canon" value={a.canon ? `$ ${Number(a.canon.replace(/[^\d]/g, "")).toLocaleString("es-CO")}` : "—"} />
                 <ReviewItem label="Arrendatario" value={a.tenantName ? `${a.tenantName}${a.tenantMode === "invite" ? " (completa por invitación)" : ""}` : "—"} />
                 <ReviewItem label="Términos" value={a.startDate ? `Desde ${a.startDate} · ${a.termMonths} meses · pago día ${a.paymentDay}` : "—"} />
-                <ReviewItem label="Codeudor" value={a.hasCodebtor === "yes" ? (a.codebtorName || "Sí") : "No"} />
+                <ReviewItem label="Codeudor" value={a.hasCodebtor === "yes" ? `${a.codebtorName || "Sí"}${a.codebtorMode === "invite" ? " (completa por invitación)" : a.codebtorMode === "tenant" ? " (lo gestiona el inquilino)" : ""}` : "No"} />
                 <ReviewItem label="Servicios públicos" value={a.utilitiesParty === "arrendatario" ? "Los paga el inquilino" : a.utilitiesParty === "arrendador" ? "Los paga el dueño" : a.utilitiesParty === "compartido" ? "Se reparten" : "—"} />
                 <ReviewItem label="Cláusulas especiales" value={a.clauses.length ? `${a.clauses.length} seleccionada(s)${a.clauses.includes("OTRA") ? " · incluye Otra" : ""}` : "Ninguna"} />
               </div>
@@ -1067,6 +1068,7 @@ function Field({ q, a, setA, docs, party }: { q: Q; a: Answers; setA: (a: Answer
           <div className="flex flex-wrap gap-2.5">
             <button type="button" onClick={() => setA({ ...a, codebtorMode: "self" })} className={chip(a.codebtorMode === "self")}>Los ingreso yo</button>
             <button type="button" onClick={() => setA({ ...a, codebtorMode: "invite" })} className={chip(a.codebtorMode === "invite")}>Se lo pido a él/ella</button>
+            <button type="button" onClick={() => setA({ ...a, codebtorMode: "tenant" })} className={chip(a.codebtorMode === "tenant")}>Lo gestiona el inquilino</button>
           </div>
           {a.codebtorMode === "self" ? (
             <PartyFields
@@ -1074,6 +1076,9 @@ function Field({ q, a, setA, docs, party }: { q: Q; a: Answers; setA: (a: Answer
               authLabel="Declaro que tengo autorización del codeudor para ingresar sus datos personales (Ley 1581 de 2012)."
               onChange={(patch) => { if (patch.auth && !a.codebtorAuth) void captureOathEvidence("codebtor_third_party_authorization", party.draftId); setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth }); }}
             />
+          ) : a.codebtorMode === "tenant" ? (
+            <CodebtorViaTenantPanel contractDraftId={party.draftId} tenantInvited={a.tenantMode === "invite"}
+              onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
           ) : (
             <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
               onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
