@@ -201,7 +201,7 @@ export default function PosventaHubPage() {
           </ol>
 
           {/* Menú aparte (no es parte del checklist de setup): gestión continua. */}
-          <nav className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-3" aria-label="Gestión del arriendo">
+          <nav className="mt-6 rounded-xl border border-slate-200 bg-white/75 p-3" aria-label="Gestión del arriendo">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Gestión del arriendo</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {SECONDARY.map((item) => (

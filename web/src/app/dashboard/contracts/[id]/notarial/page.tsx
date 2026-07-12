@@ -290,7 +290,7 @@ export default function NotarialOptionalPage() {
                   Aquí sube el <strong>último firmante</strong> el PDF final: el que ya tiene todas las firmas de la
                   Agencia Nacional Digital, o el autenticado en notaría. Queda archivado como evidencia del expediente.
                 </p>
-                <ul className="mt-2 space-y-0.5 rounded-lg bg-slate-50 p-3 text-[11px] text-slate-600">
+                <ul className="mt-2 space-y-0.5 rounded-lg bg-white/75 p-3 text-[11px] text-slate-600">
                   <li>✓ Solo lo sube una <strong>parte del contrato</strong> (tu correo debe coincidir con arrendador, arrendatario o codeudor).</li>
                   <li>✓ Verificamos que sea un <strong>PDF real</strong> y que pese menos de 15 MB.</li>
                   <li>✓ Lo dejamos <strong>vinculado a esta versión</strong> del contrato, con autor y fecha, dentro del paquete de evidencia.</li>
@@ -346,7 +346,7 @@ export default function NotarialOptionalPage() {
           )}
 
           {uploadMsg && (
-            <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800">{uploadMsg}</p>
+            <p className="rounded-lg border border-slate-200 bg-white/75 p-3 text-sm text-slate-800">{uploadMsg}</p>
           )}
         </div>
       )}

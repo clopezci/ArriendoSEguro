@@ -133,7 +133,7 @@ export default function PaymentSchedulePage() {
         <Info label="Vencidos" value={`${summary.late}`} />
         <Info label="Estado" value={summary.late > 0 ? "Con vencidos" : "Al día"} />
       </div>
-      <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+      <p className="mt-3 rounded-lg border border-slate-200 bg-white/75 p-3 text-xs text-slate-600">
         El calendario se genera <strong>automáticamente</strong> al configurar tus pagos en{" "}
         <a href={`/dashboard/contracts/${id}/pagos-recordatorios`} className="font-semibold text-violet-700 underline">
           Pagos y recordatorios
@@ -150,7 +150,7 @@ export default function PaymentSchedulePage() {
       {/* Solo lectura: la configuración de recordatorios (método de pago y días de
           aviso) vive SOLO en «Pagos y recordatorios», para no tener dos editores
           que se desincronicen. Aquí se muestra el estado actual. */}
-      <section className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+      <section className="mt-4 rounded-lg border border-slate-200 bg-white/75 p-3 text-xs text-slate-700">
         <p>
           <strong>Recordatorios al inquilino:</strong>{" "}
           {settings.enabled
