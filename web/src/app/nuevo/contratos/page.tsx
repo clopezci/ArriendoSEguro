@@ -77,15 +77,15 @@ export default function GestionarContratosPage() {
                       {complete ? "Listo para generar" : "En progreso"}
                     </span>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2.5">
-                    {/* "Continuar" va a finalizar (vista previa/firma); ya NO al
-                        asistente viejo (que volvía a pedir los mismos datos). */}
-                    <button onClick={() => router.push(`/dashboard/contracts/${d.id}/preview`)} className="rounded-xl bg-[#5646E5] px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-105 active:scale-95">Continuar / finalizar →</button>
+                  {/* En celular: grilla de 2 columnas (cada botón cabe y se ve completo);
+                      en escritorio: fila que envuelve. Así "Eliminar" nunca se sale. */}
+                  <div className="mt-4 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap">
+                    <button onClick={() => router.push(`/dashboard/contracts/${d.id}/preview`)} className="col-span-2 rounded-xl bg-[#5646E5] px-5 py-2.5 text-center text-sm font-bold text-white transition hover:brightness-105 active:scale-95 sm:col-span-1">Continuar / finalizar →</button>
                     {complete && (
-                      <button onClick={() => router.push(`/nuevo/gestionar/${d.id}`)} className="rounded-xl border border-[#12B886] bg-[#12B886]/10 px-5 py-2.5 text-sm font-bold text-[#0B7A55] transition hover:bg-[#12B886]/20">Gestionar (posventa)</button>
+                      <button onClick={() => router.push(`/nuevo/gestionar/${d.id}`)} className="col-span-2 rounded-xl border border-[#12B886] bg-[#12B886]/10 px-5 py-2.5 text-center text-sm font-bold text-[#0B7A55] transition hover:bg-[#12B886]/20 sm:col-span-1">Gestionar (posventa)</button>
                     )}
-                    <button onClick={() => router.push(`/dashboard/contracts/${d.id}/contract-type`)} className="rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-medium text-slate-500 transition hover:border-[#5646E5]">Editar datos</button>
-                    <button onClick={() => setDeleting(d)} className="rounded-xl border border-rose-200 px-4 py-2.5 text-xs font-semibold text-rose-600 transition hover:border-rose-400 hover:bg-rose-50">🗑️ Eliminar</button>
+                    <button onClick={() => router.push(`/dashboard/contracts/${d.id}/contract-type`)} className="rounded-xl border border-slate-300 px-4 py-2.5 text-center text-xs font-medium text-slate-500 transition hover:border-[#5646E5]">Editar datos</button>
+                    <button onClick={() => setDeleting(d)} className="rounded-xl border border-rose-200 px-4 py-2.5 text-center text-xs font-semibold text-rose-600 transition hover:border-rose-400 hover:bg-rose-50">🗑️ Eliminar</button>
                   </div>
                 </motion.div>
               );
