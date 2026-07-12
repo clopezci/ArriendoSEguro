@@ -17,12 +17,16 @@ export async function captureOathEvidence(oathId: string, contractDraftId?: stri
       screen: window.screen ? `${window.screen.width}x${window.screen.height}` : undefined,
       clientNow: new Date().toISOString(),
     };
-    await fetch("/api/oath-evidence/capture", {
+    const res = await fetch("/api/oath-evidence/capture", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
       keepalive: true,
     });
+    if (res.ok) {
+      // Avisa a la UI para mostrar un pequeño "Evidencia guardada".
+      window.dispatchEvent(new CustomEvent("oath-evidence-saved", { detail: { oathId } }));
+    }
   } catch {
     /* evidencia best-effort; no rompemos el flujo */
   }

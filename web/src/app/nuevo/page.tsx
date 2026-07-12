@@ -15,6 +15,7 @@ import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { validateStep, type Answers } from "@/lib/nuevo/validation";
 import { pesosEnLetras } from "@/lib/nuevo/pesos-en-letras";
 import { captureOathEvidence } from "@/lib/nuevo/oath-evidence";
+import { OathEvidenceToast } from "@/components/nuevo/oath-evidence-toast";
 import { useVoice } from "@/lib/nuevo/useVoice";
 import { MicButton } from "@/components/nuevo/mic-button";
 import { ExpressRegister } from "@/components/nuevo/express-register";
@@ -644,6 +645,7 @@ export default function NuevoPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#F5F3EF] text-[#17151F]">
+      <OathEvidenceToast />
       <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full opacity-50 blur-3xl" style={{ background: "radial-gradient(circle,#9B6BFF,#5646E5)" }} />
       <div className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full opacity-50 blur-3xl" style={{ background: "radial-gradient(circle,#FFB03A,#FF6B4A)" }} />
 

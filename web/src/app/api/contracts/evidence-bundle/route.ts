@@ -233,6 +233,39 @@ export async function GET(request: Request) {
       }
     }
 
+    // Evidencias de cada aceptación/juramento (oath_evidence) + consentimientos
+    // Habeas Data (user_consents), para que el paquete deje constancia de quién,
+    // desde dónde y cuándo aceptó cada "Acepto/Juro" (IP, ciudad, fecha, dispositivo).
+    try {
+      const lines: string[] = [];
+      lines.push("EVIDENCIAS DE ACEPTACIONES Y JURAMENTOS");
+      lines.push(`Contrato: ${contractId}`);
+      lines.push(`Generado: ${new Date().toISOString()}`);
+      lines.push("");
+      const oathSnap = await firestore.collection("oath_evidence").where("contractDraftId", "==", contractId).limit(500).get();
+      lines.push(`— Juramentos/aceptaciones registrados: ${oathSnap.size}`);
+      oathSnap.docs
+        .map((d) => d.data() as Record<string, unknown>)
+        .sort((a, b) => String(a.serverNow ?? "").localeCompare(String(b.serverNow ?? "")))
+        .forEach((o, i) => {
+          lines.push("");
+          lines.push(`${i + 1}. ${String(o.oathId ?? "juramento")}`);
+          lines.push(`   Fecha (servidor): ${o.serverNow ?? "—"}`);
+          lines.push(`   IP: ${o.ip ?? "—"}   Ubicación: ${[o.city, o.region, o.country].filter(Boolean).join(", ") || "—"}`);
+          lines.push(`   Dispositivo: ${o.userAgent ?? "—"}`);
+          lines.push(`   Zona/idioma/pantalla: ${o.timeZone ?? "—"} / ${o.language ?? "—"} / ${o.screen ?? "—"}`);
+        });
+      lines.push("");
+      const consentSnap = await firestore.collection("user_consents").where("uid", "==", participant.user.uid).limit(100).get();
+      lines.push(`— Consentimientos Habeas Data del titular: ${consentSnap.size}`);
+      consentSnap.docs.map((d) => d.data() as Record<string, unknown>).forEach((c, i) => {
+        lines.push(`  ${i + 1}. versión ${c.version ?? "—"} · superficie ${c.surface ?? "—"} · ${c.acceptedAt ?? "—"} · IP ${c.ipAddress ?? "—"}`);
+      });
+      tryAdd("04-evidencias-aceptaciones.txt", lines.join("\n"), "04-evidencias-aceptaciones.txt (juramentos, aceptaciones y consentimientos con IP/fecha/dispositivo)");
+    } catch {
+      manifest.push("- (omitido) Evidencias de aceptaciones: no se pudieron leer.");
+    }
+
     manifest.push("");
     manifest.push(
       "Notas: los archivos omitidos pueden deberse a que aún no se generó el PDF, a rutas no accesibles desde el servidor, a URLs firmadas expiradas o a los límites de tamaño del paquete. Vuelve a generar o descarga individual desde la vista de evidencia.",
