@@ -62,6 +62,7 @@ export async function POST(request: Request) {
     inviterUid: tenantInvite.inviterUid, // el dueño: para que él lo importe
     inviterEmail: tenantInvite.inviterEmail,
     inviterName: tenantName, // el inquilino es quien invita
+    monthlyRent: tenantInvite.monthlyRent, // hereda el canon para validar solvencia
   });
   await firestore
     .collection(PARTY_INVITES_COLLECTION)

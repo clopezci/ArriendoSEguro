@@ -19,6 +19,7 @@ const schema = z.object({
   inviteeEmail: z.string().email().or(z.literal("")).optional(),
   inviteeName: z.string().max(120).optional(),
   inviterName: z.string().max(120).optional(),
+  monthlyRent: z.number().int().nonnegative().optional(),
 });
 
 /** El dueño invita a un tercero (inquilino/codeudor) a llenar sus datos por enlace. */
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
     inviterUid: auth.user.uid,
     inviterEmail: auth.user.email ?? "",
     inviterName: parsed.data.inviterName?.trim() || auth.user.email || "El arrendador",
+    monthlyRent: parsed.data.monthlyRent,
   });
 
   const base = appConfig.publicUrl.replace(/\/$/, "");

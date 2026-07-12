@@ -25,6 +25,8 @@ export type PartyInviteDoc = {
   inviterUid: string;
   inviterEmail: string;
   inviterName: string;
+  /** Canon mensual del contrato (para validar la solvencia del invitado). */
+  monthlyRent?: number;
   status: PartyInviteStatus;
   otpHash?: string | null;
   otpExpiresAt?: string | null;

@@ -18,6 +18,7 @@ type Info = {
   inviteeName?: string;
   hasEmail?: boolean;
   emailMasked?: string;
+  monthlyRent?: number;
 };
 
 type Phase = "loading" | "invalid" | "otp" | "form" | "done";
@@ -122,7 +123,18 @@ export default function InvitacionPage() {
     setMsg("");
     // Datos mínimos: ya no se pide dirección de notificación a las personas.
     const sanitized = sanitizePartyFromForm(formData, { notificationAddress: "" });
-    const payloadParty = { ...sanitized, notificationAddress: "" };
+    // Ingreso mensual + validación de solvencia: bloqueante si es INFERIOR al canon.
+    const income = Number(String(formData.get("supportMonthlyIncome") ?? "").replace(/[^\d]/g, "")) || 0;
+    const rent = info?.monthlyRent ?? 0;
+    if (income <= 0) {
+      setMsg("Indica tu ingreso mensual aproximado para continuar.");
+      return;
+    }
+    if (rent > 0 && income < rent) {
+      setMsg("Tu ingreso es inferior al valor del arriendo. Revísalo: no habría cómo respaldar el pago del canon.");
+      return;
+    }
+    const payloadParty = { ...sanitized, notificationAddress: "", economicSupport: { monthlyIncome: income } };
     const isCodebtor = info?.role === "solidaryCoDebtor";
     // Aceptaciones del TITULAR (juramento + autorización de tratamiento de datos).
     // El codeudor además acepta el consentimiento de firma electrónica y la
@@ -261,6 +273,8 @@ export default function InvitacionPage() {
               oathId="invitee_truthfulness_oath"
               contractDraftId={token}
               selfDataAuthorization
+              rentReference={info?.monthlyRent ?? 0}
+              who={info?.role === "solidaryCoDebtor" ? "el codeudor" : "el inquilino"}
             />
 
             {info?.role === "solidaryCoDebtor" && (
@@ -346,7 +360,7 @@ export default function InvitacionPage() {
           <InviteSupportsUpload token={token} roleLabel={info?.role === "solidaryCoDebtor" ? "como codeudor" : "como arrendatario"} />
 
           {info?.role === "tenant" ? (
-            <CodebtorSection tenantToken={token} />
+            <CodebtorSection tenantToken={token} rentReference={info?.monthlyRent ?? 0} />
           ) : (
             <p className="text-sm text-slate-600">Cuando termines de subir tus documentos, ya puedes cerrar esta página.</p>
           )}
@@ -363,7 +377,7 @@ export default function InvitacionPage() {
  * datos declarando que cuenta con su autorización (Ley 1581). Quien tiene la
  * relación con el codeudor es el inquilino, no el dueño.
  */
-function CodebtorSection({ tenantToken }: { tenantToken: string }) {
+function CodebtorSection({ tenantToken, rentReference = 0 }: { tenantToken: string; rentReference?: number }) {
   const [mode, setMode] = useState<"choose" | "invite" | "enter">("choose");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -434,6 +448,15 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
       setMsg("Debes aceptar la declaración bajo gravedad de juramento.");
       return;
     }
+    const income = Number(String(formData.get("supportMonthlyIncome") ?? "").replace(/[^\d]/g, "")) || 0;
+    if (income <= 0) {
+      setMsg("Indica el ingreso mensual aproximado del codeudor.");
+      return;
+    }
+    if (rentReference > 0 && income < rentReference) {
+      setMsg("El ingreso del codeudor es inferior al valor del arriendo. Revísalo para continuar.");
+      return;
+    }
     const sanitized = sanitizePartyFromForm(formData, { notificationAddress: "" });
     setBusy(true);
     try {
@@ -442,7 +465,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           tenantToken,
-          party: { ...sanitized, notificationAddress: "" },
+          party: { ...sanitized, notificationAddress: "", economicSupport: { monthlyIncome: income } },
           thirdPartyAuthorization: true,
         }),
       });
@@ -619,6 +642,8 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
               oathId="tenant_entered_codebtor_oath"
               contractDraftId={tenantToken}
               thirdPartyAuthorization
+              rentReference={rentReference}
+              who="el codeudor"
             />
           </div>
           <button

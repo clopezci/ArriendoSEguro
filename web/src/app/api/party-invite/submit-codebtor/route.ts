@@ -68,6 +68,17 @@ export async function POST(request: Request) {
       { status: 422 },
     );
   }
+  // Ingreso + solvencia (bloqueante si es inferior al canon del contrato).
+  const rawIncome = (parsed.data.party as { economicSupport?: { monthlyIncome?: unknown } } | null)?.economicSupport?.monthlyIncome;
+  const income = Math.max(0, Math.round(Number(rawIncome) || 0));
+  const rent = typeof tenantInvite.monthlyRent === "number" ? tenantInvite.monthlyRent : 0;
+  if (income <= 0) {
+    return NextResponse.json({ success: false, errors: [{ field: "income", message: "Indica el ingreso mensual del codeudor." }] }, { status: 422 });
+  }
+  if (rent > 0 && income < rent) {
+    return NextResponse.json({ success: false, errors: [{ field: "income", message: "El ingreso del codeudor es inferior al canon." }] }, { status: 422 });
+  }
+  const contribution = { ...profile, economicSupport: { monthlyIncome: income } };
 
   const h = request.headers;
   const decode = (v: string | null) => {
@@ -102,11 +113,12 @@ export async function POST(request: Request) {
     inviterUid: tenantInvite.inviterUid,
     inviterEmail: tenantInvite.inviterEmail,
     inviterName: tenantName,
+    monthlyRent: tenantInvite.monthlyRent,
   });
   const nowIso = new Date().toISOString();
   await firestore.collection(PARTY_INVITES_COLLECTION).doc(invite.token).set(
     {
-      contribution: profile,
+      contribution,
       selfAttestation,
       status: "completed",
       completedAt: nowIso,

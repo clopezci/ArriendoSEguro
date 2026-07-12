@@ -14,6 +14,7 @@ import { DOCUMENT_TYPE_OPTIONS } from "@/domain/colombia/document-validation";
 import type { InviteAttestation, PartyDraft } from "@/features/contracts/draft-types";
 import { useMemo, useState } from "react";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
+import { IncomeSuggestion } from "@/components/contracts/income-suggestion";
 import { ReadAloudButton } from "@/components/a11y/read-aloud";
 
 // Textos completos para la lectura por voz (los mismos que se muestran, para que
@@ -32,8 +33,13 @@ export function PartyDataFields({
   thirdPartyAuthorization = false,
   selfDataAuthorization = false,
   attestation = null,
+  rentReference = 0,
+  who = "el inquilino",
 }: {
   party: PartyDraft;
+  /** Canon del contrato, para el aviso de solvencia (ingreso ≥ 2× / bloqueo < canon). */
+  rentReference?: number;
+  who?: "el inquilino" | "el codeudor";
   /**
    * Identificador del juramento para correlacionar la evidencia en
    * auditoría. Ej: "landlord_truthfulness_oath",
@@ -74,6 +80,10 @@ export function PartyDataFields({
   );
   const [authChecked, setAuthChecked] = useState<boolean>(false);
   const [selfAuthChecked, setSelfAuthChecked] = useState<boolean>(false);
+  const [income, setIncome] = useState<string>(
+    party.economicSupport?.monthlyIncome ? String(party.economicSupport.monthlyIncome) : "",
+  );
+  const incomeNum = Number((income || "").replace(/[^\d]/g, "")) || 0;
 
   const hint = useMemo(() => {
     return DOCUMENT_TYPE_OPTIONS.find((o) => o.value === docType)?.hint ?? "";
@@ -157,6 +167,20 @@ export function PartyDataFields({
           className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
           placeholder="Ej. 3001234567"
         />
+      </label>
+
+      <label className="text-sm sm:col-span-2">
+        <span className="mb-1 block text-slate-700">Ingreso mensual aproximado</span>
+        <input
+          name="supportMonthlyIncome"
+          inputMode="numeric"
+          required
+          value={income}
+          onChange={(e) => setIncome(e.target.value.replace(/[^\d]/g, ""))}
+          className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
+          placeholder="Ej. 3000000"
+        />
+        <IncomeSuggestion rentReference={rentReference} income={incomeNum} who={who} />
       </label>
 
       {attestation ? (

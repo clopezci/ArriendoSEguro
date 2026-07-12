@@ -54,6 +54,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, errors: [{ field: "party", message: "Faltan datos mínimos (nombre y documento)." }] }, { status: 422 });
   }
 
+  // Ingreso mensual + validación de solvencia (server-side): bloqueante si es
+  // INFERIOR al canon del contrato (no podría respaldar el pago).
+  const rawIncome = (parsed.data.party as { economicSupport?: { monthlyIncome?: unknown } } | null)?.economicSupport?.monthlyIncome;
+  const income = Math.max(0, Math.round(Number(rawIncome) || 0));
+  const rent = typeof invite.monthlyRent === "number" ? invite.monthlyRent : 0;
+  if (income <= 0) {
+    return NextResponse.json({ success: false, errors: [{ field: "income", message: "Indica tu ingreso mensual aproximado." }] }, { status: 422 });
+  }
+  if (rent > 0 && income < rent) {
+    return NextResponse.json({ success: false, errors: [{ field: "income", message: "El ingreso es inferior al canon; no habría cómo respaldar el pago." }] }, { status: 422 });
+  }
+  const contribution = { ...profile, economicSupport: { monthlyIncome: income } };
+
   // Evidencia legal de la aceptación del TITULAR (captada en el servidor, no por
   // el cliente): juramento + autorización de tratamiento de datos, con IP, fecha
   // y user-agent. Es lo que evita que el dueño tenga que (o pueda) falsear estas
@@ -114,7 +127,7 @@ export async function POST(request: Request) {
 
   const nowIso = new Date().toISOString();
   await firestore.collection(PARTY_INVITES_COLLECTION).doc(invite.token).set(
-    { contribution: profile, selfAttestation, status: "completed", completedAt: nowIso },
+    { contribution, selfAttestation, status: "completed", completedAt: nowIso },
     { merge: true },
   );
 
