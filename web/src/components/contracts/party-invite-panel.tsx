@@ -73,6 +73,14 @@ export function PartyInvitePanel({
     void refreshStatus();
   }, [refreshStatus]);
 
+  // Auto-actualización mientras la invitación está activa: así el dueño ve solo
+  // (sin pulsar nada) cuando la persona completa sus datos, y sabe cuándo avanzar.
+  useEffect(() => {
+    if (mode !== "invite" || status !== "active") return;
+    const t = setInterval(() => void refreshStatus(), 12000);
+    return () => clearInterval(t);
+  }, [mode, status, refreshStatus]);
+
   async function sendInvite() {
     if (!user) return;
     setBusy(true);
@@ -178,9 +186,19 @@ export function PartyInvitePanel({
           )}
 
           {status === "active" && (
-            <button type="button" onClick={() => void refreshStatus()} className="text-xs font-semibold text-violet-700 underline">
-              Actualizar estado
-            </button>
+            <div className="rounded-2xl border-2 border-amber-200 bg-amber-50/70 p-3 text-sm text-amber-950">
+              <p className="flex items-center gap-2 font-semibold">
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-500" aria-hidden="true" />
+                Enviado — esperando que la persona complete sus datos
+              </p>
+              <p className="mt-1 text-xs text-amber-900/80">
+                Esta pantalla se actualiza sola. Puedes <b>esperar aquí</b> a que aparezca “✓ completó”, o <b>continuar</b> y
+                volver luego a importar. Aún no podrás finalizar el contrato hasta que estén sus datos.
+              </p>
+              <button type="button" onClick={() => void refreshStatus()} className="mt-1 text-xs font-bold text-[#5646E5] underline">
+                Actualizar ahora
+              </button>
+            </div>
           )}
 
           {status === "completed" && contribution && (

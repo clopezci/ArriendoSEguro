@@ -154,9 +154,13 @@ export default function InvitacionPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl space-y-5 p-4 sm:p-6 text-slate-900">
+    <div className="relative min-h-[100dvh] overflow-hidden bg-[#F5F3EF] text-[#17151F]">
+      <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#9B6BFF,#5646E5)" }} />
+      <div className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#FFB03A,#FF6B4A)" }} />
+      <main className="relative z-10 mx-auto max-w-2xl space-y-5 px-4 py-8 sm:px-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">Registra tus datos para el arriendo</h1>
+        <span className="mb-1 inline-flex items-center gap-2 rounded-full bg-[#ECE9FB] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#5646E5]">🔒 Invitación segura</span>
+        <h1 className="text-balance text-3xl font-black tracking-tight sm:text-4xl">Registra tus datos para el arriendo</h1>
         {info?.inviterName && phase !== "invalid" && (
           <p className="text-sm text-slate-600">
             <strong>{info.inviterName}</strong> te invitó a registrar tus datos como{" "}
@@ -169,13 +173,13 @@ export default function InvitacionPage() {
       {phase === "loading" && <p className="text-sm text-slate-600">Cargando…</p>}
 
       {phase === "invalid" && (
-        <div className="rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm text-rose-800">
+        <div className="rounded-2xl border-2 border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
           Este enlace no es válido o ya expiró. Pídele a quien te invitó que te envíe uno nuevo.
         </div>
       )}
 
       {phase === "otp" && (
-        <section className="space-y-3 rounded-xl border border-slate-300 bg-white p-4">
+        <section className="space-y-3 rounded-3xl border border-slate-200 bg-white/95 shadow-[0_10px_30px_rgba(86,70,229,0.08)] p-4">
           <p className="text-sm text-slate-700">
             Para validar que eres tú, te enviaremos un <strong>código</strong> a tu correo
             {info?.emailMasked ? ` (${info.emailMasked})` : ""}.
@@ -184,7 +188,7 @@ export default function InvitacionPage() {
             type="button"
             onClick={() => void requestOtp()}
             disabled={busy}
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {busy ? "Enviando…" : "Enviar código a mi correo"}
           </button>
@@ -216,7 +220,7 @@ export default function InvitacionPage() {
           {hasSavedProfile && (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-violet-300 bg-violet-50/60 p-3 text-sm">
               <span className="text-slate-700">Tienes datos guardados de un arriendo anterior.</span>
-              <button type="button" onClick={usarMisDatos} className="rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-semibold text-white">
+              <button type="button" onClick={usarMisDatos} className="rounded-xl bg-[#5646E5] px-3 py-1.5 text-sm font-semibold text-white">
                 Usar mis datos
               </button>
             </div>
@@ -299,7 +303,7 @@ export default function InvitacionPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                className="rounded-xl bg-[#5646E5] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {busy ? "Enviando…" : "Enviar mis datos al contrato"}
               </button>
@@ -322,7 +326,8 @@ export default function InvitacionPage() {
           )}
         </div>
       )}
-    </main>
+      </main>
+    </div>
   );
 }
 
@@ -500,7 +505,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
             type="button"
             disabled={busy || !email.includes("@")}
             onClick={() => void sendInvite()}
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {busy ? "Enviando…" : "Enviar invitación"}
           </button>
@@ -526,7 +531,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
           <button
             type="submit"
             disabled={busy}
-            className="mt-3 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            className="mt-3 rounded-xl bg-[#5646E5] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
           >
             {busy ? "Enviando…" : "Guardar datos del codeudor"}
           </button>
