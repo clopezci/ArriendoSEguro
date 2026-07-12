@@ -136,7 +136,7 @@ export default function GestionarPosventaPage() {
                 <motion.button
                   key={a.slug}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }}
-                  onClick={() => router.push(`/dashboard/contracts/${id}/${a.slug}`)}
+                  onClick={() => router.push(a.slug === "inventory" ? `/nuevo/gestionar/${id}/inventario` : `/dashboard/contracts/${id}/${a.slug}`)}
                   className="flex items-start gap-3.5 rounded-2xl border-2 border-slate-200 bg-white/90 p-4 text-left shadow-sm transition hover:border-[#5646E5] active:scale-[0.99]"
                 >
                   <span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">{a.icon}</span>
