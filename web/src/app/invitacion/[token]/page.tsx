@@ -206,7 +206,7 @@ export default function InvitacionPage() {
               type="button"
               onClick={() => void verifyOtp()}
               disabled={busy || code.length < 6}
-              className="rounded-lg border border-violet-500 px-4 py-2 text-sm font-semibold text-violet-700 disabled:opacity-50"
+              className="rounded-2xl border-2 border-[#5646E5]/30 px-4 py-2 text-sm font-semibold text-violet-700 disabled:opacity-50"
             >
               Validar
             </button>
@@ -218,7 +218,7 @@ export default function InvitacionPage() {
       {phase === "form" && (
         <section className="space-y-3">
           {hasSavedProfile && (
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-violet-300 bg-violet-50/60 p-3 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border-2 border-[#5646E5]/30 bg-violet-50/60 p-3 text-sm">
               <span className="text-slate-700">Tienes datos guardados de un arriendo anterior.</span>
               <button type="button" onClick={usarMisDatos} className="rounded-xl bg-[#5646E5] px-3 py-1.5 text-sm font-semibold text-white">
                 Usar mis datos
@@ -287,7 +287,7 @@ export default function InvitacionPage() {
               </div>
             )}
 
-            <label className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+            <label className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-slate-200 bg-white/75 p-3 text-sm text-slate-700">
               <input
                 type="checkbox"
                 checked={saveProfile}
@@ -315,7 +315,7 @@ export default function InvitacionPage() {
 
       {phase === "done" && (
         <div className="space-y-4">
-          <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-800">
+          <div className="rounded-2xl border-2 border-[#12B886]/40 bg-[#12B886]/10 p-4 text-sm text-emerald-800">
             <p className="font-semibold">¡Listo! Tus datos se enviaron al contrato.</p>
             <p className="mt-1">Quien te invitó podrá verlos e incluirlos.</p>
           </div>
@@ -415,7 +415,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
 
   if (done === "none") {
     return (
-      <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-800">
+      <div className="rounded-2xl border-2 border-[#12B886]/40 bg-[#12B886]/10 p-4 text-sm text-emerald-800">
         <p className="font-semibold">¡Todo listo! Este arriendo no tiene codeudor.</p>
         <p className="mt-1">Ya puedes cerrar esta página.</p>
       </div>
@@ -424,7 +424,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
 
   if (done) {
     return (
-      <div className="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-800">
+      <div className="rounded-2xl border-2 border-[#12B886]/40 bg-[#12B886]/10 p-4 text-sm text-emerald-800">
         <p className="font-semibold">
           {done === "invited"
             ? "Le enviamos el enlace al codeudor ✓"
@@ -436,7 +436,7 @@ function CodebtorSection({ tenantToken }: { tenantToken: string }) {
             : "Quien te invitó los verá e incluirá. El codeudor confirmará al firmar. Ya puedes cerrar esta página."}
         </p>
         {done === "invited" && inviteUrl && (
-          <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900">
+          <div className="mt-2 rounded-2xl border-2 border-amber-200 bg-amber-50/70 p-2 text-[11px] text-amber-900">
             <p className="font-semibold">
               El correo no salió automáticamente (o está en modo prueba). Comparte este enlace con el codeudor:
             </p>
