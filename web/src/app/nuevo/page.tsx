@@ -698,8 +698,12 @@ export default function NuevoPage() {
                         <p className="text-sm font-semibold text-slate-800">Cuéntame tu caso en tus palabras</p>
                         <MicButton label="Dictar tu caso" onResult={(t) => setAiText((prev) => (prev ? `${prev} ${t}` : t))} />
                       </div>
-                      <textarea value={aiText} onChange={(e) => setAiText(e.target.value)} rows={3}
-                        placeholder="Ej.: Soy Juan Pérez, cédula 79000000, arriendo mi apartamento en la Calle 1 #2-3 de Bogotá por 1.500.000 a María López, con codeudor Pedro Gómez."
+                      <p className="mt-1 flex items-start gap-1.5 rounded-xl bg-[#ECE9FB]/60 px-3 py-2 text-[12px] text-[#5646E5]">
+                        <span aria-hidden="true">🎙️</span>
+                        <span>Si lo <b>dictas por voz</b>, hazlo <b>por partes</b> (una frase corta a la vez): el micrófono entiende mejor. Ve completando el texto y toca <b>“Analizar”</b> solo cuando termines todo.</span>
+                      </p>
+                      <textarea value={aiText} onChange={(e) => setAiText(e.target.value)} rows={6}
+                        placeholder={"Ej.: Soy Juan Pérez, cédula 79000000, celular 3001112233, correo juan@correo.com, de Bogotá.\nArriendo mi apartamento en la Calle 1 # 2-3, Bogotá, Cundinamarca, matrícula 050-123456, por $1.500.000 al mes, desde el 1 de agosto por 12 meses, pago el día 5.\nEl arrendatario es María López, cédula 52000000, celular 3004445566, correo maria@correo.com.\nEl codeudor es Pedro Gómez, cédula 80000000, celular 3007778899, correo pedro@correo.com.\nLos servicios públicos los paga el inquilino."}
                         className="mt-2 w-full rounded-xl border-2 border-slate-200 p-3 text-sm outline-none transition focus:border-violet-500" />
                       {aiNote && <p className="mt-1 text-xs text-rose-600">{aiNote}</p>}
                       <div className="mt-2 flex items-center gap-2">
