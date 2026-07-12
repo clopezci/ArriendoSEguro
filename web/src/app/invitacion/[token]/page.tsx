@@ -6,6 +6,7 @@ import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { sanitizePartyFromForm } from "@/features/contracts/party-sanitize";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
+import { InviteSupportsUpload } from "@/components/contracts/invite-supports-upload";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
 type Info = {
@@ -102,7 +103,9 @@ export default function InvitacionPage() {
         setHasSavedProfile(true);
         setFormKey((k) => k + 1);
       }
-      setPhase("form");
+      // Si esta invitación YA estaba completada (la persona llenó sus datos antes),
+      // no la mandamos otra vez al formulario: va directo a subir documentos.
+      setPhase(info?.status === "completed" ? "done" : "form");
     } catch {
       setMsg("Error de red.");
     } finally {
@@ -338,10 +341,14 @@ export default function InvitacionPage() {
             <p className="font-semibold">¡Listo! Tus datos se enviaron al contrato.</p>
             <p className="mt-1">Quien te invitó podrá verlos e incluirlos.</p>
           </div>
+
+          {/* Subir documentos (soportes) desde el mismo enlace. */}
+          <InviteSupportsUpload token={token} roleLabel={info?.role === "solidaryCoDebtor" ? "como codeudor" : "como arrendatario"} />
+
           {info?.role === "tenant" ? (
             <CodebtorSection tenantToken={token} />
           ) : (
-            <p className="text-sm text-slate-600">Ya puedes cerrar esta página.</p>
+            <p className="text-sm text-slate-600">Cuando termines de subir tus documentos, ya puedes cerrar esta página.</p>
           )}
         </div>
       )}
