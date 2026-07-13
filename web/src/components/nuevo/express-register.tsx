@@ -6,6 +6,8 @@ import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { mapFirebaseAuthError } from "@/lib/auth/firebase-errors";
 import { CONSENT_CURRENT_VERSION } from "@/domain/consents/consentVersions";
 import { getAuthClient } from "@/lib/firebase/client";
+import { INTRO_PROMO_TITLE, INTRO_PROMO_MESSAGE } from "@/lib/product-pricing";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 /**
@@ -190,6 +192,15 @@ export function ExpressRegister({
           ? "Así guardamos tu expediente y podrás firmar, invitar y hacer la posventa. Toma 20 segundos."
           : "Ingresa con tu correo y contraseña para continuar el expediente."}
       </p>
+
+      {/* Promoción de introducción: se muestra justo en el punto de registro. */}
+      <div className="mt-4 rounded-2xl border-2 border-[#FF6B4A]/30 bg-gradient-to-br from-[#FFF4EF] to-[#FFE9DF] p-4">
+        <p className="flex items-center gap-2 text-sm font-black text-[#C7361A]">🎉 {INTRO_PROMO_TITLE}</p>
+        <p className="mt-1 text-[13px] leading-snug text-slate-700">{INTRO_PROMO_MESSAGE}</p>
+        <Link href="/dashboard/plans" className="mt-3 inline-flex items-center gap-1 rounded-xl bg-[#FF6B4A] px-4 py-2 text-sm font-bold text-white shadow-md shadow-orange-500/30 transition hover:brightness-105">
+          Suscribirme y aprovechar →
+        </Link>
+      </div>
 
       <div className="mt-5 space-y-4">
         {mode === "crear" && (
