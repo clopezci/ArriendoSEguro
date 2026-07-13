@@ -76,7 +76,7 @@ export function HomeDashboardPanel() {
   const cta = !canCreate
     ? null
     : !id
-      ? { href: "/dashboard/contracts/new", label: "Crear mi contrato gratis" }
+      ? { href: "/dashboard/contracts/new", label: "Crear mi contrato" }
       : completo
         ? { href: `/dashboard/contracts/${id}/preview`, label: "Ver mi contrato" }
         : { href: `/dashboard/contracts/${id}/contract-type`, label: "Continuar mi contrato" };
@@ -121,7 +121,7 @@ export function HomeDashboardPanel() {
                       : "bg-emerald-100 text-emerald-800"
                 }`}
               >
-                {plusActive ? "Plan Plus" : demoActive ? "Modo demo" : "Gratis"}
+                {plusActive ? "Plan activo" : demoActive ? "Modo demo" : "Sin plan"}
               </span>
               <p className="text-sm font-semibold text-slate-800">
                 {id ? (completo ? "Tu contrato está listo para revisar." : "Tienes un contrato en progreso.") : "Empieza tu contrato de arriendo."}
@@ -145,8 +145,9 @@ export function HomeDashboardPanel() {
             )}
             {!plusActive && !demoActive && (
               <p className="mt-3 text-xs text-slate-600">
-                Generas y descargas tu contrato gratis. La <strong>firma, el inventario y la posventa</strong> se activan
-                con <Link href="/dashboard/plans" className="text-violet-700 underline">Plan Plus</Link>.
+                El contrato tiene un <strong>precio de introducción de $49.900</strong> con la <strong>firma, el
+                inventario y la posventa incluidos</strong>. Tu segundo contrato puede ser gratis si invitas a 3 que usen
+                la app. <Link href="/dashboard/plans" className="text-violet-700 underline">Ver plan</Link>.
               </p>
             )}
           </>

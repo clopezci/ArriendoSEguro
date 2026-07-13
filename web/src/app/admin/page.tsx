@@ -1408,11 +1408,14 @@ export default function AdminPage() {
 
         {data && (
           <section className="mb-6 rounded-xl border border-emerald-400/40 bg-white/95 p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-900">Contrato gratis (tier gratis)</h2>
+            <h2 className="text-sm font-semibold text-slate-900">Modelo: ¿crear contrato es gratis para todos?</h2>
             <p className="mt-1 text-xs leading-relaxed text-slate-500">
-              Controla si generar el contrato es gratis. Si lo <strong>apagas</strong>, crear un contrato pasa a requerir
-              Plan Plus (su precio y promoción se manejan arriba). Útil si el consumo sube sin ingresos. Se guarda en{" "}
-              <code className="text-[11px]">app_settings/free_tier</code>.
+              Este es el <strong>switch global</strong> del modelo. <strong>Para el nuevo modelo de introducción, apágalo</strong>:
+              así crear un contrato pasa a costar el precio de introducción ($49.900, con firma incluida). Con el modelo
+              nuevo el «gratis» ya <strong>no es global</strong>: cada usuario <strong>gana un contrato gratis cuando 3
+              personas que invitó usan la app</strong> (la app lo lleva solo y se lo muestra en su panel «Invita y gana»).
+              Deja este switch <strong>encendido</strong> solo si quieres volver al modelo viejo (crear gratis con marca de
+              agua para todos). Se guarda en <code className="text-[11px]">app_settings/free_tier</code>.
             </p>
             {ftErr && (
               <p className="mt-2 rounded border border-rose-400/45 bg-rose-50 px-2 py-1 text-xs text-rose-800">{ftErr}</p>

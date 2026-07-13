@@ -200,29 +200,25 @@ export default function TerminosPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-900">13. Planes: Gratis y Plus (únicos planes) y servicios de aliados</h2>
-        <p>{appConfig.name} ofrece únicamente dos planes:</p>
+        <h2 className="text-lg font-semibold text-slate-900">13. Planes: precio de introducción y contrato gratis por referidos, y servicios de aliados</h2>
+        <p>{appConfig.name} ofrece un plan por contrato y un mecanismo de contrato gratis por referidos:</p>
         <ul className="list-inside list-disc space-y-1 text-slate-600">
           <li>
-            <strong>Gratis:</strong> puedes generar e imprimir tu contrato de arrendamiento. La versión gratuita sale con
-            una marca discreta «arriendoseguro.app» y recomendaciones, y es utilizable. La firma electrónica con validez
-            y evidencia, el inventario y acta, el registro de pagos, los soportes, las novedades, las alertas de
-            vencimiento y la calificación de reputación requieren Plan Plus.
-            <br />
-            <strong>El Plan Gratis es una oferta promocional de lanzamiento, de carácter temporal.</strong>{" "}
-            {appConfig.name} podrá, en cualquier momento y en la medida permitida por la ley, modificarlo,
-            condicionarlo (por ejemplo, a la visualización de publicidad), limitar su alcance o darlo por terminado, de
-            manera prospectiva y con aviso razonable a través de la plataforma, hasta que {appConfig.name} lo determine.
-            El uso del Plan Gratis <strong>no genera derechos adquiridos</strong> sobre su permanencia, su precio futuro
-            ni sus condiciones. En todo caso, el ejercicio de esta facultad <strong>no afecta los contratos que ya
-            hayas generado</strong> ni el Plan Plus que ya hayas adquirido, cuyas condiciones se respetan conforme a la
-            Ley 1480 de 2011.
+            <strong>Plan por contrato (precio de introducción):</strong> pago único por contrato (sin mensualidades),
+            con un <strong>precio de introducción vigente</strong> que se muestra al contratar. Incluye la <strong>firma
+            electrónica</strong> con validez y evidencia (Ley 527 de 1999), el inventario y acta de entrega, el
+            calendario y registro de pagos, los soportes y anexos, el módulo de novedades, las alertas de terminación o
+            renovación y la calificación de reputación. El <strong>precio de introducción es una oferta promocional de
+            lanzamiento, de carácter temporal</strong>, y puede actualizarse con preaviso razonable.
           </li>
           <li>
-            <strong>Plan Plus:</strong> pago único por contrato (sin mensualidades) que habilita la firma electrónica
-            simple, el inventario y acta de entrega, el calendario y registro de pagos, los anexos y la evidencia, el
-            módulo de novedades, las alertas de terminación o renovación y la calificación de reputación. El precio
-            vigente se muestra al contratar y puede actualizarse con preaviso razonable.
+            <strong>Contrato gratis por referidos:</strong> si invitas a <strong>3 personas que usen la app</strong>
+            (generen su propio contrato), obtienes un <strong>contrato gratis</strong> con la firma incluida. Es un
+            beneficio <strong>promocional y temporal</strong>: {appConfig.name} podrá, en cualquier momento y en la
+            medida permitida por la ley, modificarlo, condicionarlo, limitar su alcance o darlo por terminado de manera
+            prospectiva y con aviso razonable. <strong>No genera derechos adquiridos</strong> sobre su permanencia,
+            precio futuro ni condiciones, y <strong>no afecta los contratos que ya hayas generado</strong> ni lo que ya
+            hayas adquirido, conforme a la Ley 1480 de 2011.
           </li>
         </ul>
         <p>
