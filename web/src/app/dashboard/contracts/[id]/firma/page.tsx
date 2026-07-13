@@ -22,8 +22,9 @@ export default function FirmaOptionsPage() {
         <span className="inline-flex items-center gap-2 rounded-full bg-[#ECE9FB] px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#5646E5]">Paso 4 de 5 · Firma</span>
         <h1 className="text-balance text-3xl font-black tracking-tight sm:text-4xl">Firma de las partes</h1>
         <p className="text-slate-500">
-          Tu contrato ya está listo y lo puedes <strong>descargar gratis</strong>. Para firmarlo con respaldo legal
-          (Ley 527: firma con evidencia), elige el camino que prefieras.
+          Con el <strong>plan de introducción</strong> (primer contrato <strong>$49.900</strong>), la{" "}
+          <strong>firma electrónica está incluida</strong> (Ley 527: firma con evidencia). Y tu{" "}
+          <strong>segundo contrato puede ser gratis</strong> si invitas a 3 personas que usen la app.
         </p>
         <div className="pt-1">
           <WizardSteps5 id={id} active="firma" />
@@ -39,14 +40,15 @@ export default function FirmaOptionsPage() {
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-[#12B886] px-2.5 py-0.5 text-[11px] font-bold text-white">GRATIS · RECOMENDADO</span>
-                  <h2 className="text-lg font-black text-[#0B6E4E]">Invita a 3 personas y firma sin costo</h2>
+                  <h2 className="text-lg font-black text-[#0B6E4E]">Tu segundo contrato gratis: invita a 3 que usen la app</h2>
                 </div>
                 <p className="mt-2 text-sm text-slate-600">
-                  Comparte ArriendoSeguro. Cuando <strong>3 personas invitadas usen la aplicación</strong>, se te activa la
-                  firma con respaldo, sin pagar nada. Es nuestra forma de crecer contigo.
+                  Comparte ArriendoSeguro. Cuando <strong>3 personas invitadas usen la aplicación</strong> (creen su
+                  contrato), tu <strong>siguiente contrato queda gratis con la firma incluida</strong>. Es nuestra forma de
+                  crecer contigo.
                 </p>
                 <Link href="/dashboard/plans" className="mt-4 inline-flex rounded-2xl bg-[#12B886] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">
-                  Invitar y activar gratis →
+                  Invitar y conseguirlo gratis →
                 </Link>
               </div>
             </div>
@@ -66,8 +68,7 @@ export default function FirmaOptionsPage() {
                   Pagar y firmar →
                 </Link>
                 <p className="mt-2 text-[11px] text-slate-400">
-                  La pasarela de pago se activa en breve; por ahora el equipo habilita el pago manualmente al elegir esta
-                  opción.
+                  El pago se procesa por una pasarela segura. Útil si solo quieres la firma de este contrato sin el plan completo.
                 </p>
               </div>
             </div>
@@ -78,13 +79,14 @@ export default function FirmaOptionsPage() {
             <div className="flex items-start gap-4">
               <span className="grid h-12 w-12 flex-none place-items-center rounded-2xl bg-[#FFEDE7] text-2xl">⭐</span>
               <div className="min-w-0">
-                <h2 className="text-lg font-black">Hazlo todo con Plan Plus</h2>
+                <h2 className="text-lg font-black">Plan de introducción — primer contrato $49.900</h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  Además de la firma, el Plan Plus habilita <strong>inventario, posventa, recordatorios y todo el
-                  respaldo</strong> por una fracción de lo que cuesta tu arriendo.
+                  Un pago único por una <strong>fracción</strong> de lo que cuesta tu arriendo. Incluye la <strong>firma
+                  electrónica</strong>, el <strong>inventario, el acta de entrega, la posventa, los recordatorios</strong> y
+                  todo el respaldo de este contrato.
                 </p>
-                <Link href="/dashboard/plans" className="mt-4 inline-flex rounded-2xl border-2 border-[#5646E5] px-5 py-2.5 text-sm font-bold text-[#5646E5] transition hover:bg-[#ECE9FB]">
-                  Ver Plan Plus →
+                <Link href="/dashboard/plans" className="mt-4 inline-flex rounded-2xl bg-[#FF6B4A] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95">
+                  Ver el plan de introducción →
                 </Link>
               </div>
             </div>
