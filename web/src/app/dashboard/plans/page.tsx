@@ -424,7 +424,10 @@ export default function PlansPage() {
               🏷️ {pricing.promoMessage}
             </p>
           )}
-          <p className="mt-2 text-sm text-slate-600">Pago único por contrato gestionado en la plataforma. Sin mensualidades.</p>
+          <p className="mt-2 text-sm text-slate-600">Precio de introducción por contrato: una <strong>fracción</strong> de lo que cobra una inmobiliaria. Pago único, sin mensualidades.</p>
+          <p className="mt-2 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs font-medium text-emerald-800">
+            🎁 Tu <strong>segundo contrato puede ser GRATIS</strong> (con la firma incluida) si invitas a <strong>3 personas que usen</strong> ArriendoSeguro.
+          </p>
           <p className="mt-2 text-xs leading-relaxed text-slate-600">{PER_CONTRACT_PAYMENT_NOTICE}</p>
           <ul className="mt-4 space-y-2 text-sm text-slate-700">
             <li>Contrato de arrendamiento</li>
