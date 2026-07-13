@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
-import { getAdminFirestore } from "@/lib/firebase/admin";
+import { getAdminFirestore, getAdminAuth } from "@/lib/firebase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
-import { REFERRALS_COLLECTION } from "@/domain/referrals/referrals";
+import { REFERRALS_COLLECTION, QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK } from "@/domain/referrals/referrals";
+import { grantManualPlusEntitlement } from "@/domain/platform-payments/manual-grant";
 import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
@@ -48,5 +49,33 @@ export async function POST(request: Request) {
 
   await ref.set({ qualified: true, qualifiedAt: new Date().toISOString(), qualifiedAtServer: FieldValue.serverTimestamp() }, { merge: true });
   auditEvent("referral_qualified", { referredUid: auth.user.uid });
-  return NextResponse.json({ success: true, qualified: true });
+
+  // Recompensa: al llegar a 3 referidos calificados (o cada múltiplo de 3), el
+  // que refirió recibe un contrato GRATIS = un entitlement Plus (que ya incluye
+  // la firma). Best-effort: si algo falla, NO rompe la calificación del referido.
+  let rewardGranted = false;
+  try {
+    const data = snap.data() as { referrerUid?: string; referrerEmail?: string };
+    if (data.referrerUid && data.referrerEmail) {
+      const qsnap = await firestore
+        .collection(REFERRALS_COLLECTION)
+        .where("referrerUid", "==", data.referrerUid)
+        .where("qualified", "==", true)
+        .get();
+      const qualifiedCount = qsnap.size;
+      const adminAuth = getAdminAuth();
+      if (adminAuth && qualifiedCount > 0 && qualifiedCount % QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK === 0) {
+        const res = await grantManualPlusEntitlement(
+          { auth: adminAuth, firestore, requestedBy: "referral_reward" },
+          { email: data.referrerEmail, validDays: 60, maxContractsAllowed: 1 },
+        );
+        rewardGranted = res.ok && res.status === "created";
+        if (rewardGranted) auditEvent("referral_free_contract_granted", { referrerUid: data.referrerUid, qualifiedCount });
+      }
+    }
+  } catch {
+    /* la recompensa es best-effort */
+  }
+
+  return NextResponse.json({ success: true, qualified: true, rewardGranted });
 }
