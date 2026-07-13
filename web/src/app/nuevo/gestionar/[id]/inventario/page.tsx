@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { useSavedContract } from "@/components/contracts/requires-saved-contract";
 import { InventoryZonePhotos } from "@/components/contracts/inventory-zone-photos";
-import { GUIDED_ZONE_OPTIONS } from "@/domain/inventory/inventoryRules";
+import { GUIDED_ZONE_OPTIONS, GUIDED_ITEMS_BY_ZONE, FALLBACK_GUIDED_ITEMS } from "@/domain/inventory/inventoryRules";
 
 /**
  * Inventario y acta de entrega en estilo BENTO ("una cosa a la vez"). Reutiliza
@@ -18,10 +18,20 @@ import { GUIDED_ZONE_OPTIONS } from "@/domain/inventory/inventoryRules";
  */
 const CONDITIONS = ["Excelente", "Bueno", "Aceptable", "Regular", "Malo", "No aplica"] as const;
 const CLEANLINESS = ["Limpio", "Aceptable", "Sucio", "No aplica"] as const;
+// Estado de cada elemento (valor guardado → etiqueta que ve el usuario).
+const ITEM_CONDITIONS: Array<{ value: string; label: string }> = [
+  { value: "excellent", label: "Excelente" },
+  { value: "good", label: "Bueno" },
+  { value: "fair", label: "Aceptable" },
+  { value: "poor", label: "Regular" },
+  { value: "damaged", label: "Malo" },
+  { value: "not_applicable", label: "No aplica" },
+];
 
 type Phase = "loading" | "locked" | "intro" | "zones" | "fill" | "review" | "done";
 type ZoneRow = { id: string; zoneName: string };
-type ZoneData = { generalCondition: string; cleanlinessStatus: string; observations: string; photoUrls: string[] };
+type ItemRow = { itemName: string; conditionStatus: string; notes: string };
+type ZoneData = { generalCondition: string; cleanlinessStatus: string; observations: string; photoUrls: string[]; items: ItemRow[] };
 
 function chip(sel: boolean) {
   return `rounded-2xl border-2 px-4 py-2.5 text-sm font-medium transition ${sel ? "border-[#5646E5] bg-[#ECE9FB] text-[#5646E5]" : "border-slate-200 bg-white text-slate-700 hover:border-[#5646E5]"}`;
@@ -106,10 +116,15 @@ export default function InventarioBentoPage() {
         success?: boolean;
         selectedZones?: Array<{ id: string; zoneName: string; status?: string }>;
         zoneDetails?: Array<{ selectedZoneId: string; generalCondition?: string; cleanlinessStatus?: string; observations?: string; photoUrls?: string[] }>;
+        zoneItems?: Array<{ selectedZoneId: string; itemName?: string; conditionStatus?: string; notes?: string }>;
       };
       const rows = (dj.selectedZones ?? []).filter((z) => z.status !== "skipped").map((z) => ({ id: z.id, zoneName: z.zoneName }));
       if (rows.length === 0) { setMsg("No se pudieron cargar las zonas."); return; }
-      // Prellenar lo que ya se hubiera guardado (para retomar sin perder fotos/estado).
+      // Prellenar lo que ya se hubiera guardado (para retomar sin perder fotos/estado/ítems).
+      const itemsByZone: Record<string, ItemRow[]> = {};
+      for (const it of dj.zoneItems ?? []) {
+        (itemsByZone[it.selectedZoneId] ??= []).push({ itemName: it.itemName ?? "", conditionStatus: it.conditionStatus ?? "good", notes: it.notes ?? "" });
+      }
       const prefill: Record<string, ZoneData> = {};
       for (const zd of dj.zoneDetails ?? []) {
         prefill[zd.selectedZoneId] = {
@@ -117,6 +132,7 @@ export default function InventarioBentoPage() {
           cleanlinessStatus: zd.cleanlinessStatus ?? "",
           observations: zd.observations ?? "",
           photoUrls: Array.isArray(zd.photoUrls) ? zd.photoUrls : [],
+          items: itemsByZone[zd.selectedZoneId] ?? [],
         };
       }
       setData(prefill);
@@ -131,7 +147,7 @@ export default function InventarioBentoPage() {
   }
 
   const cur = zones[zi];
-  const curData = (cur && data[cur.id]) || { generalCondition: "", cleanlinessStatus: "", observations: "", photoUrls: [] };
+  const curData = (cur && data[cur.id]) || { generalCondition: "", cleanlinessStatus: "", observations: "", photoUrls: [], items: [] };
   function setCur(patch: Partial<ZoneData>) {
     if (!cur) return;
     setData((d) => ({ ...d, [cur.id]: { ...curData, ...patch } }));
@@ -148,6 +164,12 @@ export default function InventarioBentoPage() {
       });
       const j = (await r.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!r.ok || !j.success) { setMsg(j.errors?.[0]?.message ?? "No se pudo guardar la zona."); return; }
+      // Guardar los elementos de la zona (los que tengan nombre).
+      const items = curData.items.filter((it) => it.itemName.trim().length > 0).map((it) => ({ itemName: it.itemName.trim(), conditionStatus: it.conditionStatus, notes: it.notes }));
+      await fetch("/api/inventory/save-zone-items", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ inventoryId, selectedZoneId: cur.id, items }),
+      }).catch(() => {});
       if (zi < zones.length - 1) setZi(zi + 1);
       else setPhase("review");
     } catch {
@@ -249,6 +271,44 @@ export default function InventarioBentoPage() {
             <div className="flex flex-wrap gap-2.5">
               {CLEANLINESS.map((c) => <button key={c} type="button" onClick={() => setCur({ cleanlinessStatus: c })} className={chip(curData.cleanlinessStatus === c)}>{c}</button>)}
             </div>
+
+            <p className="mt-4 mb-1.5 text-sm font-medium text-slate-600">Elementos de la zona (detalle)</p>
+            <p className="mb-2 text-xs text-slate-500">Toca una sugerencia para agregarla, o añade el tuyo. Marca el estado de cada elemento.</p>
+            <div className="flex flex-wrap gap-2">
+              {(GUIDED_ITEMS_BY_ZONE[cur.zoneName] ?? FALLBACK_GUIDED_ITEMS)
+                .filter((s) => !curData.items.some((it) => it.itemName.toLowerCase() === s.toLowerCase()))
+                .map((s) => (
+                  <button key={s} type="button" onClick={() => setCur({ items: [...curData.items, { itemName: s, conditionStatus: "good", notes: "" }] })}
+                    className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]">
+                    + {s}
+                  </button>
+                ))}
+              <button type="button" onClick={() => setCur({ items: [...curData.items, { itemName: "", conditionStatus: "good", notes: "" }] })}
+                className="rounded-full border-2 border-dashed border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-500 transition hover:border-[#5646E5] hover:text-[#5646E5]">
+                + Otro elemento
+              </button>
+            </div>
+
+            {curData.items.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {curData.items.map((it, idx) => (
+                  <div key={idx} className="rounded-2xl border border-slate-200 bg-white/80 p-3">
+                    <div className="flex items-center gap-2">
+                      <input value={it.itemName} onChange={(e) => setCur({ items: curData.items.map((x, j) => (j === idx ? { ...x, itemName: e.target.value } : x)) })}
+                        placeholder="Nombre del elemento" className="min-w-0 flex-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm outline-none focus:border-[#5646E5]" />
+                      <select value={it.conditionStatus} onChange={(e) => setCur({ items: curData.items.map((x, j) => (j === idx ? { ...x, conditionStatus: e.target.value } : x)) })}
+                        className="flex-none rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm">
+                        {ITEM_CONDITIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </select>
+                      <button type="button" onClick={() => setCur({ items: curData.items.filter((_, j) => j !== idx) })}
+                        className="flex-none rounded-lg bg-rose-100 px-2.5 py-1.5 text-xs font-bold text-rose-600" aria-label="Quitar elemento">×</button>
+                    </div>
+                    <input value={it.notes} onChange={(e) => setCur({ items: curData.items.map((x, j) => (j === idx ? { ...x, notes: e.target.value } : x)) })}
+                      placeholder="Notas (opcional)" className="mt-2 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs outline-none focus:border-[#5646E5]" />
+                  </div>
+                ))}
+              </div>
+            )}
 
             <p className="mt-4 mb-1.5 text-sm font-medium text-slate-600">Observaciones (opcional)</p>
             <textarea value={curData.observations} onChange={(e) => setCur({ observations: e.target.value })} rows={3} placeholder="Daños, detalles, elementos entregados…" className="w-full rounded-2xl border-2 border-slate-200 p-3 text-sm outline-none focus:border-[#5646E5]" />
