@@ -79,12 +79,24 @@ export async function GET(request: Request) {
   let approvedCount = 0;
   let pendingCount = 0;
   let qualifiedCount = 0;
+  const maskEmail = (v: string) => {
+    const at = (v ?? "").indexOf("@");
+    if (at <= 1) return "***";
+    return `${v[0]}${v[1] ?? ""}***${v.slice(at)}`;
+  };
+  const referrals: Array<{ email: string; qualified: boolean; status: ReferralStatus }> = [];
   for (const d of myReferralsSnap.docs) {
-    const data = d.data() as { status?: ReferralStatus; qualified?: boolean };
+    const data = d.data() as { status?: ReferralStatus; qualified?: boolean; referredEmail?: string };
     if (data.status === "approved") approvedCount += 1;
     else if (data.status === "pending") pendingCount += 1;
     if (data.qualified === true) qualifiedCount += 1;
+    referrals.push({ email: maskEmail(data.referredEmail ?? ""), qualified: data.qualified === true, status: data.status ?? "pending" });
   }
+  // Ordena: primero los que ya usaron la app.
+  referrals.sort((a, b) => Number(b.qualified) - Number(a.qualified));
+  // Cada 3 referidos que usan la app = 1 contrato gratis (con firma incluida).
+  const freeContractsEarned = Math.floor(qualifiedCount / QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK);
+  const toNextFree = QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK - (qualifiedCount % QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK);
 
   // ¿A mí me refirieron? (doc id = mi uid)
   const mineSnap = await firestore.collection(REFERRALS_COLLECTION).doc(auth.user.uid).get();
@@ -107,6 +119,13 @@ export async function GET(request: Request) {
     approvedCount,
     pendingCount,
     qualifiedCount,
+    referrals,
+    freeContract: {
+      required: QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK,
+      qualified: qualifiedCount,
+      earned: freeContractsEarned,
+      toNext: freeContractsEarned > 0 && qualifiedCount % QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK === 0 ? QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK : toNextFree,
+    },
     signatureUnlock: {
       required: QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK,
       qualified: qualifiedCount,

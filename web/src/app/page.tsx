@@ -72,8 +72,9 @@ export default function Home() {
               </span>
             </h1>
             <p className="text-pretty text-[15px] leading-relaxed text-slate-500">
-              Nada de formularios eternos. Te guiamos con una sola pregunta en cada paso — y tu{" "}
-              <strong className="font-semibold text-emerald-700">primer contrato es gratis</strong>.
+              Nada de formularios eternos. Te guiamos con una sola pregunta en cada paso — por un{" "}
+              <strong className="font-semibold text-emerald-700">precio de introducción de $49.900</strong>, con la firma
+              incluida (una fracción de lo que cobra una inmobiliaria).
             </p>
           </div>
 
@@ -83,7 +84,7 @@ export default function Home() {
               href="/nuevo"
               className="inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-[#FF6B4A] px-6 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95"
             >
-              Crear mi contrato gratis →
+              Crear mi contrato →
             </Link>
             <Link
               href="/ingresar?redirect=/nuevo"
@@ -167,9 +168,9 @@ export default function Home() {
             </p>
             <p className="mt-3 text-sm leading-relaxed">
               No somos inmobiliaria ni asesoría jurídica: te ayudamos a dejar por escrito y con evidencia lo que las
-              partes acuerdan, para reducir conflictos. El primer contrato es <strong>gratis</strong>; el
-              acompañamiento durante el arriendo es un plan de pago único por contrato, una fracción mínima del valor
-              del canon.
+              partes acuerdan, para reducir conflictos. El contrato tiene un <strong>precio de introducción de
+              $49.900</strong> (con la firma y la posventa incluidas), una fracción del valor del canon; y tu{" "}
+              <strong>segundo contrato puede ser gratis</strong> si invitas a 3 personas que usen la app.
             </p>
             <p className="mt-4 text-xs text-slate-400">
               Información general orientada a Colombia; no sustituye asesoría legal. Consulta siempre las normas vigentes

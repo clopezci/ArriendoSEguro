@@ -811,13 +811,13 @@ export default function PreviewStepPage() {
         {/* Paso 2 · Firmar (Plan Plus) */}
         <div className="mt-2 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3">
           <p className="text-sm font-semibold text-slate-900">
-            Paso 2 · Firma electrónica <span className="text-violet-700">(Plan Plus)</span>
+            Paso 2 · Firma electrónica <span className="text-emerald-700">(incluida)</span>
           </p>
           {!(plusActive || demoActive) ? (
             <>
               <p className="mt-0.5 text-xs text-slate-600">
-                La firma con respaldo legal (código OTP + evidencia de IP/fecha/hash, Ley 527) es parte del Plan Plus.
-                Puedes generar el contrato gratis y firmarlo cuando actives Plus.
+                La firma con respaldo legal (código OTP + evidencia de IP/fecha/hash, Ley 527) viene <strong>incluida</strong>{" "}
+                en el plan de introducción de este contrato. Actívalo para firmar.
               </p>
               {activeDraft?.specialClauses?.enabled &&
                 activeDraft.specialClauses.selected?.includes("OTRA") && (
@@ -1194,8 +1194,8 @@ export default function PreviewStepPage() {
                 Tu contrato está listo. ¿Quieres el respaldo completo del arriendo?
               </h3>
               <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                Lo generaste y guardaste <strong>gratis</strong>. El acompañamiento <strong>durante el arriendo</strong>{" "}
-                es parte del <strong>Plan Plus</strong>:
+                Con el <strong>plan de introducción</strong> ($49.900, firma incluida) tienes también todo el
+                acompañamiento <strong>durante el arriendo</strong>:
               </p>
               <ul className="mt-2 grid gap-1 text-xs text-slate-700 sm:grid-cols-2">
                 <li>• Inventario y acta de entrega</li>
