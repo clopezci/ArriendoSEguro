@@ -4,6 +4,8 @@ import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { ExpedienteNotesCard } from "@/components/contracts/expediente-notes-card";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { appendAudit, getDraft, setNotarizationSelection, toContractInput, updateDraft } from "@/features/contracts/wizard-state";
+import { flushDraftToServer } from "@/features/contracts/draft-server-sync";
+import type { PartyDraft } from "@/features/contracts/draft-types";
 import { auditEvent } from "@/features/contracts/audit";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
@@ -131,6 +133,8 @@ export default function PreviewStepPage() {
   } | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfFeedback, setPdfFeedback] = useState("");
+  const [importingParties, setImportingParties] = useState(false);
+  const [importMsg, setImportMsg] = useState("");
   const [startingSignatures, setStartingSignatures] = useState(false);
   const [refreshingSignatures, setRefreshingSignatures] = useState(false);
   const [signatureRoundMessage, setSignatureRoundMessage] = useState<{
@@ -234,6 +238,48 @@ export default function PreviewStepPage() {
     setWantsNotarizationUi(Boolean(d?.notarization?.wantsNotarization));
     setWantsDigitalNotaryUi(Boolean(d?.notarization?.wantsDigitalNotary));
   }, [id, state]);
+
+  /**
+   * Trae al contrato los datos que el inquilino/codeudor completaron por su
+   * enlace (invitación) y que aún no se habían importado. Resuelve el caso
+   * "invité a la persona pero sus datos no aparecen en la vista previa".
+   */
+  async function importInvitedParties() {
+    if (!user) return;
+    setImportingParties(true);
+    setImportMsg("");
+    try {
+      const roles: Array<"tenant" | "solidaryCoDebtor"> = ["tenant", "solidaryCoDebtor"];
+      let imported = 0;
+      for (const role of roles) {
+        const res = await fetch(`/api/party-invite/status?contractDraftId=${encodeURIComponent(id)}&role=${role}`, {
+          headers: { ...(await buildAuthHeaders(user)) },
+        });
+        const j = (await res.json()) as { success?: boolean; invite?: { status?: string; contribution?: PartyDraft | null } | null };
+        const contribution = j?.invite?.contribution;
+        if (res.ok && j.success && j.invite?.status === "completed" && contribution) {
+          updateDraft(id, (d) =>
+            role === "tenant"
+              ? { ...d, tenant: { ...d.tenant, ...contribution } }
+              : { ...d, hasSolidaryCoDebtor: true, solidaryCoDebtor: { ...d.solidaryCoDebtor, ...contribution } },
+          );
+          imported += 1;
+        }
+      }
+      if (imported > 0) {
+        const updated = getDraft(id);
+        if (updated) await flushDraftToServer(updated).catch(() => {});
+        setImportMsg(`Importé ${imported} parte(s) que completaron por su enlace. Regenerando la vista previa…`);
+        void requestPreview();
+      } else {
+        setImportMsg("Aún no hay datos completados por invitación para importar. Si invitaste a alguien, espera a que complete su enlace; si no, ingresa los datos en el asistente.");
+      }
+    } catch {
+      setImportMsg("No se pudo importar. Intenta de nuevo.");
+    } finally {
+      setImportingParties(false);
+    }
+  }
 
   async function requestPreview() {
     if (!activeDraft) return;
@@ -614,6 +660,24 @@ export default function PreviewStepPage() {
 
   return (
     <WizardShell title="Revisa y finaliza tu contrato" currentStep={10} contractId={id}>
+      {/* Navegación: volver a editar (bento) o ver/editar en la vista clásica completa. */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <Link href={`/nuevo?id=${id}`} className="inline-flex items-center gap-1.5 rounded-2xl border-2 border-[#5646E5]/30 bg-white px-4 py-2 text-sm font-bold text-[#5646E5] transition hover:bg-[#ECE9FB]">
+          ← Volver a editar
+        </Link>
+        <Link href={`/nuevo/contratos`} className="inline-flex items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-[#5646E5]">
+          Mis contratos
+        </Link>
+        <details className="group relative">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-500 transition hover:border-[#5646E5]">
+            Editar todo (vista clásica) ▾
+          </summary>
+          <div className="absolute z-20 mt-1 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+            <p className="px-2 py-1 text-[11px] text-slate-400">Vista completa, campo por campo. Puedes volver aquí con «Revisión y vista previa» arriba.</p>
+            <Link href={`/dashboard/contracts/${id}/contract-type`} className="block rounded-lg px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100">Abrir vista clásica →</Link>
+          </div>
+        </details>
+      </div>
       <p className="mb-4 flex items-start gap-2 text-xs text-slate-500">
         <span aria-hidden="true">👀</span>
         <span>Esta es tu vista previa. Queda listo para firma cuando ambas partes revisen y acepten la versión final.</span>
@@ -626,84 +690,6 @@ export default function PreviewStepPage() {
         </summary>
         <div className="mt-3">
           <ExpedienteNotesCard draftId={id} initialNotes={activeDraft.expedienteNotes ?? ""} variant="banner" />
-        </div>
-      </details>
-      <details className="group mb-4 rounded-2xl border border-slate-200 bg-white/85 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-sm text-slate-800">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-semibold text-slate-900">
-          <span>🏛️ ¿Autenticar el contrato? (opcional)</span>
-          <span className="text-xs font-normal text-slate-500 group-open:hidden">Toca para ver ▾</span>
-        </summary>
-        <div className="mt-2">
-        <p className="mt-1 text-xs text-slate-600">
-          La firma electrónica que hacen aquí (código OTP + evidencia de fecha, IP y hash) ya tiene validez legal en
-          Colombia (Ley 527 de 1999). Si además quieren un respaldo extra, tienen dos caminos. Puedes elegir{" "}
-          <strong>uno, ambos o ninguno</strong>. Ninguno reemplaza la firma electrónica de la plataforma; son
-          complementarios.
-        </p>
-
-        {/* Opción A · Notaría digital gratuita (firma del Estado) */}
-        <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3">
-          <input
-            type="checkbox"
-            checked={wantsDigitalNotaryUi}
-            onChange={(e) => {
-              const v = e.target.checked;
-              setWantsDigitalNotaryUi(v);
-              setNotarizationSelection(id, { wantsDigitalNotary: v });
-            }}
-            className="mt-0.5"
-          />
-          <span>
-            <span className="block font-semibold text-emerald-900">Notaría digital · gratis</span>
-            <span className="mt-0.5 block text-xs text-slate-700">
-              Firma y autenticación digital gratuita del Estado (Agencia Nacional Digital, Decreto 620 de 2020). Se hace{" "}
-              <strong>uno a uno</strong>, por fuera de la app: cada parte firma el mismo PDF en su turno y el último sube
-              el PDF final en el paso de <strong>Notaría</strong> del expediente. Es opcional y sin costo.
-            </span>
-            <a
-              href="https://firmaautenticaciondigital.and.gov.co/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 inline-flex text-xs font-medium text-violet-700 underline"
-            >
-              Ir a Firma y Autenticación Digital (Agencia Nacional Digital) ↗
-            </a>
-          </span>
-        </label>
-
-        {/* Opción B · Notaría física (con costo) */}
-        <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-2xl border border-slate-200 bg-white/85 p-3">
-          <input
-            type="checkbox"
-            checked={wantsNotarizationUi}
-            onChange={(e) => {
-              const v = e.target.checked;
-              setWantsNotarizationUi(v);
-              setNotarizationSelection(id, { wantsNotarization: v });
-              if (previewHtml) {
-                setSaveMessage(
-                  "Actualizaste la preferencia de notaría. Pulsa «Regenerar vista previa» y, si ya habías guardado versión, vuelve a guardarla para alinear el expediente.",
-                );
-              }
-            }}
-            className="mt-0.5"
-          />
-          <span>
-            <span className="block font-semibold text-slate-900">
-              Notaría física · opcional (sujeta a los costos de la notaría)
-            </span>
-            <span className="mt-0.5 block text-xs text-slate-700">
-              Las partes acuden a una notaría para autenticar sus firmas o reconocer el contenido del contrato. El costo
-              lo cobra la notaría según sus tarifas vigentes. El PDF autenticado se sube en el paso de{" "}
-              <strong>Notaría</strong> del expediente.
-            </span>
-          </span>
-        </label>
-
-        <p className="mt-3 text-xs text-slate-500">
-          Elijas lo que elijas (o nada), continúa abajo para revisar, guardar y firmar el contrato. El paso a paso
-          completo y la carga del PDF firmado están en el paso de <strong>Notaría</strong> del expediente.
-        </p>
         </div>
       </details>
       <div id="preview-acciones" className="mb-4 flex flex-wrap items-center gap-3 scroll-mt-24">
@@ -728,13 +714,24 @@ export default function PreviewStepPage() {
       {renderErrors.length > 0 && (
         <div role="alert" className="mb-4 rounded-3xl border-2 border-amber-300 bg-amber-50/70 p-5 text-sm text-amber-950 shadow-[0_6px_20px_rgba(245,165,36,0.12)]">
           <p className="flex items-center gap-2 text-base font-black">📋 Falta completar para poder generar</p>
-          <p className="mt-0.5 text-xs text-amber-900/80">Estos datos son necesarios para el contrato. Vuelve al asistente para completarlos.</p>
+          <p className="mt-0.5 text-xs text-amber-900/80">
+            Estos datos son necesarios para el contrato. Si invitaste al inquilino o al codeudor, vuelve al asistente y
+            pulsa <strong>«Importar sus datos»</strong> cuando aparezca «✓ completó» (si aún no completan, el contrato se
+            genera cuando lo hagan). También puedes ingresarlos tú.
+          </p>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             {renderErrors.map((msg, i) => (
               <li key={i}>{msg}</li>
             ))}
           </ul>
-          <Link href={`/dashboard/contracts/${id}/contract-type`} className="mt-3 inline-flex rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105">Completar datos →</Link>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => void importInvitedParties()} disabled={importingParties}
+              className="inline-flex rounded-xl bg-[#12B886] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105 disabled:opacity-50">
+              {importingParties ? "Importando…" : "Importar datos de invitados"}
+            </button>
+            <Link href={`/nuevo?id=${id}`} className="inline-flex rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105">Volver al asistente →</Link>
+          </div>
+          {importMsg && <p className="mt-2 text-xs font-medium text-amber-950">{importMsg}</p>}
         </div>
       )}
       {previewHtml && (
@@ -762,6 +759,88 @@ export default function PreviewStepPage() {
           </div>
         </details>
       )}
+      {/* Autenticación (notaría) — DESPUÉS de la vista previa, cerca de la firma. */}
+      {previewHtml && (
+        <details className="group mt-4 rounded-2xl border border-slate-200 bg-white/85 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-sm text-slate-800">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-semibold text-slate-900">
+            <span>🏛️ ¿Autenticar el contrato? (opcional, tras revisar la vista previa)</span>
+            <span className="text-xs font-normal text-slate-500 group-open:hidden">Toca para ver ▾</span>
+          </summary>
+          <div className="mt-2">
+            <p className="mt-1 text-xs text-slate-600">
+              La firma electrónica que hacen aquí (código OTP + evidencia de fecha, IP y hash) ya tiene validez legal en
+              Colombia (Ley 527 de 1999). Si además quieren un respaldo extra, tienen dos caminos. Puedes elegir{" "}
+              <strong>uno, ambos o ninguno</strong>. Ninguno reemplaza la firma electrónica de la plataforma; son
+              complementarios.
+            </p>
+
+            {/* Opción A · Notaría digital gratuita (firma del Estado) */}
+            <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3">
+              <input
+                type="checkbox"
+                checked={wantsDigitalNotaryUi}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  setWantsDigitalNotaryUi(v);
+                  setNotarizationSelection(id, { wantsDigitalNotary: v });
+                }}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="block font-semibold text-emerald-900">Notaría digital · gratis</span>
+                <span className="mt-0.5 block text-xs text-slate-700">
+                  Firma y autenticación digital gratuita del Estado (Agencia Nacional Digital, Decreto 620 de 2020). Se
+                  hace <strong>uno a uno</strong>, por fuera de la app: cada parte firma el mismo PDF en su turno y el
+                  último sube el PDF final en el paso de <strong>Notaría</strong> del expediente. Es opcional y sin costo.
+                </span>
+                <a
+                  href="https://firmaautenticaciondigital.and.gov.co/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 inline-flex text-xs font-medium text-violet-700 underline"
+                >
+                  Ir a Firma y Autenticación Digital (Agencia Nacional Digital) ↗
+                </a>
+              </span>
+            </label>
+
+            {/* Opción B · Notaría física (con costo) */}
+            <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-2xl border border-slate-200 bg-white/85 p-3">
+              <input
+                type="checkbox"
+                checked={wantsNotarizationUi}
+                onChange={(e) => {
+                  const v = e.target.checked;
+                  setWantsNotarizationUi(v);
+                  setNotarizationSelection(id, { wantsNotarization: v });
+                  if (previewHtml) {
+                    setSaveMessage(
+                      "Actualizaste la preferencia de notaría. Pulsa «Regenerar vista previa» y, si ya habías guardado versión, vuelve a guardarla para alinear el expediente.",
+                    );
+                  }
+                }}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="block font-semibold text-slate-900">
+                  Notaría física · opcional (sujeta a los costos de la notaría)
+                </span>
+                <span className="mt-0.5 block text-xs text-slate-700">
+                  Las partes acuden a una notaría para autenticar sus firmas o reconocer el contenido del contrato. El
+                  costo lo cobra la notaría según sus tarifas vigentes. El PDF autenticado se sube en el paso de{" "}
+                  <strong>Notaría</strong> del expediente.
+                </span>
+              </span>
+            </label>
+
+            <p className="mt-3 text-xs text-slate-500">
+              Elijas lo que elijas (o nada), continúa abajo para guardar y firmar el contrato. La carga del PDF
+              autenticado está en el paso de <strong>Notaría</strong> del expediente.
+            </p>
+          </div>
+        </details>
+      )}
+
       {/* Finalizar — flujo guiado en 3 pasos: Guarda → Firma (Plus) → PDF */}
       <section className="mt-6 rounded-3xl border-2 border-[#5646E5]/20 bg-[#ECE9FB]/40 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
