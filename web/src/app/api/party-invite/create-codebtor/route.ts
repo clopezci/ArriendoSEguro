@@ -17,6 +17,7 @@ const schema = z.object({
   inviteeEmail: z.string().email().or(z.literal("")).optional(),
   inviteeName: z.string().max(120).optional(),
   codebtorSlot: z.number().int().min(0).max(9).optional(),
+  assignNewSlot: z.boolean().optional(),
 });
 
 /**
@@ -65,6 +66,7 @@ export async function POST(request: Request) {
     inviterName: tenantName, // el inquilino es quien invita
     monthlyRent: tenantInvite.monthlyRent, // hereda el canon para validar solvencia
     codebtorSlot: parsed.data.codebtorSlot, // para varios codeudores independientes
+    assignNewSlot: parsed.data.assignNewSlot, // el servidor asigna el siguiente libre
   });
   await firestore
     .collection(PARTY_INVITES_COLLECTION)

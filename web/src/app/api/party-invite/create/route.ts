@@ -21,6 +21,7 @@ const schema = z.object({
   inviterName: z.string().max(120).optional(),
   monthlyRent: z.number().int().nonnegative().optional(),
   codebtorSlot: z.number().int().min(0).max(9).optional(),
+  assignNewSlot: z.boolean().optional(),
 });
 
 /** El dueño invita a un tercero (inquilino/codeudor) a llenar sus datos por enlace. */
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
     inviterName: parsed.data.inviterName?.trim() || auth.user.email || "El arrendador",
     monthlyRent: parsed.data.monthlyRent,
     codebtorSlot: parsed.data.codebtorSlot,
+    assignNewSlot: parsed.data.assignNewSlot,
   });
 
   const base = appConfig.publicUrl.replace(/\/$/, "");
@@ -90,5 +92,6 @@ export async function POST(request: Request) {
     status: invite.status,
     emailStatus,
     invitationUrl,
+    codebtorSlot: invite.codebtorSlot ?? 0,
   });
 }
