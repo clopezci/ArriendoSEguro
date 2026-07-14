@@ -1231,7 +1231,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               {["6", "12", "24", "36"].map((m) => (
                 <button key={m} type="button" onClick={() => setA({ ...a, termMonths: m })} className={chip(a.termMonths === m)}>{m} meses</button>
               ))}
-              <input inputMode="numeric" value={a.termMonths} onChange={(e) => setA({ ...a, termMonths: onlyDigits(e.target.value) })} className="w-24 rounded-2xl border-2 border-slate-200 px-3 py-3 text-center text-[15px] outline-none focus:border-[#5646E5]" placeholder="Otro" />
+              <input inputMode="numeric" value={["6", "12", "24", "36"].includes(a.termMonths) ? "" : a.termMonths} onChange={(e) => setA({ ...a, termMonths: onlyDigits(e.target.value) })} className={`w-28 rounded-2xl border-2 px-3 py-3 text-center text-[15px] outline-none focus:border-[#5646E5] ${!["6", "12", "24", "36"].includes(a.termMonths) && a.termMonths ? "border-[#5646E5] bg-[#ECE9FB]" : "border-slate-200"}`} placeholder="Otro (meses)" />
             </div>
           </div>
           <div>
