@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getInvite } from "@/lib/party-invite/inviteStore";
-import { isInviteUsable, partyRoleLabel } from "@/domain/party-invite/partyInvite";
+import { isInviteOpenForUpload, partyRoleLabel } from "@/domain/party-invite/partyInvite";
 import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequest } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
@@ -29,7 +29,9 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     success: true,
-    usable: isInviteUsable(invite, Date.now()),
+    // Un invite completado sigue siendo "usable" (para subir documentos o
+    // gestionar codeudor); solo deja de serlo si expiró o se invalidó.
+    usable: isInviteOpenForUpload(invite, Date.now()),
     status: invite.status,
     role: invite.role,
     roleLabel: partyRoleLabel(invite.role),
