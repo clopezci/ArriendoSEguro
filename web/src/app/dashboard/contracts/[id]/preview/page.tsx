@@ -309,6 +309,10 @@ export default function PreviewStepPage() {
 
   async function requestPreview() {
     if (!activeDraft) return;
+    // Releemos el borrador FRESCO de localStorage: tras "Importar datos de
+    // invitados" (updateDraft) el estado en memoria `activeDraft` queda viejo, y
+    // sin esto la vista previa seguía marcando faltantes ya resueltos.
+    const d = getDraft(id) ?? activeDraft;
     setLoadingPreview(true);
     setRenderErrors([]);
     setSaveMessage("");
@@ -318,9 +322,9 @@ export default function PreviewStepPage() {
         method: "POST",
         headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({
-          contractPayload: toContractInput(activeDraft),
-          isDemo: Boolean(activeDraft.isDemo),
-          isFreeTier: freeTier.enabled && !activeDraft.isDemo && !plusActive,
+          contractPayload: toContractInput(d),
+          isDemo: Boolean(d.isDemo),
+          isFreeTier: freeTier.enabled && !d.isDemo && !plusActive,
         }),
       });
       const data = (await res.json()) as ContractPreviewResponse;
@@ -381,17 +385,19 @@ export default function PreviewStepPage() {
     setSavingVersion(true);
     setSaveMessage("");
     try {
+      // Borrador fresco (con lo importado de invitados), no el estado en memoria.
+      const d = getDraft(id) ?? activeDraft;
       const res = await fetch("/api/contracts/save-draft-version", {
         method: "POST",
         headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({
           contractDraftId: id,
-          contractPayload: toContractInput(activeDraft),
+          contractPayload: toContractInput(d),
           html: cleanHtmlForSave || previewHtml,
           documentHash: versionInfo.documentHash,
-          hasSolidaryCoDebtor: activeDraft.hasSolidaryCoDebtor,
+          hasSolidaryCoDebtor: d.hasSolidaryCoDebtor,
           generatedAt: versionInfo.generatedAt,
-          renewalReminderEnabled: activeDraft.renewalReminderEnabled ?? true,
+          renewalReminderEnabled: d.renewalReminderEnabled ?? true,
         }),
       });
       const data = (await res.json()) as SaveDraftVersionResponse;
