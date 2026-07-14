@@ -20,6 +20,7 @@ const schema = z.object({
   inviteeName: z.string().max(120).optional(),
   inviterName: z.string().max(120).optional(),
   monthlyRent: z.number().int().nonnegative().optional(),
+  codebtorSlot: z.number().int().min(0).max(9).optional(),
 });
 
 /** El dueño invita a un tercero (inquilino/codeudor) a llenar sus datos por enlace. */
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
     inviterEmail: auth.user.email ?? "",
     inviterName: parsed.data.inviterName?.trim() || auth.user.email || "El arrendador",
     monthlyRent: parsed.data.monthlyRent,
+    codebtorSlot: parsed.data.codebtorSlot,
   });
 
   const base = appConfig.publicUrl.replace(/\/$/, "");

@@ -19,6 +19,7 @@ export function PartyInvitePanel({
   roleLabel,
   inviterName,
   monthlyRent,
+  codebtorSlot = 0,
   onImport,
 }: {
   contractDraftId: string;
@@ -26,6 +27,8 @@ export function PartyInvitePanel({
   roleLabel: string;
   inviterName: string;
   monthlyRent?: number;
+  /** Índice del codeudor (0 = principal; 1, 2… = adicionales) para enlaces independientes. */
+  codebtorSlot?: number;
   onImport: (party: PartyDraft) => void;
 }) {
   const { user } = useAuth();
@@ -45,7 +48,7 @@ export function PartyInvitePanel({
     if (!user) return;
     try {
       const res = await fetch(
-        `/api/party-invite/status?contractDraftId=${encodeURIComponent(contractDraftId)}&role=${role}`,
+        `/api/party-invite/status?contractDraftId=${encodeURIComponent(contractDraftId)}&role=${role}&codebtorSlot=${codebtorSlot}`,
         { headers: { ...(await buildAuthHeaders(user)) } },
       );
       const j = (await res.json()) as {
@@ -71,7 +74,7 @@ export function PartyInvitePanel({
     } catch {
       /* noop */
     }
-  }, [user, contractDraftId, role]);
+  }, [user, contractDraftId, role, codebtorSlot]);
 
   useEffect(() => {
     void refreshStatus();
@@ -103,7 +106,7 @@ export function PartyInvitePanel({
       const res = await fetch("/api/party-invite/create", {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ contractDraftId, role, inviteeEmail: email.trim(), inviteeName: name.trim(), inviterName, ...(monthlyRent && monthlyRent > 0 ? { monthlyRent } : {}) }),
+        body: JSON.stringify({ contractDraftId, role, inviteeEmail: email.trim(), inviteeName: name.trim(), inviterName, ...(monthlyRent && monthlyRent > 0 ? { monthlyRent } : {}), ...(codebtorSlot > 0 ? { codebtorSlot } : {}) }),
       });
       const j = (await res.json()) as {
         success?: boolean;
