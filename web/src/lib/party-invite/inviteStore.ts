@@ -25,6 +25,8 @@ export type CreateInviteParams = {
   inviterEmail: string;
   inviterName: string;
   monthlyRent?: number;
+  /** Índice del codeudor (0 = principal; 1, 2… = adicionales). */
+  codebtorSlot?: number;
 };
 
 /**
@@ -36,28 +38,31 @@ export type CreateInviteParams = {
  */
 export async function createInvite(firestore: Firestore, params: CreateInviteParams): Promise<PartyInviteDoc> {
   const newEmail = normalizeEmail(params.inviteeEmail);
+  const slot = Math.max(0, Math.floor(params.codebtorSlot ?? 0));
   const existing = await firestore
     .collection(PARTY_INVITES_COLLECTION)
     .where("contractDraftId", "==", params.contractDraftId)
     .where("role", "==", params.role)
     .where("status", "==", "active")
-    .limit(1)
+    .limit(20)
     .get()
     .catch(() => null);
-  if (existing && !existing.empty) {
-    const doc = existing.docs[0];
-    const data = doc.data() as PartyInviteDoc;
+  // Buscamos el enlace activo de ESTE slot (codeudor) — así varios codeudores
+  // conviven sin pisarse. Slot ausente = 0 (compatibilidad con enlaces previos).
+  const docForSlot = existing?.docs.find((d) => ((d.data() as PartyInviteDoc).codebtorSlot ?? 0) === slot) ?? null;
+  if (docForSlot) {
+    const data = docForSlot.data() as PartyInviteDoc;
     if (normalizeEmail(data.inviteeEmail) === newEmail) {
       // Mismo destinatario → mismo enlace. Actualizamos el canon si cambió/faltaba.
       if (typeof params.monthlyRent === "number" && params.monthlyRent > 0 && data.monthlyRent !== params.monthlyRent) {
-        await doc.ref.set({ monthlyRent: params.monthlyRent }, { merge: true });
+        await docForSlot.ref.set({ monthlyRent: params.monthlyRent }, { merge: true });
         return { ...data, monthlyRent: params.monthlyRent };
       }
       return data;
     }
-    // Correo distinto (otra persona): invalidamos el enlace anterior y creamos
-    // uno nuevo abajo, para que el correo llegue al destinatario correcto.
-    await doc.ref.set({ status: "expired", updatedAt: new Date().toISOString() }, { merge: true });
+    // Correo distinto para el MISMO slot (cambió el destinatario de ese codeudor):
+    // invalidamos ese enlace y creamos uno nuevo abajo.
+    await docForSlot.ref.set({ status: "expired", updatedAt: new Date().toISOString() }, { merge: true });
   }
 
   const token = newInviteToken();
@@ -73,6 +78,7 @@ export async function createInvite(firestore: Firestore, params: CreateInvitePar
     inviterEmail: params.inviterEmail,
     inviterName: params.inviterName,
     ...(typeof params.monthlyRent === "number" && params.monthlyRent > 0 ? { monthlyRent: params.monthlyRent } : {}),
+    ...(slot > 0 ? { codebtorSlot: slot } : {}),
     status: "active",
     otpVerifyAttempts: 0,
     contribution: null,

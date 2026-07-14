@@ -965,6 +965,22 @@ export default function NuevoPage() {
                 <ReviewItem label="Cláusulas especiales" value={a.clauses.length ? `${a.clauses.length} seleccionada(s)${a.clauses.includes("OTRA") ? " · incluye Otra" : ""}` : "Ninguna"} />
               </div>
 
+              {(() => {
+                const extra = draftId ? (getDraft(draftId)?.solidaryCoDebtors ?? []) : [];
+                return extra.length > 0 ? (
+                  <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Codeudores adicionales ({extra.length})</p>
+                    <ul className="mt-1 space-y-0.5">
+                      {extra.map((c, i) => (
+                        <li key={`${c.documentNumber}-${i}`} className="text-[14px] font-medium text-slate-800">
+                          Codeudor {i + 2}: {c.fullName || "—"}{c.documentNumber ? ` · ${c.documentType} ${c.documentNumber}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null;
+              })()}
+
               {a.tenantMode === "invite" && (
                 <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">✉️ El arrendatario completará sus datos por invitación; el contrato se podrá generar cuando los envíe.</p>
               )}

@@ -19,6 +19,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const contractDraftId = url.searchParams.get("contractDraftId") ?? "";
   const role = url.searchParams.get("role") ?? "";
+  const slot = Math.max(0, Math.floor(Number(url.searchParams.get("codebtorSlot") ?? "0")) || 0);
   if (!contractDraftId || !isPartyRole(role)) {
     return NextResponse.json({ success: false, errors: [{ field: "query", message: "Parámetros inválidos." }] }, { status: 422 });
   }
@@ -28,12 +29,12 @@ export async function GET(request: Request) {
     .where("contractDraftId", "==", contractDraftId)
     .where("role", "==", role)
     .where("inviterUid", "==", auth.user.uid)
-    .limit(5)
+    .limit(20)
     .get();
 
   if (snap.empty) return NextResponse.json({ success: true, invite: null });
 
-  // El más reciente (por createdAt).
+  // Solo el codeudor de ESTE slot (slot ausente = 0), el más reciente.
   const docs = snap.docs
     .map(
       (d) =>
@@ -44,9 +45,12 @@ export async function GET(request: Request) {
           selfAttestation?: unknown;
           completedAt?: string;
           createdAt?: string;
+          codebtorSlot?: number;
         },
     )
+    .filter((d) => (d.codebtorSlot ?? 0) === slot)
     .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+  if (docs.length === 0) return NextResponse.json({ success: true, invite: null });
   const inv = docs[0];
 
   return NextResponse.json({

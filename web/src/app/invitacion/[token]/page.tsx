@@ -410,6 +410,19 @@ function CodebtorSection({ tenantToken, rentReference = 0 }: { tenantToken: stri
   const [done, setDone] = useState<"invited" | "entered" | "none" | null>(null);
   const [inviteUrl, setInviteUrl] = useState("");
   const [phone, setPhone] = useState("");
+  // Slot del codeudor que el inquilino está agregando (0 = principal; 1, 2… más).
+  const [slot, setSlot] = useState(0);
+
+  function addAnother() {
+    setSlot((s) => s + 1);
+    setDone(null);
+    setMode("choose");
+    setEmail("");
+    setName("");
+    setPhone("");
+    setInviteUrl("");
+    setMsg("");
+  }
 
   // Crea la invitación del codeudor y devuelve su enlace. El correo con el
   // código (OTP) se envía desde el servidor; `channel` solo cambia el mensaje.
@@ -426,7 +439,7 @@ function CodebtorSection({ tenantToken, rentReference = 0 }: { tenantToken: stri
       const res = await fetch("/api/party-invite/create-codebtor", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tenantToken, inviteeEmail: email.trim(), inviteeName: name.trim() }),
+        body: JSON.stringify({ tenantToken, inviteeEmail: email.trim(), inviteeName: name.trim(), ...(slot > 0 ? { codebtorSlot: slot } : {}) }),
       });
       const j = (await res.json()) as {
         success?: boolean;
@@ -491,6 +504,7 @@ function CodebtorSection({ tenantToken, rentReference = 0 }: { tenantToken: stri
           tenantToken,
           party: { ...sanitized, notificationAddress: "", economicSupport: { monthlyIncome: income } },
           thirdPartyAuthorization: true,
+          ...(slot > 0 ? { codebtorSlot: slot } : {}),
         }),
       });
       const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
@@ -558,6 +572,9 @@ function CodebtorSection({ tenantToken, rentReference = 0 }: { tenantToken: stri
             </div>
           </div>
         )}
+        <button type="button" onClick={addAnother} className="mt-3 rounded-2xl border-2 border-[#5646E5]/40 bg-white px-4 py-2 text-sm font-bold text-[#5646E5] transition hover:bg-[#ECE9FB]">
+          + Agregar otro codeudor
+        </button>
       </div>
     );
   }

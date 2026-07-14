@@ -8,6 +8,7 @@ import {
   type PartyDraft,
 } from "@/features/contracts/wizard-state";
 import { IncomeSuggestion } from "@/components/contracts/income-suggestion";
+import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
 
 type NewCodebtor = {
   fullName: string;
@@ -36,30 +37,56 @@ const EMPTY: NewCodebtor = {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 
 /**
- * Gestor de codeudores **adicionales** (más allá del primero), en estilo bento y
- * con la MISMA lógica del primer codeudor: documento, ciudad, contacto, ingreso
- * mensual con validación de solvencia (bloquea si es inferior al canon) y
- * juramento. Aditivo: escribe en `draft.solidaryCoDebtors` y sus consentimientos
- * en `codebtorConsentsList`. Cada uno firma como `solidaryCoDebtor_2`, `_3`, …
- *
- * Nota: el envío de enlace/invitación es de UN codeudor por contrato (el
- * primero). Los adicionales los ingresa el dueño con la autorización del titular.
+ * Gestor de codeudores **adicionales** (2º, 3º…), en estilo bento y con la MISMA
+ * lógica del primer codeudor: cada uno se puede **ingresar tú mismo** o
+ * **enviar un enlace independiente** (el codeudor completa datos, sube documentos
+ * y valida su solvencia por su cuenta). Se distingue por `codebtorSlot` (1, 2…);
+ * el enlace del inquilino también puede invitar a más codeudores. Reusa
+ * `PartyInvitePanel` (enlace + OTP + documentos) y la validación de ingresos.
+ * Aditivo: escribe en `draft.solidaryCoDebtors` + `codebtorConsentsList`.
  */
 export function AdditionalCodebtorsManager({ contractId, max = 4 }: { contractId: string; max?: number }) {
   const [list, setList] = useState<PartyDraft[]>(() => getDraft(contractId)?.solidaryCoDebtors ?? []);
-  const [adding, setAdding] = useState(false);
+  const [addMode, setAddMode] = useState<null | "self" | "invite">(null);
   const [form, setForm] = useState<NewCodebtor>(EMPTY);
   const [error, setError] = useState("");
 
   const draft = getDraft(contractId);
   const rentReference = Number(draft?.property?.monthlyRentProposed ?? draft?.lease?.monthlyRent ?? 0);
+  const inviterName = (draft?.landlord?.fullName || "").trim() || "El arrendador";
   const incomeNum = Number((form.income || "").replace(/[^\d]/g, "")) || 0;
+  // Slot del próximo codeudor adicional (0 = principal; los adicionales van 1..N).
+  const nextSlot = list.length + 1;
 
   function refresh() {
     setList(getDraft(contractId)?.solidaryCoDebtors ?? []);
   }
 
-  function add() {
+  function appendCodebtor(party: PartyDraft, selfEntered: boolean) {
+    updateDraft(contractId, (d) =>
+      appendAudit(
+        {
+          ...d,
+          solidaryCoDebtors: [...(d.solidaryCoDebtors ?? []), party],
+          codebtorConsentsList: [
+            ...(d.codebtorConsentsList ?? []),
+            // Si lo ingresó el dueño, las aceptaciones del titular quedan pendientes
+            // (las hace al firmar). Si vino por enlace, ya las aceptó el titular.
+            selfEntered
+              ? { dataProcessingConsent: false, electronicSignatureConsent: false, solidaryObligationAcceptance: false }
+              : { dataProcessingConsent: true, electronicSignatureConsent: true, solidaryObligationAcceptance: true },
+          ],
+        },
+        "codebtor_data_saved",
+        { additional: true },
+      ),
+    );
+    setForm(EMPTY);
+    setAddMode(null);
+    refresh();
+  }
+
+  function addSelf() {
     setError("");
     const f = form;
     if (!f.fullName.trim() || !f.documentNumber.trim() || !f.city.trim() || !f.phone.trim()) {
@@ -82,34 +109,20 @@ export function AdditionalCodebtorsManager({ contractId, max = 4 }: { contractId
       setError("El codeudor debe aceptar la declaración para continuar.");
       return;
     }
-    const party: PartyDraft = {
-      fullName: f.fullName.trim(),
-      documentType: f.documentType,
-      documentNumber: f.documentNumber.trim(),
-      city: f.city.trim(),
-      email: f.email.trim().toLowerCase(),
-      phone: f.phone.trim(),
-      notificationAddress: "",
-      truthfulnessOathAccepted: true,
-      economicSupport: { monthlyIncome: incomeNum },
-    };
-    updateDraft(contractId, (d) =>
-      appendAudit(
-        {
-          ...d,
-          solidaryCoDebtors: [...(d.solidaryCoDebtors ?? []), party],
-          codebtorConsentsList: [
-            ...(d.codebtorConsentsList ?? []),
-            { dataProcessingConsent: true, electronicSignatureConsent: true, solidaryObligationAcceptance: true },
-          ],
-        },
-        "codebtor_data_saved",
-        { additional: true },
-      ),
+    appendCodebtor(
+      {
+        fullName: f.fullName.trim(),
+        documentType: f.documentType,
+        documentNumber: f.documentNumber.trim(),
+        city: f.city.trim(),
+        email: f.email.trim().toLowerCase(),
+        phone: f.phone.trim(),
+        notificationAddress: "",
+        truthfulnessOathAccepted: true,
+        economicSupport: { monthlyIncome: incomeNum },
+      },
+      true,
     );
-    setForm(EMPTY);
-    setAdding(false);
-    refresh();
   }
 
   function remove(index: number) {
@@ -128,8 +141,9 @@ export function AdditionalCodebtorsManager({ contractId, max = 4 }: { contractId
     <section className="rounded-3xl border-2 border-[#5646E5]/20 bg-[#ECE9FB]/40 p-4">
       <h4 className="text-sm font-bold text-[#5646E5]">Codeudores adicionales (opcional)</h4>
       <p className="mt-1 text-xs text-slate-600">
-        Si necesitas más de un codeudor, agrégalos aquí. Cada uno lleva la misma validación (documento, contacto, ingreso
-        vs. canon y juramento), firma el contrato y queda en el documento.
+        ¿Más de un codeudor? Agrégalos aquí. Cada uno puedes <strong>ingresarlo tú</strong> o <strong>enviarle su propio
+        enlace</strong> (llena datos, sube documentos y valida su ingreso vs. el canon, como el primero). Cada uno firma y
+        queda en el contrato.
       </p>
 
       {list.length > 0 && (
@@ -137,8 +151,9 @@ export function AdditionalCodebtorsManager({ contractId, max = 4 }: { contractId
           {list.map((c, i) => (
             <li key={`${c.documentNumber}-${i}`} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white/90 px-3 py-2.5 text-sm">
               <span className="min-w-0">
-                <strong className="text-[#17151F]">Codeudor {i + 2}:</strong> {c.fullName}
-                <span className="text-slate-500"> · {c.documentType} {c.documentNumber} · {c.email}</span>
+                <strong className="text-[#17151F]">Codeudor {i + 2}:</strong> {c.fullName || "(por invitación)"}
+                {c.documentNumber ? <span className="text-slate-500"> · {c.documentType} {c.documentNumber}</span> : null}
+                {c.email ? <span className="text-slate-500"> · {c.email}</span> : null}
               </span>
               <button type="button" onClick={() => remove(i)} className="flex-none rounded-lg border-2 border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:border-rose-400 hover:bg-rose-50">
                 Quitar
@@ -148,7 +163,33 @@ export function AdditionalCodebtorsManager({ contractId, max = 4 }: { contractId
         </ul>
       )}
 
-      {adding ? (
+      {addMode === null && canAddMore && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button type="button" onClick={() => { setAddMode("self"); setError(""); }} className="rounded-2xl border-2 border-dashed border-[#5646E5]/40 px-4 py-2.5 text-sm font-bold text-[#5646E5] transition hover:bg-[#ECE9FB]">
+            + Ingresar otro codeudor yo
+          </button>
+          <button type="button" onClick={() => { setAddMode("invite"); setError(""); }} className="rounded-2xl border-2 border-dashed border-[#12B886]/50 px-4 py-2.5 text-sm font-bold text-[#0B7A55] transition hover:bg-[#12B886]/10">
+            + Enviar enlace a otro codeudor
+          </button>
+        </div>
+      )}
+
+      {addMode === "invite" && (
+        <div className="mt-3">
+          <PartyInvitePanel
+            contractDraftId={contractId}
+            role="solidaryCoDebtor"
+            roleLabel={`Codeudor ${nextSlot + 1}`}
+            inviterName={inviterName}
+            monthlyRent={rentReference}
+            codebtorSlot={nextSlot}
+            onImport={(p) => appendCodebtor(p, false)}
+          />
+          <button type="button" onClick={() => setAddMode(null)} className="mt-2 text-xs font-semibold text-slate-500 underline">Cancelar</button>
+        </div>
+      )}
+
+      {addMode === "self" && (
         <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
           <label className="text-xs font-medium text-slate-600 sm:col-span-2">
             Nombre completo
@@ -189,27 +230,22 @@ export function AdditionalCodebtorsManager({ contractId, max = 4 }: { contractId
           <label className="sm:col-span-2 flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-3 text-xs text-slate-700">
             <input type="checkbox" checked={form.oath} onChange={(e) => setForm((s) => ({ ...s, oath: e.target.checked }))} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
             <span>
-              Como codeudor, declaro que mis datos son verídicos, acepto el tratamiento de datos, la firma electrónica y
-              la obligación solidaria dentro del contrato.
+              Declaro que cuento con la autorización del codeudor para ingresar sus datos (Ley 1581). Sus aceptaciones
+              (juramento, firma electrónica y obligación solidaria) las hará el propio codeudor al firmar.
             </span>
           </label>
           {error && <p className="sm:col-span-2 text-xs font-medium text-rose-600">{error}</p>}
           <div className="sm:col-span-2 flex gap-2">
-            <button type="button" onClick={add} className="rounded-2xl bg-[#5646E5] px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-105">
+            <button type="button" onClick={addSelf} className="rounded-2xl bg-[#5646E5] px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-105">
               Guardar codeudor
             </button>
-            <button type="button" onClick={() => { setAdding(false); setError(""); setForm(EMPTY); }} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600">
+            <button type="button" onClick={() => { setAddMode(null); setError(""); setForm(EMPTY); }} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600">
               Cancelar
             </button>
           </div>
         </div>
-      ) : (
-        canAddMore && (
-          <button type="button" onClick={() => setAdding(true)} className="mt-3 rounded-2xl border-2 border-dashed border-[#5646E5]/40 px-4 py-2.5 text-sm font-bold text-[#5646E5] transition hover:bg-[#ECE9FB]">
-            + Agregar otro codeudor
-          </button>
-        )
       )}
+
       {!canAddMore && <p className="mt-2 text-[11px] text-slate-500">Máximo {max + 1} codeudores en total.</p>}
     </section>
   );

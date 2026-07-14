@@ -27,6 +27,13 @@ export type PartyInviteDoc = {
   inviterName: string;
   /** Canon mensual del contrato (para validar la solvencia del invitado). */
   monthlyRent?: number;
+  /**
+   * Índice del codeudor para permitir VARIOS codeudores independientes en un
+   * mismo contrato: 0 = codeudor principal (`solidaryCoDebtor`); 1, 2, … =
+   * codeudores adicionales (`solidaryCoDebtors[slot-1]`). Solo aplica a
+   * role `solidaryCoDebtor`. Ausente = 0 (compatibilidad).
+   */
+  codebtorSlot?: number;
   status: PartyInviteStatus;
   otpHash?: string | null;
   otpExpiresAt?: string | null;
