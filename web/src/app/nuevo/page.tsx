@@ -22,6 +22,7 @@ import { ExpressRegister } from "@/components/nuevo/express-register";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
 import { CodebtorViaTenantPanel } from "@/components/contracts/codebtor-via-tenant-panel";
 import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-owner-list";
+import { AdditionalCodebtorsManager } from "@/components/contracts/additional-codebtors-manager";
 import { IncomeSuggestion } from "@/components/contracts/income-suggestion";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
@@ -1252,28 +1253,34 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
         </div>
       );
     case "codebtorfull":
-      return a.codebtorMode === "self" ? (
-        <div className="flex flex-col gap-3">
-          <InputMic autoFocus placeholder="Nombre del codeudor" value={a.codebtorName} onChange={(e) => setA({ ...a, codebtorName: e.target.value })} voice={(t) => setA({ ...a, codebtorName: t })} />
-          <PartyFields
-            docType={a.codebtorDocType} docNumber={a.codebtorDocNumber} city={a.codebtorCity} email={a.codebtorEmail} phone={a.codebtorPhone} auth={a.codebtorAuth}
-            income={a.codebtorIncome} onIncome={(v) => setA({ ...a, codebtorIncome: v })} rentReference={Number((a.canon || "").replace(/[^\d]/g, "")) || 0} who="el codeudor"
-            authLabel="Declaro que tengo autorización del codeudor para ingresar sus datos personales (Ley 1581 de 2012)."
-            onChange={(patch) => { if (patch.auth && !a.codebtorAuth) void captureOathEvidence("codebtor_third_party_authorization", party.draftId); setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth }); }}
-          />
-        </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {a.codebtorMode === "tenant" ? (
-            <CodebtorViaTenantPanel contractDraftId={party.draftId} tenantInvited={a.tenantMode === "invite"}
-              onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
+      return (
+        <div className="flex flex-col gap-4">
+          {a.codebtorMode === "self" ? (
+            <div className="flex flex-col gap-3">
+              <InputMic autoFocus placeholder="Nombre del codeudor" value={a.codebtorName} onChange={(e) => setA({ ...a, codebtorName: e.target.value })} voice={(t) => setA({ ...a, codebtorName: t })} />
+              <PartyFields
+                docType={a.codebtorDocType} docNumber={a.codebtorDocNumber} city={a.codebtorCity} email={a.codebtorEmail} phone={a.codebtorPhone} auth={a.codebtorAuth}
+                income={a.codebtorIncome} onIncome={(v) => setA({ ...a, codebtorIncome: v })} rentReference={Number((a.canon || "").replace(/[^\d]/g, "")) || 0} who="el codeudor"
+                authLabel="Declaro que tengo autorización del codeudor para ingresar sus datos personales (Ley 1581 de 2012)."
+                onChange={(patch) => { if (patch.auth && !a.codebtorAuth) void captureOathEvidence("codebtor_third_party_authorization", party.draftId); setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth }); }}
+              />
+            </div>
           ) : (
-            <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
-              monthlyRent={Number((a.canon || "").replace(/[^\d]/g, "")) || 0}
-              onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
+            <div className="flex flex-col gap-3">
+              {a.codebtorMode === "tenant" ? (
+                <CodebtorViaTenantPanel contractDraftId={party.draftId} tenantInvited={a.tenantMode === "invite"}
+                  onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
+              ) : (
+                <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
+                  monthlyRent={Number((a.canon || "").replace(/[^\d]/g, "")) || 0}
+                  onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
+              )}
+              {/* El dueño ve los documentos que el codeudor subió por su enlace. */}
+              <InviteSupportsOwnerList contractDraftId={party.draftId} role="solidaryCoDebtor" title="Documentos que subió el codeudor" />
+            </div>
           )}
-          {/* El dueño ve los documentos que el codeudor subió por su enlace. */}
-          <InviteSupportsOwnerList contractDraftId={party.draftId} role="solidaryCoDebtor" title="Documentos que subió el codeudor" />
+          {/* Codeudores ADICIONALES (2º, 3º…): misma lógica y presentación bento. */}
+          <AdditionalCodebtorsManager contractId={party.draftId} />
         </div>
       );
     case "credit":
