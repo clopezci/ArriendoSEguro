@@ -82,7 +82,9 @@ const QUESTIONS: Q[] = [
   { id: "credit", block: "Verificación (opcional)", prompt: "¿Quieres verificar el historial?", hint: "Herramientas externas para evaluar al inquilino y codeudor. Es opcional.", kind: "credit", basic: false },
   { id: "utils", block: "Servicios y cláusulas", prompt: "¿Quién paga los servicios públicos?", hint: "Agua, luz, gas e internet del inmueble.", kind: "utils", basic: false },
   { id: "clauses", block: "Servicios y cláusulas", prompt: "¿Añades cláusulas especiales?", hint: "Opcional. Toca las que apliquen; puedes seguir sin ninguna.", kind: "clauses", basic: false },
-  { id: "docs", block: "Documentos del inquilino", prompt: "Documentos del inquilino", hint: "Los subes tú, o le pides al inquilino que los cargue por WhatsApp o correo.", kind: "docs", basic: false },
+  // El paso separado de "documentos" se eliminó: los documentos se piden dentro
+  // del MISMO enlace del inquilino/codeudor (llenan datos y suben documentos), y
+  // el dueño los ve en la vista previa. Así no se pide dos veces.
 ];
 
 /** ¿Este paso se salta según las respuestas? (p. ej. datos del inquilino si es por invitación). */
@@ -509,18 +511,32 @@ export default function NuevoPage() {
     return true;
   }, []);
 
-  // Al montar: (1) si venimos con ?id=... (desde "Mis contratos" → Continuar),
-  // retomamos ese borrador; (2) si NO hay ?id= pero había un borrador activo
-  // (p. ej. el usuario RECARGÓ / hizo pull-to-refresh), lo restauramos para
-  // dejarlo donde estaba en vez de mandarlo al inicio.
+  // Persistencia ENTRE EQUIPOS: al montar, si hay sesión, traemos del servidor los
+  // borradores del usuario a localStorage. Así un borrador creado en el computador
+  // se puede continuar en el celular (y viceversa). Sin esto, la restauración por
+  // ?id= o "borrador activo" solo veía lo local del equipo.
+  const [serverSynced, setServerSynced] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (userRef.current) { try { await pullServerDraftsIntoLocal(); } catch { /* seguimos con lo local */ } }
+      if (!cancelled) setServerSynced(true);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+  // Al montar (tras sincronizar con el servidor): (1) si venimos con ?id=... (desde
+  // "Mis contratos" → Continuar), retomamos ese borrador; (2) si NO hay ?id= pero
+  // había un borrador activo (recarga), lo restauramos donde estaba.
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!serverSynced) return; // esperamos el pull del servidor primero
     if (sessionStorage.getItem(GOOGLE_RESUME_KEY)) return; // Google tiene prioridad
     const id = new URLSearchParams(window.location.search).get("id");
     if (id) { restoreDraft(id); return; }
     const active = window.localStorage.getItem(ACTIVE_KEY);
     if (active) restoreDraft(active);
-  }, [restoreDraft]);
+  }, [restoreDraft, serverSynced]);
 
   // Mientras el usuario avanza (o edita), guardamos snapshot + puntero activo en
   // CADA cambio, para que una recarga lo devuelva al paso exacto.
@@ -1200,7 +1216,10 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               <p className="text-xs text-slate-500">En el siguiente paso completas su documento y contacto.</p>
             </>
           ) : (
-            <p className="text-xs text-slate-500">En el siguiente paso le envías el <b>enlace</b> (correo o WhatsApp) para que complete sus datos con su firma y evidencia.</p>
+            <div className="rounded-2xl border border-[#5646E5]/20 bg-[#ECE9FB]/40 p-3 text-xs text-slate-600">
+              <p>En el siguiente paso le envías el <b>enlace</b> (correo o WhatsApp): en el mismo enlace la persona completa sus datos <b>y sube sus documentos</b>, con su firma y evidencia.</p>
+              <p className="mt-1">💡 <b>Puedes seguir avanzando</b> mientras la otra persona completa, o cerrar y <b>retomar después</b> — sus datos y documentos se importan solos en la vista previa cuando termine.</p>
+            </div>
           )}
         </div>
       );
@@ -1262,7 +1281,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
                   ? "En el siguiente paso ingresas su nombre, documento y contacto."
                   : a.codebtorMode === "tenant"
                   ? "El inquilino lo gestionará desde su invitación; tú solo esperas a que quede listo."
-                  : "En el siguiente paso le envías el enlace para que complete sus datos."}
+                  : "En el siguiente paso le envías el enlace: completa sus datos y sube documentos por ahí. Puedes seguir avanzando y sus datos se importan solos en la vista previa cuando termine."}
               </p>
             </>
           )}

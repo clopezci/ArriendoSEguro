@@ -11,14 +11,15 @@ type Row = { id: string; role: string; fileName: string; sizeBytes: number; uplo
  * invitado (inquilino/codeudor) desde su enlace. Se auto-actualiza para que el
  * dueño sepa cuándo ya subieron.
  */
-export function InviteSupportsOwnerList({ contractDraftId, role, title }: { contractDraftId: string; role: "tenant" | "solidaryCoDebtor"; title: string }) {
+export function InviteSupportsOwnerList({ contractDraftId, role, title, codebtorSlot }: { contractDraftId: string; role: "tenant" | "solidaryCoDebtor"; title: string; codebtorSlot?: number }) {
   const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
 
   const refresh = useCallback(async () => {
     if (!user || !contractDraftId) return;
     try {
-      const res = await fetch(`/api/party-invite/support/owner-list?contractDraftId=${encodeURIComponent(contractDraftId)}&role=${role}`, {
+      const slotQ = typeof codebtorSlot === "number" ? `&codebtorSlot=${codebtorSlot}` : "";
+      const res = await fetch(`/api/party-invite/support/owner-list?contractDraftId=${encodeURIComponent(contractDraftId)}&role=${role}${slotQ}`, {
         headers: { ...(await buildAuthHeaders(user)) },
       });
       const j = (await res.json()) as { success?: boolean; supports?: Row[] };
@@ -26,7 +27,7 @@ export function InviteSupportsOwnerList({ contractDraftId, role, title }: { cont
     } catch {
       /* noop */
     }
-  }, [user, contractDraftId, role]);
+  }, [user, contractDraftId, role, codebtorSlot]);
 
   useEffect(() => {
     void refresh();

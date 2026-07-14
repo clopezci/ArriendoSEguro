@@ -44,7 +44,8 @@ export async function POST(request: Request) {
   // La ruta debe estar DIRECTAMENTE en la carpeta de soportes de ESTA parte de
   // ESTE contrato (un solo segmento tras el prefijo, sin subrutas ni traversal).
   const bucketName = process.env.FIREBASE_STORAGE_BUCKET?.trim();
-  const expectedPrefix = `gs://${bucketName}/${inviteSupportStoragePrefix(invite.contractDraftId, invite.role)}`;
+  const slot = invite.codebtorSlot ?? 0;
+  const expectedPrefix = `gs://${bucketName}/${inviteSupportStoragePrefix(invite.contractDraftId, invite.role, slot)}`;
   const remainder = parsed.data.storagePath.startsWith(expectedPrefix)
     ? parsed.data.storagePath.slice(expectedPrefix.length)
     : null;
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
   // PDF/JPG/PNG/WEBP. Si no coincide, borramos el objeto y rechazamos.
   if (bucketName) {
     try {
-      const objectPath = `${inviteSupportStoragePrefix(invite.contractDraftId, invite.role)}${remainder}`;
+      const objectPath = `${inviteSupportStoragePrefix(invite.contractDraftId, invite.role, slot)}${remainder}`;
       const fileRef = getStorage().bucket(bucketName).file(objectPath);
       const [head] = await fileRef.download({ start: 0, end: 15 });
       if (!isAllowedSupportMagic(new Uint8Array(head))) {
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
     id: ref.id,
     contractDraftId: invite.contractDraftId,
     role: invite.role,
+    codebtorSlot: slot, // para separar documentos de varios codeudores
     inviterUid: invite.inviterUid, // el dueño: para que él los vea y descargue
     inviteToken: invite.token,
     uploadedByName: invite.contribution?.fullName || invite.inviteeName || "",
