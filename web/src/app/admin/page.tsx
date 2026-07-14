@@ -2139,59 +2139,49 @@ export default function AdminPage() {
             </ul>
           )}
 
-          <div className="mt-4">
-            <p className="text-xs font-medium text-slate-700">
-              Referidos a aliados ({partnerLeads.length}) · elegibles comisión:{" "}
-              {partnerLeads.filter((l) => l.outcome.commissionEligible).length} · en disputa:{" "}
-              {partnerLeads.filter((l) => l.outcome.needsReview).length}
-            </p>
+          <div className="mt-5 rounded-3xl border border-slate-200 bg-[#F5F3EF] p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-black tracking-tight text-[#17151F]">Conciliación de comisiones</h3>
+              <span className="rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-slate-600">{partnerLeads.length} referidos</span>
+              <span className="rounded-full bg-[#12B886]/15 px-2.5 py-0.5 text-[11px] font-bold text-[#0B7A55]">
+                {partnerLeads.filter((l) => l.outcome.commissionEligible).length} elegibles
+              </span>
+              <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-bold text-rose-700">
+                {partnerLeads.filter((l) => l.outcome.needsReview).length} en disputa
+              </span>
+            </div>
             {partnerLeads.length === 0 ? (
-              <p className="mt-1 text-[11px] text-slate-500">Aún no hay referidos.</p>
+              <p className="mt-3 text-sm text-slate-500">Aún no hay referidos a aliados.</p>
             ) : (
-              <ul className="mt-2 space-y-1">
-                {partnerLeads.map((l) => (
-                  <li
-                    key={l.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded border border-slate-200 bg-white/80 px-2 py-1.5 text-[11px]"
-                  >
-                    <span className="min-w-0">
-                      <strong className="text-slate-800">{l.partnerName}</strong>
-                      <span className="text-slate-500"> · {l.clientName} ({l.userEmail})</span>
-                      <span
-                        className={`ml-1 ${l.outcome.needsReview ? "text-rose-700" : l.outcome.commissionEligible ? "text-emerald-700" : "text-slate-500"}`}
-                      >
-                        · {l.outcome.label}
-                      </span>
-                      <span className="text-slate-400"> · comisión: {l.commissionStatus}</span>
-                    </span>
-                    <span className="flex gap-1">
-                      <button
-                        type="button"
-                        disabled={partnerBusy}
-                        onClick={() => void setLeadCommission(l.id, "billed")}
-                        className="rounded border border-slate-400 px-2 py-0.5 text-slate-800 disabled:opacity-50"
-                      >
-                        Facturada
-                      </button>
-                      <button
-                        type="button"
-                        disabled={partnerBusy}
-                        onClick={() => void setLeadCommission(l.id, "paid")}
-                        className="rounded border border-emerald-500 px-2 py-0.5 text-emerald-700 disabled:opacity-50"
-                      >
-                        Pagada
-                      </button>
-                      <button
-                        type="button"
-                        disabled={partnerBusy}
-                        onClick={() => void setLeadCommission(l.id, "void")}
-                        className="rounded border border-slate-300 px-2 py-0.5 text-slate-600 disabled:opacity-50"
-                      >
-                        Anular
-                      </button>
-                    </span>
-                  </li>
-                ))}
+              <ul className="mt-3 space-y-2.5">
+                {partnerLeads.map((l) => {
+                  const commLabel = l.commissionStatus === "paid" ? "Pagada" : l.commissionStatus === "billed" ? "Facturada" : l.commissionStatus === "void" ? "Anulada" : "Abierta";
+                  const commCls = l.commissionStatus === "paid" ? "bg-emerald-100 text-emerald-700" : l.commissionStatus === "billed" ? "bg-amber-100 text-amber-800" : l.commissionStatus === "void" ? "bg-slate-200 text-slate-500" : "bg-slate-100 text-slate-600";
+                  return (
+                    <li key={l.id} className="rounded-2xl border border-slate-200 bg-white/95 p-3.5 shadow-[0_6px_18px_rgba(86,70,229,0.05)]">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold tracking-tight text-[#17151F]">{l.partnerName}</p>
+                          <p className="mt-0.5 truncate text-xs text-slate-500">{l.clientName} · {l.userEmail}</p>
+                        </div>
+                        <div className="flex flex-none flex-wrap items-center gap-1.5">
+                          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${l.outcome.needsReview ? "bg-rose-100 text-rose-700" : l.outcome.commissionEligible ? "bg-[#12B886]/15 text-[#0B7A55]" : "bg-slate-100 text-slate-500"}`}>
+                            {l.outcome.label}
+                          </span>
+                          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${commCls}`}>{commLabel}</span>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button type="button" disabled={partnerBusy} onClick={() => void setLeadCommission(l.id, "billed")}
+                          className="rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800 transition hover:brightness-105 disabled:opacity-50">Marcar facturada</button>
+                        <button type="button" disabled={partnerBusy} onClick={() => void setLeadCommission(l.id, "paid")}
+                          className="rounded-xl bg-[#12B886] px-3 py-1.5 text-xs font-bold text-white transition hover:brightness-105 disabled:opacity-50">Marcar pagada</button>
+                        <button type="button" disabled={partnerBusy} onClick={() => void setLeadCommission(l.id, "void")}
+                          className="rounded-xl border-2 border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-500 transition hover:border-slate-300 disabled:opacity-50">Anular</button>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

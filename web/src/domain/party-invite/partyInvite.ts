@@ -65,6 +65,19 @@ export function isInviteUsable(doc: PartyInviteDoc | null | undefined, nowMs: nu
   return true;
 }
 
+/**
+ * Igual que `isInviteUsable`, pero también acepta invitaciones **completadas**.
+ * Se usa para SUBIR DOCUMENTOS después de que la persona ya envió sus datos (el
+ * invite pasó a `completed`): el enlace sigue vigente para adjuntar soportes.
+ */
+export function isInviteOpenForUpload(doc: PartyInviteDoc | null | undefined, nowMs: number): boolean {
+  if (!doc) return false;
+  if (doc.status !== "active" && doc.status !== "completed") return false;
+  const exp = Date.parse(doc.expiresAt ?? "");
+  if (Number.isFinite(exp) && nowMs > exp) return false;
+  return true;
+}
+
 /** Clave del perfil reutilizable del tercero: por rol + correo normalizado. */
 export function savedPartyProfileKey(role: PartyRole, email: string): string {
   return `${role}__${normalizeEmail(email)}`;

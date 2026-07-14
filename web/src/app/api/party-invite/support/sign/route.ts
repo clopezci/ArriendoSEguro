@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getStorage } from "firebase-admin/storage";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getInvite } from "@/lib/party-invite/inviteStore";
-import { isInviteUsable } from "@/domain/party-invite/partyInvite";
+import { isInviteOpenForUpload } from "@/domain/party-invite/partyInvite";
 import { validatePaymentSupportFile, sanitizeSupportFileName } from "@/domain/payments/supportValidation";
 import { inviteSupportStoragePrefix } from "@/domain/party-invite/inviteSupports";
 import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequest } from "@/lib/security/rate-limit";
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ success: false, errors: [{ field: "body", message: "Datos inválidos." }] }, { status: 422 });
 
   const invite = await getInvite(firestore, parsed.data.token);
-  if (!isInviteUsable(invite, Date.now()) || !invite) {
+  if (!isInviteOpenForUpload(invite, Date.now()) || !invite) {
     return NextResponse.json({ success: false, errors: [{ field: "token", message: "El enlace no es válido o expiró." }] }, { status: 410 });
   }
   if (!invite.otpVerifiedAt) {
