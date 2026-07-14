@@ -379,8 +379,13 @@ export default function InvitacionPage() {
         <div className="space-y-4 text-center">
           <div className="rounded-3xl border-2 border-[#12B886]/40 bg-[#12B886]/10 p-8">
             <div className="mx-auto mb-3 grid h-16 w-16 place-items-center rounded-2xl bg-[#12B886] text-3xl text-white">✓</div>
-            <p className="text-xl font-black text-emerald-800">¡Todo listo!</p>
-            <p className="mt-1 text-sm text-emerald-800/90">Ya puedes cerrar esta página. Si necesitas subir otro documento, vuelve a abrir el enlace.</p>
+            <p className="text-xl font-black text-emerald-800">¡Terminaste tu parte!</p>
+            <p className="mt-1 text-sm text-emerald-800/90">
+              Tus datos {info?.role === "solidaryCoDebtor" ? "de codeudor" : ""} y documentos quedaron guardados.{" "}
+              <strong>{info?.inviterName || "Quien te invitó"}</strong> continúa desde su cuenta con la revisión, el
+              contrato y la firma. <strong>Ya puedes cerrar esta página.</strong>
+            </p>
+            <p className="mt-2 text-xs text-emerald-800/70">Si necesitas subir otro documento, vuelve a abrir este mismo enlace.</p>
           </div>
           <button type="button" onClick={() => setFinished(false)} className="text-sm font-semibold text-[#5646E5] underline">← Volver a subir documentos</button>
         </div>
