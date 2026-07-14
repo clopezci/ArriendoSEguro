@@ -13,6 +13,7 @@ const schema = z.object({
   party: z.unknown(),
   thirdPartyAuthorization: z.boolean(),
   codebtorSlot: z.number().int().min(0).max(9).optional(),
+  assignNewSlot: z.boolean().optional(),
 });
 
 /**
@@ -116,6 +117,7 @@ export async function POST(request: Request) {
     inviterName: tenantName,
     monthlyRent: tenantInvite.monthlyRent,
     codebtorSlot: parsed.data.codebtorSlot,
+    assignNewSlot: parsed.data.assignNewSlot,
   });
   const nowIso = new Date().toISOString();
   await firestore.collection(PARTY_INVITES_COLLECTION).doc(invite.token).set(

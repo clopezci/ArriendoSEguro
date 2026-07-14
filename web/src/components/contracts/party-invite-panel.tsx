@@ -20,6 +20,7 @@ export function PartyInvitePanel({
   inviterName,
   monthlyRent,
   codebtorSlot = 0,
+  assignNewSlot = false,
   onImport,
 }: {
   contractDraftId: string;
@@ -29,9 +30,15 @@ export function PartyInvitePanel({
   monthlyRent?: number;
   /** Índice del codeudor (0 = principal; 1, 2… = adicionales) para enlaces independientes. */
   codebtorSlot?: number;
+  /** Codeudor NUEVO: el servidor asigna el siguiente slot libre al crear. */
+  assignNewSlot?: boolean;
   onImport: (party: PartyDraft) => void;
 }) {
   const { user } = useAuth();
+  // Slot realmente en uso. Para un codeudor NUEVO (assignNewSlot) empieza en -1
+  // (aún sin slot: no se sondea el estado de otro codeudor); tras crear, el
+  // servidor devuelve el slot asignado y ya se sondea ese.
+  const [activeSlot, setActiveSlot] = useState<number>(assignNewSlot ? -1 : codebtorSlot);
   const [mode, setMode] = useState<Mode>("self");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -46,9 +53,10 @@ export function PartyInvitePanel({
 
   const refreshStatus = useCallback(async () => {
     if (!user) return;
+    if (activeSlot < 0) return; // codeudor nuevo aún sin slot: no sondear
     try {
       const res = await fetch(
-        `/api/party-invite/status?contractDraftId=${encodeURIComponent(contractDraftId)}&role=${role}&codebtorSlot=${codebtorSlot}`,
+        `/api/party-invite/status?contractDraftId=${encodeURIComponent(contractDraftId)}&role=${role}&codebtorSlot=${activeSlot}`,
         { headers: { ...(await buildAuthHeaders(user)) } },
       );
       const j = (await res.json()) as {
@@ -74,7 +82,7 @@ export function PartyInvitePanel({
     } catch {
       /* noop */
     }
-  }, [user, contractDraftId, role, codebtorSlot]);
+  }, [user, contractDraftId, role, activeSlot]);
 
   useEffect(() => {
     void refreshStatus();
@@ -106,18 +114,21 @@ export function PartyInvitePanel({
       const res = await fetch("/api/party-invite/create", {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ contractDraftId, role, inviteeEmail: email.trim(), inviteeName: name.trim(), inviterName, ...(monthlyRent && monthlyRent > 0 ? { monthlyRent } : {}), ...(codebtorSlot > 0 ? { codebtorSlot } : {}) }),
+        body: JSON.stringify({ contractDraftId, role, inviteeEmail: email.trim(), inviteeName: name.trim(), inviterName, ...(monthlyRent && monthlyRent > 0 ? { monthlyRent } : {}), ...(assignNewSlot ? { assignNewSlot: true } : codebtorSlot > 0 ? { codebtorSlot } : {}) }),
       });
       const j = (await res.json()) as {
         success?: boolean;
         emailStatus?: string;
         invitationUrl?: string;
+        codebtorSlot?: number;
         errors?: { message?: string }[];
       };
       if (!res.ok || !j.success) {
         setMsg(j.errors?.[0]?.message ?? "No se pudo crear la invitación.");
         return null;
       }
+      // El servidor pudo asignar un slot nuevo: lo guardamos para el polling.
+      if (typeof j.codebtorSlot === "number") setActiveSlot(j.codebtorSlot);
       setStatus("active");
       const url = j.invitationUrl ?? "";
       setInviteUrl(url);

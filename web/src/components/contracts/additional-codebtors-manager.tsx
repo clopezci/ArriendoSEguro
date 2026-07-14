@@ -179,10 +179,10 @@ export function AdditionalCodebtorsManager({ contractId, max = 4 }: { contractId
           <PartyInvitePanel
             contractDraftId={contractId}
             role="solidaryCoDebtor"
-            roleLabel={`Codeudor ${nextSlot + 1}`}
+            roleLabel={`Codeudor adicional ${nextSlot + 1}`}
             inviterName={inviterName}
             monthlyRent={rentReference}
-            codebtorSlot={nextSlot}
+            assignNewSlot
             onImport={(p) => appendCodebtor(p, false)}
           />
           <button type="button" onClick={() => setAddMode(null)} className="mt-2 text-xs font-semibold text-slate-500 underline">Cancelar</button>

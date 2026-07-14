@@ -27,6 +27,12 @@ export type CreateInviteParams = {
   monthlyRent?: number;
   /** Índice del codeudor (0 = principal; 1, 2… = adicionales). */
   codebtorSlot?: number;
+  /**
+   * Si es `true` (solo codeudor), el SERVIDOR asigna el siguiente slot LIBRE
+   * (≥1) para un codeudor NUEVO, evitando colisiones entre dueño e inquilino.
+   * Si el correo ya tiene un enlace activo, reutiliza ese (no duplica).
+   */
+  assignNewSlot?: boolean;
 };
 
 /**
@@ -38,7 +44,6 @@ export type CreateInviteParams = {
  */
 export async function createInvite(firestore: Firestore, params: CreateInviteParams): Promise<PartyInviteDoc> {
   const newEmail = normalizeEmail(params.inviteeEmail);
-  const slot = Math.max(0, Math.floor(params.codebtorSlot ?? 0));
   const existing = await firestore
     .collection(PARTY_INVITES_COLLECTION)
     .where("contractDraftId", "==", params.contractDraftId)
@@ -47,22 +52,44 @@ export async function createInvite(firestore: Firestore, params: CreateInvitePar
     .limit(20)
     .get()
     .catch(() => null);
-  // Buscamos el enlace activo de ESTE slot (codeudor) — así varios codeudores
-  // conviven sin pisarse. Slot ausente = 0 (compatibilidad con enlaces previos).
-  const docForSlot = existing?.docs.find((d) => ((d.data() as PartyInviteDoc).codebtorSlot ?? 0) === slot) ?? null;
-  if (docForSlot) {
-    const data = docForSlot.data() as PartyInviteDoc;
-    if (normalizeEmail(data.inviteeEmail) === newEmail) {
-      // Mismo destinatario → mismo enlace. Actualizamos el canon si cambió/faltaba.
-      if (typeof params.monthlyRent === "number" && params.monthlyRent > 0 && data.monthlyRent !== params.monthlyRent) {
-        await docForSlot.ref.set({ monthlyRent: params.monthlyRent }, { merge: true });
-        return { ...data, monthlyRent: params.monthlyRent };
+  const activeDocs = existing?.docs ?? [];
+  const slotOf = (d: (typeof activeDocs)[number]) => (d.data() as PartyInviteDoc).codebtorSlot ?? 0;
+
+  let slot: number;
+  if (params.role === "solidaryCoDebtor" && params.assignNewSlot === true) {
+    // Codeudor NUEVO: el servidor asigna el siguiente slot libre (≥1). Si el
+    // correo ya tiene enlace activo, reutiliza ese (no duplica).
+    if (newEmail) {
+      const sameEmail = activeDocs.find((d) => normalizeEmail((d.data() as PartyInviteDoc).inviteeEmail) === newEmail);
+      if (sameEmail) {
+        const data = sameEmail.data() as PartyInviteDoc;
+        if (typeof params.monthlyRent === "number" && params.monthlyRent > 0 && data.monthlyRent !== params.monthlyRent) {
+          await sameEmail.ref.set({ monthlyRent: params.monthlyRent }, { merge: true });
+          return { ...data, monthlyRent: params.monthlyRent };
+        }
+        return data;
       }
-      return data;
     }
-    // Correo distinto para el MISMO slot (cambió el destinatario de ese codeudor):
-    // invalidamos ese enlace y creamos uno nuevo abajo.
-    await docForSlot.ref.set({ status: "expired", updatedAt: new Date().toISOString() }, { merge: true });
+    const used = new Set(activeDocs.map(slotOf));
+    let s = 1;
+    while (used.has(s)) s += 1;
+    slot = s;
+  } else {
+    // Slot fijo (0 = principal / cambiar destinatario de ese codeudor).
+    slot = Math.max(0, Math.floor(params.codebtorSlot ?? 0));
+    const docForSlot = activeDocs.find((d) => slotOf(d) === slot) ?? null;
+    if (docForSlot) {
+      const data = docForSlot.data() as PartyInviteDoc;
+      if (normalizeEmail(data.inviteeEmail) === newEmail) {
+        if (typeof params.monthlyRent === "number" && params.monthlyRent > 0 && data.monthlyRent !== params.monthlyRent) {
+          await docForSlot.ref.set({ monthlyRent: params.monthlyRent }, { merge: true });
+          return { ...data, monthlyRent: params.monthlyRent };
+        }
+        return data;
+      }
+      // Correo distinto para el MISMO slot (cambió el destinatario): invalidamos.
+      await docForSlot.ref.set({ status: "expired", updatedAt: new Date().toISOString() }, { merge: true });
+    }
   }
 
   const token = newInviteToken();

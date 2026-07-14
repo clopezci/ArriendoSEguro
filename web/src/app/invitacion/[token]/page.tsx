@@ -439,7 +439,7 @@ function CodebtorSection({ tenantToken, rentReference = 0 }: { tenantToken: stri
       const res = await fetch("/api/party-invite/create-codebtor", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ tenantToken, inviteeEmail: email.trim(), inviteeName: name.trim(), ...(slot > 0 ? { codebtorSlot: slot } : {}) }),
+        body: JSON.stringify({ tenantToken, inviteeEmail: email.trim(), inviteeName: name.trim(), ...(slot > 0 ? { assignNewSlot: true } : {}) }),
       });
       const j = (await res.json()) as {
         success?: boolean;
@@ -504,7 +504,7 @@ function CodebtorSection({ tenantToken, rentReference = 0 }: { tenantToken: stri
           tenantToken,
           party: { ...sanitized, notificationAddress: "", economicSupport: { monthlyIncome: income } },
           thirdPartyAuthorization: true,
-          ...(slot > 0 ? { codebtorSlot: slot } : {}),
+          ...(slot > 0 ? { assignNewSlot: true } : {}),
         }),
       });
       const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
