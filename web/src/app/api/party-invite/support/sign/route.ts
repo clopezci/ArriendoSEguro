@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const v = validatePaymentSupportFile({ supportFileName: parsed.data.filename, supportFileType: parsed.data.contentType, supportFileSize: parsed.data.sizeBytes });
   if (!v.ok) return NextResponse.json({ success: false, errors: v.errors }, { status: 422 });
 
-  const objectPath = `${inviteSupportStoragePrefix(invite.contractDraftId, invite.role)}${Date.now()}-${sanitizeSupportFileName(parsed.data.filename)}`;
+  const objectPath = `${inviteSupportStoragePrefix(invite.contractDraftId, invite.role, invite.codebtorSlot ?? 0)}${Date.now()}-${sanitizeSupportFileName(parsed.data.filename)}`;
   const file = getStorage().bucket(bucketName).file(objectPath);
   const expires = Date.now() + 1000 * 60 * 15;
   const [uploadUrl] = await file.getSignedUrl({ version: "v4", action: "write", expires, contentType: parsed.data.contentType });

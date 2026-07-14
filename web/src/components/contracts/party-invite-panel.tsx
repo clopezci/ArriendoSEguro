@@ -157,7 +157,7 @@ export function PartyInvitePanel({
   async function sendByWhatsApp() {
     const url = await ensureInvite("whatsapp");
     if (url) {
-      const msgTxt = `Hola 👋 Te comparto el enlace para completar tus datos del contrato de arriendo en ArriendoSeguro: ${url}`;
+      const msgTxt = `Hola 👋 Te comparto el enlace para completar tus datos y subir tus documentos del contrato de arriendo en ArriendoSeguro: ${url}`;
       window.open(buildWhatsAppUrl(phone, msgTxt), "_blank", "noopener,noreferrer");
     }
   }
@@ -316,7 +316,7 @@ export function PartyInvitePanel({
               </a>
               {phone.length >= 7 && (
                 <a
-                  href={buildWhatsAppUrl(phone, `Hola 👋 Te comparto el enlace para completar tus datos del contrato de arriendo en ArriendoSeguro: ${inviteUrl}`)}
+                  href={buildWhatsAppUrl(phone, `Hola 👋 Te comparto el enlace para completar tus datos y subir tus documentos del contrato de arriendo en ArriendoSeguro: ${inviteUrl}`)}
                   target="_blank"
                   rel="noreferrer"
                   className="mt-2 inline-block rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-bold text-white transition hover:brightness-105"

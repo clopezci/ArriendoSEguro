@@ -21,6 +21,7 @@ export async function GET(request: Request) {
   const invite = await getInvite(firestore, token);
   if (!invite) return NextResponse.json({ success: true, supports: [] });
 
+  const inviteSlot = invite.codebtorSlot ?? 0;
   const snap = await firestore
     .collection(PARTY_INVITE_SUPPORTS_COLLECTION)
     .where("contractDraftId", "==", invite.contractDraftId)
@@ -30,9 +31,10 @@ export async function GET(request: Request) {
 
   const supports: InviteSupportRow[] = snap.docs
     .map((d) => {
-      const x = d.data() as { id?: string; fileName?: string; contentType?: string; sizeBytes?: number; uploadedAt?: string };
-      return { id: x.id ?? d.id, fileName: x.fileName ?? "documento", contentType: x.contentType ?? "", sizeBytes: x.sizeBytes ?? 0, uploadedAt: x.uploadedAt ?? "" };
+      const x = d.data() as { id?: string; fileName?: string; contentType?: string; sizeBytes?: number; uploadedAt?: string; codebtorSlot?: number };
+      return { id: x.id ?? d.id, fileName: x.fileName ?? "documento", contentType: x.contentType ?? "", sizeBytes: x.sizeBytes ?? 0, uploadedAt: x.uploadedAt ?? "", codebtorSlot: x.codebtorSlot ?? 0 };
     })
+    .filter((s) => s.codebtorSlot === inviteSlot) // solo los de ESTE codeudor
     .sort((a, b) => (b.uploadedAt ?? "").localeCompare(a.uploadedAt ?? ""));
 
   return NextResponse.json({ success: true, supports });

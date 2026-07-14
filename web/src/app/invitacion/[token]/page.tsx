@@ -470,7 +470,7 @@ function CodebtorSection({ tenantToken, rentReference = 0 }: { tenantToken: stri
   async function sendByWhatsApp() {
     const url = await ensureCodebtorInvite("whatsapp");
     if (url) {
-      const msgTxt = `Hola 👋 Te comparto el enlace para completar tus datos como codeudor del contrato de arriendo en ArriendoSeguro: ${url}`;
+      const msgTxt = `Hola 👋 Te comparto el enlace para completar tus datos y subir tus documentos como codeudor del contrato de arriendo en ArriendoSeguro: ${url}`;
       window.open(buildWhatsAppUrl(phone, msgTxt), "_blank", "noopener,noreferrer");
     }
   }
@@ -555,7 +555,7 @@ function CodebtorSection({ tenantToken, rentReference = 0 }: { tenantToken: stri
                   className="w-52 rounded-lg border border-slate-300 px-3 py-2 text-sm"
                 />
                 <a
-                  href={buildWhatsAppUrl(phone, `Hola 👋 Te comparto el enlace para completar tus datos como codeudor del contrato de arriendo en ArriendoSeguro: ${inviteUrl}`)}
+                  href={buildWhatsAppUrl(phone, `Hola 👋 Te comparto el enlace para completar tus datos y subir tus documentos como codeudor del contrato de arriendo en ArriendoSeguro: ${inviteUrl}`)}
                   target="_blank"
                   rel="noreferrer"
                   className={`rounded-xl px-4 py-2 text-sm font-bold text-white transition ${phone.length >= 7 ? "bg-[#25D366] hover:brightness-105" : "pointer-events-none bg-slate-300"}`}

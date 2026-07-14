@@ -5,6 +5,7 @@ import { ExpedienteNotesCard } from "@/components/contracts/expediente-notes-car
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { appendAudit, getDraft, setNotarizationSelection, toContractInput, updateDraft } from "@/features/contracts/wizard-state";
 import { flushDraftToServer } from "@/features/contracts/draft-server-sync";
+import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-owner-list";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 import { auditEvent } from "@/features/contracts/audit";
 import { useAuth } from "@/contexts/auth-context";
@@ -788,6 +789,17 @@ export default function PreviewStepPage() {
           </div>
         </details>
       )}
+      {/* Documentos que subieron las partes por su enlace (persistente: aquí el
+          dueño los ve aunque el inquilino/codeudor los suban horas después). Cada
+          lista se oculta sola si no hay documentos. */}
+      <div className="mt-4 space-y-2">
+        <InviteSupportsOwnerList contractDraftId={id} role="tenant" title="📎 Documentos del inquilino" />
+        <InviteSupportsOwnerList contractDraftId={id} role="solidaryCoDebtor" codebtorSlot={0} title="📎 Documentos del codeudor" />
+        <InviteSupportsOwnerList contractDraftId={id} role="solidaryCoDebtor" codebtorSlot={1} title="📎 Documentos del codeudor 2" />
+        <InviteSupportsOwnerList contractDraftId={id} role="solidaryCoDebtor" codebtorSlot={2} title="📎 Documentos del codeudor 3" />
+        <InviteSupportsOwnerList contractDraftId={id} role="solidaryCoDebtor" codebtorSlot={3} title="📎 Documentos del codeudor 4" />
+      </div>
+
       {/* Autenticación (notaría) — DESPUÉS de la vista previa, cerca de la firma. */}
       {previewHtml && (
         <details className="group mt-4 rounded-2xl border border-slate-200 bg-white/85 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-sm text-slate-800">

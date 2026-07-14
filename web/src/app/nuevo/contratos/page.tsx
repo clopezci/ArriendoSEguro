@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { getAllDrafts, type ContractDraft } from "@/features/contracts/wizard-state";
+import { pullServerDraftsIntoLocal } from "@/features/contracts/draft-server-sync";
 import { isExpedienteCompleto } from "@/lib/dashboard/expediente-ui";
 
 /**
@@ -20,14 +21,17 @@ export default function GestionarContratosPage() {
   const [drafts, setDrafts] = useState<ContractDraft[] | null>(null);
   const [deleting, setDeleting] = useState<ContractDraft | null>(null);
 
-  const load = useCallback(() => {
+  const load = useCallback(async () => {
+    // Trae del servidor los borradores del usuario (persistencia entre equipos):
+    // así aparecen aquí los creados en otro dispositivo.
+    if (user) { try { await pullServerDraftsIntoLocal(); } catch { /* seguimos con lo local */ } }
     const all = getAllDrafts()
       .filter((d) => !user || d.userId === user.uid)
       .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime());
     setDrafts(all);
   }, [user]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#F5F3EF] text-[#17151F]">
@@ -102,7 +106,7 @@ export default function GestionarContratosPage() {
           contractId={deleting.id}
           ownerName={(deleting.landlord?.fullName || "").trim()}
           onClose={() => setDeleting(null)}
-          onDeleted={() => { setDeleting(null); load(); }}
+          onDeleted={() => { setDeleting(null); void load(); }}
         />
       )}
     </div>
