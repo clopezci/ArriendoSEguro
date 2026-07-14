@@ -28,6 +28,7 @@ export default function InvitacionPage() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [info, setInfo] = useState<Info | null>(null);
   const [code, setCode] = useState("");
+  const [finished, setFinished] = useState(false);
   // Correo que ingresa la persona cuando el enlace llegó por WhatsApp (sin correo
   // pre-registrado): sirve para enviarle el código de verificación.
   const [otpEmail, setOtpEmail] = useState("");
@@ -55,7 +56,9 @@ export default function InvitacionPage() {
           return;
         }
         setInfo(j);
-        setPhase("otp");
+        // Si ya había completado sus datos (p. ej. recargó la pantalla), lo
+        // llevamos directo a documentos, no de vuelta al código ni a error.
+        setPhase(j.status === "completed" ? "done" : "otp");
       } catch {
         if (!cancelled) setPhase("invalid");
       }
@@ -349,21 +352,37 @@ export default function InvitacionPage() {
         </section>
       )}
 
-      {phase === "done" && (
+      {phase === "done" && !finished && (
         <div className="space-y-4">
           <div className="rounded-2xl border-2 border-[#12B886]/40 bg-[#12B886]/10 p-4 text-sm text-emerald-800">
             <p className="font-semibold">¡Listo! Tus datos se enviaron al contrato.</p>
-            <p className="mt-1">Quien te invitó podrá verlos e incluirlos.</p>
+            <p className="mt-1">Quien te invitó podrá verlos e incluirlos. Ahora puedes subir tus documentos (opcional) y, al terminar, pulsar «Finalizar».</p>
           </div>
 
           {/* Subir documentos (soportes) desde el mismo enlace. */}
           <InviteSupportsUpload token={token} roleLabel={info?.role === "solidaryCoDebtor" ? "como codeudor" : "como arrendatario"} />
 
-          {info?.role === "tenant" ? (
-            <CodebtorSection tenantToken={token} rentReference={info?.monthlyRent ?? 0} />
-          ) : (
-            <p className="text-sm text-slate-600">Cuando termines de subir tus documentos, ya puedes cerrar esta página.</p>
-          )}
+          {info?.role === "tenant" && <CodebtorSection tenantToken={token} rentReference={info?.monthlyRent ?? 0} />}
+
+          <button
+            type="button"
+            onClick={() => setFinished(true)}
+            className="w-full rounded-2xl bg-[#5646E5] px-6 py-4 text-base font-bold text-white shadow-lg shadow-violet-500/30 transition hover:brightness-105 active:scale-95"
+          >
+            Finalizar ✓
+          </button>
+          <p className="text-center text-[11px] text-slate-400">Puedes volver a abrir este enlace cuando quieras para subir más documentos.</p>
+        </div>
+      )}
+
+      {phase === "done" && finished && (
+        <div className="space-y-4 text-center">
+          <div className="rounded-3xl border-2 border-[#12B886]/40 bg-[#12B886]/10 p-8">
+            <div className="mx-auto mb-3 grid h-16 w-16 place-items-center rounded-2xl bg-[#12B886] text-3xl text-white">✓</div>
+            <p className="text-xl font-black text-emerald-800">¡Todo listo!</p>
+            <p className="mt-1 text-sm text-emerald-800/90">Ya puedes cerrar esta página. Si necesitas subir otro documento, vuelve a abrir el enlace.</p>
+          </div>
+          <button type="button" onClick={() => setFinished(false)} className="text-sm font-semibold text-[#5646E5] underline">← Volver a subir documentos</button>
         </div>
       )}
       </main>
