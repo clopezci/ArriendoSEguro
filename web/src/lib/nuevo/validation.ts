@@ -87,6 +87,7 @@ export type Answers = {
   codebtorDocType: string; codebtorDocNumber: string; codebtorCity: string; codebtorEmail: string; codebtorPhone: string; codebtorAuth: boolean; codebtorIncome: string;
   // Servicios y cláusulas
   utilitiesParty: "" | "arrendatario" | "arrendador" | "compartido";
+  adminParty: "" | "arrendatario" | "arrendador" | "no_aplica";
   clauses: string[]; clauseOther: string;
   // Documentos
   docMethod: "" | "self" | "whatsapp" | "email"; docPhone: string; docEmail: string;
@@ -165,7 +166,9 @@ export function validateStep(kind: string, a: Answers): string | null {
     case "credit":
       return null; // opcional: herramientas externas de verificación
     case "utils":
-      return a.utilitiesParty ? null : "Indica quién paga los servicios públicos.";
+      if (!a.utilitiesParty) return "Indica quién paga los servicios públicos.";
+      if (!a.adminParty) return "Indica quién paga la administración (o marca «No aplica»).";
+      return null;
     case "clauses":
       if (a.clauses.includes("OTRA") && !a.clauseOther.trim()) return "Describe la cláusula “Otra”, o quítala de la selección.";
       return null;

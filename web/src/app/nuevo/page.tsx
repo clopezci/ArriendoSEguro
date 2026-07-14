@@ -109,7 +109,7 @@ const EMPTY: Answers = {
   tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false, tenantIncome: "",
   hasCodebtor: "", codebtorName: "", codebtorMode: "self",
   codebtorDocType: "CC", codebtorDocNumber: "", codebtorCity: "", codebtorEmail: "", codebtorPhone: "", codebtorAuth: false, codebtorIncome: "",
-  utilitiesParty: "", clauses: [], clauseOther: "",
+  utilitiesParty: "", adminParty: "", clauses: [], clauseOther: "",
   docMethod: "", docPhone: "", docEmail: "",
 };
 
@@ -294,6 +294,7 @@ export default function NuevoPage() {
     // Detalle de servicios y administración (el contrato los exige): se derivan
     // del responsable elegido para no pedir texto libre.
     const utilsLabel = n.utilitiesParty === "arrendatario" ? "el arrendatario" : n.utilitiesParty === "arrendador" ? "el arrendador" : "las partes según lo acordado";
+    const adminLabel = n.adminParty === "arrendatario" ? "el arrendatario" : n.adminParty === "arrendador" ? "el arrendador" : "";
     updateDraft(draftId, (d) => ({
       ...d,
       contractType: (n.contractType || d.contractType) as typeof d.contractType,
@@ -371,7 +372,8 @@ export default function NuevoPage() {
       utilities: {
         ...d.utilities,
         responsibleParty: n.utilitiesParty || d.utilities.responsibleParty,
-        ...(n.utilitiesParty ? { details: `Los servicios públicos los paga ${utilsLabel}.`, adminFeesDetails: `La administración y expensas las paga ${utilsLabel}.` } : {}),
+        ...(n.utilitiesParty ? { details: `Los servicios públicos los paga ${utilsLabel}.` } : {}),
+        ...(n.adminParty ? { adminFeesDetails: n.adminParty === "no_aplica" ? "El inmueble no tiene cuota de administración." : `La administración y expensas las paga ${adminLabel}.` } : {}),
       },
       specialClauses: n.clauses.length > 0
         ? {
@@ -958,6 +960,7 @@ export default function NuevoPage() {
                 <ReviewItem label="Términos" value={a.startDate ? `Desde ${a.startDate} · ${a.termMonths} meses · pago día ${a.paymentDay}` : "—"} />
                 <ReviewItem label="Codeudor" value={a.hasCodebtor === "yes" ? `${a.codebtorName || "Sí"}${a.codebtorMode === "invite" ? " (completa por invitación)" : a.codebtorMode === "tenant" ? " (lo gestiona el inquilino)" : ""}` : "No"} />
                 <ReviewItem label="Servicios públicos" value={a.utilitiesParty === "arrendatario" ? "Los paga el inquilino" : a.utilitiesParty === "arrendador" ? "Los paga el dueño" : a.utilitiesParty === "compartido" ? "Se reparten" : "—"} />
+                <ReviewItem label="Administración" value={a.adminParty === "arrendatario" ? "La paga el inquilino" : a.adminParty === "arrendador" ? "La paga el dueño" : a.adminParty === "no_aplica" ? "No aplica" : "—"} />
                 <ReviewItem label="Cláusulas especiales" value={a.clauses.length ? `${a.clauses.length} seleccionada(s)${a.clauses.includes("OTRA") ? " · incluye Otra" : ""}` : "Ninguna"} />
               </div>
 
@@ -1291,10 +1294,23 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
       );
     case "utils":
       return (
-        <div className="flex flex-wrap gap-2.5">
-          <button type="button" onClick={() => setA({ ...a, utilitiesParty: "arrendatario" })} className={chip(a.utilitiesParty === "arrendatario")}>Los paga el inquilino</button>
-          <button type="button" onClick={() => setA({ ...a, utilitiesParty: "arrendador" })} className={chip(a.utilitiesParty === "arrendador")}>Los paga el dueño</button>
-          <button type="button" onClick={() => setA({ ...a, utilitiesParty: "compartido" })} className={chip(a.utilitiesParty === "compartido")}>Se reparten</button>
+        <div className="flex flex-col gap-4">
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-slate-600">¿Quién paga los servicios públicos? (agua, luz, gas, internet)</p>
+            <div className="flex flex-wrap gap-2.5">
+              <button type="button" onClick={() => setA({ ...a, utilitiesParty: "arrendatario" })} className={chip(a.utilitiesParty === "arrendatario")}>Los paga el inquilino</button>
+              <button type="button" onClick={() => setA({ ...a, utilitiesParty: "arrendador" })} className={chip(a.utilitiesParty === "arrendador")}>Los paga el dueño</button>
+              <button type="button" onClick={() => setA({ ...a, utilitiesParty: "compartido" })} className={chip(a.utilitiesParty === "compartido")}>Se reparten</button>
+            </div>
+          </div>
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-slate-600">¿Quién paga la administración? (cuota de la copropiedad)</p>
+            <div className="flex flex-wrap gap-2.5">
+              <button type="button" onClick={() => setA({ ...a, adminParty: "arrendatario" })} className={chip(a.adminParty === "arrendatario")}>La paga el inquilino</button>
+              <button type="button" onClick={() => setA({ ...a, adminParty: "arrendador" })} className={chip(a.adminParty === "arrendador")}>La paga el dueño</button>
+              <button type="button" onClick={() => setA({ ...a, adminParty: "no_aplica" })} className={chip(a.adminParty === "no_aplica")}>No aplica</button>
+            </div>
+          </div>
         </div>
       );
     case "clauses": {
