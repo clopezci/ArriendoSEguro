@@ -219,6 +219,17 @@ export default function PreviewStepPage() {
     };
   }, [user]);
 
+  // Al montar: importa automáticamente lo que ya completaron por su enlace el
+  // inquilino y los codeudores, para que sus datos aparezcan en el contrato sin
+  // que el dueño tenga que pulsar nada. Corre una sola vez.
+  const autoImportRan = useRef(false);
+  useEffect(() => {
+    if (!user || !activeDraft || autoImportRan.current) return;
+    autoImportRan.current = true;
+    void importInvitedParties({ silent: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, activeDraft?.id]);
+
   useEffect(() => {
     if (!entitlementsLoaded) return; // evita marca de agua errónea antes de saber si es Plus
     if (!activeDraft) return;
@@ -244,38 +255,52 @@ export default function PreviewStepPage() {
    * enlace (invitación) y que aún no se habían importado. Resuelve el caso
    * "invité a la persona pero sus datos no aparecen en la vista previa".
    */
-  async function importInvitedParties() {
+  async function importOne(role: "tenant" | "solidaryCoDebtor", slot: number): Promise<boolean> {
+    if (!user) return false;
+    const res = await fetch(
+      `/api/party-invite/status?contractDraftId=${encodeURIComponent(id)}&role=${role}&codebtorSlot=${slot}`,
+      { headers: { ...(await buildAuthHeaders(user)) } },
+    );
+    const j = (await res.json()) as { success?: boolean; invite?: { status?: string; contribution?: PartyDraft | null } | null };
+    const contribution = j?.invite?.contribution;
+    if (!(res.ok && j.success && j.invite?.status === "completed" && contribution)) return false;
+    updateDraft(id, (d) => {
+      if (role === "tenant") return { ...d, tenant: { ...d.tenant, ...contribution } };
+      if (slot === 0) return { ...d, hasSolidaryCoDebtor: true, solidaryCoDebtor: { ...d.solidaryCoDebtor, ...contribution } };
+      const arr = [...(d.solidaryCoDebtors ?? [])];
+      arr[slot - 1] = { ...(arr[slot - 1] ?? {}), ...contribution };
+      const consents = [...(d.codebtorConsentsList ?? [])];
+      consents[slot - 1] = consents[slot - 1] ?? { dataProcessingConsent: true, electronicSignatureConsent: true, solidaryObligationAcceptance: true };
+      return { ...d, hasSolidaryCoDebtor: true, solidaryCoDebtors: arr, codebtorConsentsList: consents };
+    });
+    return true;
+  }
+
+  /**
+   * Trae al contrato los datos que completaron por su enlace el inquilino y TODOS
+   * los codeudores (principal + adicionales por slot), y que aún no se importaron.
+   */
+  async function importInvitedParties(opts?: { silent?: boolean }) {
     if (!user) return;
     setImportingParties(true);
-    setImportMsg("");
+    if (!opts?.silent) setImportMsg("");
     try {
-      const roles: Array<"tenant" | "solidaryCoDebtor"> = ["tenant", "solidaryCoDebtor"];
       let imported = 0;
-      for (const role of roles) {
-        const res = await fetch(`/api/party-invite/status?contractDraftId=${encodeURIComponent(id)}&role=${role}`, {
-          headers: { ...(await buildAuthHeaders(user)) },
-        });
-        const j = (await res.json()) as { success?: boolean; invite?: { status?: string; contribution?: PartyDraft | null } | null };
-        const contribution = j?.invite?.contribution;
-        if (res.ok && j.success && j.invite?.status === "completed" && contribution) {
-          updateDraft(id, (d) =>
-            role === "tenant"
-              ? { ...d, tenant: { ...d.tenant, ...contribution } }
-              : { ...d, hasSolidaryCoDebtor: true, solidaryCoDebtor: { ...d.solidaryCoDebtor, ...contribution } },
-          );
-          imported += 1;
-        }
+      if (await importOne("tenant", 0)) imported += 1;
+      // Codeudores: principal (slot 0) + adicionales (1..5).
+      for (let slot = 0; slot <= 5; slot += 1) {
+        if (await importOne("solidaryCoDebtor", slot)) imported += 1;
       }
       if (imported > 0) {
         const updated = getDraft(id);
         if (updated) await flushDraftToServer(updated).catch(() => {});
-        setImportMsg(`Importé ${imported} parte(s) que completaron por su enlace. Regenerando la vista previa…`);
+        if (!opts?.silent) setImportMsg(`Importé ${imported} parte(s) que completaron por su enlace. Regenerando la vista previa…`);
         void requestPreview();
-      } else {
+      } else if (!opts?.silent) {
         setImportMsg("Aún no hay datos completados por invitación para importar. Si invitaste a alguien, espera a que complete su enlace; si no, ingresa los datos en el asistente.");
       }
     } catch {
-      setImportMsg("No se pudo importar. Intenta de nuevo.");
+      if (!opts?.silent) setImportMsg("No se pudo importar. Intenta de nuevo.");
     } finally {
       setImportingParties(false);
     }
