@@ -670,11 +670,11 @@ export default function PreviewStepPage() {
         </Link>
         <details className="group relative">
           <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-500 transition hover:border-[#5646E5]">
-            Editar todo (vista clásica) ▾
+            Editar en bloque ▾
           </summary>
           <div className="absolute z-20 mt-1 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
             <p className="px-2 py-1 text-[11px] text-slate-400">Vista completa, campo por campo. Puedes volver aquí con «Revisión y vista previa» arriba.</p>
-            <Link href={`/dashboard/contracts/${id}/contract-type`} className="block rounded-lg px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100">Abrir vista clásica →</Link>
+            <Link href={`/dashboard/contracts/${id}/contract-type`} className="block rounded-lg px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100">Abrir edición en bloque →</Link>
           </div>
         </details>
       </div>
@@ -692,6 +692,31 @@ export default function PreviewStepPage() {
           <ExpedienteNotesCard draftId={id} initialNotes={activeDraft.expedienteNotes ?? ""} variant="banner" />
         </div>
       </details>
+      {/* PRIMERO: completar/importar lo que falta. Sin esto no se puede generar,
+          imprimir ni avanzar a la firma. Por eso va ANTES de la vista previa. */}
+      {renderErrors.length > 0 && (
+        <div role="alert" className="mb-4 rounded-3xl border-2 border-amber-300 bg-amber-50/70 p-5 text-sm text-amber-950 shadow-[0_6px_20px_rgba(245,165,36,0.12)]">
+          <p className="flex items-center gap-2 text-base font-black">📋 Completa esto para ver, imprimir y firmar</p>
+          <p className="mt-0.5 text-xs text-amber-900/80">
+            El contrato aún no se puede generar porque faltan datos. Si invitaste al inquilino o al codeudor, pulsa{" "}
+            <strong>«Importar datos de invitados»</strong> (deben haber completado su enlace). También puedes ingresarlos
+            tú desde el asistente. Al resolverlo, se genera la vista previa y podrás firmar.
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            {renderErrors.map((msg, i) => (
+              <li key={i}>{msg}</li>
+            ))}
+          </ul>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => void importInvitedParties()} disabled={importingParties}
+              className="inline-flex rounded-xl bg-[#12B886] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105 disabled:opacity-50">
+              {importingParties ? "Importando…" : "Importar datos de invitados (inquilino y codeudor)"}
+            </button>
+            <Link href={`/nuevo?id=${id}`} className="inline-flex rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105">Volver al asistente →</Link>
+          </div>
+          {importMsg && <p className="mt-2 text-xs font-medium text-amber-950">{importMsg}</p>}
+        </div>
+      )}
       <div id="preview-acciones" className="mb-4 flex flex-wrap items-center gap-3 scroll-mt-24">
         <button
           type="button"
@@ -703,7 +728,9 @@ export default function PreviewStepPage() {
             ? "Generando vista previa…"
             : previewHtml
               ? "Regenerar vista previa"
-              : "Generar vista previa"}
+              : renderErrors.length > 0
+                ? "Reintentar vista previa"
+                : "Generar vista previa"}
         </button>
         {!previewHtml && !loadingPreview && renderErrors.length === 0 && (
           <span className="text-xs text-slate-600">
@@ -711,29 +738,6 @@ export default function PreviewStepPage() {
           </span>
         )}
       </div>
-      {renderErrors.length > 0 && (
-        <div role="alert" className="mb-4 rounded-3xl border-2 border-amber-300 bg-amber-50/70 p-5 text-sm text-amber-950 shadow-[0_6px_20px_rgba(245,165,36,0.12)]">
-          <p className="flex items-center gap-2 text-base font-black">📋 Falta completar para poder generar</p>
-          <p className="mt-0.5 text-xs text-amber-900/80">
-            Estos datos son necesarios para el contrato. Si invitaste al inquilino o al codeudor, vuelve al asistente y
-            pulsa <strong>«Importar sus datos»</strong> cuando aparezca «✓ completó» (si aún no completan, el contrato se
-            genera cuando lo hagan). También puedes ingresarlos tú.
-          </p>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            {renderErrors.map((msg, i) => (
-              <li key={i}>{msg}</li>
-            ))}
-          </ul>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => void importInvitedParties()} disabled={importingParties}
-              className="inline-flex rounded-xl bg-[#12B886] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105 disabled:opacity-50">
-              {importingParties ? "Importando…" : "Importar datos de invitados"}
-            </button>
-            <Link href={`/nuevo?id=${id}`} className="inline-flex rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105">Volver al asistente →</Link>
-          </div>
-          {importMsg && <p className="mt-2 text-xs font-medium text-amber-950">{importMsg}</p>}
-        </div>
-      )}
       {previewHtml && (
         <>
           <div className="mb-1 flex items-center justify-between gap-2">
