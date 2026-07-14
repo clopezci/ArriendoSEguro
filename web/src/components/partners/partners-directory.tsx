@@ -11,6 +11,16 @@ function categoryLabel(c: string): string {
   return PARTNER_CATEGORY_LABELS[c as PartnerCategory] ?? "Servicio";
 }
 
+const CATEGORY_ICON: Record<string, string> = {
+  recaudo: "💳",
+  seguro: "🛡️",
+  estudio_credito: "📊",
+  mantenimiento: "🔧",
+  juridica: "⚖️",
+  cobranza: "📮",
+  otro: "🤝",
+};
+
 export function PartnersDirectory() {
   const { user } = useAuth();
   const [partners, setPartners] = useState<Partner[] | null>(null);
@@ -33,10 +43,10 @@ export function PartnersDirectory() {
     };
   }, []);
 
-  if (partners === null) return <p className="text-sm text-slate-600">Cargando aliados…</p>;
+  if (partners === null) return <p className="text-sm text-slate-500">Cargando aliados…</p>;
   if (partners.length === 0) {
     return (
-      <p className="rounded-xl border border-slate-300 bg-white/90 p-4 text-sm text-slate-600">
+      <p className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm text-slate-600">
         Aún no hay aliados disponibles. Próximamente publicaremos servicios de terceros (recaudo, seguro, estudio de
         crédito, mantenimiento, jurídica) que tú decides tomar.
       </p>
@@ -47,15 +57,20 @@ export function PartnersDirectory() {
     <>
       <ul className="grid gap-4 sm:grid-cols-2">
         {partners.map((p) => (
-          <li key={p.id} className="rounded-2xl border border-slate-300 bg-white/95 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-violet-700">{categoryLabel(p.category)}</p>
-            <h3 className="mt-1 text-base font-semibold text-slate-900">{p.name}</h3>
-            {p.description && <p className="mt-1 text-sm text-slate-600">{p.description}</p>}
-            <div className="mt-3 flex flex-wrap gap-2">
+          <li key={p.id} className="flex flex-col rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-[0_10px_30px_rgba(86,70,229,0.06)]">
+            <div className="flex items-start gap-3">
+              <span className="grid h-11 w-11 flex-none place-items-center rounded-2xl bg-[#ECE9FB] text-xl">{CATEGORY_ICON[p.category] ?? "🤝"}</span>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-[#5646E5]">{categoryLabel(p.category)}</p>
+                <h3 className="text-[15px] font-bold tracking-tight text-[#17151F]">{p.name}</h3>
+              </div>
+            </div>
+            {p.description && <p className="mt-2 flex-1 text-sm text-slate-500">{p.description}</p>}
+            <div className="mt-4 flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={() => setActive(p)}
-                className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-semibold text-white hover:bg-violet-500"
+                className="rounded-2xl bg-[#5646E5] px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-105 active:scale-95"
               >
                 Contactar
               </button>
@@ -64,7 +79,7 @@ export function PartnersDirectory() {
                   href={p.websiteUrl}
                   target="_blank"
                   rel="sponsored noreferrer"
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 hover:border-violet-500"
+                  className="rounded-2xl border-2 border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]"
                 >
                   Visitar sitio
                 </a>
@@ -73,7 +88,7 @@ export function PartnersDirectory() {
           </li>
         ))}
       </ul>
-      <p className="mt-4 text-xs text-slate-500">
+      <p className="mt-4 text-xs text-slate-400">
         Los servicios los prestan y cobran los aliados (terceros). ArriendoSeguro solo te conecta y no se hace
         responsable de la prestación.
       </p>
@@ -143,69 +158,69 @@ function ContactModal({
       aria-labelledby="partner-contact-title"
       className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center"
     >
-      <button type="button" aria-label="Cerrar" className="absolute inset-0 bg-slate-900/50" onClick={onClose} />
+      <button type="button" aria-label="Cerrar" className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={onClose} />
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="relative z-[101] w-full max-w-md rounded-2xl border border-slate-300 bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.25)] focus:outline-none"
+        className="relative z-[101] w-full max-w-md rounded-3xl border border-slate-200 bg-[#F5F3EF] p-6 shadow-[0_24px_60px_rgba(86,70,229,0.25)] focus:outline-none"
       >
-        <h2 id="partner-contact-title" className="text-lg font-bold text-slate-900">
+        <h2 id="partner-contact-title" className="text-xl font-black tracking-tight text-[#17151F]">
           Contactar a {partner.name}
         </h2>
         {done ? (
-          <div className="mt-3 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900">
-            ¡Listo! Compartimos tus datos con el aliado. Te enviamos un correo de confirmación; cuando lo resuelvas,
-            ayúdanos confirmando si tomaste el servicio.
+          <div className="mt-3 rounded-2xl border-2 border-[#12B886]/40 bg-[#12B886]/10 p-4 text-sm text-emerald-800">
+            <p className="font-bold">¡Listo! Compartimos tus datos con el aliado.</p>
+            <p className="mt-1">Te enviamos un correo de confirmación; cuando lo resuelvas, ayúdanos confirmando si tomaste el servicio (así llevamos el control).</p>
             <div className="mt-3 text-right">
-              <button type="button" onClick={onClose} className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white">
+              <button type="button" onClick={onClose} className="rounded-2xl bg-[#5646E5] px-5 py-2.5 text-sm font-bold text-white">
                 Entendido
               </button>
             </div>
           </div>
         ) : (
           <>
-            <p className="mt-1 text-xs text-slate-600">
+            <p className="mt-1 text-xs text-slate-500">
               Enviaremos tus datos al aliado para que te contacte. Tu correo registrado ({userEmail}) se incluye
               automáticamente.
             </p>
-            <div className="mt-3 space-y-3">
+            <div className="mt-4 space-y-3">
               <label className="block text-sm">
-                <span className="mb-1 block text-slate-700">Tu nombre</span>
+                <span className="mb-1 block font-medium text-slate-600">Tu nombre</span>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+                  className="w-full rounded-2xl border-2 border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#5646E5]"
                 />
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block text-slate-700">Teléfono de contacto</span>
+                <span className="mb-1 block font-medium text-slate-600">Teléfono de contacto</span>
                 <input
                   inputMode="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+                  className="w-full rounded-2xl border-2 border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#5646E5]"
                 />
               </label>
               <label className="block text-sm">
-                <span className="mb-1 block text-slate-700">¿Qué necesitas? (opcional)</span>
+                <span className="mb-1 block font-medium text-slate-600">¿Qué necesitas? (opcional)</span>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={3}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+                  className="w-full rounded-2xl border-2 border-slate-200 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-[#5646E5]"
                 />
               </label>
             </div>
-            {error && <p className="mt-2 text-sm text-rose-700">{error}</p>}
-            <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800">
+            {error && <p className="mt-2 text-sm font-medium text-rose-600">{error}</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={onClose} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600">
                 Cancelar
               </button>
               <button
                 type="button"
                 disabled={busy}
                 onClick={() => void submit()}
-                className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                className="rounded-2xl bg-[#FF6B4A] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95 disabled:opacity-50"
               >
                 {busy ? "Enviando…" : "Enviar solicitud"}
               </button>

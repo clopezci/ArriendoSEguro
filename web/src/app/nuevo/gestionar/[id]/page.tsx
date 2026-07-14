@@ -40,6 +40,7 @@ const ACTIONS: Action[] = [
   { slug: "novedades", title: "Novedades del arriendo", desc: "Incumplimientos, reparaciones, convivencia y acuerdos.", icon: "🛠️", phase: "Durante el arriendo" },
   { slug: "alertas", title: "Alertas de vencimiento", desc: "Recordatorios de terminación o renovación del contrato.", icon: "⏰", phase: "Durante el arriendo" },
   { slug: "soportes-codeudor", title: "Soportes de ingresos", desc: "Carta laboral, colillas y extractos del codeudor e inquilino.", icon: "💼", phase: "Durante el arriendo" },
+  { slug: "aliados", title: "Aliados y servicios", desc: "Seguro, cobranza, estudio de crédito, jurídica… tú eliges.", icon: "🤝", phase: "Durante el arriendo", optional: true },
   { slug: "renovar", title: "Renovar contrato", desc: "Otrosí de prórroga y reajuste (IPC) con el mismo inquilino.", icon: "🔄", phase: "Cierre" },
   { slug: "reputacion", title: "Calificar la experiencia", desc: "Califica al inquilino al final del arriendo.", icon: "⭐", phase: "Cierre" },
   { slug: "evidencia", title: "Paquete de evidencia (ZIP)", desc: "Descarga unificada del expediente cuando esté disponible.", icon: "🗂️", phase: "Cierre" },
@@ -136,7 +137,7 @@ export default function GestionarPosventaPage() {
                 <motion.button
                   key={a.slug}
                   initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.03 }}
-                  onClick={() => router.push(a.slug === "inventory" ? `/nuevo/gestionar/${id}/inventario` : `/dashboard/contracts/${id}/${a.slug}`)}
+                  onClick={() => router.push(a.slug === "inventory" ? `/nuevo/gestionar/${id}/inventario` : a.slug === "aliados" ? `/nuevo/gestionar/${id}/aliados` : `/dashboard/contracts/${id}/${a.slug}`)}
                   className="flex items-start gap-3.5 rounded-2xl border-2 border-slate-200 bg-white/90 p-4 text-left shadow-sm transition hover:border-[#5646E5] active:scale-[0.99]"
                 >
                   <span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">{a.icon}</span>
