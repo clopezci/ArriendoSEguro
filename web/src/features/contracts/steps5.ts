@@ -34,21 +34,22 @@ export const MACRO_STEPS: MacroStep[] = [
     number: 1,
     label: "Arma tu expediente",
     hint: "Quién diligencia, y datos del dueño, la propiedad, el inquilino y el codeudor.",
-    entry: (id) => `${base(id)}/contract-type`,
+    // Bento: retoma el recorrido paso a paso (no el flujo largo antiguo).
+    entry: (id) => `/nuevo?id=${id}`,
   },
   {
     key: "condiciones",
     number: 2,
     label: "Condiciones",
     hint: "Canon, pago, fechas, servicios, cláusulas y documentos de soporte.",
-    entry: (id) => `${base(id)}/terms`,
+    entry: (id) => `/nuevo?id=${id}`,
   },
   {
     key: "revision",
     number: 3,
     label: "Revisión y vista previa",
     hint: "Revisa todos los datos y la estructura completa del contrato.",
-    entry: (id) => `${base(id)}/review`,
+    entry: (id) => `${base(id)}/preview`,
   },
   {
     key: "firma",
@@ -62,7 +63,8 @@ export const MACRO_STEPS: MacroStep[] = [
     number: 5,
     label: "Acta e inventario",
     hint: "Fecha de entrega, inventario con fotos y acta para ambas partes.",
-    entry: (id) => `${base(id)}/inventory`,
+    // Bento: página de inventario y acta del rediseño.
+    entry: (id) => `/nuevo/gestionar/${id}/inventario`,
   },
 ];
 
