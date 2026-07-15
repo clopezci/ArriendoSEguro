@@ -882,7 +882,7 @@ export default function NuevoPage() {
               <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#5646E5]">Hola 👋</p>
               <h1 className="mt-3 text-balance text-4xl font-extrabold leading-none tracking-tight sm:text-5xl">{greeting}</h1>
               <p className="mt-3 h-7 text-lg text-slate-500">{SUBPHRASES[subIdx]}</p>
-              <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <BentoCard theme={themes[0]} title="Crear un contrato" sub="Te guío una pregunta a la vez. Sin formularios eternos." cta="Empezar" onClick={start} icon={<path d="M8 3h6l4 4v14H6V5M14 3v4h4M9 13h6M9 17h4" />} />
                 <BentoCard theme={themes[1]} title="Gestionar mis contratos" sub="Firmas, pagos, inventario y alertas de los que ya creaste." cta="Ver mis contratos" onClick={() => router.push("/nuevo/contratos")} icon={<path d="M3 7h6l2 2h10v11H3zM3 7V5h5l2 2" />} />
                 <div className="col-span-full flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/70 p-3 text-sm text-slate-500 backdrop-blur">
