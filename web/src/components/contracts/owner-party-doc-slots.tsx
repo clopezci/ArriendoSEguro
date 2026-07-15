@@ -98,13 +98,16 @@ export function OwnerPartyDocSlots({
               {done ? (
                 <p className="mt-1 truncate text-[11px] text-slate-500">{done.fileName}</p>
               ) : (
-                <input
-                  type="file"
-                  accept="application/pdf,image/jpeg,image/png,image/webp"
-                  disabled={busy || busyKey !== null}
-                  onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f, key); e.target.value = ""; }}
-                  className="mt-1.5 block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-[#5646E5] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white disabled:opacity-50"
-                />
+                <label className={`mt-1.5 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#5646E5] px-3 py-1.5 text-xs font-semibold text-white transition hover:brightness-105 ${busyKey !== null ? "cursor-not-allowed opacity-50" : ""}`}>
+                  {busy ? "Subiendo…" : "Adjuntar"}
+                  <input
+                    type="file"
+                    accept="application/pdf,image/jpeg,image/png,image/webp"
+                    disabled={busy || busyKey !== null}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f, key); e.target.value = ""; }}
+                    className="sr-only"
+                  />
+                </label>
               )}
               {busy && <p className="mt-1 text-[11px] text-slate-600">Subiendo…</p>}
             </li>
