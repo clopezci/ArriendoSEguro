@@ -1376,15 +1376,6 @@ export default function PreviewStepPage() {
         <section className="mt-4 rounded-2xl border border-emerald-500 bg-emerald-50 p-4 text-sm text-emerald-700">
           <p className="font-semibold">Contrato firmado</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {evidenceAnnex?.htmlContent && (
-              <details className="rounded border border-emerald-500 px-3 py-2 text-xs">
-                <summary>Ver evidencia de firma</summary>
-                <div
-                  className="mt-2 max-h-64 overflow-auto rounded bg-white p-3 text-slate-900"
-                  dangerouslySetInnerHTML={{ __html: evidenceAnnex.htmlContent }}
-                />
-              </details>
-            )}
             {pdfInfo?.pdfUrl && (
               <a
                 href={pdfInfo.pdfUrl}
@@ -1406,6 +1397,16 @@ export default function PreviewStepPage() {
               </a>
             )}
           </div>
+          {/* Evidencia como BLOQUE (no ítem de flex) para que la tabla ancha
+              tenga scroll horizontal propio y no desborde la tarjeta. */}
+          {evidenceAnnex?.htmlContent && (
+            <details className="mt-2 rounded border border-emerald-500 bg-white/60 px-3 py-2 text-xs">
+              <summary className="cursor-pointer font-medium">Ver evidencia de firma</summary>
+              <div className="mt-2 max-h-64 w-full overflow-auto rounded bg-white p-3 text-slate-900 [&_table]:w-max [&_table]:text-[11px]">
+                <div dangerouslySetInnerHTML={{ __html: evidenceAnnex.htmlContent }} />
+              </div>
+            </details>
+          )}
         </section>
       )}
       {finalizeStep === 4 && savedVersion && (
