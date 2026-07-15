@@ -1120,9 +1120,25 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
             <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-[#5646E5] text-xl">🏠</span>
             <span><b className="block text-[16px]">Arrendamiento de vivienda urbana</b><small className="text-[13.5px] text-slate-500">Casa, apartamento o habitación. Régimen de la Ley 820 de 2003.</small></span>
           </button>
-          <div className="flex items-center gap-3.5 rounded-2xl border-2 border-dashed border-slate-200 p-4 text-left opacity-60">
-            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-slate-100 text-slate-400 text-xl">🏢</span>
-            <span><b className="block text-[16px] text-slate-500">Local comercial · habitación · otros</b><small className="text-[13.5px] text-slate-400">Próximamente.</small></span>
+          <div className="mt-1 grid grid-cols-3 gap-2">
+            {[
+              { icon: "🚪", label: "Habitación" },
+              { icon: "🌾", label: "Rural" },
+              { icon: "🏢", label: "Comercial" },
+            ].map((t) => (
+              <button
+                key={t.label}
+                type="button"
+                disabled
+                aria-disabled="true"
+                title="Próximamente"
+                className="flex cursor-not-allowed flex-col items-center gap-1 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-2.5 text-center opacity-60"
+              >
+                <span className="text-lg">{t.icon}</span>
+                <span className="text-[12.5px] font-semibold text-slate-500">{t.label}</span>
+                <span className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Próximamente</span>
+              </button>
+            ))}
           </div>
         </div>
       );
