@@ -8,6 +8,7 @@ import { flushDraftToServer } from "@/features/contracts/draft-server-sync";
 import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-owner-list";
 import { OwnerIncomeReminder } from "@/components/contracts/owner-income-reminder";
 import { PropertyDocUpload } from "@/components/contracts/property-doc-upload";
+import { PoderUpload } from "@/components/contracts/poder-upload";
 import type { PropertyDocType } from "@/domain/contracts/draftPropertyDocs";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 import { auditEvent } from "@/features/contracts/audit";
@@ -185,6 +186,7 @@ export default function PreviewStepPage() {
   // para generar (se puede saltar en el asistente, pero cuenta como pendiente
   // aquí). `null` = aún no consultado.
   const [propertyDocCount, setPropertyDocCount] = useState<number | null>(null);
+  const [poderDocCount, setPoderDocCount] = useState<number | null>(null);
   const [propDocType, setPropDocType] = useState<PropertyDocType | "">("");
   // Ref al HTML del contrato renderizado, para la lectura por voz.
   const contractRef = useRef<HTMLDivElement>(null);
@@ -315,17 +317,20 @@ export default function PreviewStepPage() {
     }
   }
 
-  const refreshPropertyDocs = useCallback(async (): Promise<number | null> => {
+  const refreshPropertyDocs = useCallback(async (): Promise<{ property: number; poder: number } | null> => {
     if (!user || !id) return null;
     try {
       const res = await fetch(`/api/contracts/draft-property-docs/list?contractDraftId=${encodeURIComponent(id)}`, {
         headers: { ...(await buildAuthHeaders(user)) },
       });
-      const j = (await res.json()) as { success?: boolean; docs?: unknown[] };
+      const j = (await res.json()) as { success?: boolean; docs?: { docType?: string }[] };
       if (res.ok && j.success) {
-        const n = Array.isArray(j.docs) ? j.docs.length : 0;
-        setPropertyDocCount(n);
-        return n;
+        const list = Array.isArray(j.docs) ? j.docs : [];
+        const property = list.filter((d) => d.docType !== "poder").length;
+        const poder = list.filter((d) => d.docType === "poder").length;
+        setPropertyDocCount(property);
+        setPoderDocCount(poder);
+        return { property, poder };
       }
     } catch {
       /* si falla la consulta, no bloqueamos por esto */
@@ -418,10 +423,15 @@ export default function PreviewStepPage() {
     // El documento que soporta la propiedad es requisito para generar (se pudo
     // saltar en el asistente, pero no se puede generar sin él). Refrescamos por si
     // acaba de subirlo aquí mismo.
-    if (propertyDocCount === 0) {
+    const proxy = activeDraft?.actingAs === "proxy";
+    if (propertyDocCount === 0 || (proxy && poderDocCount === 0)) {
       const fresh = await refreshPropertyDocs();
-      if (fresh === 0) {
+      if (fresh && fresh.property === 0) {
         setRenderErrors(["Falta subir el documento que soporta la propiedad del inmueble. Cárgalo en «Documento de propiedad» más arriba para poder generar el contrato."]);
+        return null;
+      }
+      if (fresh && proxy && fresh.poder === 0) {
+        setRenderErrors(["Como apoderado, falta subir el PODER que te faculta para arrendar. Cárgalo en «Poder del apoderado» más arriba para poder generar el contrato."]);
         return null;
       }
     }
@@ -815,6 +825,19 @@ export default function PreviewStepPage() {
           actingAs={activeDraft?.actingAs === "proxy" ? "proxy" : "owner"}
           onUploaded={() => void refreshPropertyDocs()}
         />
+        {activeDraft?.actingAs === "proxy" && (
+          <div className="mt-2">
+            {poderDocCount === 0 && (
+              <p className="mb-2 rounded-2xl border-2 border-amber-300 bg-amber-50/70 p-3 text-sm font-medium text-amber-900">
+                ⚠️ Pendiente: como <b>apoderado</b> falta subir el <b>poder</b>. Súbelo aquí para poder generar el contrato.
+              </p>
+            )}
+            {poderDocCount !== null && poderDocCount > 0 && (
+              <p className="mb-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">✓ Poder cargado ({poderDocCount}).</p>
+            )}
+            <PoderUpload contractDraftId={id} onUploaded={() => void refreshPropertyDocs()} />
+          </div>
+        )}
       </div>
       <div id="preview-acciones" className="mb-4 flex flex-wrap items-center gap-3 scroll-mt-24">
         <button

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { captureOathEvidence } from "@/lib/nuevo/oath-evidence";
-import { PROPERTY_DOC_TYPES, PROPERTY_DOC_LABELS, type PropertyDocType, type DraftPropertyDocRow } from "@/domain/contracts/draftPropertyDocs";
+import { PROPERTY_DOC_TYPES, PROPERTY_DOC_LABELS, PODER_DOC_TYPE, type PropertyDocType, type DraftPropertyDocRow } from "@/domain/contracts/draftPropertyDocs";
 
 /**
  * Reemplazo de la matrícula: el dueño ELIGE qué documento soporta la propiedad
@@ -35,7 +35,7 @@ export function PropertyDocUpload({
   const [docs, setDocs] = useState<DraftPropertyDocRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-  const [verify, setVerify] = useState<{ status: VerifyStatus; names?: string[] } | null>(null);
+  const [verify, setVerify] = useState<{ status: VerifyStatus; names?: string[]; reason?: string } | null>(null);
   const [overrideAck, setOverrideAck] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -48,8 +48,8 @@ export function PropertyDocUpload({
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
         body: JSON.stringify({ contractDraftId, expectedName: expectedName ?? "", actingAs: actingAs || undefined }),
       });
-      const j = (await res.json()) as { status?: VerifyStatus; names?: string[] };
-      setVerify(res.ok && j.status ? { status: j.status, names: j.names } : { status: "skipped" });
+      const j = (await res.json()) as { status?: VerifyStatus; names?: string[]; reason?: string };
+      setVerify(res.ok && j.status ? { status: j.status, names: j.names, reason: j.reason } : { status: "skipped" });
     } catch {
       setVerify({ status: "skipped" });
     }
@@ -62,7 +62,8 @@ export function PropertyDocUpload({
         headers: { ...(await buildAuthHeaders(user)) },
       });
       const j = (await res.json()) as { success?: boolean; docs?: DraftPropertyDocRow[] };
-      if (res.ok && j.success) setDocs(j.docs ?? []);
+      // El poder tiene su propia casilla: no lo mezclamos con los de propiedad.
+      if (res.ok && j.success) setDocs((j.docs ?? []).filter((d) => d.docType !== PODER_DOC_TYPE));
     } catch {
       /* noop */
     }
@@ -130,15 +131,20 @@ export function PropertyDocUpload({
         ))}
       </div>
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="application/pdf,image/jpeg,image/png,image/webp"
-        disabled={busy || !docType}
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }}
-        className="mt-3 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-[#5646E5] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white disabled:opacity-50"
-      />
-      {busy && <p className="mt-2 text-xs text-slate-600">Subiendo…</p>}
+      {/* Input nativo oculto: evitamos el texto "No file chosen" que reaparece
+          tras subir y confunde. Usamos un botón/label con nuestro propio estado. */}
+      <label className={`mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 ${busy || !docType ? "cursor-not-allowed opacity-50" : ""}`}>
+        {busy ? "Subiendo…" : docs.length > 0 ? "Subir otro" : "Adjuntar documento"}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
+          disabled={busy || !docType}
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }}
+          className="sr-only"
+        />
+      </label>
+      <p className="mt-1 text-[11px] text-slate-500">PDF, JPG, PNG o WEBP.{!docType ? " Primero elige el tipo de documento." : ""}</p>
       {msg && <p className="mt-2 text-xs font-medium text-slate-700">{msg}</p>}
 
       {docs.length > 0 && (
@@ -152,14 +158,16 @@ export function PropertyDocUpload({
         </ul>
       )}
 
-      {verify && verify.status !== "skipped" && (
+      {verify && (verify.status !== "skipped" || ["pdf", "too_large", "ai_off", "provider_error", "download_error"].includes(verify.reason ?? "")) && (
         <div
           className={`mt-3 rounded-xl border-2 p-3 text-xs ${
             verify.status === "match"
               ? "border-emerald-200 bg-emerald-50 text-emerald-800"
               : verify.status === "mismatch"
                 ? "border-rose-200 bg-rose-50 text-rose-800"
-                : "border-slate-200 bg-slate-50 text-slate-600"
+                : verify.status === "skipped" && verify.reason === "pdf"
+                  ? "border-sky-200 bg-sky-50 text-sky-800"
+                  : "border-slate-200 bg-slate-50 text-slate-600"
           }`}
         >
           {verify.status === "checking" && "Revisando el documento con IA…"}
@@ -188,6 +196,15 @@ export function PropertyDocUpload({
           )}
           {verify.status === "unreadable" && (
             <>No pudimos leer el nombre en el documento (revisa que la foto esté nítida). No pasa nada: tu declaración jurada respalda la propiedad.</>
+          )}
+          {verify.status === "skipped" && verify.reason === "pdf" && (
+            <>📄 Subiste un <b>PDF</b>: la validación automática por IA solo lee <b>fotos</b> (JPG/PNG/WEBP). Si quieres que la IA verifique que el documento está a nombre de <b>{expectedName || "el propietario"}</b>, sube una <b>foto</b> del documento. De lo contrario puedes continuar: tu declaración jurada lo respalda.</>
+          )}
+          {verify.status === "skipped" && verify.reason === "too_large" && (
+            <>El archivo es muy grande para la validación automática. Puedes continuar; tu declaración jurada respalda la propiedad.</>
+          )}
+          {verify.status === "skipped" && ["ai_off", "provider_error", "download_error"].includes(verify.reason ?? "") && (
+            <>La validación automática por IA no está disponible en este momento. Puedes continuar; tu declaración jurada respalda la propiedad.</>
           )}
         </div>
       )}

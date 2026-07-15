@@ -31,6 +31,7 @@ import { evaluateLegalCompliance, type ComplianceInput } from "@/domain/contract
 import { requiredDocCatalogForRole } from "@/domain/party-invite/requiredDocs";
 import { OwnerPartyDocSlots } from "@/components/contracts/owner-party-doc-slots";
 import { OwnerIncomeReminder } from "@/components/contracts/owner-income-reminder";
+import { PoderUpload } from "@/components/contracts/poder-upload";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
 /**
@@ -1158,8 +1159,9 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               </div>
               <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
                 <input type="checkbox" checked={a.proxyOath} onChange={(e) => { const v = e.target.checked; if (v && !a.proxyOath) void captureOathEvidence("proxy_declaration", party.draftId); setA({ ...a, proxyOath: v }); }} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
-                <span>Declaro que cuento con <b>poder vigente y facultad</b> para arrendar este inmueble a nombre de <b>{a.poderdanteName.trim() || "el propietario"}</b>. Sé que deberé subir el poder para la firma.</span>
+                <span>Declaro que cuento con <b>poder vigente y facultad</b> para arrendar este inmueble a nombre de <b>{a.poderdanteName.trim() || "el propietario"}</b>.</span>
               </label>
+              <PoderUpload contractDraftId={party.draftId} />
             </div>
           )}
         </>

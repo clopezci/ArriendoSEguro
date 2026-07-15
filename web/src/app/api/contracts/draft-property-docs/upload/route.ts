@@ -4,7 +4,7 @@ import { getStorage } from "firebase-admin/storage";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { validatePaymentSupportFile, sanitizeSupportFileName, isAllowedSupportMagic } from "@/domain/payments/supportValidation";
-import { DRAFT_PROPERTY_DOCS_COLLECTION, DRAFT_PROPERTY_DOC_MAX, draftPropertyDocPrefix, isPropertyDocType } from "@/domain/contracts/draftPropertyDocs";
+import { DRAFT_PROPERTY_DOCS_COLLECTION, DRAFT_PROPERTY_DOC_MAX, draftPropertyDocPrefix, isDraftDocType } from "@/domain/contracts/draftPropertyDocs";
 import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequest } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     const docType = url.searchParams.get("docType") ?? "";
     const filename = url.searchParams.get("filename") ?? "documento";
     const contentType = url.searchParams.get("contentType") || request.headers.get("content-type") || "application/octet-stream";
-    if (!contractDraftId || !isPropertyDocType(docType)) return err("Datos inválidos.");
+    if (!contractDraftId || !isDraftDocType(docType)) return err("Datos inválidos.");
 
     const buf = Buffer.from(await request.arrayBuffer());
     if (buf.length === 0) return err("El archivo llegó vacío. Intenta de nuevo.");
