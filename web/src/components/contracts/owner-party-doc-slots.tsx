@@ -47,32 +47,29 @@ export function OwnerPartyDocSlots({
   }, [refresh]);
 
   async function upload(file: File, docKey?: string) {
-    if (!user) return;
+    if (!user) { setMsg("Inicia sesión para subir el documento."); return; }
+    if (!contractDraftId) { setMsg("Aún no está listo el borrador; espera un momento e intenta de nuevo."); return; }
     setBusyKey(docKey ?? "extra");
     setMsg("");
     try {
-      const h = { "content-type": "application/json", ...(await buildAuthHeaders(user)) };
-      const signRes = await fetch("/api/party-invite/support/owner-sign", {
-        method: "POST", headers: h,
-        body: JSON.stringify({ contractDraftId, role, codebtorSlot, filename: file.name, contentType: file.type || "application/octet-stream", sizeBytes: file.size }),
+      // Subida DIRECTA a nuestra API (same-origin, sin URL firmada ni CORS): el
+      // servidor guarda en Storage. Evita el "error de red" del PUT del navegador.
+      const q = new URLSearchParams({ contractDraftId, role, codebtorSlot: String(codebtorSlot), filename: file.name, contentType: file.type || "application/octet-stream", ...(docKey ? { docKey } : {}) });
+      const res = await fetch(`/api/party-invite/support/owner-upload?${q.toString()}`, {
+        method: "POST",
+        headers: { "content-type": file.type || "application/octet-stream", ...(await buildAuthHeaders(user)) },
+        body: file,
       });
-      const sign = (await signRes.json()) as { success?: boolean; uploadUrl?: string; storagePath?: string; errors?: { message?: string }[] };
-      if (!signRes.ok || !sign.success || !sign.uploadUrl || !sign.storagePath) {
-        setMsg(sign.errors?.[0]?.message ?? "No se pudo preparar la subida.");
+      let j: { success?: boolean; errors?: { message?: string }[] } = {};
+      try { j = (await res.json()) as typeof j; } catch { /* respuesta no-JSON */ }
+      if (!res.ok || !j.success) {
+        setMsg(j.errors?.[0]?.message ?? `No se pudo subir el documento (código ${res.status}).`);
         return;
       }
-      const put = await fetch(sign.uploadUrl, { method: "PUT", headers: { "content-type": file.type || "application/octet-stream" }, body: file });
-      if (!put.ok) { setMsg("No se pudo subir el archivo. Revisa tu conexión."); return; }
-      const subRes = await fetch("/api/party-invite/support/owner-submit", {
-        method: "POST", headers: h,
-        body: JSON.stringify({ contractDraftId, role, codebtorSlot, storagePath: sign.storagePath, fileName: file.name, contentType: file.type, sizeBytes: file.size, ...(docKey ? { docKey } : {}) }),
-      });
-      const sub = (await subRes.json()) as { success?: boolean; errors?: { message?: string }[] };
-      if (!subRes.ok || !sub.success) { setMsg(sub.errors?.[0]?.message ?? "No se pudo confirmar el documento."); return; }
       setMsg("Documento subido ✓");
       await refresh();
     } catch {
-      setMsg("Error de red al subir el documento.");
+      setMsg("Error de red al subir el documento. Revisa tu conexión e intenta de nuevo.");
     } finally {
       setBusyKey(null);
       if (extraRef.current) extraRef.current.value = "";
