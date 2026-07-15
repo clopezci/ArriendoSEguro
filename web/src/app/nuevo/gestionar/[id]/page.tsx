@@ -30,15 +30,15 @@ type Action = {
   optional?: boolean;
 };
 
+// Aquí SOLO va la gestión POSTERIOR al contrato completo. Lo de "terminar de
+// configurar" (documentos, condiciones de pago, alertas) vive en el flujo
+// «Termina tu contrato» (/terminar) para no mezclar.
 const ACTIONS: Action[] = [
-  { slug: "documentos-propiedad", title: "Documentos de propiedad / poder", desc: "Escritura, certificado de libertad o poder autenticado.", icon: "📄", phase: "Entrega", statusKey: "documentos" },
   { slug: "inventory", title: "Inventario y acta de entrega", desc: "Registra el estado por zonas con fotos y genera el acta.", icon: "📦", phase: "Entrega", statusKey: "entrega" },
   { slug: "notarial", title: "Autenticación notarial", desc: "Opcional: sube el PDF autenticado como refuerzo.", icon: "🏛️", phase: "Entrega", statusKey: "notaria", optional: true },
-  { slug: "pagos-recordatorios", title: "Pagos y recordatorios", desc: "Método (cuenta/QR) y días de aviso. El calendario se arma solo.", icon: "🔔", phase: "Durante el arriendo", statusKey: "pago" },
   { slug: "payment-schedule", title: "Ver calendario de pagos", desc: "Se genera al configurar tus pagos. Aquí lo consultas.", icon: "🗓️", phase: "Durante el arriendo", statusKey: "calendario", optional: true },
   { slug: "payments", title: "Registro de pagos", desc: "Confirma pagos, genera anexos y el enlace para el inquilino.", icon: "✅", phase: "Durante el arriendo" },
-  { slug: "novedades", title: "Novedades del arriendo", desc: "Incumplimientos, reparaciones, convivencia y acuerdos.", icon: "🛠️", phase: "Durante el arriendo" },
-  { slug: "alertas", title: "Alertas de vencimiento", desc: "Recordatorios de terminación o renovación del contrato.", icon: "⏰", phase: "Durante el arriendo" },
+  { slug: "novedades", title: "Novedades y mantenimientos", desc: "Incumplimientos, reparaciones, convivencia y acuerdos.", icon: "🛠️", phase: "Durante el arriendo" },
   { slug: "soportes-codeudor", title: "Soportes de ingresos", desc: "Carta laboral, colillas y extractos del codeudor e inquilino.", icon: "💼", phase: "Durante el arriendo" },
   { slug: "aliados", title: "Aliados y servicios", desc: "Seguro, cobranza, estudio de crédito, jurídica… tú eliges.", icon: "🤝", phase: "Durante el arriendo", optional: true },
   { slug: "renovar", title: "Renovar contrato", desc: "Otrosí de prórroga y reajuste (IPC) con el mismo inquilino.", icon: "🔄", phase: "Cierre" },
@@ -109,13 +109,32 @@ export default function GestionarPosventaPage() {
       <div className="relative z-10 mx-auto max-w-3xl px-6 py-8">
         <div className="mb-6 flex items-center justify-between">
           <Link href="/nuevo/contratos" className="flex items-center gap-2 text-sm font-semibold text-[#5646E5] hover:underline">← Mis contratos</Link>
-          <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Posventa</span>
+          <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Administra tu arriendo</span>
         </div>
 
-        <h1 className="text-balance text-4xl font-extrabold leading-none tracking-tight">Gestiona tu arriendo</h1>
+        <h1 className="text-balance text-4xl font-extrabold leading-none tracking-tight">Administra tu arriendo</h1>
         <p className="mt-3 text-lg text-slate-500">
           {title}{tenant ? ` · Inquilino: ${tenant}` : ""}. Elige <b>una cosa a la vez</b>.
         </p>
+
+        {/* Entrada al flujo "Termina tu contrato" (documentos, pagos y alertas). */}
+        {unlocked && (
+          <button
+            onClick={() => router.push(`/nuevo/gestionar/${id}/terminar`)}
+            className={`mt-6 flex w-full items-center gap-3 rounded-2xl border-2 p-4 text-left transition active:scale-[0.99] ${status.documentos === "pending" || status.pago === "pending" ? "border-amber-300 bg-amber-50/70 hover:border-amber-400" : "border-slate-200 bg-white/90 hover:border-[#5646E5]"}`}
+          >
+            <span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">🧩</span>
+            <span className="min-w-0 flex-1">
+              <b className="text-[15px]">Termina tu contrato</b>
+              <span className="mt-0.5 block text-[13px] text-slate-500">
+                {status.documentos === "pending" || status.pago === "pending"
+                  ? "Te falta cargar documentos y/o configurar los pagos. Complétalo paso a paso."
+                  : "Documentos, condiciones de pago y alertas — paso a paso."}
+              </span>
+            </span>
+            <span className="self-center text-sm font-bold text-[#5646E5]">→</span>
+          </button>
+        )}
 
         {!unlocked && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-8 rounded-3xl border border-amber-200 bg-amber-50/80 p-6 text-center">
