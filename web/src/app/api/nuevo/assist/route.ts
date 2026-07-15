@@ -21,10 +21,16 @@ const schema = z.object({ mode: z.enum(["extract", "ask"]), text: z.string().min
 
 const EXTRACT_SYSTEM =
   "Eres un asistente que extrae datos para un contrato de arrendamiento de vivienda en Colombia. " +
-  "Devuelve EXCLUSIVAMENTE un JSON con estas claves (usa cadena vacía si el dato no se menciona, no inventes): " +
-  "name (nombre del arrendador/dueño), docType (uno de: CC, CE, NIT, Pasaporte), docNumber, phone (10 dígitos), " +
-  "email, address (dirección del inmueble), city, canon (solo el número, sin puntos ni símbolos), " +
-  "tenantName (nombre del arrendatario/inquilino), hasCodebtor ('yes' si mencionan codeudor, 'no' si dicen que no, '' si no se sabe), codebtorName.";
+  "Devuelve EXCLUSIVAMENTE un JSON con estas claves (usa cadena vacía si el dato no se menciona, no inventes; " +
+  "docType/tenantDocType/codebtorDocType deben ser uno de: CC, CE, NIT, Pasaporte; los teléfonos a 10 dígitos; " +
+  "los montos solo el número sin puntos ni símbolos). " +
+  "ARRENDADOR (dueño): name, docType, docNumber, phone, email, ownerCity (ciudad del dueño). " +
+  "INMUEBLE: address (dirección), city (ciudad del inmueble), department (departamento), canon (canon mensual). " +
+  "ARRENDATARIO (inquilino): tenantName, tenantDocType, tenantDocNumber, tenantCity, tenantEmail, tenantPhone, " +
+  "tenantIncome (ingreso mensual). " +
+  "CODEUDOR: hasCodebtor ('yes' si mencionan codeudor con datos, 'no' si dicen que no, '' si no se sabe), " +
+  "codebtorName, codebtorDocType, codebtorDocNumber, codebtorCity, codebtorEmail, codebtorPhone, codebtorIncome. " +
+  "Asigna cada dato a la persona correcta según a quién se refiera el texto (dueño, inquilino o codeudor).";
 
 const ASK_SYSTEM =
   "Eres el asistente de ArriendoSeguro, una aplicación colombiana para que dos personas (dueño e inquilino) creen, " +
