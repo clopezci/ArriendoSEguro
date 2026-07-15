@@ -30,6 +30,7 @@ import { LegalComplianceSeal } from "@/components/contracts/legal-semaphore";
 import { evaluateLegalCompliance, summarizeCompliance, type ComplianceInput } from "@/domain/contracts/legalCompliance";
 import { requiredDocCatalogForRole, requiredDocLabel } from "@/domain/party-invite/requiredDocs";
 import { OwnerPartyDocSlots } from "@/components/contracts/owner-party-doc-slots";
+import { OwnerIncomeReminder } from "@/components/contracts/owner-income-reminder";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
 /**
@@ -1021,6 +1022,19 @@ export default function NuevoPage() {
                     </ul>
                   </div>
                 ) : null;
+              })()}
+
+              {(() => {
+                const d = draftId ? getDraft(draftId) : null;
+                const canonN = Number((a.canon || "").replace(/[^\d]/g, "")) || 0;
+                const tInc = (Number(a.tenantIncome.replace(/[^\d]/g, "")) || 0) || (d?.tenantMonthlyIncome ?? 0);
+                const cInc = a.hasCodebtor === "yes" ? ((Number(a.codebtorIncome.replace(/[^\d]/g, "")) || 0) || (d?.solidaryCoDebtor?.economicSupport?.monthlyIncome ?? 0)) : 0;
+                const rows = [{ who: "Inquilino", income: tInc }, ...(a.hasCodebtor === "yes" ? [{ who: "Codeudor", income: cInc }] : [])];
+                return (
+                  <div className="mt-5">
+                    <OwnerIncomeReminder rentReference={canonN} rows={rows} />
+                  </div>
+                );
               })()}
 
               <div className="mt-5">
