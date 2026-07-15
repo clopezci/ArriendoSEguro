@@ -23,6 +23,7 @@ import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
 import { CodebtorViaTenantPanel } from "@/components/contracts/codebtor-via-tenant-panel";
 import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-owner-list";
 import { AdditionalCodebtorsManager } from "@/components/contracts/additional-codebtors-manager";
+import { PropertyDocUpload } from "@/components/contracts/property-doc-upload";
 import { IncomeSuggestion } from "@/components/contracts/income-suggestion";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
@@ -72,7 +73,7 @@ const QUESTIONS: Q[] = [
   { id: "contact", block: "Datos del dueño", prompt: "¿Cómo lo contactamos?", hint: "Celular, correo y ciudad — para notificaciones y firma.", kind: "contact", basic: true },
   { id: "acting", block: "Datos del dueño", prompt: "¿Eres el dueño o su apoderado?", hint: "Si actúas como apoderado, luego subes el poder.", kind: "acting", basic: true },
   { id: "addr", block: "Datos del inmueble", prompt: "¿Dónde queda el inmueble?", hint: "Dirección, ciudad y departamento que irán en el contrato.", kind: "addr", basic: true },
-  { id: "registry", block: "Datos del inmueble", prompt: "Matrícula y tipo del inmueble", hint: "La matrícula da certeza jurídica. Si no la tienes a la mano, puedes seguir.", kind: "registry", basic: true },
+  { id: "registry", block: "Datos del inmueble", prompt: "Tipo del inmueble y soporte de propiedad", hint: "Elige el tipo y sube un documento que soporte la propiedad (tradición, servicios o predial).", kind: "registry", basic: true },
   { id: "canon", block: "Datos del inmueble", prompt: "¿Cuál es el canon mensual?", hint: "Validamos el tope legal (Ley 820).", kind: "canon", ph: "$ 1.500.000", basic: true },
   { id: "tenant", block: "Datos del inquilino", prompt: "¿Quién ingresa los datos del arrendatario?", hint: "Elige primero: los ingresas tú, o le envías un enlace para que los complete él mismo.", kind: "tenant", basic: true },
   { id: "tenantfull", block: "Datos del inquilino", prompt: "Datos del arrendatario", hint: "Documento, ciudad y contacto — o el enlace de invitación.", kind: "tenantfull", basic: false },
@@ -105,7 +106,7 @@ const EMPTY: Answers = {
   name: "", docType: "CC", docNumber: "", phone: "", email: "", ownerCity: "",
   acting: "", proxyOath: false,
   address: "", city: "", department: "",
-  registry: "", propertyType: "", registrySkip: false,
+  registry: "", propertyType: "", registrySkip: false, propertyDocType: "",
   canon: "", commercialValue: "", noCommercialValue: false,
   startDate: "", termMonths: "12", paymentDay: "5",
   tenantMode: "self", tenantName: "",
@@ -182,6 +183,7 @@ function answersFromDraft(d: ContractDraft): Answers {
     department: d.property?.department || "",
     registry: d.property?.registryNumber || "",
     propertyType: d.property?.type || "",
+    propertyDocType: ((d.property as { propertyDocType?: string } | undefined)?.propertyDocType as Answers["propertyDocType"]) || "",
     canon: num(d.lease?.monthlyRent ?? d.property?.monthlyRentProposed),
     commercialValue: num(d.property?.commercialValue),
     noCommercialValue: Boolean(d.property?.commercialValueUnknown),
@@ -212,7 +214,6 @@ export default function NuevoPage() {
   const router = useRouter();
   const [mode, setMode] = useState<"home" | "flow" | "review" | "done">("home");
   const [reviewOath, setReviewOath] = useState(false); // juramento del inmueble
-  const [skipAck, setSkipAck] = useState(false); // acepta continuar sin la matrícula
   const [themes, setThemes] = useState<[[string, string], [string, string]]>([THEMES[0], THEMES[1]]);
   const [greeting, setGreeting] = useState(GREETINGS[0]);
   const [subIdx, setSubIdx] = useState(0);
@@ -271,7 +272,6 @@ export default function NuevoPage() {
     setARaw(EMPTY);
     setError(null);
     setReviewOath(false);
-    setSkipAck(false);
     setGate(null);
     setI(0);
     setMode("flow");
@@ -328,6 +328,8 @@ export default function NuevoPage() {
         ...(cvNum > 0 ? { commercialValue: cvNum, legalRentCap: Math.round(cvNum * 0.01) } : {}),
         commercialValueUnknown: n.noCommercialValue,
         noCapAcknowledgement: n.noCommercialValue,
+        // Tipo de documento que soporta la propiedad (reemplazo de la matrícula).
+        ...(n.propertyDocType ? ({ propertyDocType: n.propertyDocType } as { propertyDocType: string }) : {}),
       },
       lease: {
         ...d.lease,
@@ -972,6 +974,7 @@ export default function NuevoPage() {
                 <ReviewItem label="Arrendador" value={`${a.name || "—"} · ${a.docType} ${a.docNumber || ""}`.trim()} />
                 <ReviewItem label="Calidad" value={a.acting === "proxy" ? "Apoderado" : a.acting === "owner" ? "Dueño" : "—"} />
                 <ReviewItem label="Inmueble" value={`${a.propertyType || "—"} · ${a.address || "—"}${a.city ? ", " + a.city : ""}`} />
+                <ReviewItem label="Soporte de propiedad" value={a.propertyDocType === "tradicion" ? "Certificado de tradición" : a.propertyDocType === "servicios" ? "Servicios públicos" : a.propertyDocType === "predial" ? "Impuesto predial" : a.propertyDocType === "escritura" ? "Escritura pública" : a.propertyDocType === "otro" ? "Otro documento" : "—"} />
                 <ReviewItem label="Canon" value={a.canon ? `$ ${Number(a.canon.replace(/[^\d]/g, "")).toLocaleString("es-CO")}` : "—"} />
                 <ReviewItem label="Arrendatario" value={a.tenantName ? `${a.tenantName}${a.tenantMode === "invite" ? " (completa por invitación)" : ""}` : "—"} />
                 <ReviewItem label="Términos" value={a.startDate ? `Desde ${a.startDate} · ${a.termMonths} meses · pago día ${a.paymentDay}` : "—"} />
@@ -1005,22 +1008,6 @@ export default function NuevoPage() {
                 <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">📎 Recuerda: como apoderado deberás <b>subir el poder</b> para la firma.</p>
               )}
 
-              {/* Dato importante que quedó pendiente: matrícula saltada → aviso + declaración */}
-              {a.registrySkip && (
-                <div className="mt-4 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4">
-                  <p className="flex items-center gap-2 text-sm font-bold text-amber-900">⚠️ Dato importante pendiente</p>
-                  <p className="mt-1 text-sm text-slate-700">La <b>matrícula inmobiliaria</b> da certeza jurídica y se necesita para <b>generar el contrato</b>. Puedes completarla ahora o continuar y agregarla luego.</p>
-                  <div className="mt-3">
-                    <button type="button" onClick={() => { setMode("flow"); setI(QUESTIONS.findIndex((q) => q.id === "registry")); }}
-                      className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white hover:brightness-105">Completar ahora</button>
-                  </div>
-                  <label className="mt-3 flex cursor-pointer items-start gap-2.5 text-sm text-slate-700">
-                    <input type="checkbox" checked={skipAck} onChange={(e) => { const v = e.target.checked; if (v && !skipAck) void captureOathEvidence("registry_skip_declaration", draftId ?? undefined); setSkipAck(v); }} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
-                    <span>Entiendo que <b>sin la matrícula el contrato aún no se puede generar</b>, y decido continuar por ahora para agregarla más adelante.</span>
-                  </label>
-                </div>
-              )}
-
               {/* Juramento del inmueble (obligatorio) */}
               <label className="mt-5 flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-slate-200 bg-white p-4 text-sm text-slate-700">
                 <input type="checkbox" checked={reviewOath} onChange={(e) => { const v = e.target.checked; if (v && !reviewOath) void captureOathEvidence("property_ownership_oath", draftId ?? undefined); setReviewOath(v); }} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
@@ -1032,7 +1019,7 @@ export default function NuevoPage() {
               <div className="mt-6 flex items-center gap-3">
                 <button
                   onClick={confirmReview}
-                  disabled={!reviewOath || (a.registrySkip && !skipAck)}
+                  disabled={!reviewOath}
                   className="rounded-2xl bg-[#FF6B4A] px-7 py-4 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50">
                   Confirmar y continuar →
                 </button>
@@ -1124,16 +1111,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               ))}
             </div>
           </div>
-          <div>
-            <p className="mb-2 text-sm font-medium text-slate-600">Matrícula inmobiliaria</p>
-            <InputMic inputMode="text" placeholder="Ej. 050-123456" value={a.registry} disabled={a.registrySkip}
-              onChange={(e) => setA({ ...a, registry: e.target.value })} voice={(t) => setA({ ...a, registry: t })} />
-            <p className="mt-1.5 text-xs text-slate-500">Está en el certificado de tradición y libertad del inmueble.</p>
-            <label className="mt-2.5 flex cursor-pointer items-center gap-2.5 text-sm text-slate-600">
-              <input type="checkbox" checked={a.registrySkip} onChange={(e) => setA({ ...a, registrySkip: e.target.checked, registry: e.target.checked ? "" : a.registry })} className="h-5 w-5 accent-[#5646E5]" />
-              <span>No la tengo ahora — <b>seguir sin la matrícula</b> (te la recordamos al final).</span>
-            </label>
-          </div>
+          <PropertyDocUpload contractDraftId={party.draftId} docType={a.propertyDocType} onDocType={(v) => setA({ ...a, propertyDocType: v })} />
         </div>
       );
     case "text":

@@ -41,9 +41,10 @@ export function validateContractData(input: ResidentialLeaseContractInput): Vali
   if (isBlank(input.property.city)) issues.push({ field: "property.city", message: "Ciudad del inmueble requerida." });
   if (isBlank(input.property.department)) issues.push({ field: "property.department", message: "Departamento requerido." });
   if (isBlank(input.property.type)) issues.push({ field: "property.type", message: "Tipo de inmueble requerido." });
-  if (isBlank(input.property.registryNumber)) {
-    issues.push({ field: "property.registryNumber", message: "Matrícula/registro del inmueble requerido." });
-  }
+  // La matrícula ya NO es obligatoria: la propiedad se soporta con un documento
+  // adjunto (certificado de tradición, servicios públicos o impuesto predial),
+  // que el dueño carga en el paso del inmueble. Si viene, se imprime; si no, el
+  // contrato remite al documento de soporte adjunto.
   // Si el arrendador declaró desconocer el valor comercial y aceptó la
   // responsabilidad expresa (Ley 820 de 2003), omitimos las validaciones
   // del valor comercial y del tope. La aceptación se conserva como
