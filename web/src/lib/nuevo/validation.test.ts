@@ -7,14 +7,14 @@ const base: Answers = {
   name: "", docType: "CC", docNumber: "", phone: "", email: "", ownerCity: "",
   acting: "", proxyOath: false,
   address: "", city: "", department: "",
-  registry: "", propertyType: "", registrySkip: false,
+  registry: "", propertyType: "", registrySkip: false, propertyDocType: "", propertyOath: false,
   canon: "", commercialValue: "", noCommercialValue: false,
   startDate: "", termMonths: "12", paymentDay: "5",
   tenantMode: "self", tenantName: "",
-  tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false,
+  tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false, tenantIncome: "",
   hasCodebtor: "", codebtorName: "", codebtorMode: "self",
-  codebtorDocType: "CC", codebtorDocNumber: "", codebtorCity: "", codebtorEmail: "", codebtorPhone: "", codebtorAuth: false,
-  utilitiesParty: "", clauses: [], clauseOther: "",
+  codebtorDocType: "CC", codebtorDocNumber: "", codebtorCity: "", codebtorEmail: "", codebtorPhone: "", codebtorAuth: false, codebtorIncome: "",
+  utilitiesParty: "", adminParty: "", clauses: [], clauseOther: "",
   docMethod: "", docPhone: "", docEmail: "",
 };
 const a = (o: Partial<Answers>): Answers => ({ ...base, ...o });
@@ -58,11 +58,10 @@ test("canon: cero/texto → error; sin valor comercial → pide valor o acuse; t
   assert.equal(validateStep("canon", a({ canon: "1500000", commercialValue: "200000000" })), null);
 });
 
-test("codeudor: sin elegir → error; sí sin nombre → error; no → ok", () => {
+test("codeudor: sin elegir → error; elegido (sí/no) → ok (el nombre se pide en el paso siguiente)", () => {
   assert.ok(validateStep("codebtor", a({ hasCodebtor: "" })));
-  assert.ok(validateStep("codebtor", a({ hasCodebtor: "yes", codebtorName: "" })));
   assert.equal(validateStep("codebtor", a({ hasCodebtor: "no" })), null);
-  assert.equal(validateStep("codebtor", a({ hasCodebtor: "yes", codebtorName: "María López" })), null);
+  assert.equal(validateStep("codebtor", a({ hasCodebtor: "yes" })), null);
 });
 
 test("documentos: sin método → error; WhatsApp con teléfono corto → error; self → ok", () => {
@@ -84,11 +83,11 @@ test("calidad: sin elegir → error; apoderado sin juramento → error; dueño �
   assert.equal(validateStep("acting", a({ acting: "owner" })), null);
 });
 
-test("matrícula/tipo: sin tipo → error; sin matrícula → error (obligatoria); completa → ok", () => {
-  assert.ok(validateStep("registry", a({ propertyType: "", registry: "050-1" })));                       // sin tipo → error
-  assert.ok(validateStep("registry", a({ propertyType: "Casa", registry: "", registrySkip: false })));    // sin matrícula y sin saltar → error
-  assert.equal(validateStep("registry", a({ propertyType: "Casa", registry: "", registrySkip: true })), null); // saltable → ok
-  assert.equal(validateStep("registry", a({ propertyType: "Casa", registry: "050-123456" })), null);      // con matrícula → ok
+test("inmueble: sin tipo → error; sin soporte → error; sin juramento → error; completo → ok", () => {
+  assert.ok(validateStep("registry", a({ propertyType: "", propertyDocType: "tradicion", propertyOath: true })));   // sin tipo → error
+  assert.ok(validateStep("registry", a({ propertyType: "Casa", propertyDocType: "", propertyOath: true })));         // sin elegir soporte → error
+  assert.ok(validateStep("registry", a({ propertyType: "Casa", propertyDocType: "tradicion", propertyOath: false }))); // sin juramento → error
+  assert.equal(validateStep("registry", a({ propertyType: "Casa", propertyDocType: "tradicion", propertyOath: true })), null); // completo → ok
 });
 
 test("contacto del dueño exige ciudad además de teléfono y correo", () => {
@@ -108,14 +107,16 @@ test("términos: exige fecha, duración válida y día de pago 1-31", () => {
   assert.equal(validateStep("lease", a({ startDate: "2026-01-01", termMonths: "12", paymentDay: "5" })), null);
 });
 
-test("datos completos del inquilino: doc/ciudad/correo/tel + autorización", () => {
-  assert.ok(validateStep("tenantfull", a({ tenantDocNumber: "79000000", tenantCity: "Cali", tenantEmail: "t@b.com", tenantPhone: "3001234567", tenantAuth: false }))); // falta auth
-  assert.equal(validateStep("tenantfull", a({ tenantDocNumber: "79000000", tenantCity: "Cali", tenantEmail: "t@b.com", tenantPhone: "3001234567", tenantAuth: true })), null);
+test("datos completos del inquilino: doc/ciudad/correo/tel + ingreso + autorización", () => {
+  assert.ok(validateStep("tenantfull", a({ tenantDocNumber: "79000000", tenantCity: "Cali", tenantEmail: "t@b.com", tenantPhone: "3001234567", tenantIncome: "2000000", tenantAuth: false }))); // falta auth
+  assert.ok(validateStep("tenantfull", a({ tenantDocNumber: "79000000", tenantCity: "Cali", tenantEmail: "t@b.com", tenantPhone: "3001234567", tenantIncome: "", tenantAuth: true }))); // falta ingreso
+  assert.equal(validateStep("tenantfull", a({ tenantDocNumber: "79000000", tenantCity: "Cali", tenantEmail: "t@b.com", tenantPhone: "3001234567", tenantIncome: "2000000", tenantAuth: true })), null);
 });
 
-test("servicios: sin elegir → error; con responsable → ok", () => {
-  assert.ok(validateStep("utils", a({ utilitiesParty: "" })));
-  assert.equal(validateStep("utils", a({ utilitiesParty: "arrendatario" })), null);
+test("servicios: sin responsable → error; sin administración → error; ambos → ok", () => {
+  assert.ok(validateStep("utils", a({ utilitiesParty: "", adminParty: "arrendatario" })));
+  assert.ok(validateStep("utils", a({ utilitiesParty: "arrendatario", adminParty: "" })));
+  assert.equal(validateStep("utils", a({ utilitiesParty: "arrendatario", adminParty: "no_aplica" })), null);
 });
 
 test("cláusulas: opcionales; 'Otra' sin texto → error; con texto → ok", () => {

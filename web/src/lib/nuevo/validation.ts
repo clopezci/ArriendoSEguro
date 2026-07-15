@@ -79,6 +79,9 @@ export type Answers = {
   // Documento que soporta la propiedad del inmueble (reemplaza la matrícula):
   // el dueño elige el tipo y sube el archivo.
   propertyDocType: "" | "tradicion" | "servicios" | "predial" | "escritura" | "otro";
+  // Juramento del dueño/apoderado: declara estar facultado para arrendar, se hace
+  // responsable de la veracidad del soporte y exonera a ArriendoSeguro.
+  propertyOath: boolean;
   canon: string; commercialValue: string; noCommercialValue: boolean;
   // Términos del arriendo
   startDate: string; termMonths: string; paymentDay: string;
@@ -119,6 +122,8 @@ export function validateStep(kind: string, a: Answers): string | null {
       // soporta la propiedad (certificado de tradición, servicios, predial…). La
       // carga del archivo se hace en el mismo paso (recomendada, no bloqueante).
       if (!a.propertyDocType) return "Elige qué documento vas a incluir para soportar la propiedad del inmueble.";
+      // Juramento de facultad + exoneración (siempre exigido antes de avanzar).
+      if (!a.propertyOath) return "Acepta la declaración de facultad y responsabilidad sobre el inmueble para continuar.";
       return null;
     case "canon": {
       const n = Number((a.canon || "").replace(/[^\d]/g, ""));
