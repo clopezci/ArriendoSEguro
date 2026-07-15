@@ -9,6 +9,7 @@ import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-
 import { OwnerIncomeReminder } from "@/components/contracts/owner-income-reminder";
 import { PropertyDocUpload } from "@/components/contracts/property-doc-upload";
 import { PoderUpload } from "@/components/contracts/poder-upload";
+import { SpecialClauseReviewStatus } from "@/components/contracts/special-clause-review-status";
 import type { PropertyDocType } from "@/domain/contracts/draftPropertyDocs";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 import { auditEvent } from "@/features/contracts/audit";
@@ -902,6 +903,13 @@ export default function PreviewStepPage() {
         )}
       </div>
       )}
+      {section === "revisar" &&
+        activeDraft?.specialClauses?.enabled &&
+        activeDraft.specialClauses.selected?.includes("OTRA") && (
+          <div className="mb-4">
+            <SpecialClauseReviewStatus contractId={activeDraft?.id ?? id} />
+          </div>
+        )}
       {section === "revisar" && (
       <div id="preview-acciones" className="mb-4 flex flex-wrap items-center gap-3 scroll-mt-24">
         <button
