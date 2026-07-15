@@ -237,15 +237,21 @@ export const CONTRACT_TEMPLATE = `
     Leído el presente contrato por las partes, y aceptado su contenido, se firma electrónicamente en la fecha
     registrada por la plataforma.
   </p>
-  <p>
-    EL ARRENDADOR: [NOMBRE_ARRENDADOR] - [DOCUMENTO_ARRENDADOR] - Firma: [FIRMA_ARRENDADOR] - Fecha:
-    [FECHA_FIRMA_ARRENDADOR]
-  </p>
-  <p>
-    EL ARRENDATARIO: [NOMBRE_ARRENDATARIO] - [DOCUMENTO_ARRENDATARIO] - Firma: [FIRMA_ARRENDATARIO] - Fecha:
-    [FECHA_FIRMA_ARRENDATARIO]
-  </p>
+  <p><strong>EL ARRENDADOR:</strong>
+Nombre: [NOMBRE_ARRENDADOR]
+Documento: [DOCUMENTO_ARRENDADOR]
+</p>
+  <p><strong>EL ARRENDATARIO:</strong>
+Nombre: [NOMBRE_ARRENDATARIO]
+Documento: [DOCUMENTO_ARRENDATARIO]
+</p>
   <p>[FIRMA_CODEUDOR_CONDICIONAL]</p>
+  <p>
+    La <strong>firma electrónica</strong> de cada parte —con su fecha, dirección IP y resumen criptográfico (hash) de
+    integridad— consta en el <strong>Anexo de Evidencia de Firma Electrónica</strong>, que hace parte integral de este
+    contrato conforme a la Ley 527 de 1999. Mientras alguna parte no haya firmado, su firma figura como pendiente en
+    dicho anexo.
+  </p>
 </article>
 `;
 
@@ -271,12 +277,9 @@ Dirección: [DIRECCION_NOTIFICACION_CODEUDOR]
 Correo: [EMAIL_CODEUDOR]
 `;
 
-export const FIRMA_CODEUDOR = `
-EL CODEUDOR SOLIDARIO:
+export const FIRMA_CODEUDOR = `<strong>EL CODEUDOR SOLIDARIO:</strong>
 Nombre: [NOMBRE_CODEUDOR]
 Documento: [DOCUMENTO_CODEUDOR]
-Firma electrónica: [FIRMA_CODEUDOR]
-Fecha de firma: [FECHA_FIRMA_CODEUDOR]
 `;
 
 export function wrapContractHtml(content: string, title: string): string {
