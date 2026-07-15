@@ -3,7 +3,9 @@
 import { StepNav, useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { flashSaved } from "@/components/contracts/save-flash";
-import { setSpecialClauses } from "@/features/contracts/wizard-state";
+import { getDraft, setSpecialClauses } from "@/features/contracts/wizard-state";
+import { flushDraftToServer } from "@/features/contracts/draft-server-sync";
+import { SpecialClauseReviewStatus } from "@/components/contracts/special-clause-review-status";
 import {
   SPECIAL_CLAUSES_COST_NOTICE,
   SPECIAL_CLAUSES_FREE_NOTICE,
@@ -117,15 +119,29 @@ export default function SpecialClausesStepPage() {
     });
 
     // Si eligió la cláusula libre «Otra», avisamos al aliado jurídico (best-effort,
-    // no bloquea el flujo; el servidor evita duplicados por expediente).
+    // no bloquea el flujo; el servidor evita duplicados por expediente). El abogado
+    // recibe el contacto del creador y un enlace para registrar la cláusula final,
+    // que se incorpora sola al contrato. Guardamos el token y el estado "pending".
     if (otherSelected && freeText.trim().length >= 10 && user) {
       void (async () => {
         try {
-          await fetch("/api/contracts/special-clause", {
+          const res = await fetch("/api/contracts/special-clause", {
             method: "POST",
             headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
             body: JSON.stringify({ contractDraftId: id, clauseText: freeText.trim() }),
           });
+          const j = (await res.json()) as { token?: string; status?: "pending" | "drafted" };
+          if (res.ok && j.token) {
+            const cur = getDraft(id)?.specialClauses;
+            if (cur) {
+              const updated = setSpecialClauses(id, {
+                ...cur,
+                reviewToken: j.token,
+                reviewStatus: cur.reviewStatus === "drafted" ? "drafted" : j.status ?? "pending",
+              });
+              if (updated) void flushDraftToServer(updated).catch(() => {});
+            }
+          }
         } catch {
           /* el aviso no es bloqueante */
         }
@@ -251,11 +267,16 @@ export default function SpecialClausesStepPage() {
                 </p>
                 <p className="mt-1">{SPECIAL_CLAUSES_COST_NOTICE}</p>
                 <p className="mt-1 text-xs">
-                  Al guardar, tu cláusula queda registrada y su costo se suma al pago del Plan Plus cuando actives tu
-                  contrato. Nuestro equipo jurídico la revisa antes de la firma.
+                  Al guardar, tu cláusula queda registrada y su costo se suma al pago cuando actives tu contrato.
+                  Enviamos tu solicitud a nuestro <strong>equipo jurídico</strong> junto con tus datos de contacto, para
+                  que te escriba si necesita más información. Puedes <strong>seguir armando el contrato</strong>: la
+                  redacción <strong>final</strong> del abogado se <strong>actualiza sola</strong> en el contrato cuando
+                  esté lista.
                 </p>
               </div>
             )}
+
+            {otherSelected && <SpecialClauseReviewStatus contractId={id} />}
 
             {otherSelected && (
               <label className="block">

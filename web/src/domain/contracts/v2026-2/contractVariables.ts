@@ -41,8 +41,11 @@ function formatSpecialClauses(input: ResidentialLeaseContractInput): string {
   for (const item of sc.selected ?? []) {
     items.push(`<li>${escapeHtml(item)}</li>`);
   }
-  if (sc.freeText && sc.freeText.trim().length > 0) {
-    items.push(`<li>${escapeHtml(sc.freeText.trim())}</li>`);
+  // La versión final del abogado («drafted») prima sobre el texto propuesto.
+  const drafted = sc.reviewStatus === "drafted" && Boolean(sc.finalText?.trim());
+  const otherText = drafted ? (sc.finalText ?? "") : (sc.freeText ?? "");
+  if (otherText.trim().length > 0) {
+    items.push(`<li>${escapeHtml(otherText.trim())}</li>`);
   }
   if (items.length === 0) return "";
   return `<ol>${items.join("")}</ol>`;

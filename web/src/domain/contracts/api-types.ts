@@ -22,6 +22,9 @@ const specialClausesSchema = z.object({
   selected: z.array(z.string()).default([]),
   freeText: z.string().optional(),
   costNotified: z.boolean(),
+  reviewStatus: z.enum(["pending", "drafted", "declined"]).optional(),
+  finalText: z.string().optional(),
+  reviewToken: z.string().optional(),
 });
 
 const notarizationSchema = z.object({

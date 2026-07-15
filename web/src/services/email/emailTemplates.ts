@@ -49,29 +49,52 @@ function baseHtml(title: string, body: string) {
 
 export function specialClauseReviewEmail(input: {
   contractId: string;
+  requesterName: string;
   requesterEmail: string;
+  requesterPhone: string;
   clauseText: string;
   priceCop: number;
+  reviewUrl: string;
 }): CompiledEmailTemplate {
   const priceText = `$${input.priceCop.toLocaleString("es-CO")}`;
+  const esc = (s: string) => s.replace(/[<>]/g, (c) => (c === "<" ? "&lt;" : "&gt;"));
+  const contactName = input.requesterName.trim() || "(sin nombre)";
+  const contactPhone = input.requesterPhone.trim() || "(sin teléfono)";
   const subject = `Revisión de cláusula especial · Expediente ${input.contractId}`;
   const text =
-    `Un usuario de ArriendoSeguro (${input.requesterEmail}) solicitó incluir una cláusula especial ("Otra") ` +
-    `en el expediente ${input.contractId}, que requiere tu revisión jurídica.\n\n` +
+    `Un usuario de ArriendoSeguro solicitó incluir una cláusula especial ("Otra") en el expediente ${input.contractId}, ` +
+    `que requiere tu revisión jurídica.\n\n` +
+    `DATOS DE CONTACTO DE QUIEN CREÓ EL CONTRATO (contáctalo para pedir más información o confirmar):\n` +
+    `  Nombre: ${contactName}\n  Correo: ${input.requesterEmail}\n  Teléfono/WhatsApp: ${contactPhone}\n\n` +
     `Cobro adicional informado al usuario: ${priceText}.\n\n` +
     `Texto de la cláusula propuesta:\n"${input.clauseText}"\n\n` +
-    `Revisa que se ajuste a la normatividad colombiana (Ley 820 de 2003 y demás aplicables) y responde con tu concepto.`;
+    `REGISTRA LA CLÁUSULA FINAL AQUÍ (se incorpora automáticamente al contrato del usuario):\n${input.reviewUrl}\n\n` +
+    `Revisa que se ajuste a la normatividad colombiana (Ley 820 de 2003 y demás aplicables).`;
   const html = baseHtml(
     "Solicitud de revisión de cláusula especial",
-    `<p>Un usuario de ArriendoSeguro (<strong>${input.requesterEmail}</strong>) solicitó incluir una cláusula especial
-      («Otra») en el expediente <strong>${input.contractId}</strong>, que requiere tu revisión jurídica.</p>
+    `<p>Un usuario de ArriendoSeguro solicitó incluir una cláusula especial («Otra») en el expediente
+      <strong>${esc(input.contractId)}</strong>, que requiere tu revisión jurídica.</p>
+     <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px;margin:12px 0;">
+       <p style="margin:0 0 6px;font-weight:bold;">Contacto de quien creó el contrato</p>
+       <p style="margin:0;">Nombre: <strong>${esc(contactName)}</strong><br/>
+         Correo: <a href="mailto:${esc(input.requesterEmail)}">${esc(input.requesterEmail)}</a><br/>
+         Teléfono / WhatsApp: <strong>${esc(contactPhone)}</strong></p>
+       <p style="margin:8px 0 0;font-size:12px;color:#475569;">Puedes contactarlo directamente para pedir más
+         información o confirmarle que la cláusula se adicionará.</p>
+     </div>
      <p>Cobro adicional informado al usuario: <strong>${priceText}</strong>.</p>
      <p style="margin:12px 0 4px;">Texto de la cláusula propuesta:</p>
      <blockquote style="background:#f1f5f9;padding:12px;border-left:4px solid #6d28d9;margin:0;">
-       ${input.clauseText.replace(/[<>]/g, (c) => (c === "<" ? "&lt;" : "&gt;")).replace(/\n/g, "<br/>")}
+       ${esc(input.clauseText).replace(/\n/g, "<br/>")}
      </blockquote>
-     <p style="margin-top:12px;">Revisa que se ajuste a la normatividad colombiana (Ley 820 de 2003 y demás aplicables)
-      y responde con tu concepto.</p>`,
+     <p style="margin:16px 0 8px;">Cuando tengas la <strong>redacción final</strong>, regístrala aquí y se
+       incorporará automáticamente al contrato del usuario:</p>
+     <p style="margin:0 0 12px;">
+       <a href="${esc(input.reviewUrl)}" style="display:inline-block;background:#6d28d9;color:#fff;text-decoration:none;
+         padding:10px 18px;border-radius:8px;font-weight:bold;">Registrar cláusula final</a>
+     </p>
+     <p style="margin-top:12px;font-size:12px;color:#475569;">Revisa que se ajuste a la normatividad colombiana
+      (Ley 820 de 2003 y demás aplicables).</p>`,
   );
   return { subject, html, text };
 }

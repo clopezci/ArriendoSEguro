@@ -646,6 +646,11 @@ export function setSpecialClauses(
         selected: Array.from(new Set(selection.selected ?? [])),
         freeText: selection.freeText?.trim() || undefined,
         costNotified: Boolean(selection.costNotified),
+        // Estado de revisión jurídica de la cláusula «Otra»: se conserva para no
+        // perder la respuesta del abogado al reguardar el borrador desde el cliente.
+        reviewStatus: selection.reviewStatus,
+        finalText: selection.finalText?.trim() || undefined,
+        reviewToken: selection.reviewToken,
       }
     : {
         enabled: false,

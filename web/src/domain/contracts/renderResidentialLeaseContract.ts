@@ -57,9 +57,14 @@ function buildSpecialClausesBlock(
 ): string {
   if (!selection || !selection.enabled) return "";
   const bodies = getSelectedClauseBodies(selection.selected);
+  // Si el aliado jurídico ya redactó la versión final («drafted»), esa prima
+  // sobre el texto propuesto por el usuario. Mientras esté «pending», imprimimos
+  // el texto propuesto con una nota de que la redacción final está en revisión.
+  const drafted = selection.reviewStatus === "drafted" && Boolean(selection.finalText?.trim());
+  const otherText = drafted ? (selection.finalText ?? "") : (selection.freeText ?? "");
   const hasOther =
     selection.selected.includes(SPECIAL_CLAUSE_OTHER_ID) &&
-    Boolean(selection.freeText && selection.freeText.trim().length > 0);
+    Boolean(otherText && otherText.trim().length > 0);
 
   if (bodies.length === 0 && !hasOther) return "";
 
@@ -70,10 +75,18 @@ function buildSpecialClausesBlock(
     )
     .join("\n");
 
+  const pendingNote = !drafted
+    ? `
+  <p style="font-size:11px;color:#b45309;">
+    Redacción sujeta a revisión del equipo jurídico de ArriendoSeguro. La versión final se incorporará automáticamente
+    a este contrato una vez el abogado la registre; hasta entonces rige el texto propuesto por las partes.
+  </p>`
+    : "";
+
   const otherBlock = hasOther
     ? `
   <p><strong>Otra cláusula acordada entre las partes.</strong></p>
-  ${freeTextToParagraphs(selection.freeText ?? "")}
+  ${freeTextToParagraphs(otherText)}${pendingNote}
   <p style="font-size:11px;color:#475569;">
     La presente cláusula adicional refleja un acuerdo voluntario entre las partes y su validez se encuentra sujeta a la
     normatividad colombiana aplicable. En caso de contradicción con la ley imperativa, primarán las normas legales.

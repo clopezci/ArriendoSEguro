@@ -45,6 +45,20 @@ export interface SpecialClausesSelection {
   selected: string[];
   freeText?: string;
   costNotified: boolean;
+  /**
+   * Estado de la revisión de la cláusula libre «Otra» por el aliado jurídico.
+   * - "pending": se envió al abogado y aún no registra la versión final (el
+   *   contrato se puede seguir armando, pero se muestra un aviso rojo/espera).
+   * - "drafted": el abogado registró la cláusula final (`finalText`), que
+   *   reemplaza el texto propuesto en el contrato.
+   * - "declined": el abogado indicó que no procede.
+   * Ausente = no aplica (no se eligió «Otra» o no hay aliado configurado).
+   */
+  reviewStatus?: "pending" | "drafted" | "declined";
+  /** Texto FINAL de la cláusula redactado por el aliado jurídico (si `drafted`). */
+  finalText?: string;
+  /** Token de la solicitud de revisión (`special_clause_reviews/<token>`). */
+  reviewToken?: string;
 }
 
 /**
