@@ -139,6 +139,50 @@ export async function POST(request: Request) {
     }
 
     const generatedAt = new Date().toISOString();
+
+    // Sello INFORMATIVO del estado de firma: refleja en el PDF quién ha firmado
+    // al momento de generarlo. NO cambia la validez ni el hash del documento: la
+    // constancia con plena validez (fecha, IP, hash) es el Anexo de Evidencia.
+    try {
+      const sigSnap = await firestore
+        .collection("signatures")
+        .where("contractId", "==", contractId)
+        .where("contractVersionId", "==", contractVersionId)
+        .get();
+      const byParty = new Map<string, { status: string; signedAt: string | null }>();
+      sigSnap.docs.forEach((d) => {
+        const s = d.data() as { partyType?: string; signatureStatus?: string; signedAt?: string };
+        if (!s.partyType || s.signatureStatus === "cancelled") return;
+        const cur = byParty.get(s.partyType);
+        const better = !cur || (s.signatureStatus === "signed" && cur.status !== "signed");
+        if (better) byParty.set(s.partyType, { status: s.signatureStatus ?? "", signedAt: s.signedAt ?? null });
+      });
+      const roleLabel = (t: string): string =>
+        t === "landlord" ? "EL ARRENDADOR" : t === "tenant" ? "EL ARRENDATARIO" : t.startsWith("solidaryCoDebtor") ? "EL CODEUDOR SOLIDARIO" : t;
+      const order = (t: string) => (t === "landlord" ? 0 : t === "tenant" ? 1 : 2);
+      const parties = [...byParty.keys()].sort((a, b) => order(a) - order(b) || a.localeCompare(b));
+      if (parties.length > 0) {
+        const rows = parties
+          .map((t) => {
+            const r = byParty.get(t)!;
+            const estado =
+              r.status === "signed"
+                ? `Firmado electronicamente${r.signedAt ? " el " + new Date(r.signedAt).toLocaleString("es-CO") : ""}`
+                : "Pendiente de firma";
+            return `<p>${roleLabel(t)}: ${estado}</p>`;
+          })
+          .join("");
+        const stamp =
+          `<h3>Estado de la firma electronica (informativo)</h3>` +
+          `<p>Reflejo generado el ${new Date(generatedAt).toLocaleString("es-CO")}. Este recuadro es solo informativo: la constancia con plena validez legal (fecha, IP y hash de cada firma) es el Anexo de Evidencia de Firma Electronica, que hace parte integral de este contrato (Ley 527 de 1999).</p>` +
+          rows;
+        const idx = htmlForPdf.lastIndexOf("</article>");
+        htmlForPdf = idx >= 0 ? htmlForPdf.slice(0, idx) + stamp + htmlForPdf.slice(idx) : htmlForPdf.replace("</body>", stamp + "</body>");
+      }
+    } catch {
+      /* si falla la consulta de firmas, el PDF sale sin el sello informativo */
+    }
+
     const renderStartedAt = Date.now();
     const pdfBytes = await renderContractPdfFromHtml({
       html: htmlForPdf,
