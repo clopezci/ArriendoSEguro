@@ -759,16 +759,29 @@ export default function NuevoPage() {
         return;
       }
       const d = j.data;
-      const dt = String(d.docType ?? "").toUpperCase();
-      const docType = dt === "CE" ? "CE" : dt === "NIT" ? "NIT" : dt.startsWith("PAS") ? "Pasaporte" : "CC";
+      const norm = (v: unknown): "CC" | "CE" | "NIT" | "Pasaporte" => {
+        const t = String(v ?? "").toUpperCase();
+        return t === "CE" ? "CE" : t === "NIT" ? "NIT" : t.startsWith("PAS") ? "Pasaporte" : "CC";
+      };
+      const str = (v: unknown) => String(v ?? "");
+      const digits = (v: unknown) => String(v ?? "").replace(/\D/g, "");
       const has = String(d.hasCodebtor ?? "");
+      // Hay codeudor si lo dicen O si vienen datos del codeudor en el texto.
+      const codebtorHasData = Boolean(str(d.codebtorName) || str(d.codebtorDocNumber) || str(d.codebtorEmail) || str(d.codebtorPhone));
       const prefilled: Answers = {
         ...EMPTY,
-        name: String(d.name ?? ""), docType, docNumber: String(d.docNumber ?? ""),
-        phone: String(d.phone ?? "").replace(/\D/g, ""), email: String(d.email ?? ""),
-        address: String(d.address ?? ""), city: String(d.city ?? ""), canon: String(d.canon ?? "").replace(/[^\d]/g, ""),
-        tenantName: String(d.tenantName ?? ""), hasCodebtor: has === "yes" ? "yes" : has === "no" ? "no" : "",
-        codebtorName: String(d.codebtorName ?? ""),
+        // Arrendador (dueño)
+        name: str(d.name), docType: norm(d.docType), docNumber: str(d.docNumber),
+        phone: digits(d.phone), email: str(d.email), ownerCity: str(d.ownerCity),
+        // Inmueble
+        address: str(d.address), city: str(d.city), department: str(d.department), canon: digits(d.canon),
+        // Arrendatario (inquilino): el dueño los ingresa → modo self
+        tenantName: str(d.tenantName), tenantDocType: norm(d.tenantDocType), tenantDocNumber: str(d.tenantDocNumber),
+        tenantCity: str(d.tenantCity), tenantEmail: str(d.tenantEmail), tenantPhone: digits(d.tenantPhone), tenantIncome: digits(d.tenantIncome),
+        // Codeudor
+        hasCodebtor: has === "yes" || codebtorHasData ? "yes" : has === "no" ? "no" : "",
+        codebtorName: str(d.codebtorName), codebtorDocType: norm(d.codebtorDocType), codebtorDocNumber: str(d.codebtorDocNumber),
+        codebtorCity: str(d.codebtorCity), codebtorEmail: str(d.codebtorEmail), codebtorPhone: digits(d.codebtorPhone), codebtorIncome: digits(d.codebtorIncome),
       };
       const draft = createContractDraft({ userId: user?.uid ?? "invitado", accessStatus: "free", isDemo: false });
       setDraftId(draft.id); draftIdRef.current = draft.id;

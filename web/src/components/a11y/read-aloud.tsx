@@ -24,6 +24,7 @@ type ReadAloudCtx = {
   speak: (id: string, text: string) => void;
   pause: () => void;
   resume: () => void;
+  rewind: () => void;
   stop: () => void;
   setRate: (r: number) => void;
 };
@@ -167,6 +168,19 @@ export function ReadAloudProvider({ children }: { children: React.ReactNode }) {
     speakFrom(idxRef.current);
   }, [speakFrom]);
 
+  /**
+   * Retroceder ~10 segundos. Como la lectura va por fragmentos (~220 caracteres
+   * ≈ 10–15 s a velocidad normal), retrocedemos uno o dos fragmentos según la
+   * velocidad y releemos desde ahí (aproxima los 10 s de forma fiable en todos
+   * los navegadores, sin API de tiempo).
+   */
+  const rewind = useCallback(() => {
+    if (chunksRef.current.length === 0) return;
+    const back = rateRef.current >= 1.5 ? 2 : 1; // más rápido → retrocede más fragmentos
+    const target = Math.max(0, idxRef.current - back);
+    speakFrom(target);
+  }, [speakFrom]);
+
   const stop = useCallback(() => {
     genRef.current++;
     try {
@@ -193,7 +207,7 @@ export function ReadAloudProvider({ children }: { children: React.ReactNode }) {
     [speakFrom, status],
   );
 
-  const value: ReadAloudCtx = { supported, status, activeId, rate, speak, pause, resume, stop, setRate };
+  const value: ReadAloudCtx = { supported, status, activeId, rate, speak, pause, resume, rewind, stop, setRate };
   return (
     <Ctx.Provider value={value}>
       {children}
@@ -219,6 +233,15 @@ function ReadAloudControls() {
       className="fixed inset-x-0 bottom-4 z-50 mx-auto flex w-fit max-w-[95vw] items-center gap-2 rounded-full border border-violet-300 bg-white/95 px-3 py-2 shadow-[0_8px_28px_rgba(139,92,246,0.28)] backdrop-blur"
     >
       <span className="hidden text-xs font-medium text-violet-800 sm:inline">🔊 Leyendo</span>
+      <button
+        type="button"
+        onClick={ra.rewind}
+        aria-label="Retroceder 10 segundos"
+        title="Retroceder 10 segundos"
+        className="rounded-full border border-violet-400 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-50"
+      >
+        ⏪ 10s
+      </button>
       {ra.status === "paused" ? (
         <button
           type="button"
