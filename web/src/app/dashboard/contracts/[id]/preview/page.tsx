@@ -33,7 +33,7 @@ const SECTIONS: { key: Section; label: string }[] = [
   { key: "guardar", label: "Guardar" },
   { key: "firma", label: "Firma" },
   { key: "pdf", label: "PDF" },
-  { key: "posventa", label: "Posventa" },
+  { key: "posventa", label: "Terminar" },
 ];
 
 /**
@@ -1192,8 +1192,8 @@ export default function PreviewStepPage() {
 
         {section === "posventa" && (
           <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3">
-            <p className="text-sm font-semibold text-emerald-900">Paso 5 · Posventa</p>
-            <p className="mt-0.5 text-xs text-slate-700">¡Tu contrato quedó listo! Abajo tienes el centro de posventa (pagos, inventario, novedades y documentos).</p>
+            <p className="text-sm font-semibold text-emerald-900">Paso 5 · Termina tu contrato</p>
+            <p className="mt-0.5 text-xs text-slate-700">¡Contrato firmado! Ahora completa lo que falta (documentos, condiciones de pago y alertas), paso a paso. Después podrás administrar tu arriendo (acta, inventario y más).</p>
           </div>
         )}
       </section>
@@ -1476,17 +1476,16 @@ export default function PreviewStepPage() {
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Y para terminar</p>
           {plusActive || demoActive ? (
             <>
-              <h3 className="mt-1 text-base font-bold text-slate-900">Continúa con la posventa, paso a paso</h3>
+              <h3 className="mt-1 text-base font-bold text-slate-900">Termina tu contrato, paso a paso</h3>
               <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                Con tu contrato guardado, te llevamos a un <strong>centro de control</strong> donde haces, en orden y
-                viendo qué falta: documentos de respaldo, método de pago, calendario de pagos, inventario de entrega y
-                más.
+                Con tu contrato guardado, completa lo que falta —<strong>documentos, condiciones de pago y alertas</strong>—
+                una cosa a la vez. Después administras tu arriendo (acta, inventario y más).
               </p>
               <Link
-                href={`/nuevo/gestionar/${id}`}
+                href={`/nuevo/gestionar/${id}/terminar`}
                 className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[#5646E5] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95"
               >
-                Ir a la posventa →
+                Termina tu contrato →
               </Link>
             </>
           ) : (
@@ -1529,7 +1528,7 @@ export default function PreviewStepPage() {
             Continuar →
           </button>
         ) : (
-          <Link href={`/nuevo/gestionar/${id}`} className="rounded-2xl bg-[#12B886] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">Ir a la posventa →</Link>
+          <Link href={`/nuevo/gestionar/${id}/terminar`} className="rounded-2xl bg-[#12B886] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">Termina tu contrato →</Link>
         )}
       </div>
     </WizardShell>
