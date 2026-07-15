@@ -76,6 +76,9 @@ export type Answers = {
   // Inmueble
   address: string; city: string; department: string;
   registry: string; propertyType: string; registrySkip: boolean;
+  // Documento que soporta la propiedad del inmueble (reemplaza la matrícula):
+  // el dueño elige el tipo y sube el archivo.
+  propertyDocType: "" | "tradicion" | "servicios" | "predial" | "escritura" | "otro";
   canon: string; commercialValue: string; noCommercialValue: boolean;
   // Términos del arriendo
   startDate: string; termMonths: string; paymentDay: string;
@@ -112,10 +115,10 @@ export function validateStep(kind: string, a: Answers): string | null {
       return addressError(a.address) ?? cityError(a.city) ?? (a.department.trim().length < 3 ? "Indica el departamento del inmueble." : null);
     case "registry":
       if (!a.propertyType) return "Elige el tipo de inmueble (apartamento, casa, local…).";
-      // Matrícula SALTABLE: si marca "no la tengo ahora", puede continuar (se le
-      // recuerda al final). Solo se exige si NO decidió saltarla.
-      if (!a.registrySkip && a.registry.trim().length < 2)
-        return "Escribe la matrícula inmobiliaria, o marca “No la tengo ahora”.";
+      // Ya no se pide la matrícula: se exige elegir el TIPO de documento que
+      // soporta la propiedad (certificado de tradición, servicios, predial…). La
+      // carga del archivo se hace en el mismo paso (recomendada, no bloqueante).
+      if (!a.propertyDocType) return "Elige qué documento vas a incluir para soportar la propiedad del inmueble.";
       return null;
     case "canon": {
       const n = Number((a.canon || "").replace(/[^\d]/g, ""));

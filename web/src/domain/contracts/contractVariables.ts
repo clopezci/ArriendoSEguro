@@ -63,7 +63,7 @@ export function buildContractVariables(input: ResidentialLeaseContractInput): Co
       "y las ventanillas catastrales o de registro competentes para el municipio; Arriendo Seguro no sustituye esas consultas.",
     CIUDAD_INMUEBLE: escapeHtml(input.property.city),
     DEPARTAMENTO_INMUEBLE: escapeHtml(input.property.department),
-    MATRICULA_INMOBILIARIA: escapeHtml(input.property.registryNumber),
+    MATRICULA_INMOBILIARIA: escapeHtml(input.property.registryNumber || "según documento de propiedad adjunto"),
     TIPO_INMUEBLE: escapeHtml(input.property.type),
     CANON_MENSUAL: money(input.lease.monthlyRent),
     CANON_MENSUAL_LETRAS: escapeHtml(input.lease.monthlyRentText),
