@@ -132,7 +132,7 @@ export default function GestionarPosventaPage() {
         {unlocked && PHASES.map((phase) => (
           <section key={phase} className="mt-8">
             <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">{phase}</h2>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {ACTIONS.filter((a) => a.phase === phase).map((a, idx) => (
                 <motion.button
                   key={a.slug}

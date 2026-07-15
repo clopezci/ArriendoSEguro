@@ -59,7 +59,7 @@ export default function GestionarContratosPage() {
             </button>
           </motion.div>
         ) : (
-          <div className="mt-8 grid gap-4">
+          <div className="mt-8 grid grid-cols-1 gap-4">
             {drafts.map((d, idx) => {
               const complete = isExpedienteCompleto(d);
               const title = (d.property?.address || "").trim() || "Contrato en preparación";
