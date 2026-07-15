@@ -17,6 +17,7 @@ export function PoderUpload({ contractDraftId, onUploaded }: { contractDraftId: 
   const [docs, setDocs] = useState<DraftPropertyDocRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
@@ -73,15 +74,29 @@ export function PoderUpload({ contractDraftId, onUploaded }: { contractDraftId: 
     }
   }
 
+  const hasDocs = docs.length > 0;
+  const showFull = !hasDocs || expanded;
   return (
     <div className="rounded-2xl border-2 border-amber-200 bg-amber-50/50 p-3">
-      <p className="text-sm font-semibold text-amber-900">📎 {PODER_DOC_LABEL}</p>
-      <p className="mt-0.5 text-xs text-slate-600">Como apoderado, sube el poder que te faculta para arrendar a nombre del propietario. Puedes subirlo ahora o antes de generar el contrato.</p>
-      <label className={`mt-2 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 ${busy ? "cursor-not-allowed opacity-50" : ""}`}>
-        {busy ? "Subiendo…" : docs.length > 0 ? "Subir otro" : "Adjuntar poder"}
-        <input ref={inputRef} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }} className="sr-only" />
-      </label>
-      <p className="mt-1 text-[11px] text-slate-500">PDF, JPG, PNG o WEBP.</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-amber-900">📎 {PODER_DOC_LABEL}</p>
+        {hasDocs && (
+          <button type="button" onClick={() => setExpanded((v) => !v)} className="flex-none text-[11px] font-semibold text-[#5646E5] hover:underline">
+            {expanded ? "Listo" : "Cambiar / subir otro"}
+          </button>
+        )}
+      </div>
+      {hasDocs && !expanded && <p className="mt-1 text-xs font-medium text-emerald-700">✓ Ya subiste el poder.</p>}
+      {showFull && (
+        <>
+          <p className="mt-0.5 text-xs text-slate-600">Como apoderado, sube el poder que te faculta para arrendar a nombre del propietario. Puedes subirlo ahora o antes de generar el contrato.</p>
+          <label className={`mt-2 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 ${busy ? "cursor-not-allowed opacity-50" : ""}`}>
+            {busy ? "Subiendo…" : hasDocs ? "Subir otro" : "Adjuntar poder"}
+            <input ref={inputRef} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }} className="sr-only" />
+          </label>
+          <p className="mt-1 text-[11px] text-slate-500">PDF, JPG, PNG o WEBP.</p>
+        </>
+      )}
       {msg && <p className="mt-2 text-xs font-medium text-slate-700">{msg}</p>}
       {docs.length > 0 && (
         <ul className="mt-2 space-y-1.5">

@@ -787,7 +787,7 @@ export default function PreviewStepPage() {
   const canGoSection = (k: Section): boolean => (k === "firma" || k === "pdf" || k === "posventa" ? Boolean(savedVersion) : true);
 
   return (
-    <WizardShell title="Revisa y finaliza tu contrato" currentStep={10} contractId={id}>
+    <WizardShell title="Revisa y finaliza tu contrato" currentStep={10} contractId={id} hideGuide>
       {/* Navegación: volver a editar (bento) o ver/editar en la vista clásica completa. */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Link href={`/nuevo?id=${id}`} className="inline-flex items-center gap-1.5 rounded-2xl border-2 border-[#5646E5]/30 bg-white px-4 py-2 text-sm font-bold text-[#5646E5] transition hover:bg-[#ECE9FB]">

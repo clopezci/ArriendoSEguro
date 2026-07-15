@@ -37,6 +37,7 @@ export function WizardShell({
   variant = "wizard",
   phase,
   macroStep,
+  hideGuide = false,
 }: {
   title: string;
   currentStep: number;
@@ -48,6 +49,9 @@ export function WizardShell({
   phase?: ContractPhase;
   /** Macro-paso a resaltar. Si no se pasa, se infiere del `currentStep`/variant. */
   macroStep?: MacroStepKey | "posventa";
+  /** Oculta la tarjeta descriptiva `StepGuide` (útil si la pantalla ya tiene su
+   * propio sub-stepper y esa tarjeta solo satura). */
+  hideGuide?: boolean;
 }) {
   const clamped = Math.min(Math.max(currentStep, 1), steps.length);
   const active: MacroStepKey | "posventa" =
@@ -96,9 +100,11 @@ export function WizardShell({
         <div className="mt-3">
           <WizardSteps5 id={contractId} active={active} />
         </div>
-        <div className="mt-3">
-          <StepGuide currentStep={clamped} variant="wizard" />
-        </div>
+        {!hideGuide && (
+          <div className="mt-3">
+            <StepGuide currentStep={clamped} variant="wizard" />
+          </div>
+        )}
       </div>
       <div className="rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-[0_10px_30px_rgba(86,70,229,0.10)]">
         {children}
