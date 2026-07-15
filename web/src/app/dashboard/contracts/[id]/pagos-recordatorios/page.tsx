@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
-import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
 import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import type { PaymentMethodKind, AccountType } from "@/domain/payments/paymentSettings";
@@ -158,30 +157,32 @@ export default function PagosRecordatoriosPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6 text-slate-900">
-      <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Posventa · pagos</p>
-        <h1 className="text-2xl font-bold">Pagos y recordatorios</h1>
-        <p className="text-sm text-slate-600">
-          El <strong>calendario de pagos se arma solo</strong> con las fechas de tu contrato. Aquí solo eliges{" "}
-          <strong>cómo te paga el inquilino</strong> y con <strong>cuántos días de anticipación</strong> avisarle.
-          ArriendoSeguro <strong>no recauda ni custodia tu dinero</strong>: solo recuerda y guarda la constancia.
-        </p>
-        <Link href={`/dashboard/contracts/${id}/adicionales`} className="text-sm text-violet-700 underline">
-          ← Volver a la posventa
-        </Link>
-      </header>
+    <div className="relative min-h-screen overflow-hidden bg-[#F5F3EF] text-[#17151F]">
+      <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#37D0E8,#3A7BFF)" }} />
+      <div className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#3FD98A,#12B886)" }} />
 
-      <ExpedientePostWizardNav contractId={id} />
+      <div className="relative z-10 mx-auto max-w-2xl px-6 py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <Link href={`/nuevo/gestionar/${id}/terminar`} className="flex items-center gap-2 text-sm font-semibold text-[#5646E5] hover:underline">← Termina tu contrato</Link>
+          <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Condiciones de pago</span>
+        </div>
+
+        <h1 className="text-balance text-4xl font-extrabold leading-none tracking-tight">¿Cómo te paga el inquilino?</h1>
+        <p className="mt-3 text-lg text-slate-500">
+          El calendario se arma solo con las fechas del contrato. Aquí eliges el <b>método</b> y los <b>días de aviso</b>.
+        </p>
+        <p className="mt-2 rounded-2xl border border-slate-200 bg-white/70 p-3 text-xs text-slate-600">
+          🔒 ArriendoSeguro <strong>no recauda ni custodia tu dinero</strong>: solo le recuerda al inquilino y guarda la constancia.
+        </p>
 
       <RequiresSavedContract id={id}>
-      <section className="rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)]/95 p-4">
+      <section className="mt-6 rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
         <fieldset>
-          <legend className="text-sm font-semibold text-slate-900">¿Cómo te paga el inquilino?</legend>
-          <div className="mt-2 grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Método de pago">
+          <legend className="text-sm font-semibold text-slate-700">Método de pago</legend>
+          <div className="mt-2 flex flex-wrap gap-2.5" role="radiogroup" aria-label="Método de pago">
             {([
-              { v: "account", label: "Cuenta bancaria" },
-              { v: "qr", label: "Código QR" },
+              { v: "account", label: "🏦 Cuenta bancaria" },
+              { v: "qr", label: "📱 Código QR" },
               { v: "none", label: "Ninguno" },
             ] as const).map((o) => (
               <button
@@ -190,8 +191,8 @@ export default function PagosRecordatoriosPage() {
                 role="radio"
                 aria-checked={method === o.v}
                 onClick={() => setMethod(o.v)}
-                className={`rounded-lg border px-3 py-2 text-sm ${
-                  method === o.v ? "border-violet-500 bg-violet-100/60 text-violet-800" : "border-slate-300 bg-white hover:border-violet-400"
+                className={`rounded-2xl border-2 px-4 py-2.5 text-sm font-medium transition ${
+                  method === o.v ? "border-[#5646E5] bg-[#ECE9FB] text-[#5646E5]" : "border-slate-200 bg-white text-slate-700 hover:border-[#5646E5]"
                 }`}
               >
                 {o.label}
@@ -274,13 +275,18 @@ export default function PagosRecordatoriosPage() {
           type="button"
           disabled={busy}
           onClick={() => void save()}
-          className="mt-4 rounded-xl bg-[#5646E5] px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+          className="mt-5 w-full rounded-2xl bg-[#5646E5] px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95 disabled:opacity-50"
         >
           {busy ? "Guardando…" : "Guardar y activar recordatorios"}
         </button>
-        {msg && <p className="mt-2 text-xs text-emerald-700">{msg}</p>}
+        {msg && <p className="mt-2 text-sm font-medium text-emerald-700">{msg}</p>}
       </section>
+
+      <div className="mt-6 flex justify-end">
+        <Link href={`/nuevo/gestionar/${id}/terminar`} className="rounded-2xl bg-[#FF6B4A] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95">Continuar →</Link>
+      </div>
       </RequiresSavedContract>
-    </main>
+      </div>
+    </div>
   );
 }
