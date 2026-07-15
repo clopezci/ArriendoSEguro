@@ -991,10 +991,33 @@ export default function PreviewStepPage() {
 
       {/* Finalizar — flujo guiado en 3 pasos: Guarda → Firma (Plus) → PDF */}
       <section className="mt-6 rounded-3xl border-2 border-[#5646E5]/20 bg-[#ECE9FB]/40 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-lg font-black text-[#17151F]">✅ Finaliza tu contrato</h3>
-          <p className="rounded-full bg-white/70 px-3 py-1 text-[11px] font-bold text-[#5646E5]">Guarda → Firma → PDF</p>
-        </div>
+        <h3 className="text-lg font-black text-[#17151F]">✅ Finaliza tu contrato, paso a paso</h3>
+        {(() => {
+          const s1 = Boolean(savedVersion);
+          const s2 = hasAllSigned;
+          const s3 = Boolean(pdfInfo);
+          const done = [s1, s2, s3].filter(Boolean).length;
+          const Step = ({ n, label, ok, active }: { n: number; label: string; ok: boolean; active: boolean }) => (
+            <div className="flex flex-1 flex-col items-center gap-1 text-center">
+              <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${ok ? "bg-[#12B886] text-white" : active ? "bg-[#5646E5] text-white" : "bg-white text-slate-400 ring-1 ring-slate-200"}`}>
+                {ok ? "✓" : n}
+              </span>
+              <span className={`text-[11px] font-semibold ${ok ? "text-[#0B6E4E]" : active ? "text-[#5646E5]" : "text-slate-400"}`}>{label}</span>
+            </div>
+          );
+          return (
+            <div className="mt-3">
+              <div className="flex items-start gap-1">
+                <Step n={1} label="Guardar" ok={s1} active={!s1} />
+                <Step n={2} label="Firma" ok={s2} active={s1 && !s2} />
+                <Step n={3} label="PDF" ok={s3} active={s1 && !s3} />
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/70">
+                <div className="h-full rounded-full bg-gradient-to-r from-[#5646E5] to-[#12B886] transition-all" style={{ width: `${Math.round((done / 3) * 100)}%` }} />
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Paso 1 · Guardar */}
         <div className="mt-3 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3">
@@ -1005,11 +1028,14 @@ export default function PreviewStepPage() {
               : "Deja registrada esta versión para poder firmar, descargar el PDF y habilitar la posventa (pagos, novedades, documentos)."}
           </p>
           {savedVersion && (
-            <p className="mt-1 rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900">
-              ¿Volviste atrás y cambiaste datos de una parte (por ejemplo, el correo del codeudor)? Pulsa{" "}
-              <strong>«Guardar de nuevo»</strong> aquí y luego <strong>reenvía las firmas</strong> para que se use el dato
-              actualizado. La firma toma los datos de la última versión guardada.
-            </p>
+            <details className="mt-1 rounded-md border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900">
+              <summary className="cursor-pointer font-medium">¿Cambiaste datos de una parte después de guardar?</summary>
+              <p className="mt-1">
+                Si volviste atrás y cambiaste algo (por ejemplo, el correo del codeudor), pulsa{" "}
+                <strong>«Guardar de nuevo»</strong> aquí y luego <strong>reenvía las firmas</strong> para que se use el dato
+                actualizado. La firma toma los datos de la última versión guardada.
+              </p>
+            </details>
           )}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <button
@@ -1336,8 +1362,12 @@ export default function PreviewStepPage() {
         </section>
       )}
       {savedVersion && (
-        <section className="mt-4 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
-          <h3 className="text-sm font-semibold text-slate-900">Anexos del contrato</h3>
+        <details className="group mt-4 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-slate-900">📎 Anexos del contrato</h3>
+            <span className="text-xs font-normal text-slate-500 group-open:hidden">Ver ▾</span>
+          </summary>
+          <p className="mt-1 text-xs text-slate-500">Se generan a medida que avanzas en la posventa (inventario, acta, evidencia de firma, pagos…).</p>
           <div className="mt-2 overflow-auto">
             <table className="min-w-full text-xs text-slate-700">
               <thead>
@@ -1393,7 +1423,7 @@ export default function PreviewStepPage() {
               </tbody>
             </table>
           </div>
-        </section>
+        </details>
       )}
 
       {/* CTA FINAL — al final del todo, sin romper el flujo de los pasos de arriba. */}
