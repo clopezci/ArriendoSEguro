@@ -45,35 +45,24 @@ export function InviteSupportsUpload({
     setBusyKey(docKey ?? "extra");
     setMsg("");
     try {
-      const signRes = await fetch("/api/party-invite/support/sign", {
+      // Subida DIRECTA a nuestra API (same-origin, sin URL firmada ni CORS): el
+      // servidor guarda en Storage. Evita el "error de red" del PUT del navegador.
+      const q = new URLSearchParams({ token, filename: file.name, contentType: file.type || "application/octet-stream", ...(docKey ? { docKey } : {}) });
+      const res = await fetch(`/api/party-invite/support/upload?${q.toString()}`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ token, filename: file.name, contentType: file.type || "application/octet-stream", sizeBytes: file.size }),
+        headers: { "content-type": file.type || "application/octet-stream" },
+        body: file,
       });
-      const sign = (await signRes.json()) as { success?: boolean; uploadUrl?: string; storagePath?: string; errors?: { message?: string }[] };
-      if (!signRes.ok || !sign.success || !sign.uploadUrl || !sign.storagePath) {
-        setMsg(sign.errors?.[0]?.message ?? "No se pudo preparar la subida.");
-        return;
-      }
-      const put = await fetch(sign.uploadUrl, { method: "PUT", headers: { "content-type": file.type || "application/octet-stream" }, body: file });
-      if (!put.ok) {
-        setMsg("No se pudo subir el archivo. Revisa tu conexión.");
-        return;
-      }
-      const subRes = await fetch("/api/party-invite/support/submit", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ token, storagePath: sign.storagePath, fileName: file.name, contentType: file.type, sizeBytes: file.size, ...(docKey ? { docKey } : {}) }),
-      });
-      const sub = (await subRes.json()) as { success?: boolean; errors?: { message?: string }[] };
-      if (!subRes.ok || !sub.success) {
-        setMsg(sub.errors?.[0]?.message ?? "No se pudo confirmar el documento.");
+      let j: { success?: boolean; errors?: { message?: string }[] } = {};
+      try { j = (await res.json()) as typeof j; } catch { /* respuesta no-JSON */ }
+      if (!res.ok || !j.success) {
+        setMsg(j.errors?.[0]?.message ?? `No se pudo subir el documento (código ${res.status}).`);
         return;
       }
       setMsg("Documento subido ✓");
       await refresh();
     } catch {
-      setMsg("Error de red al subir el documento.");
+      setMsg("Error de red al subir el documento. Revisa tu conexión e intenta de nuevo.");
     } finally {
       setBusyKey(null);
       if (extraRef.current) extraRef.current.value = "";
