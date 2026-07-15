@@ -106,7 +106,7 @@ const EMPTY: Answers = {
   name: "", docType: "CC", docNumber: "", phone: "", email: "", ownerCity: "",
   acting: "", proxyOath: false,
   address: "", city: "", department: "",
-  registry: "", propertyType: "", registrySkip: false, propertyDocType: "",
+  registry: "", propertyType: "", registrySkip: false, propertyDocType: "", propertyOath: false,
   canon: "", commercialValue: "", noCommercialValue: false,
   startDate: "", termMonths: "12", paymentDay: "5",
   tenantMode: "self", tenantName: "",
@@ -184,6 +184,7 @@ function answersFromDraft(d: ContractDraft): Answers {
     registry: d.property?.registryNumber || "",
     propertyType: d.property?.type || "",
     propertyDocType: ((d.property as { propertyDocType?: string } | undefined)?.propertyDocType as Answers["propertyDocType"]) || "",
+    propertyOath: Boolean((d.property as { authorityOathAcceptedAt?: string } | undefined)?.authorityOathAcceptedAt),
     canon: num(d.lease?.monthlyRent ?? d.property?.monthlyRentProposed),
     commercialValue: num(d.property?.commercialValue),
     noCommercialValue: Boolean(d.property?.commercialValueUnknown),
@@ -330,6 +331,11 @@ export default function NuevoPage() {
         noCapAcknowledgement: n.noCommercialValue,
         // Tipo de documento que soporta la propiedad (reemplazo de la matrícula).
         ...(n.propertyDocType ? ({ propertyDocType: n.propertyDocType } as { propertyDocType: string }) : {}),
+        // Juramento de facultad/responsabilidad del dueño (fecha de aceptación como
+        // sello; la evidencia con IP/dispositivo queda en `oath_evidence`).
+        ...(n.propertyOath
+          ? ({ authorityOathAcceptedAt: (d.property as { authorityOathAcceptedAt?: string }).authorityOathAcceptedAt ?? new Date().toISOString() } as { authorityOathAcceptedAt: string })
+          : {}),
       },
       lease: {
         ...d.lease,
@@ -974,7 +980,7 @@ export default function NuevoPage() {
                 <ReviewItem label="Arrendador" value={`${a.name || "—"} · ${a.docType} ${a.docNumber || ""}`.trim()} />
                 <ReviewItem label="Calidad" value={a.acting === "proxy" ? "Apoderado" : a.acting === "owner" ? "Dueño" : "—"} />
                 <ReviewItem label="Inmueble" value={`${a.propertyType || "—"} · ${a.address || "—"}${a.city ? ", " + a.city : ""}`} />
-                <ReviewItem label="Soporte de propiedad" value={a.propertyDocType === "tradicion" ? "Certificado de tradición" : a.propertyDocType === "servicios" ? "Servicios públicos" : a.propertyDocType === "predial" ? "Impuesto predial" : a.propertyDocType === "escritura" ? "Escritura pública" : a.propertyDocType === "otro" ? "Otro documento" : "—"} />
+                <ReviewItem label="Soporte de propiedad" value={`${a.propertyDocType === "tradicion" ? "Certificado de tradición" : a.propertyDocType === "servicios" ? "Servicios públicos" : a.propertyDocType === "predial" ? "Impuesto predial" : a.propertyDocType === "escritura" ? "Escritura pública" : a.propertyDocType === "otro" ? "Otro documento" : "—"}${a.propertyOath ? " · declaración de facultad aceptada ✓" : ""}`} />
                 <ReviewItem label="Canon" value={a.canon ? `$ ${Number(a.canon.replace(/[^\d]/g, "")).toLocaleString("es-CO")}` : "—"} />
                 <ReviewItem label="Arrendatario" value={a.tenantName ? `${a.tenantName}${a.tenantMode === "invite" ? " (completa por invitación)" : ""}` : "—"} />
                 <ReviewItem label="Términos" value={a.startDate ? `Desde ${a.startDate} · ${a.termMonths} meses · pago día ${a.paymentDay}` : "—"} />
@@ -1112,6 +1118,23 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
             </div>
           </div>
           <PropertyDocUpload contractDraftId={party.draftId} docType={a.propertyDocType} onDocType={(v) => setA({ ...a, propertyDocType: v })} />
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={a.propertyOath}
+              onChange={(e) => { const v = e.target.checked; if (v && !a.propertyOath) void captureOathEvidence("property_authority_oath", party.draftId); setA({ ...a, propertyOath: v }); }}
+              className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]"
+            />
+            <span>
+              <b>Declaro bajo la gravedad de juramento</b> que soy el {a.acting === "proxy" ? <b>apoderado con facultades vigentes</b> : <b>propietario</b>} del inmueble
+              {a.acting === "proxy" ? " y que estoy facultado para arrendarlo a nombre del propietario" : " o que estoy debidamente facultado para arrendarlo"};
+              que el documento adjunto soporta dicha titularidad y que la información es <b>verídica, completa y actual</b>. Me hago
+              <b> plenamente responsable</b> de su veracidad. Entiendo y acepto que ArriendoSeguro <b>no verifica ni certifica</b> la
+              propiedad ni la titularidad (no es notaría, oficina de registro ni catastro), que cualquier revisión automática es
+              <b> orientativa y no vinculante</b>, y <b>exonero y mantengo indemne</b> a ArriendoSeguro de toda reclamación derivada de
+              la titularidad, la facultad para arrendar o la autenticidad del documento. Queda registrado con evidencia (fecha e IP).
+            </span>
+          </label>
         </div>
       );
     case "text":
