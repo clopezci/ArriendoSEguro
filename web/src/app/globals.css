@@ -35,6 +35,14 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  /*
+   * Evita cualquier desplazamiento horizontal en móvil: si un elemento se pasa
+   * unos píxeles (animaciones con transform, un badge largo, etc.), se recorta en
+   * vez de correr toda la vista hacia la derecha. Los headers `position: sticky`
+   * viven en contenedores de scroll internos (app-shell flex-col), así que este
+   * recorte NO los afecta.
+   */
+  overflow-x: hidden;
 }
 
 .input {

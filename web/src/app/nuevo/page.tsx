@@ -850,12 +850,12 @@ export default function NuevoPage() {
       <div className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full opacity-50 blur-3xl" style={{ background: "radial-gradient(circle,#FFB03A,#FF6B4A)" }} />
 
       <div className="relative z-10 mx-auto max-w-3xl px-6 py-8">
-        <div className="mb-9 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 font-bold tracking-tight">
-            <span className="h-7 w-7 rounded-[9px] bg-gradient-to-br from-[#5646E5] to-[#8B6BFF] shadow-lg shadow-violet-500/40" />
-            ArriendoSeguro
+        <div className="mb-9 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <Link href="/" className="flex min-w-0 items-center gap-2 font-bold tracking-tight">
+            <span className="h-7 w-7 flex-none rounded-[9px] bg-gradient-to-br from-[#5646E5] to-[#8B6BFF] shadow-lg shadow-violet-500/40" />
+            <span className="truncate">ArriendoSeguro</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {canSpeak && (
               <button type="button" onClick={() => void toggleVoice()} aria-pressed={voiceMode}
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition ${voiceMode ? "bg-[#5646E5] text-white" : "border border-slate-200 bg-white/70 text-slate-600 hover:border-[#5646E5]"}`}>
@@ -975,7 +975,7 @@ export default function NuevoPage() {
                   <input value={askText} onChange={(e) => setAskText(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") void askAI(); }}
                     placeholder="¿Dudas de este paso? Pregúntame…"
-                    className="flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400" />
+                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-slate-400" />
                   <MicButton label="Dictar tu pregunta" onResult={(t) => setAskText((prev) => (prev ? `${prev} ${t}` : t))} />
                   <button type="button" onClick={() => void askAI()} disabled={askBusy || !askText.trim()} className="rounded-lg bg-violet-100 px-3 py-1.5 text-xs font-semibold text-violet-700 disabled:opacity-50">
                     {askBusy ? "…" : "Preguntar"}
