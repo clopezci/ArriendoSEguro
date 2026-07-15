@@ -74,7 +74,7 @@ export default function Home() {
             <p className="text-pretty text-[15px] leading-relaxed text-slate-500">
               Nada de formularios eternos. Te guiamos con una sola pregunta en cada paso — por un{" "}
               <strong className="font-semibold text-emerald-700">precio de introducción de $49.900</strong>, con la firma
-              incluida (una fracción de lo que cobra una inmobiliaria).
+              incluida (una fracción de lo que cuesta tu arriendo).
             </p>
           </div>
 
