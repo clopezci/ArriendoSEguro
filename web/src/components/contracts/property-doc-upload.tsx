@@ -11,20 +11,44 @@ import { PROPERTY_DOC_TYPES, PROPERTY_DOC_LABELS, type PropertyDocType, type Dra
  * otro) y lo SUBE. Reusa el patrón de subida por URL firmada (sign → PUT →
  * submit). Etapa de borrador (autenticado por el dueño, keyed por draftId).
  */
+type VerifyStatus = "match" | "mismatch" | "unreadable" | "skipped" | "checking";
+
 export function PropertyDocUpload({
   contractDraftId,
   docType,
   onDocType,
+  expectedName,
+  actingAs,
 }: {
   contractDraftId: string;
   docType: string;
   onDocType: (v: PropertyDocType) => void;
+  /** Nombre contra el que se coteja el documento (arrendador; vacío si apoderado sin poderdante). */
+  expectedName?: string;
+  actingAs?: "" | "owner" | "proxy";
 }) {
   const { user } = useAuth();
   const [docs, setDocs] = useState<DraftPropertyDocRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [verify, setVerify] = useState<{ status: VerifyStatus; names?: string[] } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const runVerify = useCallback(async () => {
+    if (!user || !contractDraftId) return;
+    setVerify({ status: "checking" });
+    try {
+      const res = await fetch("/api/contracts/draft-property-docs/verify", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ contractDraftId, expectedName: expectedName ?? "", actingAs: actingAs || undefined }),
+      });
+      const j = (await res.json()) as { status?: VerifyStatus; names?: string[] };
+      setVerify(res.ok && j.status ? { status: j.status, names: j.names } : { status: "skipped" });
+    } catch {
+      setVerify({ status: "skipped" });
+    }
+  }, [user, contractDraftId, expectedName, actingAs]);
 
   const refresh = useCallback(async () => {
     if (!user || !contractDraftId) return;
@@ -69,6 +93,7 @@ export function PropertyDocUpload({
       if (!subRes.ok || !sub.success) { setMsg(sub.errors?.[0]?.message ?? "No se pudo confirmar el documento."); return; }
       setMsg("Documento subido ✓");
       await refresh();
+      void runVerify();
     } catch {
       setMsg("Error de red al subir el documento.");
     } finally {
@@ -121,6 +146,33 @@ export function PropertyDocUpload({
             </li>
           ))}
         </ul>
+      )}
+
+      {verify && verify.status !== "skipped" && (
+        <div
+          className={`mt-3 rounded-xl border-2 p-3 text-xs ${
+            verify.status === "match"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : verify.status === "mismatch"
+                ? "border-rose-200 bg-rose-50 text-rose-800"
+                : "border-slate-200 bg-slate-50 text-slate-600"
+          }`}
+        >
+          {verify.status === "checking" && "Revisando el documento con IA…"}
+          {verify.status === "match" && (
+            <>✓ Revisión IA: el documento <b>parece estar a nombre de {expectedName}</b>. Recuerda que es orientativo; tu declaración jurada es la que vale.</>
+          )}
+          {verify.status === "mismatch" && (
+            <>
+              ⚠️ <b>Posible incumplimiento:</b> la revisión automática <b>no encontró el nombre de {expectedName}</b> en el documento
+              {verify.names && verify.names.length > 0 ? ` (leyó: ${verify.names.slice(0, 3).join(", ")})` : ""}. Verifica que subiste el documento correcto.
+              Si estás seguro, tu declaración jurada de facultad te permite continuar. La revisión IA es orientativa y no vinculante.
+            </>
+          )}
+          {verify.status === "unreadable" && (
+            <>No pudimos leer el nombre en el documento (revisa que la foto esté nítida). No pasa nada: tu declaración jurada respalda la propiedad.</>
+          )}
+        </div>
       )}
     </div>
   );

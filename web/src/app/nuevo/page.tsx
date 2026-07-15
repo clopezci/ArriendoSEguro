@@ -1117,7 +1117,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               ))}
             </div>
           </div>
-          <PropertyDocUpload contractDraftId={party.draftId} docType={a.propertyDocType} onDocType={(v) => setA({ ...a, propertyDocType: v })} />
+          <PropertyDocUpload contractDraftId={party.draftId} docType={a.propertyDocType} onDocType={(v) => setA({ ...a, propertyDocType: v })} expectedName={a.acting === "proxy" ? "" : a.name} actingAs={a.acting} />
           <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
             <input
               type="checkbox"
