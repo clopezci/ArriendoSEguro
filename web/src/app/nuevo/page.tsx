@@ -1176,6 +1176,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
             </div>
           </div>
           <PropertyDocUpload contractDraftId={party.draftId} docType={a.propertyDocType} onDocType={(v) => setA({ ...a, propertyDocType: v })} expectedName={a.acting === "proxy" ? a.poderdanteName : a.name} actingAs={a.acting} />
+          <p className="rounded-xl border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-500">💡 Puedes subir el documento <b>ahora o más tarde</b> (antes de generar el contrato). Si lo saltas, quedará como <b>pendiente</b> y no podrás generar el contrato hasta cargarlo.</p>
           <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
             <input
               type="checkbox"

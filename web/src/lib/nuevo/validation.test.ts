@@ -85,11 +85,12 @@ test("calidad: sin elegir → error; apoderado sin poderdante/juramento → erro
   assert.equal(validateStep("acting", a({ acting: "owner" })), null);
 });
 
-test("inmueble: sin tipo → error; sin soporte → error; sin juramento → error; completo → ok", () => {
+test("inmueble: sin tipo → error; sin juramento → error; el documento es saltable (pendiente al generar)", () => {
   assert.ok(validateStep("registry", a({ propertyType: "", propertyDocType: "tradicion", propertyOath: true })));   // sin tipo → error
-  assert.ok(validateStep("registry", a({ propertyType: "Casa", propertyDocType: "", propertyOath: true })));         // sin elegir soporte → error
   assert.ok(validateStep("registry", a({ propertyType: "Casa", propertyDocType: "tradicion", propertyOath: false }))); // sin juramento → error
-  assert.equal(validateStep("registry", a({ propertyType: "Casa", propertyDocType: "tradicion", propertyOath: true })), null); // completo → ok
+  // El tipo de documento es opcional en este paso (se puede subir más tarde):
+  assert.equal(validateStep("registry", a({ propertyType: "Casa", propertyDocType: "", propertyOath: true })), null);
+  assert.equal(validateStep("registry", a({ propertyType: "Casa", propertyDocType: "tradicion", propertyOath: true })), null);
 });
 
 test("contacto del dueño exige ciudad además de teléfono y correo", () => {

@@ -126,10 +126,9 @@ export function validateStep(kind: string, a: Answers): string | null {
       return addressError(a.address) ?? cityError(a.city) ?? (a.department.trim().length < 3 ? "Indica el departamento del inmueble." : null);
     case "registry":
       if (!a.propertyType) return "Elige el tipo de inmueble (apartamento, casa, local…).";
-      // Ya no se pide la matrícula: se exige elegir el TIPO de documento que
-      // soporta la propiedad (certificado de tradición, servicios, predial…). La
-      // carga del archivo se hace en el mismo paso (recomendada, no bloqueante).
-      if (!a.propertyDocType) return "Elige qué documento vas a incluir para soportar la propiedad del inmueble.";
+      // El TIPO de documento y la CARGA del archivo son opcionales EN ESTE PASO:
+      // se pueden saltar y subir más tarde (antes de generar). El archivo cuenta
+      // como pendiente en la vista previa: no se puede generar sin él.
       // Juramento de facultad + exoneración (siempre exigido antes de avanzar).
       if (!a.propertyOath) return "Acepta la declaración de facultad y responsabilidad sobre el inmueble para continuar.";
       return null;
