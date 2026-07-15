@@ -34,6 +34,18 @@ export type PartyInviteDoc = {
    * role `solidaryCoDebtor`. Ausente = 0 (compatibilidad).
    */
   codebtorSlot?: number;
+  /**
+   * Documentos que el DUEÑO exige a esta parte (claves del catálogo
+   * `requiredDocs`). El enlace muestra una casilla nombrada por cada uno para
+   * asegurar que el invitado suba la cantidad requerida.
+   */
+  requiredDocs?: string[];
+  /**
+   * Documentos exigidos al CODEUDOR, transportados en el enlace del INQUILINO
+   * para que, si el inquilino invita al codeudor, ese enlace herede las casillas
+   * requeridas (el dueño sigue siendo la fuente de verdad).
+   */
+  codebtorRequiredDocs?: string[];
   status: PartyInviteStatus;
   otpHash?: string | null;
   otpExpiresAt?: string | null;

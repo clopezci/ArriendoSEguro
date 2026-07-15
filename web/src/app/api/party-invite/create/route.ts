@@ -22,6 +22,8 @@ const schema = z.object({
   monthlyRent: z.number().int().nonnegative().optional(),
   codebtorSlot: z.number().int().min(0).max(9).optional(),
   assignNewSlot: z.boolean().optional(),
+  requiredDocs: z.array(z.string().max(60)).max(30).optional(),
+  codebtorRequiredDocs: z.array(z.string().max(60)).max(30).optional(),
 });
 
 /** El dueño invita a un tercero (inquilino/codeudor) a llenar sus datos por enlace. */
@@ -55,6 +57,8 @@ export async function POST(request: Request) {
     monthlyRent: parsed.data.monthlyRent,
     codebtorSlot: parsed.data.codebtorSlot,
     assignNewSlot: parsed.data.assignNewSlot,
+    requiredDocs: parsed.data.requiredDocs,
+    codebtorRequiredDocs: parsed.data.codebtorRequiredDocs,
   });
 
   const base = appConfig.publicUrl.replace(/\/$/, "");

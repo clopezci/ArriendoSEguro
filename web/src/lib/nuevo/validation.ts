@@ -85,6 +85,8 @@ export type Answers = {
   // responsable de la veracidad del soporte y exonera a ArriendoSeguro.
   propertyOath: boolean;
   canon: string; commercialValue: string; noCommercialValue: boolean;
+  // Documentos que el dueño exige a cada parte (claves del catálogo requiredDocs).
+  reqDocsTenant: string[]; reqDocsCodebtor: string[];
   // Términos del arriendo
   startDate: string; termMonths: string; paymentDay: string;
   // Inquilino
@@ -130,6 +132,9 @@ export function validateStep(kind: string, a: Answers): string | null {
       if (!a.propertyDocType) return "Elige qué documento vas a incluir para soportar la propiedad del inmueble.";
       // Juramento de facultad + exoneración (siempre exigido antes de avanzar).
       if (!a.propertyOath) return "Acepta la declaración de facultad y responsabilidad sobre el inmueble para continuar.";
+      return null;
+    case "reqdocs":
+      // Opcional: el dueño puede no exigir documentos. Se puede continuar.
       return null;
     case "canon": {
       const n = Number((a.canon || "").replace(/[^\d]/g, ""));

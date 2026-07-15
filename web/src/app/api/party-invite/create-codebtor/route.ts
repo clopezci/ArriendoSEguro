@@ -67,6 +67,7 @@ export async function POST(request: Request) {
     monthlyRent: tenantInvite.monthlyRent, // hereda el canon para validar solvencia
     codebtorSlot: parsed.data.codebtorSlot, // para varios codeudores independientes
     assignNewSlot: parsed.data.assignNewSlot, // el servidor asigna el siguiente libre
+    requiredDocs: tenantInvite.codebtorRequiredDocs, // hereda las casillas exigidas al codeudor
   });
   await firestore
     .collection(PARTY_INVITES_COLLECTION)

@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
   const supports = snap.docs
     .map((d) => {
-      const x = d.data() as { id?: string; role?: string; fileName?: string; contentType?: string; sizeBytes?: number; uploadedAt?: string; uploadedByName?: string; codebtorSlot?: number };
+      const x = d.data() as { id?: string; role?: string; fileName?: string; contentType?: string; sizeBytes?: number; uploadedAt?: string; uploadedByName?: string; codebtorSlot?: number; docKey?: string };
       return {
         id: x.id ?? d.id,
         role: x.role ?? "",
@@ -42,6 +42,7 @@ export async function GET(request: Request) {
         sizeBytes: x.sizeBytes ?? 0,
         uploadedAt: x.uploadedAt ?? "",
         uploadedByName: x.uploadedByName ?? "",
+        docKey: x.docKey,
       };
     })
     // Si se pide un slot específico (codeudor N), filtramos por él.

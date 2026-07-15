@@ -28,4 +28,6 @@ export type InviteSupportRow = {
   sizeBytes: number;
   uploadedAt: string;
   codebtorSlot?: number;
+  /** Clave del documento requerido que este archivo cubre (catálogo requiredDocs). */
+  docKey?: string;
 };

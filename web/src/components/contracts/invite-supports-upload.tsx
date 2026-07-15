@@ -2,17 +2,30 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { InviteSupportRow } from "@/domain/party-invite/inviteSupports";
+import { requiredDocLabel } from "@/domain/party-invite/requiredDocs";
 
 /**
  * Subida de documentos del invitado (inquilino/codeudor) desde su enlace, con
  * el mismo patrón por token de los comprobantes de pago: sign → PUT → submit.
  * No requiere sesión: la identidad ya quedó validada por OTP al abrir el enlace.
+ *
+ * Si el DUEÑO exigió documentos (`requiredDocs`), se muestran como CASILLAS
+ * NOMBRADAS (una por documento) con estado pendiente/subido, para asegurar la
+ * cantidad requerida. Siempre se permite además subir documentos adicionales.
  */
-export function InviteSupportsUpload({ token, roleLabel }: { token: string; roleLabel: string }) {
+export function InviteSupportsUpload({
+  token,
+  roleLabel,
+  requiredDocs = [],
+}: {
+  token: string;
+  roleLabel: string;
+  requiredDocs?: string[];
+}) {
   const [supports, setSupports] = useState<InviteSupportRow[]>([]);
-  const [busy, setBusy] = useState(false);
+  const [busyKey, setBusyKey] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const extraRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -28,8 +41,8 @@ export function InviteSupportsUpload({ token, roleLabel }: { token: string; role
     void refresh();
   }, [refresh]);
 
-  async function upload(file: File) {
-    setBusy(true);
+  async function upload(file: File, docKey?: string) {
+    setBusyKey(docKey ?? "extra");
     setMsg("");
     try {
       const signRes = await fetch("/api/party-invite/support/sign", {
@@ -50,7 +63,7 @@ export function InviteSupportsUpload({ token, roleLabel }: { token: string; role
       const subRes = await fetch("/api/party-invite/support/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ token, storagePath: sign.storagePath, fileName: file.name, contentType: file.type, sizeBytes: file.size }),
+        body: JSON.stringify({ token, storagePath: sign.storagePath, fileName: file.name, contentType: file.type, sizeBytes: file.size, ...(docKey ? { docKey } : {}) }),
       });
       const sub = (await subRes.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!subRes.ok || !sub.success) {
@@ -62,32 +75,80 @@ export function InviteSupportsUpload({ token, roleLabel }: { token: string; role
     } catch {
       setMsg("Error de red al subir el documento.");
     } finally {
-      setBusy(false);
-      if (inputRef.current) inputRef.current.value = "";
+      setBusyKey(null);
+      if (extraRef.current) extraRef.current.value = "";
     }
   }
+
+  const uploadedFor = (key: string) => supports.find((s) => s.docKey === key);
+  // Documentos ya subidos que NO corresponden a una casilla requerida (adicionales
+  // o cargados antes de exigir la lista).
+  const extras = supports.filter((s) => !s.docKey || !requiredDocs.includes(s.docKey));
+  const doneCount = requiredDocs.filter((k) => uploadedFor(k)).length;
 
   return (
     <div className="rounded-2xl border-2 border-[#5646E5]/20 bg-[#ECE9FB]/40 p-4">
       <p className="text-sm font-bold text-[#5646E5]">📎 Sube tus documentos {roleLabel}</p>
-      <p className="mt-0.5 text-[11px] text-slate-600">
-        Cédula, carta laboral, colillas, extractos… (PDF, JPG, PNG o WEBP). Puedes subir varios, uno por uno.
-      </p>
+      {requiredDocs.length > 0 ? (
+        <p className="mt-0.5 text-[11px] text-slate-600">
+          El arrendador te pide estos documentos ({doneCount}/{requiredDocs.length} subido{doneCount === 1 ? "" : "s"}). Sube cada uno en su casilla (PDF, JPG, PNG o WEBP).
+        </p>
+      ) : (
+        <p className="mt-0.5 text-[11px] text-slate-600">
+          Cédula, carta laboral, colillas, extractos… (PDF, JPG, PNG o WEBP). Puedes subir varios, uno por uno.
+        </p>
+      )}
 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="application/pdf,image/jpeg,image/png,image/webp"
-        disabled={busy}
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }}
-        className="mt-3 block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-[#5646E5] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white disabled:opacity-50"
-      />
-      {busy && <p className="mt-2 text-xs text-slate-600">Subiendo…</p>}
+      {/* Casillas nombradas de los documentos requeridos. */}
+      {requiredDocs.length > 0 && (
+        <ul className="mt-3 space-y-2">
+          {requiredDocs.map((key) => {
+            const done = uploadedFor(key);
+            const busy = busyKey === key;
+            return (
+              <li key={key} className={`rounded-xl border-2 p-2.5 ${done ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white/80"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-slate-700">
+                    {done ? "✓ " : "• "}{requiredDocLabel(key)}
+                  </span>
+                  {done && <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">Subido</span>}
+                </div>
+                {done ? (
+                  <p className="mt-1 truncate text-[11px] text-slate-500">{done.fileName}</p>
+                ) : (
+                  <input
+                    type="file"
+                    accept="application/pdf,image/jpeg,image/png,image/webp"
+                    disabled={busy || busyKey !== null}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f, key); e.target.value = ""; }}
+                    className="mt-1.5 block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-[#5646E5] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white disabled:opacity-50"
+                  />
+                )}
+                {busy && <p className="mt-1 text-[11px] text-slate-600">Subiendo…</p>}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {/* Subida libre (adicionales, o único método si no hay lista requerida). */}
+      <div className="mt-3">
+        {requiredDocs.length > 0 && <p className="mb-1 text-[11px] font-medium text-slate-500">¿Otro documento adicional?</p>}
+        <input
+          ref={extraRef}
+          type="file"
+          accept="application/pdf,image/jpeg,image/png,image/webp"
+          disabled={busyKey !== null}
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }}
+          className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-[#5646E5] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white disabled:opacity-50"
+        />
+      </div>
+      {busyKey === "extra" && <p className="mt-2 text-xs text-slate-600">Subiendo…</p>}
       {msg && <p className="mt-2 text-xs font-medium text-slate-700">{msg}</p>}
 
-      {supports.length > 0 && (
+      {extras.length > 0 && (
         <ul className="mt-3 space-y-1.5">
-          {supports.map((s) => (
+          {extras.map((s) => (
             <li key={s.id} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-700">
               <span aria-hidden="true">✓</span>
               <span className="truncate">{s.fileName}</span>

@@ -27,6 +27,10 @@ export type CreateInviteParams = {
   monthlyRent?: number;
   /** Índice del codeudor (0 = principal; 1, 2… = adicionales). */
   codebtorSlot?: number;
+  /** Documentos que el dueño exige a esta parte (claves del catálogo requiredDocs). */
+  requiredDocs?: string[];
+  /** Documentos exigidos al codeudor (se guardan en el enlace del inquilino). */
+  codebtorRequiredDocs?: string[];
   /**
    * Si es `true` (solo codeudor), el SERVIDOR asigna el siguiente slot LIBRE
    * (≥1) para un codeudor NUEVO, evitando colisiones entre dueño e inquilino.
@@ -44,6 +48,8 @@ export type CreateInviteParams = {
  */
 export async function createInvite(firestore: Firestore, params: CreateInviteParams): Promise<PartyInviteDoc> {
   const newEmail = normalizeEmail(params.inviteeEmail);
+  const reqDocs = Array.isArray(params.requiredDocs) ? params.requiredDocs.filter((x) => typeof x === "string").slice(0, 30) : undefined;
+  const codebtorReqDocs = Array.isArray(params.codebtorRequiredDocs) ? params.codebtorRequiredDocs.filter((x) => typeof x === "string").slice(0, 30) : undefined;
   const existing = await firestore
     .collection(PARTY_INVITES_COLLECTION)
     .where("contractDraftId", "==", params.contractDraftId)
@@ -63,9 +69,12 @@ export async function createInvite(firestore: Firestore, params: CreateInvitePar
       const sameEmail = activeDocs.find((d) => normalizeEmail((d.data() as PartyInviteDoc).inviteeEmail) === newEmail);
       if (sameEmail) {
         const data = sameEmail.data() as PartyInviteDoc;
-        if (typeof params.monthlyRent === "number" && params.monthlyRent > 0 && data.monthlyRent !== params.monthlyRent) {
-          await sameEmail.ref.set({ monthlyRent: params.monthlyRent }, { merge: true });
-          return { ...data, monthlyRent: params.monthlyRent };
+        const patch: Partial<PartyInviteDoc> = {};
+        if (typeof params.monthlyRent === "number" && params.monthlyRent > 0 && data.monthlyRent !== params.monthlyRent) patch.monthlyRent = params.monthlyRent;
+        if (reqDocs) patch.requiredDocs = reqDocs;
+        if (Object.keys(patch).length) {
+          await sameEmail.ref.set(patch, { merge: true });
+          return { ...data, ...patch };
         }
         return data;
       }
@@ -81,9 +90,12 @@ export async function createInvite(firestore: Firestore, params: CreateInvitePar
     if (docForSlot) {
       const data = docForSlot.data() as PartyInviteDoc;
       if (normalizeEmail(data.inviteeEmail) === newEmail) {
-        if (typeof params.monthlyRent === "number" && params.monthlyRent > 0 && data.monthlyRent !== params.monthlyRent) {
-          await docForSlot.ref.set({ monthlyRent: params.monthlyRent }, { merge: true });
-          return { ...data, monthlyRent: params.monthlyRent };
+        const patch: Partial<PartyInviteDoc> = {};
+        if (typeof params.monthlyRent === "number" && params.monthlyRent > 0 && data.monthlyRent !== params.monthlyRent) patch.monthlyRent = params.monthlyRent;
+        if (reqDocs) patch.requiredDocs = reqDocs;
+        if (Object.keys(patch).length) {
+          await docForSlot.ref.set(patch, { merge: true });
+          return { ...data, ...patch };
         }
         return data;
       }
@@ -106,6 +118,8 @@ export async function createInvite(firestore: Firestore, params: CreateInvitePar
     inviterName: params.inviterName,
     ...(typeof params.monthlyRent === "number" && params.monthlyRent > 0 ? { monthlyRent: params.monthlyRent } : {}),
     ...(slot > 0 ? { codebtorSlot: slot } : {}),
+    ...(reqDocs && reqDocs.length > 0 ? { requiredDocs: reqDocs } : {}),
+    ...(codebtorReqDocs && codebtorReqDocs.length > 0 ? { codebtorRequiredDocs: codebtorReqDocs } : {}),
     status: "active",
     otpVerifyAttempts: 0,
     contribution: null,

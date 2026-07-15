@@ -40,5 +40,7 @@ export async function GET(request: Request) {
     hasEmail: Boolean((invite.inviteeEmail ?? "").trim()),
     emailMasked: maskEmail(invite.inviteeEmail),
     monthlyRent: typeof invite.monthlyRent === "number" ? invite.monthlyRent : 0,
+    codebtorSlot: invite.codebtorSlot ?? 0,
+    requiredDocs: Array.isArray(invite.requiredDocs) ? invite.requiredDocs : [],
   });
 }
