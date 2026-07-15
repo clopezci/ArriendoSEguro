@@ -31,8 +31,8 @@ export async function GET(request: Request) {
 
   const supports: InviteSupportRow[] = snap.docs
     .map((d) => {
-      const x = d.data() as { id?: string; fileName?: string; contentType?: string; sizeBytes?: number; uploadedAt?: string; codebtorSlot?: number };
-      return { id: x.id ?? d.id, fileName: x.fileName ?? "documento", contentType: x.contentType ?? "", sizeBytes: x.sizeBytes ?? 0, uploadedAt: x.uploadedAt ?? "", codebtorSlot: x.codebtorSlot ?? 0 };
+      const x = d.data() as { id?: string; fileName?: string; contentType?: string; sizeBytes?: number; uploadedAt?: string; codebtorSlot?: number; docKey?: string };
+      return { id: x.id ?? d.id, fileName: x.fileName ?? "documento", contentType: x.contentType ?? "", sizeBytes: x.sizeBytes ?? 0, uploadedAt: x.uploadedAt ?? "", codebtorSlot: x.codebtorSlot ?? 0, docKey: x.docKey };
     })
     .filter((s) => s.codebtorSlot === inviteSlot) // solo los de ESTE codeudor
     .sort((a, b) => (b.uploadedAt ?? "").localeCompare(a.uploadedAt ?? ""));

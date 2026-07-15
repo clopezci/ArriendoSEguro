@@ -21,6 +21,8 @@ export function PartyInvitePanel({
   monthlyRent,
   codebtorSlot = 0,
   assignNewSlot = false,
+  requiredDocs,
+  codebtorRequiredDocs,
   onImport,
 }: {
   contractDraftId: string;
@@ -32,6 +34,10 @@ export function PartyInvitePanel({
   codebtorSlot?: number;
   /** Codeudor NUEVO: el servidor asigna el siguiente slot libre al crear. */
   assignNewSlot?: boolean;
+  /** Documentos exigidos a esta parte (se envían al crear el enlace). */
+  requiredDocs?: string[];
+  /** Documentos exigidos al codeudor (solo para el enlace del inquilino). */
+  codebtorRequiredDocs?: string[];
   onImport: (party: PartyDraft) => void;
 }) {
   const { user } = useAuth();
@@ -114,7 +120,7 @@ export function PartyInvitePanel({
       const res = await fetch("/api/party-invite/create", {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ contractDraftId, role, inviteeEmail: email.trim(), inviteeName: name.trim(), inviterName, ...(monthlyRent && monthlyRent > 0 ? { monthlyRent } : {}), ...(assignNewSlot ? { assignNewSlot: true } : codebtorSlot > 0 ? { codebtorSlot } : {}) }),
+        body: JSON.stringify({ contractDraftId, role, inviteeEmail: email.trim(), inviteeName: name.trim(), inviterName, ...(monthlyRent && monthlyRent > 0 ? { monthlyRent } : {}), ...(assignNewSlot ? { assignNewSlot: true } : codebtorSlot > 0 ? { codebtorSlot } : {}), ...(requiredDocs && requiredDocs.length > 0 ? { requiredDocs } : {}), ...(codebtorRequiredDocs && codebtorRequiredDocs.length > 0 ? { codebtorRequiredDocs } : {}) }),
       });
       const j = (await res.json()) as {
         success?: boolean;

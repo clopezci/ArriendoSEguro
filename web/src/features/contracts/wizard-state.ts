@@ -246,6 +246,14 @@ export interface ContractDraft {
    */
   tenantIncomeDocs?: string[];
   /**
+   * Documentos que el DUEÑO exige a cada parte (claves del catálogo
+   * `requiredDocs`). Se eligen antes de decidir quién ingresa los datos y se
+   * convierten en casillas nombradas de subida (para el invitado en su enlace y
+   * para el dueño si sube en su nombre). Aseguran la CANTIDAD requerida.
+   */
+  requiredDocsTenant?: string[];
+  requiredDocsCodebtor?: string[];
+  /**
    * Garantía para servicios públicos (Art. 15 Ley 820 de 2003). Opcional; se
    * captura en el paso de Servicios con aceptación y registro de IP en servidor.
    */

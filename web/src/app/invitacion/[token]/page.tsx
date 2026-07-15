@@ -19,6 +19,7 @@ type Info = {
   hasEmail?: boolean;
   emailMasked?: string;
   monthlyRent?: number;
+  requiredDocs?: string[];
 };
 
 type Phase = "loading" | "invalid" | "otp" | "form" | "done";
@@ -360,7 +361,7 @@ export default function InvitacionPage() {
           </div>
 
           {/* Subir documentos (soportes) desde el mismo enlace. */}
-          <InviteSupportsUpload token={token} roleLabel={info?.role === "solidaryCoDebtor" ? "como codeudor" : "como arrendatario"} />
+          <InviteSupportsUpload token={token} roleLabel={info?.role === "solidaryCoDebtor" ? "como codeudor" : "como arrendatario"} requiredDocs={info?.requiredDocs ?? []} />
 
           {info?.role === "tenant" && <CodebtorSection tenantToken={token} rentReference={info?.monthlyRent ?? 0} />}
 

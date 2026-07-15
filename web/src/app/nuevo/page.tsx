@@ -28,6 +28,8 @@ import { IncomeSuggestion } from "@/components/contracts/income-suggestion";
 import { UtilityGuaranteeSection } from "@/components/contracts/utility-guarantee-section";
 import { LegalComplianceSeal } from "@/components/contracts/legal-semaphore";
 import { evaluateLegalCompliance, summarizeCompliance, type ComplianceInput } from "@/domain/contracts/legalCompliance";
+import { requiredDocCatalogForRole, requiredDocLabel } from "@/domain/party-invite/requiredDocs";
+import { OwnerPartyDocSlots } from "@/components/contracts/owner-party-doc-slots";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
 /**
@@ -51,7 +53,7 @@ const SUBPHRASES = [
   "Tú pones los datos; la ley la ponemos nosotros.",
 ];
 
-type Kind = "ctype" | "text" | "doc" | "contact" | "acting" | "addr" | "registry" | "canon" | "lease" | "tenant" | "tenantfull" | "codebtor" | "codebtorfull" | "credit" | "utils" | "clauses" | "docs";
+type Kind = "ctype" | "text" | "doc" | "contact" | "acting" | "addr" | "registry" | "reqdocs" | "canon" | "lease" | "tenant" | "tenantfull" | "codebtor" | "codebtorfull" | "credit" | "utils" | "clauses" | "docs";
 
 // Catálogo de cláusulas especiales (mismos ids que el dominio) + "Otra".
 const CLAUSE_CATALOG: { id: string; title: string }[] = [
@@ -78,6 +80,7 @@ const QUESTIONS: Q[] = [
   { id: "addr", block: "Datos del inmueble", prompt: "¿Dónde queda el inmueble?", hint: "Dirección, ciudad y departamento que irán en el contrato.", kind: "addr", basic: true },
   { id: "registry", block: "Datos del inmueble", prompt: "Tipo del inmueble y soporte de propiedad", hint: "Elige el tipo y sube un documento que soporte la propiedad (tradición, servicios o predial).", kind: "registry", basic: true },
   { id: "canon", block: "Datos del inmueble", prompt: "¿Cuál es el canon mensual?", hint: "Validamos el tope legal (Ley 820).", kind: "canon", ph: "$ 1.500.000", basic: true },
+  { id: "reqdocs", block: "Documentos requeridos", prompt: "¿Qué documentos exigirás?", hint: "Elige los documentos que deberá aportar el inquilino y (si aplica) el codeudor. Aparecerán como casillas para subir, ya sea que los cargues tú o cada persona por su enlace.", kind: "reqdocs", basic: false },
   { id: "tenant", block: "Datos del inquilino", prompt: "¿Quién ingresa los datos del arrendatario?", hint: "Elige primero: los ingresas tú, o le envías un enlace para que los complete él mismo.", kind: "tenant", basic: true },
   { id: "tenantfull", block: "Datos del inquilino", prompt: "Datos del arrendatario", hint: "Documento, ciudad y contacto — o el enlace de invitación.", kind: "tenantfull", basic: false },
   { id: "lease", block: "Términos del arriendo", prompt: "¿Cuándo y cómo se paga?", hint: "Inicio, duración y día de pago del canon.", kind: "lease", basic: false },
@@ -111,6 +114,7 @@ const EMPTY: Answers = {
   address: "", city: "", department: "",
   registry: "", propertyType: "", registrySkip: false, propertyDocType: "", propertyOath: false,
   canon: "", commercialValue: "", noCommercialValue: false,
+  reqDocsTenant: [], reqDocsCodebtor: [],
   startDate: "", termMonths: "12", paymentDay: "5",
   tenantMode: "self", tenantName: "",
   tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false, tenantIncome: "",
@@ -192,6 +196,8 @@ function answersFromDraft(d: ContractDraft): Answers {
     canon: num(d.lease?.monthlyRent ?? d.property?.monthlyRentProposed),
     commercialValue: num(d.property?.commercialValue),
     noCommercialValue: Boolean(d.property?.commercialValueUnknown),
+    reqDocsTenant: Array.isArray(d.requiredDocsTenant) ? d.requiredDocsTenant : [],
+    reqDocsCodebtor: Array.isArray(d.requiredDocsCodebtor) ? d.requiredDocsCodebtor : [],
     startDate: d.lease?.startDate || "",
     termMonths: d.lease?.termMonths ? String(d.lease.termMonths) : EMPTY.termMonths,
     paymentDay: d.lease?.paymentDueDay ? String(d.lease.paymentDueDay) : EMPTY.paymentDay,
@@ -313,6 +319,8 @@ export default function NuevoPage() {
           ? (d.proxyDeclarationAcceptedAt ?? new Date().toISOString())
           : n.acting === "owner" ? undefined : d.proxyDeclarationAcceptedAt,
       hasSolidaryCoDebtor: n.hasCodebtor === "yes" ? true : n.hasCodebtor === "no" ? false : d.hasSolidaryCoDebtor,
+      requiredDocsTenant: n.reqDocsTenant,
+      requiredDocsCodebtor: n.reqDocsCodebtor,
       ...(tenantIncomeNum > 0 ? { tenantMonthlyIncome: tenantIncomeNum } : {}),
       landlord: {
         ...d.landlord,
@@ -996,6 +1004,7 @@ export default function NuevoPage() {
                 <ReviewItem label="Servicios públicos" value={a.utilitiesParty === "arrendatario" ? "Los paga el inquilino" : a.utilitiesParty === "arrendador" ? "Los paga el dueño" : a.utilitiesParty === "compartido" ? "Se reparten" : "—"} />
                 <ReviewItem label="Administración" value={a.adminParty === "arrendatario" ? "La paga el inquilino" : a.adminParty === "arrendador" ? "La paga el dueño" : a.adminParty === "no_aplica" ? "No aplica" : "—"} />
                 <ReviewItem label="Cláusulas especiales" value={a.clauses.length ? `${a.clauses.length} seleccionada(s)${a.clauses.includes("OTRA") ? " · incluye Otra" : ""}` : "Ninguna"} />
+                <ReviewItem label="Documentos requeridos" value={`Inquilino: ${a.reqDocsTenant.length || "—"}${a.hasCodebtor === "yes" ? ` · Codeudor: ${a.reqDocsCodebtor.length || "—"}` : ""}`} />
               </div>
 
               {(() => {
@@ -1185,6 +1194,30 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
           <InputMic placeholder="Departamento (ej. Antioquia)" value={a.department} onChange={(e) => setA({ ...a, department: e.target.value })} voice={(t) => setA({ ...a, department: t })} />
         </div>
       );
+    case "reqdocs": {
+      const toggle = (list: string[], key: string): string[] => (list.includes(key) ? list.filter((k) => k !== key) : [...list, key]);
+      const Section = ({ role, list, onToggle, title, icon }: { role: "tenant" | "codebtor"; list: string[]; onToggle: (key: string) => void; title: string; icon: string }) => (
+        <div className="rounded-2xl border-2 border-slate-200 bg-white/70 p-3">
+          <p className="text-sm font-semibold text-slate-700">{icon} {title}</p>
+          <p className="mt-0.5 text-xs text-slate-500">Toca los que exigirás ({list.length} seleccionado{list.length === 1 ? "" : "s"}).</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {requiredDocCatalogForRole(role).map((d) => (
+              <button key={d.key} type="button" onClick={() => onToggle(d.key)}
+                className={`rounded-2xl border-2 px-3 py-1.5 text-xs font-medium transition ${list.includes(d.key) ? "border-[#5646E5] bg-[#ECE9FB] text-[#5646E5]" : "border-slate-200 bg-white text-slate-700 hover:border-[#5646E5]"}`}>
+                {list.includes(d.key) ? "✓ " : ""}{d.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+      return (
+        <div className="flex flex-col gap-3">
+          <Section role="tenant" list={a.reqDocsTenant} onToggle={(k) => setA({ ...a, reqDocsTenant: toggle(a.reqDocsTenant, k) })} title="Documentos del arrendatario" icon="🧑" />
+          <Section role="codebtor" list={a.reqDocsCodebtor} onToggle={(k) => setA({ ...a, reqDocsCodebtor: toggle(a.reqDocsCodebtor, k) })} title="Documentos del codeudor (si aplica)" icon="🤝" />
+          <p className="text-xs text-slate-500">Es opcional: puedes continuar sin exigir ninguno. Cada documento elegido aparecerá como una casilla nombrada para subir — la sube el dueño o cada persona por su enlace.</p>
+        </div>
+      );
+    }
     case "canon": {
       const canonN = Number((a.canon || "").replace(/[^\d]/g, "")) || 0;
       const cvN = Number((a.commercialValue || "").replace(/[^\d]/g, "")) || 0;
@@ -1245,15 +1278,19 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
       );
     case "tenantfull":
       return a.tenantMode === "self" ? (
-        <PartyFields
-          docType={a.tenantDocType} docNumber={a.tenantDocNumber} city={a.tenantCity} email={a.tenantEmail} phone={a.tenantPhone} auth={a.tenantAuth}
-          income={a.tenantIncome} onIncome={(v) => setA({ ...a, tenantIncome: v })} rentReference={Number((a.canon || "").replace(/[^\d]/g, "")) || 0} who="el inquilino"
-          authLabel="Declaro que tengo autorización del arrendatario para ingresar sus datos personales (Ley 1581 de 2012)."
-          onChange={(patch) => { if (patch.auth && !a.tenantAuth) void captureOathEvidence("tenant_third_party_authorization", party.draftId); setA({ ...a, tenantDocType: patch.docType, tenantDocNumber: patch.docNumber, tenantCity: patch.city, tenantEmail: patch.email, tenantPhone: patch.phone, tenantAuth: patch.auth }); }}
-        />
+        <div className="flex flex-col gap-3">
+          <PartyFields
+            docType={a.tenantDocType} docNumber={a.tenantDocNumber} city={a.tenantCity} email={a.tenantEmail} phone={a.tenantPhone} auth={a.tenantAuth}
+            income={a.tenantIncome} onIncome={(v) => setA({ ...a, tenantIncome: v })} rentReference={Number((a.canon || "").replace(/[^\d]/g, "")) || 0} who="el inquilino"
+            authLabel="Declaro que tengo autorización del arrendatario para ingresar sus datos personales (Ley 1581 de 2012)."
+            onChange={(patch) => { if (patch.auth && !a.tenantAuth) void captureOathEvidence("tenant_third_party_authorization", party.draftId); setA({ ...a, tenantDocType: patch.docType, tenantDocNumber: patch.docNumber, tenantCity: patch.city, tenantEmail: patch.email, tenantPhone: patch.phone, tenantAuth: patch.auth }); }}
+          />
+          <OwnerPartyDocSlots contractDraftId={party.draftId} role="tenant" requiredDocs={a.reqDocsTenant} />
+        </div>
       ) : (
         <PartyInvitePanel contractDraftId={party.draftId} role="tenant" roleLabel="Arrendatario (inquilino)" inviterName={party.inviterName}
           monthlyRent={Number((a.canon || "").replace(/[^\d]/g, "")) || 0}
+          requiredDocs={a.reqDocsTenant} codebtorRequiredDocs={a.reqDocsCodebtor}
           onImport={(p) => party.onImport("tenant", p)} />
       );
     case "lease": {
@@ -1319,6 +1356,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
                 authLabel="Declaro que tengo autorización del codeudor para ingresar sus datos personales (Ley 1581 de 2012)."
                 onChange={(patch) => { if (patch.auth && !a.codebtorAuth) void captureOathEvidence("codebtor_third_party_authorization", party.draftId); setA({ ...a, codebtorDocType: patch.docType, codebtorDocNumber: patch.docNumber, codebtorCity: patch.city, codebtorEmail: patch.email, codebtorPhone: patch.phone, codebtorAuth: patch.auth }); }}
               />
+              <OwnerPartyDocSlots contractDraftId={party.draftId} role="solidaryCoDebtor" requiredDocs={a.reqDocsCodebtor} />
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -1328,6 +1366,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               ) : (
                 <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
                   monthlyRent={Number((a.canon || "").replace(/[^\d]/g, "")) || 0}
+                  requiredDocs={a.reqDocsCodebtor}
                   onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
               )}
               {/* El dueño ve los documentos que el codeudor subió por su enlace. */}

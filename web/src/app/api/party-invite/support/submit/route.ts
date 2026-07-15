@@ -18,6 +18,7 @@ const schema = z.object({
   fileName: z.string().max(200).optional(),
   contentType: z.string().max(120).optional(),
   sizeBytes: z.number().int().nonnegative().optional(),
+  docKey: z.string().max(60).optional(),
 });
 
 /** El invitado confirma la subida de un documento (verificación de magic bytes). */
@@ -97,6 +98,7 @@ export async function POST(request: Request) {
     inviterUid: invite.inviterUid, // el dueño: para que él los vea y descargue
     inviteToken: invite.token,
     uploadedByName: invite.contribution?.fullName || invite.inviteeName || "",
+    ...(parsed.data.docKey ? { docKey: parsed.data.docKey } : {}),
     storagePath: parsed.data.storagePath,
     fileName: parsed.data.fileName ?? "documento",
     contentType: parsed.data.contentType ?? "",

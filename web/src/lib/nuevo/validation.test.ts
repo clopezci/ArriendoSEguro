@@ -9,6 +9,7 @@ const base: Answers = {
   address: "", city: "", department: "",
   registry: "", propertyType: "", registrySkip: false, propertyDocType: "", propertyOath: false,
   canon: "", commercialValue: "", noCommercialValue: false,
+  reqDocsTenant: [], reqDocsCodebtor: [],
   startDate: "", termMonths: "12", paymentDay: "5",
   tenantMode: "self", tenantName: "",
   tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false, tenantIncome: "",
