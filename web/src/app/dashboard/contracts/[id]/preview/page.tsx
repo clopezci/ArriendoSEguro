@@ -188,6 +188,8 @@ export default function PreviewStepPage() {
   const [propertyDocCount, setPropertyDocCount] = useState<number | null>(null);
   const [poderDocCount, setPoderDocCount] = useState<number | null>(null);
   const [propDocType, setPropDocType] = useState<PropertyDocType | "">("");
+  // Cierre paso a paso (bento): 1 Guardar · 2 Firma · 3 PDF · 4 Posventa.
+  const [finalizeStep, setFinalizeStep] = useState<1 | 2 | 3 | 4>(1);
   // Ref al HTML del contrato renderizado, para la lectura por voz.
   const contractRef = useRef<HTMLDivElement>(null);
 
@@ -348,6 +350,16 @@ export default function PreviewStepPage() {
     if (t && !propDocType) setPropDocType(t as PropertyDocType);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDraft?.id]);
+
+  // Al guardar por primera vez, avanzamos UNA vez al paso de firma (fluidez).
+  // Después el usuario navega libre con los botones/indicador.
+  const savedAdvancedRef = useRef(false);
+  useEffect(() => {
+    if (savedVersion && !savedAdvancedRef.current) {
+      savedAdvancedRef.current = true;
+      setFinalizeStep((s) => (s === 1 ? 2 : s));
+    }
+  }, [savedVersion]);
 
   async function requestPreview() {
     if (!activeDraft) return;
@@ -907,8 +919,8 @@ export default function PreviewStepPage() {
         <InviteSupportsOwnerList contractDraftId={id} role="solidaryCoDebtor" codebtorSlot={3} title="📎 Documentos del codeudor 4" />
       </div>
 
-      {/* Autenticación (notaría) — DESPUÉS de la vista previa, cerca de la firma. */}
-      {previewHtml && (
+      {/* Autenticación (notaría) — junto al paso de firma (opcional). */}
+      {previewHtml && finalizeStep === 2 && (
         <details className="group mt-4 rounded-2xl border border-slate-200 bg-white/85 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-sm text-slate-800">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-semibold text-slate-900">
             <span>🏛️ ¿Autenticar el contrato? (opcional, tras revisar la vista previa)</span>
@@ -989,37 +1001,46 @@ export default function PreviewStepPage() {
         </details>
       )}
 
-      {/* Finalizar — flujo guiado en 3 pasos: Guarda → Firma (Plus) → PDF */}
+      {/* Finalizar — flujo guiado paso a paso (bento): Guarda → Firma → PDF → Posventa */}
       <section className="mt-6 rounded-3xl border-2 border-[#5646E5]/20 bg-[#ECE9FB]/40 p-5">
         <h3 className="text-lg font-black text-[#17151F]">✅ Finaliza tu contrato, paso a paso</h3>
         {(() => {
-          const s1 = Boolean(savedVersion);
-          const s2 = hasAllSigned;
-          const s3 = Boolean(pdfInfo);
-          const done = [s1, s2, s3].filter(Boolean).length;
-          const Step = ({ n, label, ok, active }: { n: number; label: string; ok: boolean; active: boolean }) => (
-            <div className="flex flex-1 flex-col items-center gap-1 text-center">
-              <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${ok ? "bg-[#12B886] text-white" : active ? "bg-[#5646E5] text-white" : "bg-white text-slate-400 ring-1 ring-slate-200"}`}>
-                {ok ? "✓" : n}
-              </span>
-              <span className={`text-[11px] font-semibold ${ok ? "text-[#0B6E4E]" : active ? "text-[#5646E5]" : "text-slate-400"}`}>{label}</span>
-            </div>
-          );
+          const okByStep: Record<number, boolean> = { 1: Boolean(savedVersion), 2: hasAllSigned, 3: Boolean(pdfInfo), 4: false };
+          const doneCount = [1, 2, 3].filter((n) => okByStep[n]).length;
+          const labels: Record<number, string> = { 1: "Guardar", 2: "Firma", 3: "PDF", 4: "Posventa" };
+          // Solo se puede saltar a firma/PDF/posventa cuando ya se guardó.
+          const canGo = (n: number) => n === 1 || Boolean(savedVersion);
           return (
             <div className="mt-3">
               <div className="flex items-start gap-1">
-                <Step n={1} label="Guardar" ok={s1} active={!s1} />
-                <Step n={2} label="Firma" ok={s2} active={s1 && !s2} />
-                <Step n={3} label="PDF" ok={s3} active={s1 && !s3} />
+                {[1, 2, 3, 4].map((n) => {
+                  const ok = okByStep[n];
+                  const active = finalizeStep === n;
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => canGo(n) && setFinalizeStep(n as 1 | 2 | 3 | 4)}
+                      disabled={!canGo(n)}
+                      className={`flex flex-1 flex-col items-center gap-1 text-center ${canGo(n) ? "cursor-pointer" : "cursor-not-allowed"}`}
+                    >
+                      <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${ok ? "bg-[#12B886] text-white" : active ? "bg-[#5646E5] text-white" : "bg-white text-slate-400 ring-1 ring-slate-200"}`}>
+                        {ok ? "✓" : n}
+                      </span>
+                      <span className={`text-[11px] font-semibold ${active ? "text-[#5646E5]" : ok ? "text-[#0B6E4E]" : "text-slate-400"}`}>{labels[n]}</span>
+                    </button>
+                  );
+                })}
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/70">
-                <div className="h-full rounded-full bg-gradient-to-r from-[#5646E5] to-[#12B886] transition-all" style={{ width: `${Math.round((done / 3) * 100)}%` }} />
+                <div className="h-full rounded-full bg-gradient-to-r from-[#5646E5] to-[#12B886] transition-all" style={{ width: `${Math.round((doneCount / 3) * 100)}%` }} />
               </div>
             </div>
           );
         })()}
 
         {/* Paso 1 · Guardar */}
+        {finalizeStep === 1 && (
         <div className="mt-3 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3">
           <p className="text-sm font-semibold text-slate-900">Paso 1 · Guarda tu contrato</p>
           <p className="mt-0.5 text-xs text-slate-600">
@@ -1059,9 +1080,16 @@ export default function PreviewStepPage() {
               <span className="text-xs text-slate-500">Espera a que termine la vista previa (se genera sola).</span>
             )}
           </div>
+          {savedVersion && (
+            <button type="button" onClick={() => setFinalizeStep(2)} className="mt-3 w-full rounded-2xl bg-[#FF6B4A] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95">
+              Continuar a la firma →
+            </button>
+          )}
         </div>
+        )}
 
         {/* Paso 2 · Firmar (Plan Plus) */}
+        {finalizeStep === 2 && (
         <div className="mt-2 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3">
           <p className="text-sm font-semibold text-slate-900">
             Paso 2 · Firma electrónica <span className="text-emerald-700">(incluida)</span>
@@ -1116,9 +1144,15 @@ export default function PreviewStepPage() {
               )}
             </>
           )}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={() => setFinalizeStep(1)} className="rounded-2xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]">← Atrás</button>
+            <button type="button" onClick={() => setFinalizeStep(3)} className="rounded-2xl bg-[#FF6B4A] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95">Continuar al PDF →</button>
+          </div>
         </div>
+        )}
 
         {/* Paso 3 · PDF (disponible para todos; gratis sale con marca de agua) */}
+        {finalizeStep === 3 && (
         <div className="mt-2 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3">
           <p className="text-sm font-semibold text-slate-900">Paso 3 · Descarga el PDF</p>
           <p className="mt-0.5 text-xs text-slate-600">
@@ -1144,7 +1178,20 @@ export default function PreviewStepPage() {
               </a>
             )}
           </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={() => setFinalizeStep(2)} className="rounded-2xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]">← Atrás</button>
+            <button type="button" onClick={() => setFinalizeStep(4)} className="rounded-2xl bg-[#FF6B4A] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95">Continuar a la posventa →</button>
+          </div>
         </div>
+        )}
+
+        {finalizeStep === 4 && (
+          <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3">
+            <p className="text-sm font-semibold text-emerald-900">Paso 4 · Posventa</p>
+            <p className="mt-0.5 text-xs text-slate-700">¡Tu contrato quedó listo! Abajo tienes el centro de posventa (pagos, inventario, novedades y documentos).</p>
+            <button type="button" onClick={() => setFinalizeStep(3)} className="mt-2 rounded-2xl border-2 border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]">← Atrás</button>
+          </div>
+        )}
 
         <div className="mt-3">
           <Link
@@ -1163,7 +1210,7 @@ export default function PreviewStepPage() {
       )}
       {contractStatus && <p className="text-xs text-slate-600">Estado contractual: {contractStatus}</p>}
 
-      {signatureRoundMessage && (
+      {finalizeStep === 2 && signatureRoundMessage && (
         <div
           id="firma-resultado"
           role="status"
@@ -1211,7 +1258,7 @@ export default function PreviewStepPage() {
           )}
         </div>
       )}
-      {signatureRows.length > 0 && (
+      {finalizeStep === 2 && signatureRows.length > 0 && (
         <section className="mt-4 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-slate-900">
@@ -1318,14 +1365,14 @@ export default function PreviewStepPage() {
           </p>
         </section>
       )}
-      {pdfInfo && (
+      {finalizeStep === 3 && pdfInfo && (
         <div className="mt-3 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3 text-xs text-slate-700">
           <p>PDF generado: {new Date(pdfInfo.pdfGeneratedAt).toLocaleString("es-CO")}</p>
           <p>Versión: {pdfInfo.versionNumber}</p>
           <p>Hash: {pdfInfo.documentHash}</p>
         </div>
       )}
-      {hasAllSigned && (
+      {finalizeStep === 2 && hasAllSigned && (
         <section className="mt-4 rounded-2xl border border-emerald-500 bg-emerald-50 p-4 text-sm text-emerald-700">
           <p className="font-semibold">Contrato firmado</p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -1361,7 +1408,7 @@ export default function PreviewStepPage() {
           </div>
         </section>
       )}
-      {savedVersion && (
+      {finalizeStep === 4 && savedVersion && (
         <details className="group mt-4 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-slate-900">📎 Anexos del contrato</h3>
@@ -1426,9 +1473,9 @@ export default function PreviewStepPage() {
         </details>
       )}
 
-      {/* CTA FINAL — al final del todo, sin romper el flujo de los pasos de arriba. */}
-      {savedVersion && (
-        <section className="mt-8 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50/90 to-white p-5 shadow-[0_8px_28px_rgba(139,92,246,0.14)]">
+      {/* CTA FINAL — Paso 4 (Posventa) del cierre paso a paso. */}
+      {finalizeStep === 4 && savedVersion && (
+        <section className="mt-4 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50/90 to-white p-5 shadow-[0_8px_28px_rgba(139,92,246,0.14)]">
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Y para terminar</p>
           {plusActive || demoActive ? (
             <>
