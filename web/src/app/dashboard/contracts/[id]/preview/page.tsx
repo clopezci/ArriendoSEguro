@@ -25,6 +25,17 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ReadAloudButton } from "@/components/a11y/read-aloud-button";
 
+/** Secciones del cierre paso a paso (bento): una a la vez. */
+type Section = "revisar" | "documentos" | "guardar" | "firma" | "pdf" | "posventa";
+const SECTIONS: { key: Section; label: string }[] = [
+  { key: "revisar", label: "Revisar" },
+  { key: "documentos", label: "Documentos" },
+  { key: "guardar", label: "Guardar" },
+  { key: "firma", label: "Firma" },
+  { key: "pdf", label: "PDF" },
+  { key: "posventa", label: "Posventa" },
+];
+
 /**
  * Etiquetas amigables para los `field` que devuelve `validateContractData`
  * y los demás endpoints. Permite mostrar al usuario "Canon mensual" en
@@ -188,8 +199,9 @@ export default function PreviewStepPage() {
   const [propertyDocCount, setPropertyDocCount] = useState<number | null>(null);
   const [poderDocCount, setPoderDocCount] = useState<number | null>(null);
   const [propDocType, setPropDocType] = useState<PropertyDocType | "">("");
-  // Cierre paso a paso (bento): 1 Guardar · 2 Firma · 3 PDF · 4 Posventa.
-  const [finalizeStep, setFinalizeStep] = useState<1 | 2 | 3 | 4>(1);
+  // Revisión y cierre PASO A PASO (bento): una sección a la vez. Reúne TODO el
+  // contenido de la pantalla en secciones para no apilarlo (antes eran 8 scrolls).
+  const [section, setSection] = useState<Section>("revisar");
   // Ref al HTML del contrato renderizado, para la lectura por voz.
   const contractRef = useRef<HTMLDivElement>(null);
 
@@ -351,13 +363,13 @@ export default function PreviewStepPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDraft?.id]);
 
-  // Al guardar por primera vez, avanzamos UNA vez al paso de firma (fluidez).
+  // Al guardar por primera vez, avanzamos UNA vez a la sección de firma (fluidez).
   // Después el usuario navega libre con los botones/indicador.
   const savedAdvancedRef = useRef(false);
   useEffect(() => {
     if (savedVersion && !savedAdvancedRef.current) {
       savedAdvancedRef.current = true;
-      setFinalizeStep((s) => (s === 1 ? 2 : s));
+      setSection((s) => (s === "guardar" ? "firma" : s));
     }
   }, [savedVersion]);
 
@@ -759,6 +771,21 @@ export default function PreviewStepPage() {
 
   if (state !== "ready" || !activeDraft) return <p className="text-sm text-slate-700">Cargando…</p>;
 
+  // Navegación del sub-flujo bento (una sección a la vez).
+  const proxyDraft = activeDraft?.actingAs === "proxy";
+  const sectionOrder: Section[] = ["revisar", "documentos", "guardar", "firma", "pdf", "posventa"];
+  const goNext = () => setSection(sectionOrder[Math.min(sectionOrder.indexOf(section) + 1, sectionOrder.length - 1)]);
+  const goPrev = () => setSection(sectionOrder[Math.max(sectionOrder.indexOf(section) - 1, 0)]);
+  const sectionDone = (k: Section): boolean =>
+    k === "revisar" ? Boolean(previewHtml)
+    : k === "documentos" ? (propertyDocCount !== null && propertyDocCount > 0 && (!proxyDraft || (poderDocCount !== null && poderDocCount > 0)))
+    : k === "guardar" ? Boolean(savedVersion)
+    : k === "firma" ? hasAllSigned
+    : k === "pdf" ? Boolean(pdfInfo)
+    : false;
+  // Firma/PDF/Posventa requieren haber guardado; Revisar/Documentos/Guardar libres.
+  const canGoSection = (k: Section): boolean => (k === "firma" || k === "pdf" || k === "posventa" ? Boolean(savedVersion) : true);
+
   return (
     <WizardShell title="Revisa y finaliza tu contrato" currentStep={10} contractId={id}>
       {/* Navegación: volver a editar (bento) o ver/editar en la vista clásica completa. */}
@@ -779,11 +806,33 @@ export default function PreviewStepPage() {
           </div>
         </details>
       </div>
+
+      {/* Sub-flujo bento: una sección a la vez (Revisar → Documentos → Guardar → Firma → PDF → Posventa). */}
+      <div className="mb-4 rounded-3xl border-2 border-[#5646E5]/15 bg-[#ECE9FB]/40 p-3">
+        <div className="flex items-start gap-1 overflow-x-auto">
+          {SECTIONS.map((s, i) => {
+            const done = sectionDone(s.key);
+            const active = section === s.key;
+            const can = canGoSection(s.key);
+            return (
+              <button key={s.key} type="button" disabled={!can} onClick={() => can && setSection(s.key)}
+                className={`flex min-w-[54px] flex-1 flex-col items-center gap-1 ${can ? "cursor-pointer" : "cursor-not-allowed"}`}>
+                <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${done ? "bg-[#12B886] text-white" : active ? "bg-[#5646E5] text-white" : "bg-white text-slate-400 ring-1 ring-slate-200"}`}>{done ? "✓" : i + 1}</span>
+                <span className={`text-[10px] font-semibold ${active ? "text-[#5646E5]" : done ? "text-[#0B6E4E]" : "text-slate-400"}`}>{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-center text-[11px] text-slate-500">Vas por «{SECTIONS.find((s) => s.key === section)?.label}». Avanza con «Continuar» abajo o toca un paso.</p>
+      </div>
+      {section === "revisar" && (
       <p className="mb-4 flex items-start gap-2 text-xs text-slate-500">
         <span aria-hidden="true">👀</span>
         <span>Esta es tu vista previa. Queda listo para firma cuando ambas partes revisen y acepten la versión final.</span>
       </p>
+      )}
       {/* Notas del expediente: secundario → plegado para no saturar el cierre. */}
+      {section === "revisar" && (
       <details className="group mb-4 rounded-2xl border border-slate-200 bg-white/85 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-2 text-sm font-semibold text-slate-900">
           <span>📝 Anotaciones del expediente (opcional)</span>
@@ -793,9 +842,9 @@ export default function PreviewStepPage() {
           <ExpedienteNotesCard draftId={id} initialNotes={activeDraft.expedienteNotes ?? ""} variant="banner" />
         </div>
       </details>
-      {/* PRIMERO: completar/importar lo que falta. Sin esto no se puede generar,
-          imprimir ni avanzar a la firma. Por eso va ANTES de la vista previa. */}
-      {renderErrors.length > 0 && (
+      )}
+      {/* PRIMERO: completar/importar lo que falta. Sin esto no se puede generar. */}
+      {(section === "documentos" || section === "revisar") && renderErrors.length > 0 && (
         <div role="alert" className="mb-4 rounded-3xl border-2 border-amber-300 bg-amber-50/70 p-5 text-sm text-amber-950 shadow-[0_6px_20px_rgba(245,165,36,0.12)]">
           <p className="flex items-center gap-2 text-base font-black">📋 Completa esto para ver, imprimir y firmar</p>
           <p className="mt-0.5 text-xs text-amber-900/80">
@@ -820,6 +869,7 @@ export default function PreviewStepPage() {
       )}
       {/* Documento que soporta la propiedad: se pudo saltar en el asistente, pero
           es requisito para generar. Si falta, se marca pendiente y aquí se sube. */}
+      {section === "documentos" && (
       <div className="mb-4">
         {propertyDocCount === 0 && (
           <p className="mb-2 rounded-2xl border-2 border-amber-300 bg-amber-50/70 p-3 text-sm font-medium text-amber-900">
@@ -851,6 +901,8 @@ export default function PreviewStepPage() {
           </div>
         )}
       </div>
+      )}
+      {section === "revisar" && (
       <div id="preview-acciones" className="mb-4 flex flex-wrap items-center gap-3 scroll-mt-24">
         <button
           type="button"
@@ -872,7 +924,8 @@ export default function PreviewStepPage() {
           </span>
         )}
       </div>
-      {previewHtml && (
+      )}
+      {section === "revisar" && previewHtml && (
         <>
           <div className="mb-1 flex items-center justify-between gap-2">
             <p className="text-xs font-medium text-slate-500">Vista previa del contrato</p>
@@ -887,7 +940,7 @@ export default function PreviewStepPage() {
           </div>
         </>
       )}
-      {versionInfo && (
+      {section === "revisar" && versionInfo && (
         <details className="group mt-3 rounded-2xl border border-slate-200 bg-white/85 p-3 text-xs text-slate-600">
           <summary className="cursor-pointer list-none font-medium text-slate-500">🔐 Datos técnicos de la versión (hash) <span className="group-open:hidden">▾</span></summary>
           <div className="mt-2 space-y-0.5 break-all">
@@ -897,10 +950,8 @@ export default function PreviewStepPage() {
           </div>
         </details>
       )}
-      {/* Documentos que subieron las partes por su enlace (persistente: aquí el
-          dueño los ve aunque el inquilino/codeudor los suban horas después). Cada
-          lista se oculta sola si no hay documentos. */}
-      {(() => {
+      {/* Documentos que subieron las partes por su enlace + ingresos declarados. */}
+      {section === "documentos" && (() => {
         const canonN = Number(activeDraft?.lease?.monthlyRent ?? activeDraft?.property?.monthlyRentProposed ?? 0) || 0;
         const tInc = activeDraft?.tenantMonthlyIncome ?? 0;
         const cInc = activeDraft?.hasSolidaryCoDebtor ? (activeDraft?.solidaryCoDebtor?.economicSupport?.monthlyIncome ?? 0) : 0;
@@ -911,6 +962,7 @@ export default function PreviewStepPage() {
           </div>
         );
       })()}
+      {section === "documentos" && (
       <div className="mt-4 space-y-2">
         <InviteSupportsOwnerList contractDraftId={id} role="tenant" title="📎 Documentos del inquilino" />
         <InviteSupportsOwnerList contractDraftId={id} role="solidaryCoDebtor" codebtorSlot={0} title="📎 Documentos del codeudor" />
@@ -918,9 +970,10 @@ export default function PreviewStepPage() {
         <InviteSupportsOwnerList contractDraftId={id} role="solidaryCoDebtor" codebtorSlot={2} title="📎 Documentos del codeudor 3" />
         <InviteSupportsOwnerList contractDraftId={id} role="solidaryCoDebtor" codebtorSlot={3} title="📎 Documentos del codeudor 4" />
       </div>
+      )}
 
-      {/* Autenticación (notaría) — junto al paso de firma (opcional). */}
-      {previewHtml && finalizeStep === 2 && (
+      {/* Autenticación (notaría) — en la sección de firma (opcional). */}
+      {section === "firma" && previewHtml && (
         <details className="group mt-4 rounded-2xl border border-slate-200 bg-white/85 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-sm text-slate-800">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 font-semibold text-slate-900">
             <span>🏛️ ¿Autenticar el contrato? (opcional, tras revisar la vista previa)</span>
@@ -1001,46 +1054,11 @@ export default function PreviewStepPage() {
         </details>
       )}
 
-      {/* Finalizar — flujo guiado paso a paso (bento): Guarda → Firma → PDF → Posventa */}
+      {/* Finalizar — cada paso vive en su sección del sub-flujo bento (stepper arriba). */}
+      {(section === "guardar" || section === "firma" || section === "pdf" || section === "posventa") && (
       <section className="mt-6 rounded-3xl border-2 border-[#5646E5]/20 bg-[#ECE9FB]/40 p-5">
-        <h3 className="text-lg font-black text-[#17151F]">✅ Finaliza tu contrato, paso a paso</h3>
-        {(() => {
-          const okByStep: Record<number, boolean> = { 1: Boolean(savedVersion), 2: hasAllSigned, 3: Boolean(pdfInfo), 4: false };
-          const doneCount = [1, 2, 3].filter((n) => okByStep[n]).length;
-          const labels: Record<number, string> = { 1: "Guardar", 2: "Firma", 3: "PDF", 4: "Posventa" };
-          // Solo se puede saltar a firma/PDF/posventa cuando ya se guardó.
-          const canGo = (n: number) => n === 1 || Boolean(savedVersion);
-          return (
-            <div className="mt-3">
-              <div className="flex items-start gap-1">
-                {[1, 2, 3, 4].map((n) => {
-                  const ok = okByStep[n];
-                  const active = finalizeStep === n;
-                  return (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => canGo(n) && setFinalizeStep(n as 1 | 2 | 3 | 4)}
-                      disabled={!canGo(n)}
-                      className={`flex flex-1 flex-col items-center gap-1 text-center ${canGo(n) ? "cursor-pointer" : "cursor-not-allowed"}`}
-                    >
-                      <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-bold ${ok ? "bg-[#12B886] text-white" : active ? "bg-[#5646E5] text-white" : "bg-white text-slate-400 ring-1 ring-slate-200"}`}>
-                        {ok ? "✓" : n}
-                      </span>
-                      <span className={`text-[11px] font-semibold ${active ? "text-[#5646E5]" : ok ? "text-[#0B6E4E]" : "text-slate-400"}`}>{labels[n]}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/70">
-                <div className="h-full rounded-full bg-gradient-to-r from-[#5646E5] to-[#12B886] transition-all" style={{ width: `${Math.round((doneCount / 3) * 100)}%` }} />
-              </div>
-            </div>
-          );
-        })()}
-
         {/* Paso 1 · Guardar */}
-        {finalizeStep === 1 && (
+        {section === "guardar" && (
         <div className="mt-3 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3">
           <p className="text-sm font-semibold text-slate-900">Paso 1 · Guarda tu contrato</p>
           <p className="mt-0.5 text-xs text-slate-600">
@@ -1080,16 +1098,11 @@ export default function PreviewStepPage() {
               <span className="text-xs text-slate-500">Espera a que termine la vista previa (se genera sola).</span>
             )}
           </div>
-          {savedVersion && (
-            <button type="button" onClick={() => setFinalizeStep(2)} className="mt-3 w-full rounded-2xl bg-[#FF6B4A] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95">
-              Continuar a la firma →
-            </button>
-          )}
         </div>
         )}
 
         {/* Paso 2 · Firmar (Plan Plus) */}
-        {finalizeStep === 2 && (
+        {section === "firma" && (
         <div className="mt-2 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3">
           <p className="text-sm font-semibold text-slate-900">
             Paso 2 · Firma electrónica <span className="text-emerald-700">(incluida)</span>
@@ -1144,15 +1157,11 @@ export default function PreviewStepPage() {
               )}
             </>
           )}
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" onClick={() => setFinalizeStep(1)} className="rounded-2xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]">← Atrás</button>
-            <button type="button" onClick={() => setFinalizeStep(3)} className="rounded-2xl bg-[#FF6B4A] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95">Continuar al PDF →</button>
-          </div>
         </div>
         )}
 
         {/* Paso 3 · PDF (disponible para todos; gratis sale con marca de agua) */}
-        {finalizeStep === 3 && (
+        {section === "pdf" && (
         <div className="mt-2 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3">
           <p className="text-sm font-semibold text-slate-900">Paso 3 · Descarga el PDF</p>
           <p className="mt-0.5 text-xs text-slate-600">
@@ -1178,30 +1187,17 @@ export default function PreviewStepPage() {
               </a>
             )}
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" onClick={() => setFinalizeStep(2)} className="rounded-2xl border-2 border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]">← Atrás</button>
-            <button type="button" onClick={() => setFinalizeStep(4)} className="rounded-2xl bg-[#FF6B4A] px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95">Continuar a la posventa →</button>
-          </div>
         </div>
         )}
 
-        {finalizeStep === 4 && (
+        {section === "posventa" && (
           <div className="mt-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-3">
-            <p className="text-sm font-semibold text-emerald-900">Paso 4 · Posventa</p>
+            <p className="text-sm font-semibold text-emerald-900">Paso 5 · Posventa</p>
             <p className="mt-0.5 text-xs text-slate-700">¡Tu contrato quedó listo! Abajo tienes el centro de posventa (pagos, inventario, novedades y documentos).</p>
-            <button type="button" onClick={() => setFinalizeStep(3)} className="mt-2 rounded-2xl border-2 border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]">← Atrás</button>
           </div>
         )}
-
-        <div className="mt-3">
-          <Link
-            href={`/dashboard/contracts/${id}/review`}
-            className="text-xs text-slate-600 underline hover:text-violet-700"
-          >
-            ← Volver a editar los datos del contrato
-          </Link>
-        </div>
       </section>
+      )}
       {saveMessage && <p className="mt-3 text-sm text-emerald-700">{saveMessage}</p>}
       {pdfFeedback && (
         <p className="mt-2 text-sm text-violet-800" role="status">
@@ -1210,7 +1206,7 @@ export default function PreviewStepPage() {
       )}
       {contractStatus && <p className="text-xs text-slate-600">Estado contractual: {contractStatus}</p>}
 
-      {finalizeStep === 2 && signatureRoundMessage && (
+      {section === "firma" && signatureRoundMessage && (
         <div
           id="firma-resultado"
           role="status"
@@ -1258,7 +1254,7 @@ export default function PreviewStepPage() {
           )}
         </div>
       )}
-      {finalizeStep === 2 && signatureRows.length > 0 && (
+      {section === "firma" && signatureRows.length > 0 && (
         <section className="mt-4 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-slate-900">
@@ -1365,14 +1361,14 @@ export default function PreviewStepPage() {
           </p>
         </section>
       )}
-      {finalizeStep === 3 && pdfInfo && (
+      {section === "pdf" && pdfInfo && (
         <div className="mt-3 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3 text-xs text-slate-700">
           <p>PDF generado: {new Date(pdfInfo.pdfGeneratedAt).toLocaleString("es-CO")}</p>
           <p>Versión: {pdfInfo.versionNumber}</p>
           <p>Hash: {pdfInfo.documentHash}</p>
         </div>
       )}
-      {finalizeStep === 2 && hasAllSigned && (
+      {section === "firma" && hasAllSigned && (
         <section className="mt-4 rounded-2xl border border-emerald-500 bg-emerald-50 p-4 text-sm text-emerald-700">
           <p className="font-semibold">Contrato firmado</p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -1409,7 +1405,7 @@ export default function PreviewStepPage() {
           )}
         </section>
       )}
-      {finalizeStep === 4 && savedVersion && (
+      {section === "posventa" && savedVersion && (
         <details className="group mt-4 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-slate-900">📎 Anexos del contrato</h3>
@@ -1475,7 +1471,7 @@ export default function PreviewStepPage() {
       )}
 
       {/* CTA FINAL — Paso 4 (Posventa) del cierre paso a paso. */}
-      {finalizeStep === 4 && savedVersion && (
+      {section === "posventa" && savedVersion && (
         <section className="mt-4 rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50/90 to-white p-5 shadow-[0_8px_28px_rgba(139,92,246,0.14)]">
           <p className="text-xs font-semibold uppercase tracking-wide text-violet-700">Y para terminar</p>
           {plusActive || demoActive ? (
@@ -1520,6 +1516,22 @@ export default function PreviewStepPage() {
           )}
         </section>
       )}
+
+      {/* Navegación global del sub-flujo bento: una sección a la vez. */}
+      <div className="mt-6 flex items-center justify-between gap-2">
+        {section !== "revisar" ? (
+          <button type="button" onClick={goPrev} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5] active:scale-95">← Atrás</button>
+        ) : (
+          <span />
+        )}
+        {section !== "posventa" ? (
+          <button type="button" onClick={goNext} disabled={!canGoSection(sectionOrder[Math.min(sectionOrder.indexOf(section) + 1, sectionOrder.length - 1)])} className="rounded-2xl bg-[#FF6B4A] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50">
+            Continuar →
+          </button>
+        ) : (
+          <Link href={`/dashboard/contracts/${id}/adicionales`} className="rounded-2xl bg-[#12B886] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">Ir a la posventa →</Link>
+        )}
+      </div>
     </WizardShell>
   );
 }
