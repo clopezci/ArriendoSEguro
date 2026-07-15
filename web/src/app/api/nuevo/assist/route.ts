@@ -21,16 +21,24 @@ const schema = z.object({ mode: z.enum(["extract", "ask"]), text: z.string().min
 
 const EXTRACT_SYSTEM =
   "Eres un asistente que extrae datos para un contrato de arrendamiento de vivienda en Colombia. " +
-  "Devuelve EXCLUSIVAMENTE un JSON con estas claves (usa cadena vacía si el dato no se menciona, no inventes; " +
-  "docType/tenantDocType/codebtorDocType deben ser uno de: CC, CE, NIT, Pasaporte; los teléfonos a 10 dígitos; " +
-  "los montos solo el número sin puntos ni símbolos). " +
-  "ARRENDADOR (dueño): name, docType, docNumber, phone, email, ownerCity (ciudad del dueño). " +
-  "INMUEBLE: address (dirección), city (ciudad del inmueble), department (departamento), canon (canon mensual). " +
-  "ARRENDATARIO (inquilino): tenantName, tenantDocType, tenantDocNumber, tenantCity, tenantEmail, tenantPhone, " +
-  "tenantIncome (ingreso mensual). " +
-  "CODEUDOR: hasCodebtor ('yes' si mencionan codeudor con datos, 'no' si dicen que no, '' si no se sabe), " +
-  "codebtorName, codebtorDocType, codebtorDocNumber, codebtorCity, codebtorEmail, codebtorPhone, codebtorIncome. " +
-  "Asigna cada dato a la persona correcta según a quién se refiera el texto (dueño, inquilino o codeudor).";
+  "Responde ÚNICAMENTE con un objeto JSON PLANO (todas las claves al MISMO nivel, NO uses objetos anidados) " +
+  "que contenga EXACTAMENTE estas claves. Usa cadena vacía \"\" si el dato no se menciona; NO inventes. " +
+  "Claves (en este orden): " +
+  "name, docType, docNumber, phone, email, ownerCity, " +
+  "address, city, department, canon, " +
+  "tenantName, tenantDocType, tenantDocNumber, tenantCity, tenantEmail, tenantPhone, tenantIncome, " +
+  "hasCodebtor, codebtorName, codebtorDocType, codebtorDocNumber, codebtorCity, codebtorEmail, codebtorPhone, codebtorIncome. " +
+  "Significado: las claves SIN prefijo (name, docType, docNumber, phone, email, ownerCity) son del ARRENDADOR (dueño). " +
+  "address/city/department/canon son del INMUEBLE. Las claves con prefijo tenant* son del ARRENDATARIO (inquilino) y " +
+  "codebtor* del CODEUDOR. Asigna cada dato a la persona correcta según a quién se refiera el texto. " +
+  "Reglas de formato: docType, tenantDocType y codebtorDocType deben ser uno de CC, CE, NIT, Pasaporte; " +
+  "phone/tenantPhone/codebtorPhone a 10 dígitos; canon/tenantIncome/codebtorIncome solo números (sin puntos ni símbolos); " +
+  "hasCodebtor = 'yes' si mencionan codeudor con datos, 'no' si dicen que no hay, '' si no se sabe. " +
+  "Ejemplo de forma esperada (valores ilustrativos): " +
+  '{"name":"Carlos Perez","docType":"CC","docNumber":"71217228","phone":"3001234567","email":"c@x.com","ownerCity":"Medellin",' +
+  '"address":"Calle 34 60-26","city":"Medellin","department":"Antioquia","canon":"1500000",' +
+  '"tenantName":"Ana Ruiz","tenantDocType":"CC","tenantDocNumber":"43262933","tenantCity":"Medellin","tenantEmail":"a@x.com","tenantPhone":"3015551234","tenantIncome":"4000000",' +
+  '"hasCodebtor":"yes","codebtorName":"Luis Gomez","codebtorDocType":"CC","codebtorDocNumber":"123456789","codebtorCity":"Bello","codebtorEmail":"l@x.com","codebtorPhone":"3020001111","codebtorIncome":"6000000"}';
 
 const ASK_SYSTEM =
   "Eres el asistente de ArriendoSeguro, una aplicación colombiana para que dos personas (dueño e inquilino) creen, " +
@@ -78,7 +86,15 @@ export async function POST(request: Request) {
   const isExtract = parsed.data.mode === "extract";
   // Intenta el modelo configurado y, si falla por modelo, cae a alternativos
   // estables de Groq. Maximiza que "siempre funcione" sin cambiar de proveedor.
-  const candidates = [...new Set(([process.env.AI_MODEL?.trim(), "llama-3.3-70b-versatile", "llama-3.1-8b-instant"].filter(Boolean)) as string[])];
+  // Para EXTRAER, priorizamos el modelo grande (mejor adherencia al JSON pedido).
+  const candidates = [
+    ...new Set(
+      ((isExtract
+        ? ["llama-3.3-70b-versatile", process.env.AI_MODEL?.trim(), "llama-3.1-8b-instant"]
+        : [process.env.AI_MODEL?.trim(), "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+      ).filter(Boolean)) as string[],
+    ),
+  ];
 
   let lastDetail = "sin respuesta del proveedor";
   for (const model of candidates) {
@@ -90,7 +106,10 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           model,
           temperature: isExtract ? 0 : 0.4,
-          max_tokens: isExtract ? 500 : 220,
+          max_tokens: isExtract ? 1024 : 220,
+          // Modo JSON: obliga al modelo a devolver un objeto JSON válido (evita
+          // prosa/truncados que antes rompían el parseo y dejaban todo vacío).
+          ...(isExtract ? { response_format: { type: "json_object" } } : {}),
           messages: [
             { role: "system", content: isExtract ? EXTRACT_SYSTEM : ASK_SYSTEM },
             { role: "user", content: parsed.data.text },

@@ -1,6 +1,5 @@
 "use client";
 
-import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
 import { RenewalReminderCard } from "@/components/contracts/renewal-reminder-card";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -9,49 +8,50 @@ export default function AlertasContratoPage() {
   const id = String(useParams<{ id: string }>().id);
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-6 text-slate-900">
-      <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Alertas</p>
-        <h1 className="text-2xl font-bold">Recordatorios del arriendo</h1>
-        <p className="text-sm text-slate-600">
-          Configura los avisos automáticos de terminación o renovación del contrato.
-        </p>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <Link href={`/dashboard/contracts/${id}/pagos-recordatorios`} className="text-violet-700 underline">
-            Pagos y recordatorios
-          </Link>
-          <span className="text-slate-400">·</span>
-          <Link href={`/dashboard/contracts/${id}/novedades`} className="text-violet-700 underline">
-            Novedades del arriendo
-          </Link>
+    <div className="relative min-h-screen overflow-hidden bg-[#F5F3EF] text-[#17151F]">
+      <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#FFB03A,#FF6B4A)" }} />
+      <div className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#9B6BFF,#5646E5)" }} />
+
+      <div className="relative z-10 mx-auto max-w-2xl px-6 py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <Link href={`/nuevo/gestionar/${id}/terminar`} className="flex items-center gap-2 text-sm font-semibold text-[#5646E5] hover:underline">← Termina tu contrato</Link>
+          <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Alertas</span>
         </div>
-      </header>
 
-      <ExpedientePostWizardNav contractId={id} />
+        <h1 className="text-balance text-4xl font-extrabold leading-none tracking-tight">Alertas y recordatorios</h1>
+        <p className="mt-3 text-lg text-slate-500">
+          Activa los avisos automáticos para no quedarte sin plazo ni sin pagos.
+        </p>
 
-      <section className="rounded-xl border border-violet-200 bg-violet-50/40 p-4 text-sm text-slate-700">
-        <h2 className="text-sm font-bold text-slate-900">Qué alertas envía ArriendoSeguro</h2>
-        <ul className="mt-2 space-y-1.5">
-          <li>
-            <strong>Terminación / renovación:</strong> avisos antes del fin del contrato (respetando el preaviso de 3
-            meses), a ambas partes. Se activa/desactiva aquí abajo.
-          </li>
-          <li>
-            <strong>Recordatorios de pago:</strong> al inquilino, los días de anticipación que elijas y el día del
-            vencimiento, con tu método de pago y un enlace para subir su soporte.{" "}
-            <Link href={`/dashboard/contracts/${id}/pagos-recordatorios`} className="font-semibold text-violet-700 underline">
-              Configurar pagos
-            </Link>
-            .
-          </li>
-          <li>
-            <strong>Escalamiento:</strong> si el inquilino sube un soporte y no lo confirmas en unos días, te lo
-            recordamos a ambas partes. (Automático, sin configuración.)
-          </li>
-        </ul>
-      </section>
+        <section className="mt-6 rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm text-sm text-slate-700">
+          <h2 className="text-sm font-bold text-slate-900">Qué alertas envía ArriendoSeguro</h2>
+          <ul className="mt-3 space-y-2.5">
+            <li className="flex gap-2">
+              <span aria-hidden="true">⏰</span>
+              <span><strong>Terminación / renovación:</strong> avisos antes del fin del contrato (respetando el preaviso de 3 meses), a ambas partes. Se activa aquí abajo.</span>
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden="true">🔔</span>
+              <span>
+                <strong>Recordatorios de pago:</strong> al inquilino, los días que elijas y el día del vencimiento, con tu método de pago.{" "}
+                <Link href={`/dashboard/contracts/${id}/pagos-recordatorios`} className="font-semibold text-[#5646E5] underline">Configurar pagos</Link>.
+              </span>
+            </li>
+            <li className="flex gap-2">
+              <span aria-hidden="true">✅</span>
+              <span><strong>Escalamiento:</strong> si el inquilino sube un soporte y no lo confirmas en unos días, se lo recordamos a ambas partes. (Automático.)</span>
+            </li>
+          </ul>
+        </section>
 
-      <RenewalReminderCard contractId={id} />
-    </main>
+        <div className="mt-4">
+          <RenewalReminderCard contractId={id} />
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <Link href={`/nuevo/gestionar/${id}/terminar`} className="rounded-2xl bg-[#12B886] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">Listo, volver →</Link>
+        </div>
+      </div>
+    </div>
   );
 }

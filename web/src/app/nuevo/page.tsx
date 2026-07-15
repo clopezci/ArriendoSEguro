@@ -758,30 +758,57 @@ export default function NuevoPage() {
         setAiNote(j.detail || j.error ? `Falló la IA (${j.error ?? "error"}): ${j.detail ?? ""}` : "No pude leer los datos; intenta reformular con nombres y valores claros.");
         return;
       }
-      const d = j.data;
+      const d = j.data as Record<string, unknown>;
       const norm = (v: unknown): "CC" | "CE" | "NIT" | "Pasaporte" => {
         const t = String(v ?? "").toUpperCase();
         return t === "CE" ? "CE" : t === "NIT" ? "NIT" : t.startsWith("PAS") ? "Pasaporte" : "CC";
       };
-      const str = (v: unknown) => String(v ?? "");
+      const str = (v: unknown) => (v == null ? "" : String(v));
       const digits = (v: unknown) => String(v ?? "").replace(/\D/g, "");
-      const has = String(d.hasCodebtor ?? "");
-      // Hay codeudor si lo dicen O si vienen datos del codeudor en el texto.
-      const codebtorHasData = Boolean(str(d.codebtorName) || str(d.codebtorDocNumber) || str(d.codebtorEmail) || str(d.codebtorPhone));
+      // Contenedor anidado por persona, por si el modelo devuelve {arrendador:{…}}
+      // en vez de claves planas (respaldo defensivo).
+      const obj = (...names: string[]): Record<string, unknown> => {
+        for (const n of names) { const c = d[n]; if (c && typeof c === "object") return c as Record<string, unknown>; }
+        return {};
+      };
+      const own = obj("arrendador", "dueno", "dueño", "landlord", "owner", "propietario");
+      const ten = obj("arrendatario", "inquilino", "tenant");
+      const cod = obj("codeudor", "codebtor", "fiador");
+      // pick: clave plana → si vacía, alias dentro del contenedor de la persona.
+      const pick = (flat: string, c: Record<string, unknown>, ...aliases: string[]): string => {
+        const v = d[flat];
+        if (v != null && String(v) !== "") return String(v);
+        for (const a of aliases) { const x = c[a]; if (x != null && String(x) !== "") return String(x); }
+        return "";
+      };
+      const has = str(d.hasCodebtor) || str(cod["hasCodebtor"]);
+      const codebtorName = pick("codebtorName", cod, "name", "nombre", "fullName");
+      const codebtorDoc = pick("codebtorDocNumber", cod, "docNumber", "documento", "numeroDocumento");
+      const codebtorHasData = Boolean(codebtorName || codebtorDoc || pick("codebtorEmail", cod, "email", "correo") || pick("codebtorPhone", cod, "phone", "telefono"));
       const prefilled: Answers = {
         ...EMPTY,
         // Arrendador (dueño)
-        name: str(d.name), docType: norm(d.docType), docNumber: str(d.docNumber),
-        phone: digits(d.phone), email: str(d.email), ownerCity: str(d.ownerCity),
+        name: pick("name", own, "name", "nombre", "fullName"),
+        docType: norm(pick("docType", own, "docType", "tipoDocumento")),
+        docNumber: pick("docNumber", own, "docNumber", "documento", "numeroDocumento"),
+        phone: digits(pick("phone", own, "phone", "telefono", "celular")),
+        email: pick("email", own, "email", "correo"),
+        ownerCity: pick("ownerCity", own, "city", "ciudad"),
         // Inmueble
-        address: str(d.address), city: str(d.city), department: str(d.department), canon: digits(d.canon),
+        address: pick("address", {}, "direccion"), city: str(d.city), department: str(d.department), canon: digits(d.canon),
         // Arrendatario (inquilino): el dueño los ingresa → modo self
-        tenantName: str(d.tenantName), tenantDocType: norm(d.tenantDocType), tenantDocNumber: str(d.tenantDocNumber),
-        tenantCity: str(d.tenantCity), tenantEmail: str(d.tenantEmail), tenantPhone: digits(d.tenantPhone), tenantIncome: digits(d.tenantIncome),
+        tenantName: pick("tenantName", ten, "name", "nombre", "fullName"),
+        tenantDocType: norm(pick("tenantDocType", ten, "docType", "tipoDocumento")),
+        tenantDocNumber: pick("tenantDocNumber", ten, "docNumber", "documento", "numeroDocumento"),
+        tenantCity: pick("tenantCity", ten, "city", "ciudad"),
+        tenantEmail: pick("tenantEmail", ten, "email", "correo"),
+        tenantPhone: digits(pick("tenantPhone", ten, "phone", "telefono", "celular")),
+        tenantIncome: digits(pick("tenantIncome", ten, "income", "ingreso", "ingresos")),
         // Codeudor
         hasCodebtor: has === "yes" || codebtorHasData ? "yes" : has === "no" ? "no" : "",
-        codebtorName: str(d.codebtorName), codebtorDocType: norm(d.codebtorDocType), codebtorDocNumber: str(d.codebtorDocNumber),
-        codebtorCity: str(d.codebtorCity), codebtorEmail: str(d.codebtorEmail), codebtorPhone: digits(d.codebtorPhone), codebtorIncome: digits(d.codebtorIncome),
+        codebtorName, codebtorDocType: norm(pick("codebtorDocType", cod, "docType", "tipoDocumento")), codebtorDocNumber: codebtorDoc,
+        codebtorCity: pick("codebtorCity", cod, "city", "ciudad"), codebtorEmail: pick("codebtorEmail", cod, "email", "correo"),
+        codebtorPhone: digits(pick("codebtorPhone", cod, "phone", "telefono", "celular")), codebtorIncome: digits(pick("codebtorIncome", cod, "income", "ingreso", "ingresos")),
       };
       const draft = createContractDraft({ userId: user?.uid ?? "invitado", accessStatus: "free", isDemo: false });
       setDraftId(draft.id); draftIdRef.current = draft.id;
