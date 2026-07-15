@@ -1,3 +1,28 @@
+/**
+ * FIRMA ELECTRÓNICA CERTIFICADA POR TERCERO (feature DESACTIVADA).
+ *
+ * Decisión de producto (2026-07): el contrato usa SOLO la firma electrónica
+ * simple de la plataforma (Ley 527 de 1999, plenamente válida) + notaría/
+ * notariado digital como opción. La "firma certificada por un tercero" NO es un
+ * requisito legal, tiene costo y confunde (dos firmas). Se deja apagada.
+ *
+ * PARA REACTIVARLA en el futuro (aplicación fácil):
+ *   1) Cambia esta constante a `CERTIFIED_SIGNATURE_CLAUSE_TEXT` (abajo) para que
+ *      el párrafo vuelva a imprimirse en el contrato.
+ *   2) La lógica de desbloqueo (referidos calificados o micropago) ya existe en
+ *      `@/domain/referrals/referrals.ts` (QUALIFIED_REFERRALS_*, MICROPAYMENT_*).
+ *   3) Alinea el mismo texto en `v2026-2/contractClauses.ts`.
+ */
+const CERTIFIED_SIGNATURE_CLAUSE_TEXT = `
+  <p>
+    La plataforma podrá ofrecer, de forma opcional, un nivel adicional de <strong>firma electrónica certificada</strong>
+    emitida por un tercero de confianza. Su uso es voluntario y no disminuye la validez de la firma electrónica simple
+    aquí pactada; constituye únicamente una capa probatoria reforzada.
+  </p>`;
+/** Activo en el contrato: vacío = apagado. Poner `CERTIFIED_SIGNATURE_CLAUSE_TEXT` para reactivar. */
+const CERTIFIED_SIGNATURE_CLAUSE = "";
+void CERTIFIED_SIGNATURE_CLAUSE_TEXT; // conservado para reactivación futura (evita "no usado")
+
 export const CONTRACT_TEMPLATE = `
 <article>
   <h1>CONTRATO DE ARRENDAMIENTO DE VIVIENDA URBANA</h1>
@@ -141,11 +166,7 @@ export const CONTRACT_TEMPLATE = `
     utilice un código de verificación de un solo uso (OTP) enviado al firmante, este también queda registrado como
     factor de autenticación.
   </p>
-  <p>
-    La plataforma podrá ofrecer, de forma opcional, un nivel adicional de <strong>firma electrónica certificada</strong>
-    emitida por un tercero de confianza. Su uso es voluntario y no disminuye la validez de la firma electrónica simple
-    aquí pactada; constituye únicamente una capa probatoria reforzada.
-  </p>
+  ${CERTIFIED_SIGNATURE_CLAUSE}
   <p>
     De forma <strong>opcional y alternativa</strong>, las partes podrán además <strong>autenticar</strong> este contrato
     ante notaría pública: descargarán el documento desde la plataforma, surtirán el trámite de autenticación y cargarán

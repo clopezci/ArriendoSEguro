@@ -197,11 +197,8 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
     El conjunto de registros mencionados constituye un mensaje de datos y, junto con el contrato firmado, hace prueba
     del consentimiento expresado por cada parte.
   </p>
-  <p>
-    La plataforma podrá ofrecer, de forma opcional, un nivel adicional de firma electrónica certificada emitida por un
-    tercero de confianza. Su uso es voluntario y no disminuye la validez de la firma electrónica aquí pactada;
-    constituye únicamente una capa probatoria reforzada.
-  </p>
+  <!-- Firma electrónica certificada por tercero: DESACTIVADA (ver
+       contractClauses.ts base -> CERTIFIED_SIGNATURE_CLAUSE_TEXT para reactivar). -->
 
   <h2>DÉCIMA SÉPTIMA. TRATAMIENTO DE DATOS PERSONALES</h2>
   <p>

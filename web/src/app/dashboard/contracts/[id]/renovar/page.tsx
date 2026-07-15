@@ -107,6 +107,10 @@ export default function RenovarPage() {
   }
 
   const isActive = status === "signed";
+  // Tope legal del reajuste (Art. 20 Ley 820): el aumento no puede exceder el IPC.
+  const currentRentNum = Number(lease?.monthlyRent ?? 0) || 0;
+  const legalMaxRent = Math.round(currentRentNum * (1 + IPC_REFERENCE.percent / 100));
+  const overLegalCap = mode === "custom" && currentRentNum > 0 && newRent > legalMaxRent;
 
   return (
     <main className="mx-auto max-w-2xl space-y-5 p-6 text-slate-900">
@@ -170,6 +174,21 @@ export default function RenovarPage() {
               <label className="text-sm">
                 <span className="mb-1 block text-slate-700">Nuevo canon (COP)</span>
                 <input type="number" value={newRent || ""} onChange={(e) => setNewRent(Number(e.target.value) || 0)} disabled={mode === "auto"} className="w-full rounded border border-slate-300 bg-slate-100 px-3 py-2 text-sm disabled:opacity-70" />
+                {(() => {
+                  const currentRent = Number(lease.monthlyRent ?? 0) || 0;
+                  const legalMax = Math.round(currentRent * (1 + IPC_REFERENCE.percent / 100));
+                  if (mode !== "custom" || currentRent <= 0) return null;
+                  if (newRent > legalMax) {
+                    return (
+                      <span className="mt-1 block rounded-lg border border-rose-300 bg-rose-50 p-2 text-[11px] font-medium text-rose-800">
+                        ⚠️ El nuevo canon <b>supera el tope legal</b>: el reajuste anual no puede exceder el IPC ({IPC_REFERENCE.percent}%). Máximo permitido: <b>{money(legalMax)}</b> (Ley 820, art. 20).
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="mt-1 block text-[11px] text-emerald-700">✓ Dentro del tope legal (máx. {money(legalMax)}, IPC {IPC_REFERENCE.percent}%).</span>
+                  );
+                })()}
               </label>
               <label className="text-sm">
                 <span className="mb-1 block text-slate-700">Nuevo canon en letras (opcional)</span>
@@ -187,10 +206,10 @@ export default function RenovarPage() {
           <button
             type="button"
             onClick={() => void renew()}
-            disabled={busy || !newStart || !newEnd || !newRent}
+            disabled={busy || !newStart || !newEnd || !newRent || overLegalCap}
             className="rounded-xl bg-[#5646E5] px-5 py-2.5 text-sm font-semibold text-white hover:brightness-105 disabled:opacity-60"
           >
-            {busy ? "Renovando y enviando…" : "Renovar y enviar a las partes"}
+            {busy ? "Renovando y enviando…" : overLegalCap ? "Baja el canon al tope legal para continuar" : "Renovar y enviar a las partes"}
           </button>
         </>
       )}
