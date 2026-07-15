@@ -73,6 +73,8 @@ export type Answers = {
   // Arrendador
   name: string; docType: string; docNumber: string; phone: string; email: string; ownerCity: string;
   acting: "" | "owner" | "proxy"; proxyOath: boolean;
+  // Nombre del propietario que otorga el poder (solo si actúa como apoderado).
+  poderdanteName: string;
   // Inmueble
   address: string; city: string; department: string;
   registry: string; propertyType: string; registrySkip: boolean;
@@ -112,7 +114,11 @@ export function validateStep(kind: string, a: Answers): string | null {
       return phoneError(a.phone) ?? emailError(a.email) ?? cityError(a.ownerCity);
     case "acting":
       if (a.acting === "") return "Indica si eres el dueño o actúas como apoderado.";
-      if (a.acting === "proxy" && !a.proxyOath) return "Como apoderado, acepta la declaración para poder continuar.";
+      if (a.acting === "proxy") {
+        const gErr = nameError(a.poderdanteName);
+        if (gErr) return `Nombre del propietario que te da el poder: ${gErr.toLowerCase()}`;
+        if (!a.proxyOath) return "Como apoderado, acepta la declaración para poder continuar.";
+      }
       return null;
     case "addr":
       return addressError(a.address) ?? cityError(a.city) ?? (a.department.trim().length < 3 ? "Indica el departamento del inmueble." : null);

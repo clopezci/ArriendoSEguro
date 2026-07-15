@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { captureOathEvidence } from "@/lib/nuevo/oath-evidence";
 import { PROPERTY_DOC_TYPES, PROPERTY_DOC_LABELS, type PropertyDocType, type DraftPropertyDocRow } from "@/domain/contracts/draftPropertyDocs";
 
 /**
@@ -32,6 +33,7 @@ export function PropertyDocUpload({
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [verify, setVerify] = useState<{ status: VerifyStatus; names?: string[] } | null>(null);
+  const [overrideAck, setOverrideAck] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const runVerify = useCallback(async () => {
@@ -92,6 +94,7 @@ export function PropertyDocUpload({
       const sub = (await subRes.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!subRes.ok || !sub.success) { setMsg(sub.errors?.[0]?.message ?? "No se pudo confirmar el documento."); return; }
       setMsg("Documento subido ✓");
+      setOverrideAck(false);
       await refresh();
       void runVerify();
     } catch {
@@ -164,9 +167,22 @@ export function PropertyDocUpload({
           )}
           {verify.status === "mismatch" && (
             <>
-              ⚠️ <b>Posible incumplimiento:</b> la revisión automática <b>no encontró el nombre de {expectedName}</b> en el documento
+              ⚠️ <b>Posible diferencia:</b> la revisión automática <b>no encontró el nombre de {expectedName}</b> en el documento
               {verify.names && verify.names.length > 0 ? ` (leyó: ${verify.names.slice(0, 3).join(", ")})` : ""}. Verifica que subiste el documento correcto.
-              Si estás seguro, tu declaración jurada de facultad te permite continuar. La revisión IA es orientativa y no vinculante.
+              La revisión IA es orientativa y no vinculante: <b>puedes corregir el documento</b> o, si estás seguro, aceptar la declaración para <b>avanzar de todos modos</b>.
+              <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border-2 border-rose-300 bg-white/70 p-2 text-[11px] text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={overrideAck}
+                  onChange={(e) => { const v = e.target.checked; if (v && !overrideAck) void captureOathEvidence("property_name_mismatch_override", contractDraftId); setOverrideAck(v); }}
+                  className="mt-0.5 h-4 w-4 flex-none accent-[#5646E5]"
+                />
+                <span>
+                  Declaro que, pese a la alerta, el documento <b>sí respalda la propiedad</b> y que estoy facultado para arrendar. Asumo la
+                  responsabilidad de su veracidad y <b>eximo a ArriendoSeguro</b> de cualquier reclamación por la titularidad o la
+                  autenticidad del documento. Queda registrado con evidencia (fecha e IP).
+                </span>
+              </label>
             </>
           )}
           {verify.status === "unreadable" && (

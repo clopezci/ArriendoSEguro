@@ -5,7 +5,7 @@ import { validateStep, type Answers } from "./validation";
 const base: Answers = {
   contractType: "VIVIENDA_URBANA",
   name: "", docType: "CC", docNumber: "", phone: "", email: "", ownerCity: "",
-  acting: "", proxyOath: false,
+  acting: "", proxyOath: false, poderdanteName: "",
   address: "", city: "", department: "",
   registry: "", propertyType: "", registrySkip: false, propertyDocType: "", propertyOath: false,
   canon: "", commercialValue: "", noCommercialValue: false,
@@ -76,10 +76,11 @@ test("tipo de contrato: con valor → ok", () => {
   assert.equal(validateStep("ctype", a({ contractType: "VIVIENDA_URBANA" })), null);
 });
 
-test("calidad: sin elegir → error; apoderado sin juramento → error; dueño → ok", () => {
+test("calidad: sin elegir → error; apoderado sin poderdante/juramento → error; dueño → ok", () => {
   assert.ok(validateStep("acting", a({ acting: "" })));
-  assert.ok(validateStep("acting", a({ acting: "proxy", proxyOath: false })));
-  assert.equal(validateStep("acting", a({ acting: "proxy", proxyOath: true })), null);
+  assert.ok(validateStep("acting", a({ acting: "proxy", poderdanteName: "", proxyOath: true }))); // falta nombre del poderdante
+  assert.ok(validateStep("acting", a({ acting: "proxy", poderdanteName: "Ana Ruiz", proxyOath: false }))); // falta juramento
+  assert.equal(validateStep("acting", a({ acting: "proxy", poderdanteName: "Ana Ruiz", proxyOath: true })), null);
   assert.equal(validateStep("acting", a({ acting: "owner" })), null);
 });
 

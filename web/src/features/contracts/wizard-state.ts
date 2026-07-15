@@ -150,6 +150,12 @@ export interface ContractDraft {
   actingAs?: "owner" | "proxy";
   /** Marca de tiempo (ISO) de aceptación de la declaración del apoderado. */
   proxyDeclarationAcceptedAt?: string;
+  /**
+   * Nombre completo del PROPIETARIO que otorga el poder (poderdante), cuando el
+   * arrendador actúa como apoderado. Se usa para cotejar el documento de
+   * propiedad contra el titular correcto (verificación IA, no vinculante).
+   */
+  grantorFullName?: string;
   generatedAt: string;
   status: ContractFlowStatus;
   landlord: PartyDraft;

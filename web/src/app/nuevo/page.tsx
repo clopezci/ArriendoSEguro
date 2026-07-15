@@ -25,6 +25,9 @@ import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-
 import { AdditionalCodebtorsManager } from "@/components/contracts/additional-codebtors-manager";
 import { PropertyDocUpload } from "@/components/contracts/property-doc-upload";
 import { IncomeSuggestion } from "@/components/contracts/income-suggestion";
+import { UtilityGuaranteeSection } from "@/components/contracts/utility-guarantee-section";
+import { LegalComplianceSeal } from "@/components/contracts/legal-semaphore";
+import { evaluateLegalCompliance, summarizeCompliance, type ComplianceInput } from "@/domain/contracts/legalCompliance";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
 /**
@@ -104,7 +107,7 @@ function prevActiveIndex(from: number, a: Answers): number {
 const EMPTY: Answers = {
   contractType: "VIVIENDA_URBANA",
   name: "", docType: "CC", docNumber: "", phone: "", email: "", ownerCity: "",
-  acting: "", proxyOath: false,
+  acting: "", proxyOath: false, poderdanteName: "",
   address: "", city: "", department: "",
   registry: "", propertyType: "", registrySkip: false, propertyDocType: "", propertyOath: false,
   canon: "", commercialValue: "", noCommercialValue: false,
@@ -178,6 +181,7 @@ function answersFromDraft(d: ContractDraft): Answers {
     ownerCity: d.landlord?.city || "",
     acting: d.actingAs || "",
     proxyOath: Boolean(d.proxyDeclarationAcceptedAt),
+    poderdanteName: d.grantorFullName || "",
     address: d.property?.address || "",
     city: d.property?.city || "",
     department: d.property?.department || "",
@@ -303,6 +307,7 @@ export default function NuevoPage() {
       ...d,
       contractType: (n.contractType || d.contractType) as typeof d.contractType,
       actingAs: n.acting === "owner" || n.acting === "proxy" ? n.acting : d.actingAs,
+      grantorFullName: n.acting === "proxy" ? (n.poderdanteName.trim() || d.grantorFullName) : n.acting === "owner" ? undefined : d.grantorFullName,
       proxyDeclarationAcceptedAt:
         n.acting === "proxy" && n.proxyOath
           ? (d.proxyDeclarationAcceptedAt ?? new Date().toISOString())
@@ -952,6 +957,9 @@ export default function NuevoPage() {
 
               <JourneyScene pct={pct} stepIndex={i} />
 
+              {/* Termómetro de cumplimiento: se llena a medida que se incluye cada punto. */}
+              <LawThermometer input={complianceFromAnswers(a, draftId ? getDraft(draftId) : null)} />
+
               <div className="mt-5 rounded-2xl border border-slate-200 bg-white/70 p-3">
                 <div className="flex items-center gap-2">
                   <span className="text-violet-600">✨</span>
@@ -1005,6 +1013,10 @@ export default function NuevoPage() {
                   </div>
                 ) : null;
               })()}
+
+              <div className="mt-5">
+                <LegalComplianceSeal checks={evaluateLegalCompliance(complianceFromAnswers(a, draftId ? getDraft(draftId) : null))} />
+              </div>
 
               {a.tenantMode === "invite" && (
                 <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">✉️ El arrendatario completará sus datos por invitación; el contrato se podrá generar cuando los envíe.</p>
@@ -1099,10 +1111,17 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
             <button type="button" onClick={() => setA({ ...a, acting: "proxy" })} className={chip(a.acting === "proxy")}>Soy apoderado</button>
           </div>
           {a.acting === "proxy" && (
-            <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
-              <input type="checkbox" checked={a.proxyOath} onChange={(e) => { const v = e.target.checked; if (v && !a.proxyOath) void captureOathEvidence("proxy_declaration", party.draftId); setA({ ...a, proxyOath: v }); }} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
-              <span>Declaro que cuento con <b>poder vigente y facultad</b> para arrendar este inmueble a nombre del propietario. Sé que deberé subir el poder para la firma.</span>
-            </label>
+            <div className="flex flex-col gap-2.5">
+              <div>
+                <p className="mb-1.5 text-sm font-medium text-slate-600">Nombre completo del propietario que te da el poder</p>
+                <InputMic autoFocus autoComplete="name" placeholder="Nombre del dueño (poderdante)" value={a.poderdanteName} onChange={(e) => setA({ ...a, poderdanteName: e.target.value })} voice={(t) => setA({ ...a, poderdanteName: t })} />
+                <p className="mt-1 text-xs text-slate-500">Usamos este nombre para cotejar el documento de propiedad. El poder lo subirás para la firma.</p>
+              </div>
+              <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
+                <input type="checkbox" checked={a.proxyOath} onChange={(e) => { const v = e.target.checked; if (v && !a.proxyOath) void captureOathEvidence("proxy_declaration", party.draftId); setA({ ...a, proxyOath: v }); }} className="mt-0.5 h-5 w-5 flex-none accent-[#5646E5]" />
+                <span>Declaro que cuento con <b>poder vigente y facultad</b> para arrendar este inmueble a nombre de <b>{a.poderdanteName.trim() || "el propietario"}</b>. Sé que deberé subir el poder para la firma.</span>
+              </label>
+            </div>
           )}
         </>
       );
@@ -1117,7 +1136,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               ))}
             </div>
           </div>
-          <PropertyDocUpload contractDraftId={party.draftId} docType={a.propertyDocType} onDocType={(v) => setA({ ...a, propertyDocType: v })} expectedName={a.acting === "proxy" ? "" : a.name} actingAs={a.acting} />
+          <PropertyDocUpload contractDraftId={party.draftId} docType={a.propertyDocType} onDocType={(v) => setA({ ...a, propertyDocType: v })} expectedName={a.acting === "proxy" ? a.poderdanteName : a.name} actingAs={a.acting} />
           <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
             <input
               type="checkbox"
@@ -1354,6 +1373,10 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               <button type="button" onClick={() => setA({ ...a, adminParty: "no_aplica" })} className={chip(a.adminParty === "no_aplica")}>No aplica</button>
             </div>
           </div>
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-slate-600">Garantía de servicios públicos (opcional, Ley 820 art. 15)</p>
+            <UtilityGuaranteeSection contractId={party.draftId} initial={getDraft(party.draftId)?.utilityServicesGuarantee} />
+          </div>
         </div>
       );
     case "clauses": {
@@ -1483,6 +1506,49 @@ function ReviewItem({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-0.5 break-words text-[15px] font-medium text-slate-800">{value}</p>
+    </div>
+  );
+}
+
+/** Construye la entrada del semáforo legal desde las respuestas + el borrador. */
+function complianceFromAnswers(a: Answers, draft: ContractDraft | null): ComplianceInput {
+  const canonN = Number((a.canon || "").replace(/[^\d]/g, "")) || 0;
+  const cvN = Number((a.commercialValue || "").replace(/[^\d]/g, "")) || 0;
+  const g = draft?.utilityServicesGuarantee;
+  return {
+    property: {
+      commercialValue: cvN,
+      legalRentCap: cvN > 0 ? Math.round(cvN * 0.01) : 0,
+      monthlyRentProposed: canonN,
+      commercialValueUnknown: a.noCommercialValue,
+    },
+    lease: {
+      monthlyRent: canonN,
+      latePaymentMonthsThreshold: draft?.lease?.latePaymentMonthsThreshold ?? 2,
+    },
+    utilityServicesGuarantee: g
+      ? { enabled: g.enabled, acceptedAt: g.acceptedAt, agreedAmountCop: g.agreedAmountCop, maxAllowedCop: g.maxAllowedCop }
+      : undefined,
+  };
+}
+
+/** Termómetro compacto de cumplimiento Ley 820: se llena a medida que los puntos pasan a verde. */
+function LawThermometer({ input }: { input: ComplianceInput }) {
+  const checks = evaluateLegalCompliance(input);
+  const summary = summarizeCompliance(checks);
+  const actionable = checks.filter((c) => c.status !== "info").length || 1;
+  const pct = Math.round((summary.passCount / actionable) * 100);
+  const color = summary.overall === "fail" ? "#E11D48" : summary.overall === "warn" ? "#F59E0B" : "#12B886";
+  const label = summary.overall === "fail" ? "Hay un punto que incumple" : summary.overall === "warn" ? "Cumplimiento en progreso" : "Cumple la Ley 820";
+  return (
+    <div className="mt-4 rounded-2xl border border-slate-200 bg-white/70 p-3">
+      <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
+        <span className="inline-flex items-center gap-1.5">⚖️ Cumplimiento Ley 820</span>
+        <span style={{ color }}>{summary.passCount}/{actionable} · {label}</span>
+      </div>
+      <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-[#EAE6DF]">
+        <motion.div className="h-full rounded-full" style={{ backgroundColor: color }} animate={{ width: `${pct}%` }} transition={{ duration: 0.5 }} />
+      </div>
     </div>
   );
 }
