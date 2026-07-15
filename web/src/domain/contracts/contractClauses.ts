@@ -249,8 +249,7 @@ Documento: [DOCUMENTO_ARRENDATARIO]
   <p>
     La <strong>firma electrónica</strong> de cada parte —con su fecha, dirección IP y resumen criptográfico (hash) de
     integridad— consta en el <strong>Anexo de Evidencia de Firma Electrónica</strong>, que hace parte integral de este
-    contrato conforme a la Ley 527 de 1999. Mientras alguna parte no haya firmado, su firma figura como pendiente en
-    dicho anexo.
+    contrato conforme a la Ley 527 de 1999.
   </p>
 </article>
 `;
