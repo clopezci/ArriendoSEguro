@@ -6,6 +6,7 @@ import { WizardShell } from "@/components/contracts/wizard-shell";
 import { appendAudit, getDraft, setNotarizationSelection, toContractInput, updateDraft } from "@/features/contracts/wizard-state";
 import { flushDraftToServer } from "@/features/contracts/draft-server-sync";
 import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-owner-list";
+import { OwnerIncomeReminder } from "@/components/contracts/owner-income-reminder";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 import { auditEvent } from "@/features/contracts/audit";
 import { useAuth } from "@/contexts/auth-context";
@@ -798,6 +799,17 @@ export default function PreviewStepPage() {
       {/* Documentos que subieron las partes por su enlace (persistente: aquí el
           dueño los ve aunque el inquilino/codeudor los suban horas después). Cada
           lista se oculta sola si no hay documentos. */}
+      {(() => {
+        const canonN = Number(activeDraft?.lease?.monthlyRent ?? activeDraft?.property?.monthlyRentProposed ?? 0) || 0;
+        const tInc = activeDraft?.tenantMonthlyIncome ?? 0;
+        const cInc = activeDraft?.hasSolidaryCoDebtor ? (activeDraft?.solidaryCoDebtor?.economicSupport?.monthlyIncome ?? 0) : 0;
+        const rows = [{ who: "Inquilino", income: tInc }, ...(activeDraft?.hasSolidaryCoDebtor ? [{ who: "Codeudor", income: cInc }] : [])];
+        return (
+          <div className="mt-4">
+            <OwnerIncomeReminder rentReference={canonN} rows={rows} />
+          </div>
+        );
+      })()}
       <div className="mt-4 space-y-2">
         <InviteSupportsOwnerList contractDraftId={id} role="tenant" title="📎 Documentos del inquilino" />
         <InviteSupportsOwnerList contractDraftId={id} role="solidaryCoDebtor" codebtorSlot={0} title="📎 Documentos del codeudor" />
