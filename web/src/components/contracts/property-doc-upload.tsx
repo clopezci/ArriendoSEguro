@@ -20,6 +20,7 @@ export function PropertyDocUpload({
   onDocType,
   expectedName,
   actingAs,
+  onUploaded,
 }: {
   contractDraftId: string;
   docType: string;
@@ -27,6 +28,8 @@ export function PropertyDocUpload({
   /** Nombre contra el que se coteja el documento (arrendador; vacío si apoderado sin poderdante). */
   expectedName?: string;
   actingAs?: "" | "owner" | "proxy";
+  /** Se llama tras subir con éxito (para refrescar estados externos, p. ej. pendientes). */
+  onUploaded?: () => void;
 }) {
   const { user } = useAuth();
   const [docs, setDocs] = useState<DraftPropertyDocRow[]>([]);
@@ -70,35 +73,33 @@ export function PropertyDocUpload({
   }, [refresh]);
 
   async function upload(file: File) {
-    if (!user) return;
+    if (!user) { setMsg("Inicia sesión para subir el documento."); return; }
+    if (!contractDraftId) { setMsg("Aún no está listo el borrador; espera un momento e intenta de nuevo."); return; }
     if (!docType) { setMsg("Primero elige qué documento vas a subir."); return; }
     setBusy(true);
     setMsg("");
     try {
-      const h = { "content-type": "application/json", ...(await buildAuthHeaders(user)) };
-      const signRes = await fetch("/api/contracts/draft-property-docs/sign", {
-        method: "POST", headers: h,
-        body: JSON.stringify({ contractDraftId, docType, filename: file.name, contentType: file.type || "application/octet-stream", sizeBytes: file.size }),
+      // Subida DIRECTA a nuestra API (same-origin, sin URL firmada ni CORS): el
+      // servidor guarda en Storage. Evita el "error de red" del PUT del navegador.
+      const q = new URLSearchParams({ contractDraftId, docType, filename: file.name, contentType: file.type || "application/octet-stream" });
+      const res = await fetch(`/api/contracts/draft-property-docs/upload?${q.toString()}`, {
+        method: "POST",
+        headers: { "content-type": file.type || "application/octet-stream", ...(await buildAuthHeaders(user)) },
+        body: file,
       });
-      const sign = (await signRes.json()) as { success?: boolean; uploadUrl?: string; storagePath?: string; errors?: { message?: string }[] };
-      if (!signRes.ok || !sign.success || !sign.uploadUrl || !sign.storagePath) {
-        setMsg(sign.errors?.[0]?.message ?? "No se pudo preparar la subida.");
+      let j: { success?: boolean; errors?: { message?: string }[] } = {};
+      try { j = (await res.json()) as typeof j; } catch { /* respuesta no-JSON */ }
+      if (!res.ok || !j.success) {
+        setMsg(j.errors?.[0]?.message ?? `No se pudo subir el documento (código ${res.status}).`);
         return;
       }
-      const put = await fetch(sign.uploadUrl, { method: "PUT", headers: { "content-type": file.type || "application/octet-stream" }, body: file });
-      if (!put.ok) { setMsg("No se pudo subir el archivo. Revisa tu conexión."); return; }
-      const subRes = await fetch("/api/contracts/draft-property-docs/submit", {
-        method: "POST", headers: h,
-        body: JSON.stringify({ contractDraftId, docType, storagePath: sign.storagePath, fileName: file.name, contentType: file.type, sizeBytes: file.size }),
-      });
-      const sub = (await subRes.json()) as { success?: boolean; errors?: { message?: string }[] };
-      if (!subRes.ok || !sub.success) { setMsg(sub.errors?.[0]?.message ?? "No se pudo confirmar el documento."); return; }
       setMsg("Documento subido ✓");
       setOverrideAck(false);
       await refresh();
+      onUploaded?.();
       void runVerify();
     } catch {
-      setMsg("Error de red al subir el documento.");
+      setMsg("Error de red al subir el documento. Revisa tu conexión e intenta de nuevo.");
     } finally {
       setBusy(false);
       if (inputRef.current) inputRef.current.value = "";

@@ -7,6 +7,8 @@ import { appendAudit, getDraft, setNotarizationSelection, toContractInput, updat
 import { flushDraftToServer } from "@/features/contracts/draft-server-sync";
 import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-owner-list";
 import { OwnerIncomeReminder } from "@/components/contracts/owner-income-reminder";
+import { PropertyDocUpload } from "@/components/contracts/property-doc-upload";
+import type { PropertyDocType } from "@/domain/contracts/draftPropertyDocs";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 import { auditEvent } from "@/features/contracts/audit";
 import { useAuth } from "@/contexts/auth-context";
@@ -19,7 +21,7 @@ import type {
 } from "@/domain/contracts/api-types";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ReadAloudButton } from "@/components/a11y/read-aloud-button";
 
 /**
@@ -179,6 +181,11 @@ export default function PreviewStepPage() {
 
   const [wantsNotarizationUi, setWantsNotarizationUi] = useState(false);
   const [wantsDigitalNotaryUi, setWantsDigitalNotaryUi] = useState(false);
+  // Documentos que soportan la propiedad subidos en el borrador. Es requisito
+  // para generar (se puede saltar en el asistente, pero cuenta como pendiente
+  // aquí). `null` = aún no consultado.
+  const [propertyDocCount, setPropertyDocCount] = useState<number | null>(null);
+  const [propDocType, setPropDocType] = useState<PropertyDocType | "">("");
   // Ref al HTML del contrato renderizado, para la lectura por voz.
   const contractRef = useRef<HTMLDivElement>(null);
 
@@ -308,6 +315,35 @@ export default function PreviewStepPage() {
     }
   }
 
+  const refreshPropertyDocs = useCallback(async (): Promise<number | null> => {
+    if (!user || !id) return null;
+    try {
+      const res = await fetch(`/api/contracts/draft-property-docs/list?contractDraftId=${encodeURIComponent(id)}`, {
+        headers: { ...(await buildAuthHeaders(user)) },
+      });
+      const j = (await res.json()) as { success?: boolean; docs?: unknown[] };
+      if (res.ok && j.success) {
+        const n = Array.isArray(j.docs) ? j.docs.length : 0;
+        setPropertyDocCount(n);
+        return n;
+      }
+    } catch {
+      /* si falla la consulta, no bloqueamos por esto */
+    }
+    return null;
+  }, [user, id]);
+
+  useEffect(() => {
+    void refreshPropertyDocs();
+  }, [refreshPropertyDocs]);
+
+  // Semilla del tipo de documento de propiedad desde el borrador (para la casilla).
+  useEffect(() => {
+    const t = (activeDraft?.property as { propertyDocType?: string } | undefined)?.propertyDocType;
+    if (t && !propDocType) setPropDocType(t as PropertyDocType);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDraft?.id]);
+
   async function requestPreview() {
     if (!activeDraft) return;
     // Releemos el borrador FRESCO de localStorage: tras "Importar datos de
@@ -378,6 +414,16 @@ export default function PreviewStepPage() {
     if (!previewHtml || !versionInfo) {
       setRenderErrors(["Primero genera la vista previa del contrato."]);
       return null;
+    }
+    // El documento que soporta la propiedad es requisito para generar (se pudo
+    // saltar en el asistente, pero no se puede generar sin él). Refrescamos por si
+    // acaba de subirlo aquí mismo.
+    if (propertyDocCount === 0) {
+      const fresh = await refreshPropertyDocs();
+      if (fresh === 0) {
+        setRenderErrors(["Falta subir el documento que soporta la propiedad del inmueble. Cárgalo en «Documento de propiedad» más arriba para poder generar el contrato."]);
+        return null;
+      }
     }
     // Sin `force`, si ya hay versión no re-guardamos (evita duplicar). Con
     // `force` (botón "Guardar de nuevo"), SÍ re-guardamos para capturar cambios
@@ -750,6 +796,26 @@ export default function PreviewStepPage() {
           {importMsg && <p className="mt-2 text-xs font-medium text-amber-950">{importMsg}</p>}
         </div>
       )}
+      {/* Documento que soporta la propiedad: se pudo saltar en el asistente, pero
+          es requisito para generar. Si falta, se marca pendiente y aquí se sube. */}
+      <div className="mb-4">
+        {propertyDocCount === 0 && (
+          <p className="mb-2 rounded-2xl border-2 border-amber-300 bg-amber-50/70 p-3 text-sm font-medium text-amber-900">
+            ⚠️ Pendiente: falta el <b>documento que soporta la propiedad</b> del inmueble. Súbelo aquí para poder generar el contrato.
+          </p>
+        )}
+        {propertyDocCount !== null && propertyDocCount > 0 && (
+          <p className="mb-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">✓ Documento de propiedad cargado ({propertyDocCount}).</p>
+        )}
+        <PropertyDocUpload
+          contractDraftId={id}
+          docType={propDocType}
+          onDocType={(v) => { setPropDocType(v); updateDraft(id, (d) => ({ ...d, property: { ...d.property, propertyDocType: v } as typeof d.property })); }}
+          expectedName={activeDraft?.actingAs === "proxy" ? (activeDraft?.grantorFullName ?? "") : (activeDraft?.landlord?.fullName ?? "")}
+          actingAs={activeDraft?.actingAs === "proxy" ? "proxy" : "owner"}
+          onUploaded={() => void refreshPropertyDocs()}
+        />
+      </div>
       <div id="preview-acciones" className="mb-4 flex flex-wrap items-center gap-3 scroll-mt-24">
         <button
           type="button"
