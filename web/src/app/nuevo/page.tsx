@@ -27,8 +27,8 @@ import { PropertyDocUpload } from "@/components/contracts/property-doc-upload";
 import { IncomeSuggestion } from "@/components/contracts/income-suggestion";
 import { UtilityGuaranteeSection } from "@/components/contracts/utility-guarantee-section";
 import { LegalComplianceSeal } from "@/components/contracts/legal-semaphore";
-import { evaluateLegalCompliance, summarizeCompliance, type ComplianceInput } from "@/domain/contracts/legalCompliance";
-import { requiredDocCatalogForRole, requiredDocLabel } from "@/domain/party-invite/requiredDocs";
+import { evaluateLegalCompliance, type ComplianceInput } from "@/domain/contracts/legalCompliance";
+import { requiredDocCatalogForRole } from "@/domain/party-invite/requiredDocs";
 import { OwnerPartyDocSlots } from "@/components/contracts/owner-party-doc-slots";
 import { OwnerIncomeReminder } from "@/components/contracts/owner-income-reminder";
 import type { PartyDraft } from "@/features/contracts/draft-types";
@@ -967,7 +967,7 @@ export default function NuevoPage() {
               <JourneyScene pct={pct} stepIndex={i} />
 
               {/* Termómetro de cumplimiento: se llena a medida que se incluye cada punto. */}
-              <LawThermometer input={complianceFromAnswers(a, draftId ? getDraft(draftId) : null)} />
+              <LawThermometer a={a} draft={draftId ? getDraft(draftId) : null} />
 
               <div className="mt-5 rounded-2xl border border-slate-200 bg-white/70 p-3">
                 <div className="flex items-center gap-2">
@@ -1602,19 +1602,52 @@ function complianceFromAnswers(a: Answers, draft: ContractDraft | null): Complia
   };
 }
 
-/** Termómetro compacto de cumplimiento Ley 820: se llena a medida que los puntos pasan a verde. */
-function LawThermometer({ input }: { input: ComplianceInput }) {
-  const checks = evaluateLegalCompliance(input);
-  const summary = summarizeCompliance(checks);
-  const actionable = checks.filter((c) => c.status !== "info").length || 1;
-  const pct = Math.round((summary.passCount / actionable) * 100);
-  const color = summary.overall === "fail" ? "#E11D48" : summary.overall === "warn" ? "#F59E0B" : "#12B886";
-  const label = summary.overall === "fail" ? "Hay un punto que incumple" : summary.overall === "warn" ? "Cumplimiento en progreso" : "Cumple la Ley 820";
+/**
+ * Progreso REAL de los puntos que el usuario va incluyendo (no los cumplimientos
+ * "por diseño" que siempre están verdes). Arranca en 0 y se llena paso a paso:
+ * canon dentro del tope, responsable de servicios, administración, y términos del
+ * arriendo. Detecta incumplimientos que dependen de datos (canon sobre el tope,
+ * garantía de servicios sobre el máximo).
+ */
+function lawProgressFromAnswers(a: Answers, draft: ContractDraft | null): { done: number; total: number; failLabel: string | null } {
+  const canonN = Number((a.canon || "").replace(/[^\d]/g, "")) || 0;
+  const cvN = Number((a.commercialValue || "").replace(/[^\d]/g, "")) || 0;
+  const cap = cvN > 0 ? Math.round(cvN * 0.01) : 0;
+  const canonOverCap = canonN > 0 && cvN > 0 && canonN > cap;
+  // Canon definido y dentro del tope (o con la declaración de "no conozco el valor").
+  const canonDone = canonN > 0 && (a.noCommercialValue || (cvN > 0 && !canonOverCap));
+  const utilsDone = Boolean(a.utilitiesParty);
+  const adminDone = Boolean(a.adminParty);
+  const payDay = Number(a.paymentDay);
+  const termsDone = Boolean(a.startDate) && (Number(a.termMonths) || 0) > 0 && payDay >= 1 && payDay <= 31;
+
+  // Garantía de servicios (opcional): si se activó y supera el máximo, incumple.
+  const g = draft?.utilityServicesGuarantee;
+  const guaranteeOver =
+    Boolean(g?.enabled) && Number(g?.agreedAmountCop) > 0 && Number(g?.maxAllowedCop) > 0 && Number(g?.agreedAmountCop) > Number(g?.maxAllowedCop);
+
+  const milestones = [canonDone, utilsDone, adminDone, termsDone];
+  const done = milestones.filter(Boolean).length;
+  const failLabel = canonOverCap
+    ? "El canon supera el tope legal (1%)"
+    : guaranteeOver
+      ? "La garantía supera el máximo (2 períodos)"
+      : null;
+  return { done, total: milestones.length, failLabel };
+}
+
+/** Termómetro compacto: se llena a medida que el usuario COMPLETA cada punto de la Ley 820. */
+function LawThermometer({ a, draft }: { a: Answers; draft: ContractDraft | null }) {
+  const { done, total, failLabel } = lawProgressFromAnswers(a, draft);
+  const pct = Math.round((done / total) * 100);
+  const complete = done === total;
+  const color = failLabel ? "#E11D48" : complete ? "#12B886" : "#F59E0B";
+  const label = failLabel ?? (complete ? "Cumple los puntos de la Ley 820" : "Completa cada punto");
   return (
     <div className="mt-4 rounded-2xl border border-slate-200 bg-white/70 p-3">
       <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
         <span className="inline-flex items-center gap-1.5">⚖️ Cumplimiento Ley 820</span>
-        <span style={{ color }}>{summary.passCount}/{actionable} · {label}</span>
+        <span style={{ color }}>{done}/{total} · {label}</span>
       </div>
       <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-[#EAE6DF]">
         <motion.div className="h-full rounded-full" style={{ backgroundColor: color }} animate={{ width: `${pct}%` }} transition={{ duration: 0.5 }} />
