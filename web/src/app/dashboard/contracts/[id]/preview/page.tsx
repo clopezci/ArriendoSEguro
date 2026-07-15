@@ -1483,7 +1483,7 @@ export default function PreviewStepPage() {
                 más.
               </p>
               <Link
-                href={`/dashboard/contracts/${id}/adicionales`}
+                href={`/nuevo/gestionar/${id}`}
                 className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-[#5646E5] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95"
               >
                 Ir a la posventa →
@@ -1529,7 +1529,7 @@ export default function PreviewStepPage() {
             Continuar →
           </button>
         ) : (
-          <Link href={`/dashboard/contracts/${id}/adicionales`} className="rounded-2xl bg-[#12B886] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">Ir a la posventa →</Link>
+          <Link href={`/nuevo/gestionar/${id}`} className="rounded-2xl bg-[#12B886] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">Ir a la posventa →</Link>
         )}
       </div>
     </WizardShell>
