@@ -37,6 +37,8 @@ export function PropertyDocUpload({
   const [msg, setMsg] = useState("");
   const [verify, setVerify] = useState<{ status: VerifyStatus; names?: string[]; reason?: string } | null>(null);
   const [overrideAck, setOverrideAck] = useState(false);
+  // Si ya hay documento, mostramos recogido; "Cambiar / subir otro" expande el bloque.
+  const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const runVerify = useCallback(async () => {
@@ -118,33 +120,46 @@ export function PropertyDocUpload({
     }
   }
 
+  const hasDocs = docs.length > 0;
+  const showFull = !hasDocs || expanded;
   return (
     <div className="rounded-2xl border-2 border-slate-200 bg-white/70 p-3">
-      <p className="text-sm font-medium text-slate-600">Documento que soporta la propiedad</p>
-      <p className="mt-0.5 text-xs text-slate-500">Elige cuál vas a incluir y súbelo (PDF, JPG, PNG o WEBP).</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {PROPERTY_DOC_TYPES.map((t) => (
-          <button key={t} type="button" onClick={() => onDocType(t)}
-            className={`rounded-2xl border-2 px-3 py-2 text-xs font-medium transition ${docType === t ? "border-[#5646E5] bg-[#ECE9FB] text-[#5646E5]" : "border-slate-200 bg-white text-slate-700 hover:border-[#5646E5]"}`}>
-            {PROPERTY_DOC_LABELS[t as PropertyDocType]}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium text-slate-600">Documento que soporta la propiedad</p>
+        {hasDocs && (
+          <button type="button" onClick={() => setExpanded((v) => !v)} className="flex-none text-[11px] font-semibold text-[#5646E5] hover:underline">
+            {expanded ? "Listo" : "Cambiar / subir otro"}
           </button>
-        ))}
+        )}
       </div>
+      {hasDocs && !expanded && <p className="mt-1 text-xs font-medium text-emerald-700">✓ Ya subiste el documento.</p>}
 
-      {/* Input nativo oculto: evitamos el texto "No file chosen" que reaparece
-          tras subir y confunde. Usamos un botón/label con nuestro propio estado. */}
-      <label className={`mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 ${busy || !docType ? "cursor-not-allowed opacity-50" : ""}`}>
-        {busy ? "Subiendo…" : docs.length > 0 ? "Subir otro" : "Adjuntar documento"}
-        <input
-          ref={inputRef}
-          type="file"
-          accept="application/pdf,image/jpeg,image/png,image/webp"
-          disabled={busy || !docType}
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }}
-          className="sr-only"
-        />
-      </label>
-      <p className="mt-1 text-[11px] text-slate-500">PDF, JPG, PNG o WEBP.{!docType ? " Primero elige el tipo de documento." : ""}</p>
+      {showFull && (
+        <>
+          <p className="mt-0.5 text-xs text-slate-500">Elige cuál vas a incluir y súbelo (PDF, JPG, PNG o WEBP).</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {PROPERTY_DOC_TYPES.map((t) => (
+              <button key={t} type="button" onClick={() => onDocType(t)}
+                className={`rounded-2xl border-2 px-3 py-2 text-xs font-medium transition ${docType === t ? "border-[#5646E5] bg-[#ECE9FB] text-[#5646E5]" : "border-slate-200 bg-white text-slate-700 hover:border-[#5646E5]"}`}>
+                {PROPERTY_DOC_LABELS[t as PropertyDocType]}
+              </button>
+            ))}
+          </div>
+          {/* Input nativo oculto: evitamos el "No file chosen" y usamos nuestro estado. */}
+          <label className={`mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 ${busy || !docType ? "cursor-not-allowed opacity-50" : ""}`}>
+            {busy ? "Subiendo…" : hasDocs ? "Subir otro" : "Adjuntar documento"}
+            <input
+              ref={inputRef}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              disabled={busy || !docType}
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }}
+              className="sr-only"
+            />
+          </label>
+          <p className="mt-1 text-[11px] text-slate-500">PDF, JPG, PNG o WEBP.{!docType ? " Primero elige el tipo de documento." : ""}</p>
+        </>
+      )}
       {msg && <p className="mt-2 text-xs font-medium text-slate-700">{msg}</p>}
 
       {docs.length > 0 && (
