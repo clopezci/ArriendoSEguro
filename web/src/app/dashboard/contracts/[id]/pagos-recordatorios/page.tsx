@@ -163,7 +163,7 @@ export default function PagosRecordatoriosPage() {
 
       <div className="relative z-10 mx-auto max-w-2xl px-6 py-8">
         <div className="mb-6 flex items-center justify-between">
-          <Link href={`/nuevo/gestionar/${id}/terminar`} className="flex items-center gap-2 text-sm font-semibold text-[#5646E5] hover:underline">← Termina tu contrato</Link>
+          <Link href={`/nuevo/gestionar/${id}/terminar`} className="flex items-center gap-2 text-sm font-semibold text-[#5646E5] hover:underline">← Volver</Link>
           <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Condiciones de pago</span>
         </div>
 
@@ -223,10 +223,20 @@ export default function PagosRecordatoriosPage() {
 
         {method === "qr" && (
           <div className="mt-4 space-y-2">
-            <label className="text-sm">
-              <span className="mb-1 block text-slate-700">Imagen del QR (PNG/JPG/WEBP)</span>
-              <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadQr(f); }} className="text-xs" />
+            <span className="mb-1 block text-sm text-slate-700">Imagen del QR (PNG/JPG/WEBP)</span>
+            {/* Botón claro: el input nativo era un letrero diminuto que nadie
+                identificaba como "elegir foto". */}
+            <label className={`inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-[#5646E5] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95 ${busy ? "cursor-not-allowed opacity-50" : ""}`}>
+              {busy ? "Subiendo…" : qrPreview ? "📷 Cambiar foto del QR" : "📷 Elegir foto del QR"}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                disabled={busy}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadQr(f); e.target.value = ""; }}
+                className="sr-only"
+              />
             </label>
+            <p className="text-[11px] text-slate-500">Toma o elige una foto/captura de tu código QR de pago.</p>
             {qrPreview && <img src={qrPreview} alt="QR de pago" className="h-40 w-40 rounded border border-slate-300 object-contain" />}
           </div>
         )}
@@ -282,7 +292,8 @@ export default function PagosRecordatoriosPage() {
         {msg && <p className="mt-2 text-sm font-medium text-emerald-700">{msg}</p>}
       </section>
 
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6 flex items-center justify-between gap-2">
+        <Link href={`/nuevo/gestionar/${id}/terminar`} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]">← Atrás</Link>
         <Link href={`/nuevo/gestionar/${id}/terminar`} className="rounded-2xl bg-[#FF6B4A] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95">Continuar →</Link>
       </div>
       </RequiresSavedContract>

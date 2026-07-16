@@ -14,7 +14,7 @@ export default function AlertasContratoPage() {
 
       <div className="relative z-10 mx-auto max-w-2xl px-6 py-8">
         <div className="mb-6 flex items-center justify-between">
-          <Link href={`/nuevo/gestionar/${id}/terminar`} className="flex items-center gap-2 text-sm font-semibold text-[#5646E5] hover:underline">← Termina tu contrato</Link>
+          <Link href={`/nuevo/gestionar/${id}/terminar`} className="flex items-center gap-2 text-sm font-semibold text-[#5646E5] hover:underline">← Volver</Link>
           <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Alertas</span>
         </div>
 
@@ -48,8 +48,9 @@ export default function AlertasContratoPage() {
           <RenewalReminderCard contractId={id} />
         </div>
 
-        <div className="mt-6 flex justify-end">
-          <Link href={`/nuevo/gestionar/${id}/terminar`} className="rounded-2xl bg-[#12B886] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">Listo, volver →</Link>
+        <div className="mt-6 flex items-center justify-between gap-2">
+          <Link href={`/nuevo/gestionar/${id}/terminar`} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]">← Atrás</Link>
+          <Link href={`/nuevo/gestionar/${id}/terminar`} className="rounded-2xl bg-[#12B886] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">Listo, continuar →</Link>
         </div>
       </div>
     </div>

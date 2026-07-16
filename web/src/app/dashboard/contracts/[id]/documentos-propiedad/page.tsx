@@ -42,7 +42,7 @@ export default function DocumentosPropiedadPage() {
           href={fromTerminar ? `/nuevo/gestionar/${id}/terminar` : `/dashboard/contracts/${id}/evidencias`}
           className="text-sm text-violet-700 underline"
         >
-          ← {fromTerminar ? "Termina tu contrato" : "Evidencias del expediente"}
+          ← {fromTerminar ? "Volver" : "Evidencias del expediente"}
         </Link>
       </header>
 
@@ -76,7 +76,7 @@ export default function DocumentosPropiedadPage() {
             onClick={() => router.push(`/nuevo/gestionar/${id}/terminar`)}
             className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]"
           >
-            ← Termina tu contrato
+            ← Volver
           </button>
           <button
             onClick={() => router.push(`/nuevo/gestionar/${id}/terminar`)}
