@@ -5,35 +5,51 @@ Este documento lista lo que **tú** debes hacer para cerrar los puntos de calida
 o decisiones. Todo lo demás (error boundaries, CI, Dependabot, Speed Insights,
 Playwright + axe, validación, seguridad) ya quedó hecho en el código.
 
-Retómalo **después de terminar tus pruebas**. Orden sugerido: 1 → 2 → 3 → 4 → 5.
+Retómalo **después de terminar tus pruebas**. Nota: el punto **2 (RNBD)** NO es para
+ahora (ver por qué abajo). Prioridad práctica: **1 → 3 → 4 → 5**, y el 2 solo si
+formalizas la empresa.
 
 ---
 
-## 1. Activar 2FA (verificación en dos pasos) en tu cuenta de dueño
+## 1. Activar 2FA en TU cuenta de dueño (la que administra el proyecto)
+**Ojo — dos cosas distintas:**
+- El **MFA de Firebase Authentication** (consola → Authentication) es 2FA para **los
+  usuarios de la app** (arrendadores/inquilinos), NO para tu cuenta de administrador.
+  Además, el MFA **por SMS cuesta** (cada mensaje). **Déjalo DESHABILITADO** por ahora;
+  no lo necesitas para probar. Si algún día ofreces 2FA a tus usuarios, usa
+  **app de autenticación (TOTP)**, que es gratis, no SMS.
+- Para proteger **TU** acceso de dueño (la cuenta de Google que es dueña del proyecto),
+  se hace en tu **Cuenta de Google**, no en Firebase.
+
 **Por qué:** protege tu cuenta de administrador aunque te roben la contraseña.
-**Costo:** gratis (incluido en Firebase).
-**Pasos:**
-1. Entra a la **consola de Firebase**: https://console.firebase.google.com
-2. Elige tu proyecto de ArriendoSeguro.
-3. Menú izquierdo → **Authentication** → pestaña **Sign-in method**.
-4. Busca **Multi-factor authentication** (Autenticación multifactor) → **Enable**.
-5. Guarda. Luego, al iniciar sesión, podrás registrar tu número para el código SMS/app.
+**Costo:** gratis.
+**Pasos (esto es lo que sí te protege a ti):**
+1. Entra a **https://myaccount.google.com** con tu cuenta de dueño.
+2. **Seguridad** → **Verificación en dos pasos** → **Activar**.
+3. Elige método (app de autenticación o mensaje) y sigue las instrucciones.
 
 ---
 
-## 2. Registro de Bases de Datos ante la SIC (RNBD) — Ley 1581 de 2012
-**Por qué:** en Colombia, tratar datos personales obliga a registrar tus bases de
-datos ante la Superintendencia de Industria y Comercio (SIC). Es requisito legal.
-**Costo:** gratis (trámite en línea).
-**Pasos:**
-1. Entra al portal de la SIC → **RNBD** (Registro Nacional de Bases de Datos):
-   busca "SIC RNBD" o entra a https://www.sic.gov.co (sección Protección de Datos).
-2. Crea/usa tu usuario y registra tu empresa (LOTIC Soluciones).
-3. Declara tus bases de datos (ej.: "usuarios", "contratos/expedientes",
-   "consultas de reputación"). Indica finalidad, política de tratamiento y contacto.
-4. Guarda el certificado de registro.
-> Nota: revisa los plazos y umbrales vigentes con la SIC; algunas empresas peque-
-> ñas tienen condiciones especiales. Ante la duda, confírmalo con tu abogado.
+## 2. Registro ante la SIC (RNBD) — Ley 1581 de 2012 — **NO es para ahora**
+**Conclusión:** mientras estás **validando la idea, sin empresa constituida**, **NO
+registres el RNBD** y **no es un bloqueante**. No puedes registrar una empresa que
+legalmente aún no existe, y además el registro del RNBD aplica sobre todo a
+**personas jurídicas (sociedades/entidades) con activos altos (> 100.000 UVT)** y a
+entidades públicas — no a una persona natural probando una idea.
+
+**Lo que SÍ debes cumplir desde ya** (la Ley 1581 aplica aunque no registres el RNBD):
+- Tener **política de privacidad / aviso de tratamiento** (ya está en la app).
+- **Pedir consentimiento** con evidencia (ya lo hace la app).
+- **Proteger los datos** (seguridad — ya reforzada).
+
+**Secuencia correcta (cuándo sí toca el RNBD):**
+1. **Ahora:** no registres nada. Sigue probando. (Solo el punto 3, visto bueno legal, conviene.)
+2. **Si la idea funciona y decides formalizar:** crea la empresa en **Cámara de Comercio**
+   (ahí "LOTIC Soluciones" pasa a ser real y obtienes el **NIT** en la DIAN).
+3. **Ya con empresa:** evalúa si superas el umbral (activos > 100.000 UVT). Si lo superas
+   → registras el RNBD en https://www.sic.gov.co; si no, normalmente **no es obligatorio**.
+> No soy abogado y las reglas/umbrales de la SIC cambian. Confírmalo con un abogado o
+> directamente con la SIC cuando vayas a formalizar.
 
 ---
 
