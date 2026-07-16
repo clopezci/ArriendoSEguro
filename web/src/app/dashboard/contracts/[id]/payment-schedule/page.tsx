@@ -166,7 +166,7 @@ export default function PaymentSchedulePage() {
         </p>
       </section>
 
-      <div className="mt-4 overflow-auto rounded border border-slate-300">
+      <div className="mt-4 overflow-auto rounded-2xl border-2 border-slate-200">
         <table className="min-w-full text-xs text-slate-700">
           <thead>
             <tr className="border-b border-slate-300">
@@ -208,7 +208,7 @@ export default function PaymentSchedulePage() {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded border border-slate-300 bg-white/95 p-3">
+    <div className="rounded-2xl border-2 border-slate-200 bg-white/95 p-3">
       <p className="text-[11px] text-slate-600">{label}</p>
       <p className="text-sm font-medium text-slate-900">{value}</p>
     </div>

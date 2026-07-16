@@ -152,21 +152,19 @@ export default function EvidenciaExpedientePage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-6 text-slate-900">
+    <main className="mx-auto max-w-2xl space-y-5">
+      <ExpedienteNav contractId={id} />
+
       <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Posventa · evidencias</p>
-        <h1 className="text-2xl font-bold">Paquete de evidencia (descargas)</h1>
-        <p className="text-sm text-slate-600">
+        <h1 className="text-balance text-3xl font-extrabold tracking-tight text-[#17151F]">
+          Paquete de evidencia (descargas)
+        </h1>
+        <p className="mt-2 text-slate-500">
           Aquí reunimos los enlaces de descarga del contrato y anexos generados en la plataforma. También puedes bajar un
           solo archivo ZIP (contrato, inventario, acta si existen, anexos con PDF o HTML como el registro de pagos). Si
           falta algo, genera primero el PDF o el anexo desde la vista previa o el módulo correspondiente.
         </p>
-        <Link href={`/dashboard/contracts/${id}/adicionales`} className="inline-block text-sm text-violet-700 underline">
-          ← Volver a la posventa
-        </Link>
       </header>
-
-      <ExpedienteNav contractId={id} />
 
       {loading && <p className="text-sm text-slate-600">Cargando…</p>}
       {error && (
@@ -206,7 +204,7 @@ export default function EvidenciaExpedientePage() {
                 {zipMsg && <p className="mt-2 text-xs text-violet-900">{zipMsg}</p>}
               </section>
 
-              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <section className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900">Contrato</h2>
                 <p className="mt-1 text-xs text-slate-600">
                   Estado del expediente: <strong>{contractStatus || "—"}</strong>
@@ -219,7 +217,7 @@ export default function EvidenciaExpedientePage() {
                 </ul>
               </section>
 
-              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <section className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900">Firma electrónica</h2>
                 {evidenceAnnex ? (
                   <ul className="mt-3 list-disc space-y-2 pl-5 text-sm">
@@ -254,7 +252,7 @@ export default function EvidenciaExpedientePage() {
                 )}
               </section>
 
-              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <section className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900">Otros anexos registrados</h2>
                 {annexes.length === 0 ? (
                   <p className="mt-2 text-sm text-slate-600">No hay más anexos en Firestore para esta versión.</p>
@@ -280,7 +278,7 @@ export default function EvidenciaExpedientePage() {
                 )}
               </section>
 
-              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <section className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900">Bitácora de pagos</h2>
                 <p className="mt-1 text-xs text-slate-600">
                   El anexo de registro de pagos se guarda como HTML en el expediente. Genera o actualiza el anexo desde{" "}
@@ -291,7 +289,7 @@ export default function EvidenciaExpedientePage() {
                 </p>
               </section>
 
-              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <section className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900">Inventario y acta de entrega</h2>
                 <ul className="mt-3 list-disc space-y-2 pl-5 text-sm">
                   {inventoryId ? (
