@@ -165,22 +165,23 @@ export default function NotarialOptionalPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-6 text-slate-900">
+    <main className="mx-auto max-w-2xl space-y-5">
+      <ExpedienteNav contractId={id} />
+
       <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Posventa · notaría</p>
-        <h1 className="text-2xl font-bold">Autenticación notarial (opcional)</h1>
-        <p className="text-sm text-slate-600">
+        <h1 className="text-balance text-3xl font-extrabold tracking-tight text-[#17151F]">
+          Autenticación notarial (opcional)
+        </h1>
+        <p className="mt-2 text-slate-500">
           Si las partes deciden autenticar el contrato en una notaría, este espacio te orienta: descargas el paquete
           útil, llevas el trámite presencialmente (o por los canales que indique el notario) y vuelves aquí para
           archivar el PDF que te entreguen. ArriendoSeguro no reemplaza al notario ni valida el contenido del
           documento autenticado.
         </p>
-        <Link href={`/dashboard/contracts/${id}/evidencias`} className="inline-block text-sm text-violet-700 underline">
+        <Link href={`/dashboard/contracts/${id}/evidencias`} className="inline-block text-sm text-[#5646E5] hover:underline">
           ← Evidencias del expediente
         </Link>
       </header>
-
-      <ExpedienteNav contractId={id} />
 
       <RequiresSavedContract id={id}>
       {loading && <p className="text-sm text-slate-600">Cargando…</p>}
@@ -254,7 +255,7 @@ export default function NotarialOptionalPage() {
 
           {versionId && (
             <>
-              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <section className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900">Estado del expediente</h2>
                 <p className="mt-1 text-xs text-slate-600">
                   Estado: <strong>{contractStatus || "—"}</strong>. Versión contractual actual:{" "}
@@ -262,7 +263,7 @@ export default function NotarialOptionalPage() {
                 </p>
               </section>
 
-              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <section className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900">1. Descargas para el trámite</h2>
                 <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700">
                   <li>
@@ -285,7 +286,7 @@ export default function NotarialOptionalPage() {
                 </ul>
               </section>
 
-              <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <section className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
                 <h2 className="text-sm font-semibold text-slate-900">2. Subir el PDF firmado (ANND) o autenticado</h2>
                 <p className="mt-1 text-xs text-slate-600">
                   Aquí sube el <strong>último firmante</strong> el PDF final: el que ya tiene todas las firmas de la

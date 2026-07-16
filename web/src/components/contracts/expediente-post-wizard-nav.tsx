@@ -9,12 +9,12 @@ import Link from "next/link";
  */
 export function ExpedientePostWizardNav({ contractId }: { contractId: string }) {
   return (
-    <nav className="mb-6 border-b border-slate-200 pb-3 text-sm">
+    <nav className="mb-6 text-sm">
       <Link
-        href={`/dashboard/contracts/${contractId}/adicionales`}
-        className="inline-flex items-center gap-1 font-medium text-violet-700 hover:text-violet-900"
+        href={`/nuevo/gestionar/${contractId}`}
+        className="inline-flex items-center gap-1 text-sm font-semibold text-[#5646E5] hover:underline"
       >
-        ← Volver al panel del contrato
+        ← Administra tu arriendo
       </Link>
     </nav>
   );

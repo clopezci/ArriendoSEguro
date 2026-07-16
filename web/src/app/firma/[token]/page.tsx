@@ -207,11 +207,21 @@ export default function SignatureTokenPage() {
     };
   }
 
-  if (loading) return <main className="mx-auto max-w-3xl p-6 text-slate-800">Cargando enlace de firma...</main>;
+  if (loading) {
+    return (
+      <div className="relative min-h-screen overflow-hidden bg-[#F5F3EF] text-[#17151F]">
+        <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#9B6BFF,#5646E5)" }} />
+        <main className="relative z-10 mx-auto max-w-2xl px-6 py-10 text-slate-500">Cargando enlace de firma…</main>
+      </div>
+    );
+  }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 p-6 text-slate-900">
-      <h1 className="text-2xl font-bold">Firma electrónica del contrato</h1>
+    <div className="relative min-h-screen overflow-hidden bg-[#F5F3EF] text-[#17151F]">
+      <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#9B6BFF,#5646E5)" }} />
+      <div className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#FFB03A,#FF6B4A)" }} />
+      <main className="relative z-10 mx-auto max-w-2xl space-y-4 px-6 py-8">
+      <h1 className="text-balance text-3xl font-extrabold tracking-tight">Firma electrónica del contrato</h1>
       <p className="text-sm text-slate-600">
         Por seguridad, primero validamos un código de un solo uso (OTP) enviado a tu correo; después podrás aceptar
         las declaraciones y firmar. Ley 527 de 1999 (orientación general, no asesoría legal).
@@ -457,6 +467,7 @@ export default function SignatureTokenPage() {
           )}
         </section>
       )}
-    </main>
+      </main>
+    </div>
   );
 }

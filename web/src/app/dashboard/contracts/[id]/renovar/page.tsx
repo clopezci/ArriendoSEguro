@@ -113,13 +113,15 @@ export default function RenovarPage() {
   const overLegalCap = mode === "custom" && currentRentNum > 0 && newRent > legalMaxRent;
 
   return (
-    <main className="mx-auto max-w-2xl space-y-5 p-6 text-slate-900">
-      <header className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Gestiona tu arriendo</p>
-        <h1 className="text-2xl font-bold tracking-tight">Renovar contrato</h1>
-        <Link href={`/dashboard/contracts/${id}/adicionales`} className="text-sm text-violet-700 underline">
-          ← Volver a la posventa
+    <main className="mx-auto max-w-2xl space-y-5">
+      <header className="space-y-2">
+        <Link
+          href={`/nuevo/gestionar/${id}`}
+          className="inline-flex items-center gap-1 text-sm font-semibold text-[#5646E5] hover:underline"
+        >
+          ← Administra tu arriendo
         </Link>
+        <h1 className="text-balance text-3xl font-extrabold tracking-tight text-[#17151F]">Renovar contrato</h1>
       </header>
 
       {loading && <p className="text-sm text-slate-600">Cargando…</p>}
@@ -238,7 +240,7 @@ export default function RenovarPage() {
             </a>
           )}
           <p className="pt-1">
-            <Link href={`/dashboard/contracts/${id}/adicionales`} className="text-violet-700 underline">← Volver a la posventa</Link>
+            <Link href={`/nuevo/gestionar/${id}`} className="text-[#5646E5] hover:underline">← Administra tu arriendo</Link>
           </p>
         </section>
       )}

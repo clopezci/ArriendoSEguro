@@ -136,7 +136,7 @@ export default function NovedadesExpedientePage() {
           </p>
         )}
 
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-slate-900">Registrar novedad</h2>
           <p className="mt-1 text-xs text-slate-600">
             Debes figurar como parte del contrato (mismo correo que en el expediente). Si eliges «Otra», describe la
@@ -199,7 +199,7 @@ export default function NovedadesExpedientePage() {
           {formMsg && <p className="mt-3 text-sm text-slate-700">{formMsg}</p>}
         </section>
 
-        <section className="mt-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="mt-6 rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-slate-900">Historial</h2>
           {loading && <p className="mt-2 text-sm text-slate-600">Cargando…</p>}
           {!loading && rows.length === 0 && (
