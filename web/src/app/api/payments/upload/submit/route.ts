@@ -117,6 +117,16 @@ export async function POST(request: Request) {
   // Marca el token como usado (un soporte por periodo; el dueño puede pedir otro).
   await firestore.collection(PAYMENT_UPLOAD_TOKENS_COLLECTION).doc(parsed.data.token).set({ status: "used", usedAt: now }, { merge: true });
 
+  // Marca el pago programado como REPORTADO: detiene recordatorios y el
+  // escalamiento (codeudor/conciliación/cobro personal) para ese periodo.
+  if (doc.scheduledPaymentId) {
+    await firestore
+      .collection("scheduled_payments")
+      .doc(doc.scheduledPaymentId)
+      .set({ status: "reported_paid", supportUploadedAt: now, updatedAt: now }, { merge: true })
+      .catch(() => {});
+  }
+
   // Avisa al arrendador para que confirme.
   try {
     const vSnap = await firestore.collection("contract_versions").doc(doc.contractVersionId).get();
