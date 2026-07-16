@@ -88,24 +88,24 @@ export default function PagosRecordatoriosPage() {
     setBusy(true);
     setMsg("");
     try {
-      const res = await fetch("/api/contracts/payment-qr/upload-url", {
+      // Vista previa INSTANTÁNEA con la imagen local (no depende de la URL firmada).
+      try { setQrPreview(URL.createObjectURL(file)); } catch { /* noop */ }
+      // Subida DIRECTA (proxy same-origin): sin PUT del navegador a Storage → sin
+      // el "error de red"/CORS que dejaba el QR sin cargar.
+      const q = new URLSearchParams({ contractId: id, filename: file.name || "qr.png", contentType: file.type || "image/png" });
+      const res = await fetch(`/api/contracts/payment-qr/upload?${q.toString()}`, {
         method: "POST",
-        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ contractId: id, filename: file.name, contentType: file.type || "image/png", sizeBytes: file.size }),
+        headers: { "content-type": file.type || "image/png", ...(await buildAuthHeaders(user)) },
+        body: file,
       });
-      const j = (await res.json()) as { success?: boolean; uploadUrl?: string; storagePath?: string; errors?: { message?: string }[] };
-      if (!res.ok || !j.success || !j.uploadUrl || !j.storagePath) {
-        setMsg(j.errors?.[0]?.message ?? "No se pudo preparar la subida del QR.");
-        return;
-      }
-      const put = await fetch(j.uploadUrl, { method: "PUT", headers: { "content-type": file.type || "image/png" }, body: file });
-      if (!put.ok) {
-        setMsg("No se pudo subir el QR.");
+      let j: { success?: boolean; storagePath?: string; errors?: { message?: string }[] } = {};
+      try { j = (await res.json()) as typeof j; } catch { /* respuesta no-JSON */ }
+      if (!res.ok || !j.success || !j.storagePath) {
+        setMsg(j.errors?.[0]?.message ?? `No se pudo subir el QR (código ${res.status}).`);
         return;
       }
       setQrStoragePath(j.storagePath);
-      await loadQrPreview(j.storagePath);
-      setMsg("QR subido. Recuerda guardar.");
+      setMsg("QR subido ✓. Recuerda guardar.");
     } catch {
       setMsg("Error de red al subir el QR.");
     } finally {
