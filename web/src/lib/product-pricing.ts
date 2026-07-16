@@ -28,7 +28,7 @@ export const INTRO_PROMO_TITLE = "Precio de introducción: primer contrato por $
  * si invitas a 3 personas que usen la app.
  */
 export const INTRO_PROMO_MESSAGE =
-  "Aprovecha: tu primer contrato tiene un precio de introducción de $49.900 (una fracción de lo que cuesta tu arriendo) e incluye la firma electrónica. Y tu segundo contrato puede ser GRATIS si invitas a 3 personas que usen ArriendoSeguro.";
+  "Aprovecha: tu primer contrato tiene un precio de introducción de $49.900 (una fracción de lo que cuesta tu arriendo) e incluye la firma electrónica. Y tu segundo contrato puede ser GRATIS si lo compartes con 3 personas y al menos 2 de ellas lo usan (crean su contrato).";
 
 export function formatCop(amount: number): string {
   return new Intl.NumberFormat("es-CO", {

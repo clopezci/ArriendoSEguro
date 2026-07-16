@@ -2,15 +2,19 @@
 
 import { getAuthClient, isFirebaseClientConfigured } from "@/lib/firebase/client";
 import {
+  browserLocalPersistence,
+  browserSessionPersistence,
   createUserWithEmailAndPassword,
   getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
   signOut as firebaseSignOut,
+  type Auth,
   type User,
 } from "firebase/auth";
 import {
@@ -27,8 +31,11 @@ type AuthState = {
   user: User | null;
   loading: boolean;
   configError: boolean;
-  signIn: (email: string, password: string) => Promise<string>;
-  signUp: (email: string, password: string) => Promise<string>;
+  /** `remember` (por defecto true): mantiene la sesión en este dispositivo
+   * (browserLocalPersistence). Si es false, la sesión dura solo hasta cerrar el
+   * navegador (browserSessionPersistence). */
+  signIn: (email: string, password: string, remember?: boolean) => Promise<string>;
+  signUp: (email: string, password: string, remember?: boolean) => Promise<string>;
   signInWithGoogle: () => Promise<string>;
   /** Acceso con Google por REDIRECT (fiable en móvil). Navega fuera y vuelve. */
   signInWithGoogleRedirect: () => Promise<void>;
@@ -59,17 +66,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsub();
   }, []);
 
-  const signIn = useCallback(async (email: string, password: string): Promise<string> => {
-    if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
-    const cred = await signInWithEmailAndPassword(getAuthClient(), email.trim(), password);
-    return cred.user.uid;
+  /** Fija la persistencia (recordar en este dispositivo o solo esta sesión). */
+  const applyPersistence = useCallback(async (auth: Auth, remember: boolean) => {
+    try {
+      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+    } catch {
+      /* si el navegador no soporta cambiarla, se queda con la predeterminada */
+    }
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string): Promise<string> => {
+  const signIn = useCallback(async (email: string, password: string, remember = true): Promise<string> => {
     if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
-    const cred = await createUserWithEmailAndPassword(getAuthClient(), email.trim(), password);
+    const auth = getAuthClient();
+    await applyPersistence(auth, remember);
+    const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
     return cred.user.uid;
-  }, []);
+  }, [applyPersistence]);
+
+  const signUp = useCallback(async (email: string, password: string, remember = true): Promise<string> => {
+    if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
+    const auth = getAuthClient();
+    await applyPersistence(auth, remember);
+    const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
+    return cred.user.uid;
+  }, [applyPersistence]);
 
   const signInWithGoogle = useCallback(async (): Promise<string> => {
     if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");

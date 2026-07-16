@@ -76,6 +76,7 @@ export function ExpressRegister({
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [consent, setConsent] = useState(false);
   const [consentInvalid, setConsentInvalid] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -169,8 +170,8 @@ export function ExpressRegister({
     setBusy(true);
     try {
       const uid = mode === "iniciar"
-        ? await signIn(mail, password)
-        : await (async () => { const u = await signUp(mail, password); await recordConsent(); return u; })();
+        ? await signIn(mail, password, remember)
+        : await (async () => { const u = await signUp(mail, password, remember); await recordConsent(); return u; })();
       onAuthenticated(uid); // continúa el recorrido con la sesión ya activa
     } catch (err) {
       setError(mapFirebaseAuthError(err));
@@ -189,7 +190,7 @@ export function ExpressRegister({
       </h2>
       <p className="mt-1.5 text-sm text-slate-500">
         {mode === "crear"
-          ? "Así guardamos tu expediente y podrás firmar, invitar y hacer la posventa. Toma 20 segundos."
+          ? "Regístrate para guardar tu información y verla en cualquier momento y desde cualquier dispositivo. Además podrás firmar, invitar y administrar tu arriendo. Toma 20 segundos."
           : "Ingresa con tu correo y contraseña para continuar el expediente."}
       </p>
 
@@ -310,6 +311,16 @@ export function ExpressRegister({
             errorMessage="Debes aceptar el tratamiento de datos para crear tu cuenta."
           />
         )}
+
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(e) => setRemember(e.target.checked)}
+            className="h-4 w-4 accent-[#5646E5]"
+          />
+          Recordarme en este dispositivo (no cierres la sesión al salir)
+        </label>
 
         {error && (
           <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700" role="alert">
