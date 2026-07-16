@@ -5,6 +5,12 @@ import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
 
+// Nota de seguridad: esta ruta sirve un PDF por `inventoryId` (id aleatorio, no
+// adivinable) cuya ruta de archivo proviene de Firestore (sin traversal). Se
+// accede por enlace `<a href>` para descargar, que NO puede enviar cabecera de
+// autorización; por eso queda protegida por la aleatoriedad del id en vez de un
+// gate de sesión. Las rutas que CAMBIAN datos o exponen PII sí exigen auth.
+
 export async function GET(
   _request: Request,
   context: { params: Promise<{ inventoryId: string }> },

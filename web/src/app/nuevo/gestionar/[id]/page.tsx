@@ -78,9 +78,9 @@ export default function GestionarPosventaPage() {
         .then((r) => r.json()).then((j) => done("documentos", Array.isArray(j?.documents) && j.documents.length > 0)).catch(() => done("documentos", false));
       fetch(`/api/contracts/payment-settings?contractId=${encodeURIComponent(id)}`, { headers: { ...authH } })
         .then((r) => r.json()).then((j) => done("pago", Boolean(j?.settings && j.settings.method && j.settings.method !== "none"))).catch(() => done("pago", false));
-      fetch(`/api/payments/schedule/list?${vq}`)
+      fetch(`/api/payments/schedule/list?${vq}`, { headers: { ...authH } })
         .then((r) => r.json()).then((j) => done("calendario", Array.isArray(j?.scheduledPayments) && j.scheduledPayments.length > 0)).catch(() => done("calendario", false));
-      fetch(`/api/contracts/annexes/list?${vq}`)
+      fetch(`/api/contracts/annexes/list?${vq}`, { headers: { ...authH } })
         .then((r) => r.json()).then((j) => {
           const annexes: Array<{ annexType?: string; status?: string; pdfUrl?: string | null }> = Array.isArray(j?.annexes) ? j.annexes : [];
           done("entrega", annexes.some((a) => a.annexType === "initial_delivery_act" && a.status === "generated"));

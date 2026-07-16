@@ -13,6 +13,7 @@ import type {
 } from "@/domain/inventory/types";
 import { renderInitialInventoryAnnex } from "@/domain/inventory/renderInitialInventoryAnnex";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { requireInventoryParticipant } from "@/lib/auth/requireInventoryParticipant";
 
 export const runtime = "nodejs";
 const schema = z.object({ inventoryId: z.string().min(3) });
@@ -33,6 +34,8 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     }
+    const gate = await requireInventoryParticipant(request, firestore, parsed.data.inventoryId);
+    if (!gate.ok) return gate.response;
     const invRef = firestore.collection("inventories").doc(parsed.data.inventoryId);
     const invSnap = await invRef.get();
     if (!invSnap.exists) {

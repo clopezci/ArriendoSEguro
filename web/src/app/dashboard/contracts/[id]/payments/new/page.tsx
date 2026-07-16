@@ -32,7 +32,7 @@ export default function NewPaymentPage() {
   useEffect(() => {
     if (!scheduledPaymentId) return;
     void (async () => {
-      const res = await fetch(`/api/payments/schedule/one?scheduledPaymentId=${encodeURIComponent(scheduledPaymentId)}`);
+      const res = await fetch(`/api/payments/schedule/one?scheduledPaymentId=${encodeURIComponent(scheduledPaymentId)}`, { headers: { ...(await buildAuthHeaders(user)) } });
       const data = await res.json();
       if (!res.ok || !data?.success) return;
       const s = data.scheduledPayment as { periodLabel?: string; dueDate?: string; expectedAmount?: number };
@@ -41,7 +41,7 @@ export default function NewPaymentPage() {
       setAmountDue(String(Number(s.expectedAmount ?? 0)));
       setAmountPaid(String(Number(s.expectedAmount ?? 0)));
     })();
-  }, [scheduledPaymentId]);
+  }, [scheduledPaymentId, user]);
 
   if (state !== "ready") return <p className="text-sm text-slate-700">Cargando...</p>;
 

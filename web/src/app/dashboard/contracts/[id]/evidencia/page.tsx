@@ -65,15 +65,19 @@ export default function EvidenciaExpedientePage() {
         return;
       }
 
+      const authHeaders = await buildAuthHeaders(user);
       const [listRes, evRes, invRes] = await Promise.all([
         fetch(
           `/api/contracts/annexes/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(cid)}`,
+          { headers: { ...authHeaders } },
         ),
         fetch(
           `/api/contracts/annexes/electronic-signature?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(cid)}`,
+          { headers: { ...authHeaders } },
         ),
         fetch(
           `/api/inventory/by-contract?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(cid)}`,
+          { headers: { ...authHeaders } },
         ),
       ]);
 
@@ -104,7 +108,7 @@ export default function EvidenciaExpedientePage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => {
     void load();

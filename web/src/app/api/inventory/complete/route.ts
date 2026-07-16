@@ -6,6 +6,7 @@ import { validateInventoryCompletion } from "@/domain/inventory/validateInventor
 import { renderInitialInventoryAnnex } from "@/domain/inventory/renderInitialInventoryAnnex";
 import type { Inventory, InventoryItem, InventoryKey, InventoryMeterReading } from "@/domain/inventory/types";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { requireInventoryParticipant } from "@/lib/auth/requireInventoryParticipant";
 
 export const runtime = "nodejs";
 const schema = z.object({ inventoryId: z.string().min(3) });
@@ -18,6 +19,9 @@ export async function POST(request: Request) {
     }
     const firestore = getAdminFirestore();
     if (!firestore) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });
+
+    const gate = await requireInventoryParticipant(request, firestore, parsed.data.inventoryId);
+    if (!gate.ok) return gate.response;
 
     const invRef = firestore.collection("inventories").doc(parsed.data.inventoryId);
     const invSnap = await invRef.get();

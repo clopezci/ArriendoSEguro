@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getStorage } from "firebase-admin/storage";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
+import { requireInventoryParticipant } from "@/lib/auth/requireInventoryParticipant";
+import { getAdminFirestore } from "@/lib/firebase/admin";
 
 export const runtime = "nodejs";
 
@@ -36,6 +38,13 @@ export async function POST(request: Request) {
   if (!ALLOWED.includes(parsed.data.contentType)) {
     return NextResponse.json({ success: false, errors: [{ field: "contentType", message: "La foto debe ser JPG, PNG o WEBP." }] }, { status: 422 });
   }
+
+  const firestore = getAdminFirestore();
+  if (!firestore) {
+    return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });
+  }
+  const gate = await requireInventoryParticipant(request, firestore, parsed.data.inventoryId);
+  if (!gate.ok) return gate.response;
 
   const objectPath = `inventories/${parsed.data.inventoryId}/zones/${sanitize(parsed.data.selectedZoneId)}/${Date.now()}-${sanitize(parsed.data.filename)}`;
   const file = getStorage().bucket(bucketName).file(objectPath);

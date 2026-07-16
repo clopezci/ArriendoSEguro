@@ -78,7 +78,7 @@ export default function InventarioBentoPage() {
     const h = { "content-type": "application/json", ...(await authHeaders()) };
     let invId = "";
     try {
-      const r = await fetch(`/api/inventory/by-contract?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`);
+      const r = await fetch(`/api/inventory/by-contract?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`, { headers: { ...(await authHeaders()) } });
       const j = (await r.json()) as { success?: boolean; inventory?: { id?: string } | null };
       if (r.ok && j.success && j.inventory?.id) invId = j.inventory.id;
     } catch { /* noop */ }
@@ -107,7 +107,7 @@ export default function InventarioBentoPage() {
         // Bloque: una sola "zona" contenedora para colgar fotos + notas.
         const h = { "content-type": "application/json", ...(await authHeaders()) };
         await fetch("/api/inventory/select-zones", {
-          method: "POST", headers: { "content-type": "application/json" },
+          method: "POST", headers: { "content-type": "application/json", ...(await authHeaders()) },
           body: JSON.stringify({ inventoryId: invId, zones: [{ zoneCode: "inmueble_general", zoneName: BLOCK_ZONE_NAME, order: 0 }] }),
         });
         const dr = await fetch(`/api/inventory/detail?inventoryId=${encodeURIComponent(invId)}`, { headers: h });
@@ -136,7 +136,7 @@ export default function InventarioBentoPage() {
     try {
       const h = { "content-type": "application/json", ...(await authHeaders()) };
       const payloadZones = selected.map((z, idx) => ({ zoneCode: z.toLowerCase().replaceAll(" ", "_"), zoneName: z, order: idx }));
-      const r = await fetch("/api/inventory/select-zones", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ inventoryId, zones: payloadZones }) });
+      const r = await fetch("/api/inventory/select-zones", { method: "POST", headers: { "content-type": "application/json", ...(await authHeaders()) }, body: JSON.stringify({ inventoryId, zones: payloadZones }) });
       const j = (await r.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!r.ok || !j.success) { setMsg(j.errors?.[0]?.message ?? "No se pudieron guardar las zonas."); return; }
       const dr = await fetch(`/api/inventory/detail?inventoryId=${encodeURIComponent(inventoryId)}`, { headers: h });
@@ -185,14 +185,14 @@ export default function InventarioBentoPage() {
     setBusy(true); setMsg("");
     try {
       const r = await fetch("/api/inventory/save-zone-detail", {
-        method: "POST", headers: { "content-type": "application/json" },
+        method: "POST", headers: { "content-type": "application/json", ...(await authHeaders()) },
         body: JSON.stringify({ inventoryId, selectedZoneId: cur.id, generalCondition: curData.generalCondition, cleanlinessStatus: curData.cleanlinessStatus, observations: curData.observations, photoUrls: curData.photoUrls, status: "completed" }),
       });
       const j = (await r.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!r.ok || !j.success) { setMsg(j.errors?.[0]?.message ?? "No se pudo guardar la zona."); return; }
       const items = curData.items.filter((it) => it.itemName.trim().length > 0).map((it) => ({ itemName: it.itemName.trim(), conditionStatus: it.conditionStatus, notes: it.notes }));
       await fetch("/api/inventory/save-zone-items", {
-        method: "POST", headers: { "content-type": "application/json" },
+        method: "POST", headers: { "content-type": "application/json", ...(await authHeaders()) },
         body: JSON.stringify({ inventoryId, selectedZoneId: cur.id, items }),
       }).catch(() => {});
       if (zi < zones.length - 1) setZi(zi + 1);
@@ -207,7 +207,7 @@ export default function InventarioBentoPage() {
   /** Guarda la zona-bloque (fotos + notas dictadas) antes de finalizar. */
   async function saveBlockZone(): Promise<boolean> {
     const r = await fetch("/api/inventory/save-zone-detail", {
-      method: "POST", headers: { "content-type": "application/json" },
+      method: "POST", headers: { "content-type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ inventoryId, selectedZoneId: blockZoneId, generalCondition: "No aplica", cleanlinessStatus: "No aplica", observations: blockNotes, photoUrls: blockPhotos, status: "completed" }),
     });
     const j = (await r.json()) as { success?: boolean };
@@ -223,13 +223,13 @@ export default function InventarioBentoPage() {
         const ok = await saveBlockZone();
         if (!ok) { setMsg("No se pudo guardar el inventario en bloque."); setBusy(false); return; }
       }
-      const rc = await fetch("/api/inventory/complete-guided", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ inventoryId }) });
+      const rc = await fetch("/api/inventory/complete-guided", { method: "POST", headers: { "content-type": "application/json", ...(await authHeaders()) }, body: JSON.stringify({ inventoryId }) });
       const jc = (await rc.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!rc.ok || !jc.success) { setMsg(jc.errors?.[0]?.message ?? "No se pudo finalizar el inventario."); setBusy(false); return; }
 
       const obs = [receiverName.trim() ? `Recibe la entrega: ${receiverName.trim()}.` : "", actObservations.trim()].filter(Boolean).join(" ");
       const ra = await fetch("/api/delivery-act/generate", {
-        method: "POST", headers: { "content-type": "application/json" },
+        method: "POST", headers: { "content-type": "application/json", ...(await authHeaders()) },
         body: JSON.stringify({ inventoryId, contractId: id, contractVersionId: versionId, observations: obs || undefined, deliveryDate: deliveryDate || undefined }),
       });
       const ja = (await ra.json()) as { success?: boolean; errors?: { message?: string }[] };

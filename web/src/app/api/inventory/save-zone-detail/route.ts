@@ -3,6 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { requireInventoryParticipant } from "@/lib/auth/requireInventoryParticipant";
 
 export const runtime = "nodejs";
 
@@ -30,6 +31,8 @@ export async function POST(request: Request) {
     }
     const firestore = getAdminFirestore();
     if (!firestore) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });
+    const gate = await requireInventoryParticipant(request, firestore, parsed.data.inventoryId);
+    if (!gate.ok) return gate.response;
     const selectedZoneRef = firestore.collection("inventory_selected_zones").doc(parsed.data.selectedZoneId);
     const selectedZoneSnap = await selectedZoneRef.get();
     if (!selectedZoneSnap.exists) return NextResponse.json({ success: false, errors: [{ field: "selectedZoneId", message: "Zona seleccionada no existe." }] }, { status: 404 });

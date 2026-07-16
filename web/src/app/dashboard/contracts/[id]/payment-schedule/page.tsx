@@ -49,7 +49,7 @@ export default function PaymentSchedulePage() {
       paymentDueDay: Number(latest?.version?.contractPayload?.lease?.paymentDueDay ?? 1),
     });
     if (!versionId) return;
-    const list = await fetch(`/api/payments/schedule/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`).then((r) => r.json());
+    const list = await fetch(`/api/payments/schedule/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json());
     if (list?.success) {
       setSchedule((list.scheduledPayments ?? []) as ScheduledPayment[]);
       if (list.reminderSettings) {
@@ -63,7 +63,7 @@ export default function PaymentSchedulePage() {
         });
       }
     }
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => {
     void load();
@@ -84,7 +84,7 @@ export default function PaymentSchedulePage() {
     try {
       const res = await fetch("/api/payments/schedule/generate", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
         body: JSON.stringify({
           leaseProcessId: id,
           contractId: id,

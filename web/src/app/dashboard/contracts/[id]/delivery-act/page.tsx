@@ -5,6 +5,8 @@ import { useParams, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
+import { useAuth } from "@/contexts/auth-context";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 
 export default function DeliveryActPage() {
   const id = String(useParams<{ id: string }>().id);
@@ -12,6 +14,7 @@ export default function DeliveryActPage() {
   const inventoryId = qs.get("inventoryId") ?? "";
   const contractVersionId = qs.get("contractVersionId") ?? "";
   const { state } = useDraftGuard(id);
+  const { user } = useAuth();
   const [deliveryDate, setDeliveryDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [observations, setObservations] = useState("");
   const [html, setHtml] = useState("");
@@ -29,7 +32,7 @@ export default function DeliveryActPage() {
     try {
       const res = await fetch("/api/delivery-act/generate", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
         body: JSON.stringify({ inventoryId, contractId: id, contractVersionId, observations, deliveryDate }),
       });
       const data = await res.json();
@@ -44,7 +47,7 @@ export default function DeliveryActPage() {
               ? " No pudimos enviarla por correo (revisa la configuración de correo o hazlo en modo prueba)."
               : "";
       setOk(`Acta de entrega generada y archivada como anexo.${mailMsg}`);
-      const annex = await fetch(`/api/contracts/annexes/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(contractVersionId)}`).then((r) => r.json());
+      const annex = await fetch(`/api/contracts/annexes/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(contractVersionId)}`, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json());
       const found = (annex?.annexes ?? []).find((a: { annexType?: string }) => a.annexType === "initial_delivery_act");
       setHtml(found?.htmlContent ?? "");
       setPdfUrl(found?.pdfUrl ?? "");

@@ -56,6 +56,7 @@ export default function NotarialOptionalPage() {
       }
       const listRes = await fetch(
         `/api/contracts/annexes/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(cid)}`,
+        { headers: { ...(await buildAuthHeaders(user)) } },
       );
       const listData = (await listRes.json()) as {
         success?: boolean;
@@ -72,7 +73,7 @@ export default function NotarialOptionalPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, user]);
 
   useEffect(() => {
     void load();
