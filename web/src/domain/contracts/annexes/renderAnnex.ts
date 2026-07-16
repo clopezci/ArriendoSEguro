@@ -3,6 +3,7 @@ import { ANNEX_PLACEHOLDER_HTML, ANNEX_TITLES } from "./annexTemplates";
 import type { ContractAnnex, ContractAnnexType } from "./types";
 import { isPlaceholderAnnexType, validateAnnexData } from "./validateAnnexData";
 import type { SignatureRecord } from "@/domain/signatures/types";
+import { formatAppDateTime } from "@/lib/datetime/appTime";
 
 type RenderAnnexInput = {
   id: string;
@@ -60,9 +61,9 @@ export function renderElectronicSignatureEvidenceAnnex(input: {
         <td>${s.signerName}</td>
         <td>${s.signerDocument}</td>
         <td>${s.signerEmail}</td>
-        <td>${s.signedAt ?? "-"}</td>
+        <td>${formatAppDateTime(s.signedAt)}</td>
         <td>${s.signatureMethod}</td>
-        <td>${ev.otpVerifiedAt ?? "-"}</td>
+        <td>${formatAppDateTime(ev.otpVerifiedAt)}</td>
         <td>${ev.otpEmail ?? "-"}</td>
         <td style="word-break:break-all;font-size:10px;">${ev.consentBlockHash ?? "-"}</td>
         <td>${s.ipAddress ?? "-"}</td>
@@ -77,7 +78,8 @@ export function renderElectronicSignatureEvidenceAnnex(input: {
       <p>Contrato: ${input.contract.id}</p>
       <p>Versión contractual: ${input.contractVersion.id} (número ${input.contractVersion.versionNumber ?? 1})</p>
       <p>Hash documental: ${input.contractVersion.documentHash}</p>
-      <p>Fecha de generación del anexo: ${now}</p>
+      <p>Fecha de generación del anexo: ${formatAppDateTime(now)}</p>
+      <p style="font-size:11px;color:#475569;">Las fechas y horas de este anexo se muestran en <strong>hora de Colombia (GMT-5)</strong>. Internamente se registran en tiempo universal (UTC) para trazabilidad.</p>
       <p>Estado final del contrato: ${input.contract.status ?? "signed"}</p>
       <p><strong>Marco legal (orientación general):</strong> la firma electrónica y los datos de evidencia se relacionan con la Ley 527 de 1999 y normas concordantes. Este documento es generado por la plataforma ArriendoSeguro como constancia técnica; no sustituye asesoría legal ni actuación notarial.</p>
       <h2>Firmantes</h2>
@@ -90,7 +92,7 @@ export function renderElectronicSignatureEvidenceAnnex(input: {
             <th>Correo</th>
             <th>Fecha firma</th>
             <th>Método</th>
-            <th>OTP verificado (UTC)</th>
+            <th>OTP verificado</th>
             <th>Correo verif. OTP</th>
             <th>Hash bloque consentimientos</th>
             <th>IP</th>

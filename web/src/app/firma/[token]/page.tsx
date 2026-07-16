@@ -2,6 +2,7 @@
 
 import { SIGNING_CONSENT_TEXTS, SIGNING_DATA_CONFIRMATION_TEXT } from "@/domain/signatures/signingConsentTexts";
 import { ReadAloudButton } from "@/components/a11y/read-aloud-button";
+import { formatAppDateTime } from "@/lib/datetime/appTime";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -366,7 +367,7 @@ export default function SignatureTokenPage() {
             <strong>Hash documental:</strong> {info.documentHash}
           </p>
           <p>
-            <strong>Expira:</strong> {new Date(info.tokenExpiresAt).toLocaleString("es-CO")}
+            <strong>Expira:</strong> {formatAppDateTime(info.tokenExpiresAt)}
           </p>
           <div className="flex flex-wrap gap-2">
             {info.pdfUrl && (
