@@ -24,7 +24,8 @@ export type EmailTemplateCode =
   | "reputationReviewReceivedEmail"
   | "contractRenewalDocEmail"
   | "partnerInterestEmail"
-  | "customAlertEmail";
+  | "customAlertEmail"
+  | "paymentEscalationEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
