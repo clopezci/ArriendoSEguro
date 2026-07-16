@@ -20,7 +20,7 @@ export const EARLY_BIRD_BENEFIT_SHORT =
   "Los primeros inscritos en la encuesta acceden a $49.900 por contrato (precio de lista $89.900), mientras dure la promoción de lanzamiento.";
 
 /** Título corto de la promoción de introducción (para CTAs). */
-export const INTRO_PROMO_TITLE = "Precio de introducción: primer contrato por $49.900";
+export const INTRO_PROMO_TITLE = "Precio de introducción: $49.900 por todo el contrato (pago único, no mensual)";
 
 /**
  * Mensaje de promoción que se muestra en el punto de registro/login: precio de

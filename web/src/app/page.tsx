@@ -73,8 +73,9 @@ export default function Home() {
             </h1>
             <p className="text-pretty text-[15px] leading-relaxed text-slate-500">
               Nada de formularios eternos. Te guiamos con una sola pregunta en cada paso — por un{" "}
-              <strong className="font-semibold text-emerald-700">precio de introducción de $49.900</strong>, con la firma
-              incluida (una fracción de lo que cuesta tu arriendo).
+              <strong className="font-semibold text-emerald-700">precio de introducción de $49.900</strong>:{" "}
+              <strong className="font-semibold text-slate-700">un solo pago por todo el contrato, no es mensual</strong>,
+              con la firma incluida (una fracción de lo que cuesta tu arriendo).
             </p>
           </div>
 
@@ -169,8 +170,9 @@ export default function Home() {
             <p className="mt-3 text-sm leading-relaxed">
               No somos inmobiliaria ni asesoría jurídica: te ayudamos a dejar por escrito y con evidencia lo que las
               partes acuerdan, para reducir conflictos. El contrato tiene un <strong>precio de introducción de
-              $49.900</strong> (con la firma y la posventa incluidas), una fracción del valor del canon; y tu{" "}
-              <strong>segundo contrato puede ser gratis</strong> si invitas a 3 personas que usen la app.
+              $49.900</strong> — <strong>un solo pago por todo el contrato (no es mensual)</strong>, con la firma y la
+              posventa incluidas, una fracción del valor del canon; y tu{" "}
+              <strong>segundo contrato puede ser gratis</strong> si lo compartes con 3 personas y al menos 2 de ellas lo usan.
             </p>
             <p className="mt-4 text-xs text-slate-400">
               Información general orientada a Colombia; no sustituye asesoría legal. Consulta siempre las normas vigentes
