@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
 import { getDraft } from "@/features/contracts/wizard-state";
+import { pullServerDraftsIntoLocal } from "@/features/contracts/draft-server-sync";
+import type { ContractDraft } from "@/features/contracts/wizard-state";
 import { PropertyDocUpload } from "@/components/contracts/property-doc-upload";
 import { PoderUpload } from "@/components/contracts/poder-upload";
 import { OwnerPartyDocSlots } from "@/components/contracts/owner-party-doc-slots";
@@ -24,7 +27,20 @@ import type { PropertyDocType } from "@/domain/contracts/draftPropertyDocs";
 export default function DocumentosTerminarPage() {
   const id = String(useParams<{ id: string }>().id);
   const router = useRouter();
-  const draft = getDraft(id);
+  const { user } = useAuth();
+  // Persistencia cross-device: partimos de lo local (rápido) pero traemos el
+  // borrador del servidor para que las casillas/estado aparezcan aunque abras
+  // desde otro dispositivo o navegador.
+  const [draft, setDraft] = useState<ContractDraft | null>(() => getDraft(id));
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      await pullServerDraftsIntoLocal().catch(() => null);
+      if (!cancelled) setDraft(getDraft(id));
+    })();
+    return () => { cancelled = true; };
+  }, [id, user]);
 
   const actingAs = draft?.actingAs;
   const isProxy = actingAs === "proxy";
