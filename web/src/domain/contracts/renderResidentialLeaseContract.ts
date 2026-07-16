@@ -156,6 +156,31 @@ export function buildUtilityGuaranteeBlock(input: ResidentialLeaseContractInput)
   </section>`;
 }
 
+/**
+ * Cláusula condicional de comprobantes de pago y notificaciones. Solo aparece si
+ * el dueño eligió "notifications_and_upload" antes de firmar. BORRADOR sujeto a
+ * revisión legal (como el resto del motor de cláusulas).
+ */
+function buildPaymentPolicyBlock(input: ResidentialLeaseContractInput): string {
+  if (input.paymentSupportPolicy !== "notifications_and_upload") return "";
+  return `
+  <section>
+    <h2>COMPROBANTES DE PAGO Y NOTIFICACIONES</h2>
+    <p>
+      EL ARRENDATARIO registrará en la plataforma ArriendoSeguro el comprobante de cada pago del canon dentro de los días
+      siguientes a la fecha pactada. La plataforma enviará recordatorios a EL ARRENDATARIO y, de no registrarse el
+      comprobante en el plazo, podrá enviarlos también a EL/LOS CODEUDOR(ES) solidario(s), conforme al protocolo informado
+      a las partes. Este registro es un mecanismo de constancia y comunicación entre las partes; no sustituye los medios de
+      pago ni las obligaciones legales del contrato, y su omisión no exonera del pago del canon. Ante controversias, las
+      partes podrán registrar una conciliación en la plataforma. En lo no previsto aquí, primará la Ley 820 de 2003 y demás
+      normas concordantes.
+    </p>
+    <p style="font-size:11px;color:#475569;">
+      Cláusula operativa acordada voluntariamente por las partes; su validez se sujeta a la normatividad colombiana aplicable.
+    </p>
+  </section>`;
+}
+
 function withConditionalBlocks(
   template: string,
   input: ResidentialLeaseContractInput,
@@ -177,6 +202,10 @@ function withConditionalBlocks(
     .replaceAll(
       "[GARANTIA_SERVICIOS_PUBLICOS_CONDICIONAL]",
       buildUtilityGuaranteeBlock(input),
+    )
+    .replaceAll(
+      "[NOTIFICACIONES_PAGO_CONDICIONAL]",
+      buildPaymentPolicyBlock(input),
     );
 }
 

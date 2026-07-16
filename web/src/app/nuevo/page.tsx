@@ -122,7 +122,7 @@ const EMPTY: Answers = {
   tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false, tenantIncome: "",
   hasCodebtor: "", codebtorName: "", codebtorMode: "self",
   codebtorDocType: "CC", codebtorDocNumber: "", codebtorCity: "", codebtorEmail: "", codebtorPhone: "", codebtorAuth: false, codebtorIncome: "",
-  utilitiesParty: "", adminParty: "", clauses: [], clauseOther: "",
+  utilitiesParty: "", adminParty: "", paymentSupportPolicy: "notifications", clauses: [], clauseOther: "",
   docMethod: "", docPhone: "", docEmail: "",
 };
 
@@ -217,6 +217,7 @@ function answersFromDraft(d: ContractDraft): Answers {
     codebtorEmail: d.solidaryCoDebtor?.email || "",
     codebtorPhone: d.solidaryCoDebtor?.phone || "",
     utilitiesParty: (d.utilities?.responsibleParty as Answers["utilitiesParty"]) || "",
+    paymentSupportPolicy: (d.paymentSupportPolicy as Answers["paymentSupportPolicy"]) || "notifications",
     clauses: d.specialClauses?.selected ? [...d.specialClauses.selected] : [],
     clauseOther: d.specialClauses?.freeText || "",
   };
@@ -395,6 +396,7 @@ export default function NuevoPage() {
             } : {}),
           }
         : d.solidaryCoDebtor,
+      paymentSupportPolicy: n.paymentSupportPolicy || "notifications",
       utilities: {
         ...d.utilities,
         responsibleParty: n.utilitiesParty || d.utilities.responsibleParty,
@@ -1484,6 +1486,20 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               <button type="button" onClick={() => setA({ ...a, adminParty: "arrendador" })} className={chip(a.adminParty === "arrendador")}>La paga el dueño</button>
               <button type="button" onClick={() => setA({ ...a, adminParty: "no_aplica" })} className={chip(a.adminParty === "no_aplica")}>No aplica</button>
             </div>
+          </div>
+          <div>
+            <p className="mb-1.5 text-sm font-medium text-slate-600">Notificaciones y comprobantes de pago</p>
+            <p className="mb-2 text-xs text-slate-500">Cómo se maneja el pago del canon. Se refleja en el contrato y en lo que aceptan las partes al firmar.</p>
+            <div className="flex flex-wrap gap-2.5">
+              <button type="button" onClick={() => setA({ ...a, paymentSupportPolicy: "notifications_and_upload" })} className={chip(a.paymentSupportPolicy === "notifications_and_upload")}>Recordatorios + el inquilino sube el soporte</button>
+              <button type="button" onClick={() => setA({ ...a, paymentSupportPolicy: "notifications" })} className={chip(a.paymentSupportPolicy === "notifications")}>Solo recordatorios de pago</button>
+              <button type="button" onClick={() => setA({ ...a, paymentSupportPolicy: "none" })} className={chip(a.paymentSupportPolicy === "none")}>Ninguna</button>
+            </div>
+            {a.paymentSupportPolicy === "notifications_and_upload" && (
+              <p className="mt-2 rounded-xl border border-amber-300 bg-amber-50 p-2.5 text-[11px] text-amber-900">
+                Se agregará al contrato una cláusula: el inquilino se obliga a registrar el comprobante de cada pago en la plataforma, y si no lo hace se activa el protocolo de recordatorios (incluido el codeudor). <b>Borrador sujeto a revisión legal.</b>
+              </p>
+            )}
           </div>
           <div>
             <p className="mb-1.5 text-sm font-medium text-slate-600">Garantía de servicios públicos (opcional, Ley 820 art. 15)</p>

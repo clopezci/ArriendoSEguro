@@ -203,6 +203,14 @@ export interface ResidentialLeaseContractInput {
    */
   contractType?: ContractType;
   specialClauses?: SpecialClausesSelection;
+  /**
+   * Política de notificaciones/comprobantes de pago elegida por el dueño antes
+   * de firmar. Si es "notifications_and_upload" se agrega al contrato una cláusula
+   * que obliga al inquilino a registrar el comprobante de cada pago y habilita el
+   * protocolo de recordatorios/escalamiento. "notifications" = solo recordatorios.
+   * Ausente/"none" = sin cláusula (comportamiento anterior).
+   */
+  paymentSupportPolicy?: "none" | "notifications" | "notifications_and_upload";
   notarization?: NotarizationSelection;
   creditCheck?: CreditCheckSelection;
   /**
