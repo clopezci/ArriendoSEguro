@@ -37,9 +37,43 @@ async function loadVersionParties(firestore: Firestore, contractVersionId: strin
 }
 
 /** Correos de los codeudores (primario + adicionales), sin vacíos. */
-function codebtorEmails(p: VersionParties): string[] {
-  const list = [p.solidaryCoDebtor?.email, ...((p.solidaryCoDebtors ?? []).map((c) => c?.email))];
-  return list.map((e) => (e ?? "").trim()).filter(Boolean);
+/** Contactos (correo + celular) de los codeudores (primario + adicionales). */
+function codebtorContacts(p: VersionParties): Array<{ email: string; phone: string }> {
+  const list = [p.solidaryCoDebtor, ...(p.solidaryCoDebtors ?? [])];
+  return list
+    .map((c) => ({ email: (c?.email ?? "").trim(), phone: (c?.phone ?? "").trim() }))
+    .filter((c) => c.email || c.phone);
+}
+
+/**
+ * Envía un recordatorio al CELULAR por el canal configurado:
+ * PAYMENT_REMINDER_CHANNEL="whatsapp" (y WhatsApp configurado) → WhatsApp con
+ * plantilla (1 variable = el mensaje); en otro caso → SMS. `msg` es el texto
+ * (sin marca; el SMS le antepone "ArriendoSeguro:"). No incluye URLs largas: el
+ * enlace para subir el soporte va en el CORREO.
+ */
+async function phoneReminder(to: string | undefined, msg: string, relatedId: string): Promise<void> {
+  const phone = (to ?? "").trim();
+  if (!phone) return;
+  const useWa = (process.env.PAYMENT_REMINDER_CHANNEL || "sms").toLowerCase() === "whatsapp" && isWhatsAppConfigured();
+  if (useWa) {
+    await sendWhatsApp({
+      to: phone,
+      templateName: process.env.WHATSAPP_TEMPLATE_PAYMENT?.trim() || "recordatorio_pago",
+      bodyParams: [msg],
+      templateCode: "paymentReminderWa",
+      relatedEntityType: "payment",
+      relatedEntityId: relatedId,
+    }).catch(() => {});
+  } else {
+    await sendSms({
+      to: phone,
+      body: `ArriendoSeguro: ${msg}`,
+      templateCode: "paymentReminderSms",
+      relatedEntityType: "payment",
+      relatedEntityId: relatedId,
+    }).catch(() => {});
+  }
 }
 
 /**
@@ -145,32 +179,13 @@ export async function POST(request: Request) {
         { merge: true },
       );
       reminders += 1;
-      // Mensaje SOLO el día del vencimiento. Canal configurable con una variable:
-      // PAYMENT_REMINDER_CHANNEL="whatsapp" (y WhatsApp configurado) → WhatsApp;
-      // en cualquier otro caso → SMS CORTO (1 segmento, sin URL: remite al correo,
-      // para abaratar). Cambiar a WhatsApp = poner esa variable + credenciales.
-      if (milestone === "due" && parties.tenant?.phone) {
-        const amount = `$${(Number(row.expectedAmount) || 0).toLocaleString("es-CO")}`;
-        const useWa = (process.env.PAYMENT_REMINDER_CHANNEL || "sms").toLowerCase() === "whatsapp" && isWhatsAppConfigured();
-        if (useWa) {
-          await sendWhatsApp({
-            to: parties.tenant.phone,
-            templateName: process.env.WHATSAPP_TEMPLATE_PAYMENT?.trim() || "recordatorio_pago",
-            bodyParams: [amount, `${base}/pago/${token}`],
-            templateCode: "paymentReminderWa",
-            relatedEntityType: "payment",
-            relatedEntityId: row.id ?? d.id,
-          }).catch(() => {});
-        } else {
-          await sendSms({
-            to: parties.tenant.phone,
-            body: `ArriendoSeguro: hoy vence tu arriendo (${amount}). Revisa tu correo para pagar y subir el comprobante.`,
-            templateCode: "paymentReminderSms",
-            relatedEntityType: "payment",
-            relatedEntityId: row.id ?? d.id,
-          }).catch(() => {});
-        }
-      }
+      // Mensaje al celular (WhatsApp/SMS según canal) en AMBOS hitos: antes y el
+      // día del vencimiento. El enlace para subir el soporte va en el correo.
+      const amount = `$${(Number(row.expectedAmount) || 0).toLocaleString("es-CO")}`;
+      const msg = milestone === "before"
+        ? `faltan ${daysBefore} días para el pago de tu arriendo (${amount}). Revisa tu correo para pagar y subir el comprobante.`
+        : `hoy vence tu arriendo (${amount}). Revisa tu correo para pagar y subir el comprobante.`;
+      await phoneReminder(parties.tenant?.phone, msg, row.id ?? d.id);
     }
   }
 
@@ -246,8 +261,9 @@ export async function POST(request: Request) {
     const daysLate = Math.floor((now.getTime() - new Date(row.dueDate).getTime()) / (1000 * 60 * 60 * 24));
     if (daysLate < 1) continue;
     const tenantEmail = (parties.tenant?.email ?? "").trim();
+    const tenantPhone = (parties.tenant?.phone ?? "").trim();
     const landlordEmail = (parties.landlord?.email ?? "").trim();
-    const cods = codebtorEmails(parties);
+    const cods = codebtorContacts(parties);
     const spId = row.id ?? d.id;
     const per = row.periodLabel ? ` · ${row.periodLabel}` : "";
     const perP = row.periodLabel ? ` (${row.periodLabel})` : "";
@@ -265,14 +281,19 @@ export async function POST(request: Request) {
         relatedEntityType: "payment",
         relatedEntityId: spId,
       });
+      // Mismo aviso al celular del inquilino (WhatsApp/SMS).
+      await phoneReminder(tenantPhone, `no recibimos tu comprobante de pago del arriendo${perP}. Ingresa a la plataforma; si no lo registras, avisaremos también a tu codeudor.`, spId);
       await d.ref.set({ escLateWarnedAt: now.toISOString(), escConciliationTenantToken: cToken, escConciliationStatus: row.escConciliationStatus ?? "none" }, { merge: true });
       escalations += 1;
       continue;
     }
 
-    // Días 2–6: recordatorio a inquilino + codeudor(es), una vez por día.
+    // Días 2–6: recordatorio a inquilino + codeudor(es), una vez por día, por
+    // correo Y al celular (WhatsApp/SMS), hasta que suba el pago.
     if (daysLate >= 2 && daysLate <= 6 && (row.escLastCodebtorDay ?? 0) < daysLate) {
-      for (const to of [tenantEmail, ...cods].filter(Boolean)) {
+      const emails = [tenantEmail, ...cods.map((c) => c.email)].filter(Boolean);
+      const phones = [tenantPhone, ...cods.map((c) => c.phone)].filter(Boolean);
+      for (const to of emails) {
         await sendEmail({
           to,
           subject: `Recordatorio: pago del canon pendiente${per}`,
@@ -283,6 +304,8 @@ export async function POST(request: Request) {
           relatedEntityId: spId,
         });
       }
+      const msg = `sigue pendiente el comprobante del pago del arriendo${perP} (${daysLate} días de mora). Por favor regístralo en la plataforma.`;
+      for (const ph of phones) await phoneReminder(ph, msg, spId);
       await d.ref.set({ escLastCodebtorDay: daysLate }, { merge: true });
       escalations += 1;
       continue;
