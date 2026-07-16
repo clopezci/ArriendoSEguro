@@ -74,15 +74,20 @@ entidades públicas — no a una persona natural probando una idea.
 
 ---
 
-## 5. Reportes de errores en producción (opcional — Sentry)
-**Ya tienes** una captura de errores propia (se guardan en la colección
-`error_events` de Firebase, con datos personales enmascarados) y **error boundaries**
-que evitan la pantalla en blanco. Sentry es **opcional**, solo si quieres un panel
-más cómodo con alertas.
-**Si lo quieres:**
-1. Crea cuenta gratis en **Sentry** (https://sentry.io) y un proyecto "Next.js".
-2. Copia el **DSN** (una URL que te da Sentry) y pásamelo.
-3. Yo lo integro (queda inactivo hasta que exista el DSN, así que no molesta).
+## 5. Reportes de errores en producción (Sentry) — ✅ YA INTEGRADO
+Sentry quedó integrado en la app (proyecto `lotic/arriendoseguro`): captura errores
+en **producción**, solo errores (sin performance ni session replay) para no gastar
+la cuota del **plan gratis**, y sin datos personales. Convive con la captura propia
+que ya tenías (`error_events`) + los error boundaries.
+**Lo que debes hacer TÚ (mínimo):**
+1. En la pantalla de onboarding de Sentry (la del comando `npx @sentry/wizard…`):
+   **NO corras ese comando** (ya lo hice manualmente) → dale **"Skip setup"**.
+2. **No pagues / no toques "Upgrade Now"**: al terminar los 14 días de prueba,
+   la cuenta baja sola al plan gratuito.
+**Opcional (recomendado):** en Vercel, agrega la variable de entorno
+`NEXT_PUBLIC_SENTRY_DSN` con tu DSN (ya hay un valor por defecto en el código, así
+que funciona sin esto). Si algún día quieres stack traces legibles (source maps),
+avísame y lo activo con un token de Sentry.
 
 ---
 
