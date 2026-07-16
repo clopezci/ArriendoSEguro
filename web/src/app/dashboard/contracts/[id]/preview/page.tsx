@@ -11,6 +11,7 @@ import { PropertyDocUpload } from "@/components/contracts/property-doc-upload";
 import { PoderUpload } from "@/components/contracts/poder-upload";
 import { SpecialClauseReviewStatus } from "@/components/contracts/special-clause-review-status";
 import { formatAppDateTime } from "@/lib/datetime/appTime";
+import { INTRO_PROMO_TITLE, INTRO_PROMO_MESSAGE } from "@/lib/product-pricing";
 import type { PropertyDocType } from "@/domain/contracts/draftPropertyDocs";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 import { auditEvent } from "@/features/contracts/audit";
@@ -23,7 +24,7 @@ import type {
   SaveDraftVersionResponse,
 } from "@/domain/contracts/api-types";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ReadAloudButton } from "@/components/a11y/read-aloud-button";
 
@@ -203,7 +204,14 @@ export default function PreviewStepPage() {
   const [propDocType, setPropDocType] = useState<PropertyDocType | "">("");
   // Revisión y cierre PASO A PASO (bento): una sección a la vez. Reúne TODO el
   // contenido de la pantalla en secciones para no apilarlo (antes eran 8 scrolls).
-  const [section, setSection] = useState<Section>("revisar");
+  // Sección inicial: por defecto "revisar", pero si volvemos del pago con
+  // `?section=firma` retomamos AUTOMÁTICAMENTE el paso donde iba el usuario.
+  const requestedSection = useSearchParams().get("section");
+  const [section, setSection] = useState<Section>(
+    requestedSection && SECTIONS.some((s) => s.key === requestedSection)
+      ? (requestedSection as Section)
+      : "revisar",
+  );
   // Ref al HTML del contrato renderizado, para la lectura por voz.
   const contractRef = useRef<HTMLDivElement>(null);
 
@@ -1128,25 +1136,30 @@ export default function PreviewStepPage() {
             Paso 2 · Firma electrónica <span className="text-emerald-700">(incluida)</span>
           </p>
           {!(plusActive || demoActive) ? (
-            <>
-              <p className="mt-0.5 text-xs text-slate-600">
-                La firma con respaldo legal (código OTP + evidencia de IP/fecha/hash, Ley 527) viene <strong>incluida</strong>{" "}
-                en el plan de introducción de este contrato. Actívalo para firmar.
+            <div className="mt-2 rounded-2xl border-2 border-[#FF6B4A]/40 bg-gradient-to-br from-[#FFF4EF] to-[#FFE9DF] p-4">
+              <p className="inline-flex items-center gap-2 rounded-full bg-[#FF6B4A]/15 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-[#C7361A]">
+                ⏳ Oferta por tiempo limitado
+              </p>
+              <p className="mt-2 text-sm font-black text-[#C7361A]">🎉 {INTRO_PROMO_TITLE}</p>
+              <p className="mt-1 text-[13px] leading-snug text-slate-700">{INTRO_PROMO_MESSAGE}</p>
+              <p className="mt-2 text-xs text-slate-600">
+                Al activar tu plan podrás <strong>generar tu contrato</strong>, <strong>firmar electrónicamente</strong>{" "}
+                (OTP + evidencia de IP/fecha/hash, Ley 527) y acceder a <strong>todos los beneficios</strong>.
               </p>
               {activeDraft?.specialClauses?.enabled &&
                 activeDraft.specialClauses.selected?.includes("OTRA") && (
-                  <p className="mt-1 text-xs text-amber-800">
+                  <p className="mt-2 text-xs text-amber-800">
                     Este contrato incluye la cláusula «Otra» (con costo): se sumará automáticamente en el carrito al
-                    activar Plan Plus.
+                    activar tu plan.
                   </p>
                 )}
               <Link
                 href={`/dashboard/plans?contract=${encodeURIComponent(activeDraft?.id ?? id)}`}
-                className="mt-2 inline-flex rounded-lg border border-violet-500 px-4 py-2 text-sm font-medium text-violet-700"
+                className="mt-3 flex w-full items-center justify-center rounded-2xl bg-[#FF6B4A] px-6 py-3.5 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95"
               >
-                Activar Plan Plus
+                Ir a pago y activar mi plan →
               </Link>
-            </>
+            </div>
           ) : (
             <>
               <p className="mt-0.5 text-xs text-slate-600">

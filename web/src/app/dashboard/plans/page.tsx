@@ -171,8 +171,11 @@ export default function PlansPage() {
   // sondeamos las entitlements unos segundos por si el webhook llega con retraso.
   useEffect(() => {
     if (typeof window === "undefined" || !user) return;
-    const ref = new URLSearchParams(window.location.search).get("order");
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("order") || params.get("mockOrder");
     if (!ref) return;
+    // Contrato al que debemos DEVOLVER al usuario cuando el pago quede confirmado.
+    const contract = params.get("contract");
     let cancelled = false;
     let attempts = 0;
     setMsg("Estamos confirmando tu pago. Esto puede tardar unos segundos…");
@@ -185,7 +188,15 @@ export default function PlansPage() {
       const data = res && res.ok ? ((await res.json()) as EntitlementsResponse) : null;
       if (data?.success) setEntitlements(data);
       if (data?.plusActive) {
-        setMsg("¡Pago confirmado! Tu Plan Plus ya está activo.");
+        if (contract) {
+          // Vuelve AUTOMÁTICAMENTE al paso donde iba (firma) para continuar.
+          setMsg("¡Pago confirmado! Te llevamos de vuelta a tu contrato para continuar…");
+          setTimeout(() => {
+            if (!cancelled) window.location.href = `/dashboard/contracts/${encodeURIComponent(contract)}/preview?section=firma`;
+          }, 1400);
+        } else {
+          setMsg("¡Pago confirmado! Tu Plan Plus ya está activo.");
+        }
         return;
       }
       if (attempts >= 6) {
@@ -426,7 +437,7 @@ export default function PlansPage() {
           )}
           <p className="mt-2 text-sm text-slate-600">Precio de introducción por contrato: una <strong>fracción</strong> de lo que cuesta tu arriendo. Pago único, sin mensualidades.</p>
           <p className="mt-2 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-xs font-medium text-emerald-800">
-            🎁 Tu <strong>segundo contrato puede ser GRATIS</strong> (con la firma incluida) si invitas a <strong>3 personas que usen</strong> ArriendoSeguro.
+            🎁 Tu <strong>segundo contrato puede ser GRATIS</strong> (con la firma incluida) si lo <strong>compartes con 3 personas y al menos 2 de ellas lo usan</strong> (crean su contrato).
           </p>
           <p className="mt-2 text-xs leading-relaxed text-slate-600">{PER_CONTRACT_PAYMENT_NOTICE}</p>
           <ul className="mt-4 space-y-2 text-sm text-slate-700">

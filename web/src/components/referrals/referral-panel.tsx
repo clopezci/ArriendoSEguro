@@ -66,8 +66,8 @@ export function ReferralPanel() {
         <div>
           <h2 className="text-lg font-bold text-slate-900">Invita y gana un contrato gratis</h2>
           <p className="mt-1 text-sm text-slate-600">
-            Comparte tu enlace. Cuando <strong>{req} personas</strong> que invitaste <strong>usen la app</strong> (creen su
-            contrato), tu <strong className="text-emerald-700">siguiente contrato es GRATIS</strong> (con la firma incluida).
+            Comparte tu enlace <strong>con 3 personas</strong>. Cuando <strong>al menos {req}</strong> de ellas <strong>usen la app</strong>
+            {" "}(creen su contrato), tu <strong className="text-emerald-700">siguiente contrato es GRATIS</strong> (con la firma incluida).
           </p>
         </div>
         <span className="rounded-full bg-violet-600 px-3 py-1 text-xs font-semibold text-white">

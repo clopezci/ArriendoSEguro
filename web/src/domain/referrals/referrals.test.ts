@@ -58,10 +58,10 @@ test("solo cuentan los referidos calificados (que usaron la app)", () => {
   assert.equal(countQualifiedReferrals(list), 2);
 });
 
-test("desbloqueo de firma con 3 referidos calificados", () => {
-  assert.equal(QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK, 3);
-  assert.equal(signatureUnlockedByReferrals(2), false);
-  assert.equal(signatureUnlockedByReferrals(3), true);
+test("recompensa cuando al menos 2 referidos califican (comparte con 3, usan 2)", () => {
+  assert.equal(QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK, 2);
+  assert.equal(signatureUnlockedByReferrals(1), false);
+  assert.equal(signatureUnlockedByReferrals(2), true);
   assert.equal(signatureUnlockedByReferrals(5), true);
 });
 

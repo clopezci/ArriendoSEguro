@@ -9,7 +9,10 @@ export const wompiPaymentProvider: PaymentProviderAdapter = {
     // Al terminar (o cancelar) el pago, Wompi devuelve al usuario a la página de
     // Planes con la referencia, para que la app consulte el estado de la orden.
     const base = appConfig.publicUrl.replace(/\/$/, "");
-    const redirectUrl = `${base}/dashboard/plans?order=${encodeURIComponent(order.providerReference)}`;
+    // Llevamos también el contrato para que, al confirmarse el pago, la app pueda
+    // devolver al usuario AL PASO donde iba (vista previa/firma) y continuar.
+    const contractQ = order.leaseProcessId ? `&contract=${encodeURIComponent(order.leaseProcessId)}` : "";
+    const redirectUrl = `${base}/dashboard/plans?order=${encodeURIComponent(order.providerReference)}${contractQ}`;
 
     const checkoutUrl = buildWompiCheckoutUrl({
       reference: order.providerReference,

@@ -25,8 +25,15 @@ export const REFERRALS_COLLECTION = "referrals";
 export const DEFAULT_REFERRAL_DISCOUNT_PERCENT = 50;
 export const MAX_REFERRAL_DISCOUNT_PERCENT = 100;
 
-/** Referidos **calificados** (que usaron la app de verdad) para desbloquear la firma certificada. */
-export const QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK = 3;
+/**
+ * Modelo: se comparte con ~3 personas (`SUGGESTED_SHARE_COUNT`) y la recompensa
+ * (2º contrato gratis / firma) se otorga cuando **al menos 2** de ellas usan la
+ * app de verdad (crean su contrato). Este es el número de referidos CALIFICADOS
+ * necesarios para la recompensa.
+ */
+export const QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK = 2;
+/** Número sugerido de personas a invitar (solo para la mensajería). */
+export const SUGGESTED_SHARE_COUNT = 3;
 
 /** Micropago alternativo (COP) para desbloquear la firma certificada. */
 export const SIGNATURE_UNLOCK_MICRO_FEE_COP = 10_000;
