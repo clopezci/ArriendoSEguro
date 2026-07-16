@@ -23,7 +23,8 @@ export type EmailTemplateCode =
   | "initialDeliveryActEmail"
   | "reputationReviewReceivedEmail"
   | "contractRenewalDocEmail"
-  | "partnerInterestEmail";
+  | "partnerInterestEmail"
+  | "customAlertEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;
