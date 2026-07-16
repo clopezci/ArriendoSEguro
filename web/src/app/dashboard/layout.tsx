@@ -20,7 +20,7 @@ export default function DashboardLayout({
         <div className="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#9B6BFF,#5646E5)" }} />
         <div className="pointer-events-none absolute -bottom-32 -left-24 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#FFB03A,#FF6B4A)" }} />
 
-        <header className="sticky top-0 z-50 isolate border-b border-slate-200/70 bg-white/80 backdrop-blur">
+        <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
             <Link href="/nuevo" className="text-lg font-semibold tracking-tight text-[#5646E5]">
               <BrandLockup />

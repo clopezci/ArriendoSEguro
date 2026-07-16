@@ -73,8 +73,11 @@ export function InventoryZonePhotos({
         setMsg("No se pudo subir la foto.");
         return;
       }
+      // Vista previa INSTANTÁNEA con la imagen local (sin esperar la URL firmada),
+      // para que el usuario confirme de inmediato que la foto quedó.
+      try { setThumbs((t) => ({ ...t, [upJson.storagePath!]: URL.createObjectURL(file) })); } catch { /* noop */ }
       onChange([...photoUrls, upJson.storagePath]);
-      setMsg("Foto agregada. Recuerda guardar la zona.");
+      setMsg("Foto guardada ✓");
     } catch {
       setMsg("Error de red al subir la foto.");
     } finally {
