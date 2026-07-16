@@ -7,6 +7,7 @@ import { createUploadToken } from "@/lib/payments/uploadTokenStore";
 import { PAYMENT_SETTINGS_COLLECTION, describePaymentMethodForTenant, type PaymentSettings } from "@/domain/payments/paymentSettings";
 import { tenantPaymentReminderEmail, ownerConfirmEscalationEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
+import { sendSms } from "@/services/sms/sendSms";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { appConfig } from "@/lib/config";
 
@@ -15,7 +16,7 @@ export const runtime = "nodejs";
 /** Días tras la subida del inquilino sin confirmación del dueño para escalar. */
 const ESCALATION_DAYS = 3;
 
-type VersionParties = { tenant?: { email?: string; fullName?: string }; landlord?: { email?: string; fullName?: string } };
+type VersionParties = { tenant?: { email?: string; fullName?: string; phone?: string }; landlord?: { email?: string; fullName?: string } };
 
 async function loadVersionParties(firestore: Firestore, contractVersionId: string, cache: Map<string, VersionParties>): Promise<VersionParties> {
   const hit = cache.get(contractVersionId);
@@ -129,6 +130,17 @@ export async function POST(request: Request) {
         { merge: true },
       );
       reminders += 1;
+      // SMS SOLO el día del vencimiento (decisión de costo): un mensaje al inquilino
+      // con el monto y el enlace para subir el soporte. Sin Twilio configurado → mock.
+      if (milestone === "due" && parties.tenant?.phone) {
+        await sendSms({
+          to: parties.tenant.phone,
+          body: `ArriendoSeguro: hoy vence tu arriendo (${`$${(Number(row.expectedAmount) || 0).toLocaleString("es-CO")}`}). Paga y sube tu soporte aqui: ${base}/pago/${token}`,
+          templateCode: "paymentReminderSms",
+          relatedEntityType: "payment",
+          relatedEntityId: row.id ?? d.id,
+        }).catch(() => {});
+      }
     }
   }
 
