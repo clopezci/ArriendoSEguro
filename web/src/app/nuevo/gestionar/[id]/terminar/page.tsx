@@ -25,7 +25,8 @@ type StepDef = {
   icon: string;
   title: string;
   desc: string;
-  slug: string;
+  /** Ruta destino para configurar/revisar el punto. */
+  path: (id: string) => string;
   tips: string[];
   /** Texto del "ya lo hiciste" cuando detectamos configuración real. */
   signalDone: string;
@@ -38,7 +39,7 @@ const STEPS: StepDef[] = [
     icon: "📄",
     title: "Documentos del contrato",
     desc: "Revisa que estén los documentos que respaldan el contrato. Súbelos o, si no aplican, márcalo como listo.",
-    slug: "documentos-propiedad",
+    path: (id) => `/nuevo/gestionar/${id}/documentos`,
     tips: [
       "Documento que soporta la propiedad (certificado de tradición, predial, escritura o servicios).",
       "Si actúas como apoderado, el poder autenticado que te faculta para arrendar.",
@@ -52,7 +53,7 @@ const STEPS: StepDef[] = [
     icon: "🔔",
     title: "Condiciones de pago",
     desc: "Elige cómo te paga el inquilino y deja cuenta o QR; con esto enviamos los recordatorios.",
-    slug: "pagos-recordatorios",
+    path: (id) => `/dashboard/contracts/${id}/pagos-recordatorios?from=terminar`,
     tips: [
       "Método: transferencia, efectivo u otro.",
       "Cuenta o QR (se envía junto con el recordatorio al inquilino).",
@@ -66,7 +67,7 @@ const STEPS: StepDef[] = [
     icon: "⏰",
     title: "Alertas y notificaciones",
     desc: "Activa el aviso de vencimiento y renovación para no quedarte sin plazo (preaviso de 3 meses).",
-    slug: "alertas",
+    path: (id) => `/dashboard/contracts/${id}/alertas?from=terminar`,
     tips: [
       "Aviso de vencimiento/renovación a ambas partes.",
       "Respeta el preaviso legal de 3 meses (Ley 820).",
@@ -231,7 +232,7 @@ export default function TerminarContratoPage() {
               )}
 
               <button
-                onClick={() => router.push(`/dashboard/contracts/${id}/${current.slug}?from=terminar`)}
+                onClick={() => router.push(current.path(id))}
                 className="mt-4 w-full rounded-2xl bg-[#5646E5] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95"
               >
                 {signal[active] ? "Revisar / ajustar →" : "Configurar ahora →"}
