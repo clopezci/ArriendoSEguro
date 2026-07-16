@@ -105,6 +105,9 @@ export default function PagosRecordatoriosPage() {
         return;
       }
       setQrStoragePath(j.storagePath);
+      // Reemplaza la vista previa local por la de la COPIA GUARDADA (URL firmada),
+      // para que no se pierda al cambiar de opción o recargar.
+      await loadQrPreview(j.storagePath);
       setMsg("QR subido ✓. Recuerda guardar.");
     } catch {
       setMsg("Error de red al subir el QR.");

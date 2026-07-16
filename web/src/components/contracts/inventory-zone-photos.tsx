@@ -58,23 +58,22 @@ export function InventoryZonePhotos({
     setBusy(true);
     setMsg("");
     try {
-      const up = await fetch("/api/inventory/zone-photo/upload-url", {
+      // Subida DIRECTA (proxy same-origin): el servidor guarda la foto con Admin
+      // SDK. Sin PUT del navegador a Storage → sin el "error de red" (CORS).
+      const q = new URLSearchParams({ inventoryId, selectedZoneId: zoneId, filename: file.name || "foto.jpg", contentType: file.type || "image/jpeg" });
+      const up = await fetch(`/api/inventory/zone-photo/upload?${q.toString()}`, {
         method: "POST",
-        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ inventoryId, selectedZoneId: zoneId, filename: file.name || "foto.jpg", contentType: file.type || "image/jpeg", sizeBytes: file.size }),
+        headers: { "content-type": file.type || "image/jpeg", ...(await buildAuthHeaders(user)) },
+        body: file,
       });
-      const upJson = (await up.json()) as { success?: boolean; uploadUrl?: string; storagePath?: string; errors?: { message?: string }[] };
-      if (!up.ok || !upJson.success || !upJson.uploadUrl || !upJson.storagePath) {
-        setMsg(upJson.errors?.[0]?.message ?? "No se pudo preparar la subida.");
+      let upJson: { success?: boolean; storagePath?: string; errors?: { message?: string }[] } = {};
+      try { upJson = (await up.json()) as typeof upJson; } catch { /* respuesta no-JSON */ }
+      if (!up.ok || !upJson.success || !upJson.storagePath) {
+        setMsg(upJson.errors?.[0]?.message ?? `No se pudo subir la foto (código ${up.status}).`);
         return;
       }
-      const put = await fetch(upJson.uploadUrl, { method: "PUT", headers: { "content-type": file.type || "image/jpeg" }, body: file });
-      if (!put.ok) {
-        setMsg("No se pudo subir la foto.");
-        return;
-      }
-      // Vista previa INSTANTÁNEA con la imagen local (sin esperar la URL firmada),
-      // para que el usuario confirme de inmediato que la foto quedó.
+      // Vista previa INSTANTÁNEA con la imagen local (confirma que quedó); en
+      // recarga se resuelve la URL firmada de la copia guardada.
       try { setThumbs((t) => ({ ...t, [upJson.storagePath!]: URL.createObjectURL(file) })); } catch { /* noop */ }
       onChange([...photoUrls, upJson.storagePath]);
       setMsg("Foto guardada ✓");
