@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { requireInventoryParticipant } from "@/lib/auth/requireInventoryParticipant";
 
 export const runtime = "nodejs";
 
@@ -30,6 +31,8 @@ export async function POST(request: Request) {
     }
     const firestore = getAdminFirestore();
     if (!firestore) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });
+    const gate = await requireInventoryParticipant(request, firestore, parsed.data.inventoryId);
+    if (!gate.ok) return gate.response;
     const now = new Date().toISOString();
     const batch = firestore.batch();
     parsed.data.items.forEach((item) => {

@@ -108,7 +108,7 @@ export default function InventoryNewPage() {
       ];
       const res = await fetch("/api/inventory/select-zones", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({ inventoryId: invId, zones }),
       });
       const data = await res.json();
@@ -153,7 +153,7 @@ export default function InventoryNewPage() {
         } as InventoryZoneDetail);
       const res = await fetch("/api/inventory/save-zone-detail", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({
           inventoryId,
           selectedZoneId: zone.id,
@@ -179,7 +179,7 @@ export default function InventoryNewPage() {
         .filter((item) => item.itemName.length > 0);
       const itemRes = await fetch("/api/inventory/save-zone-items", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({
           inventoryId,
           selectedZoneId: zone.id,
@@ -190,7 +190,7 @@ export default function InventoryNewPage() {
       if (!itemRes.ok || !itemData.success) throw new Error(itemData?.errors?.[0]?.message ?? "No se pudieron guardar elementos.");
       await fetch("/api/inventory/save-items", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({ inventoryId, items: [], meterReadings: meters, keys }),
       });
       if (nextAction === "next") setCurrentStep((s) => Math.min(s + 1, selectedZoneRows.length - 1));
@@ -212,7 +212,7 @@ export default function InventoryNewPage() {
     try {
       await fetch("/api/inventory/save-zone-detail", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({
           inventoryId,
           selectedZoneId: zone.id,
@@ -240,7 +240,7 @@ export default function InventoryNewPage() {
     try {
       const res = await fetch("/api/inventory/complete-guided", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({ inventoryId }),
       });
       const data = await res.json();
@@ -255,7 +255,7 @@ export default function InventoryNewPage() {
       setInventoryReportHash(detail?.inventory?.documentHash ?? "");
       await fetch("/api/inventory/save-items", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({ inventoryId, items: [], meterReadings: meters, keys }),
       });
     } catch (e) {
@@ -271,7 +271,7 @@ export default function InventoryNewPage() {
     try {
       const res = await fetch("/api/inventory/generate-report-pdf", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
         body: JSON.stringify({ inventoryId }),
       });
       const data = await res.json();

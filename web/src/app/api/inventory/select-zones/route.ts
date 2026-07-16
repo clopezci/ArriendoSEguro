@@ -3,6 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { requireInventoryParticipant } from "@/lib/auth/requireInventoryParticipant";
 
 export const runtime = "nodejs";
 
@@ -40,6 +41,8 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     }
+    const gate = await requireInventoryParticipant(request, firestore, parsed.data.inventoryId);
+    if (!gate.ok) return gate.response;
     const invRef = firestore.collection("inventories").doc(parsed.data.inventoryId);
     const invSnap = await invRef.get();
     if (!invSnap.exists) {

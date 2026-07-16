@@ -10,6 +10,7 @@ import { renderInitialDeliveryAct } from "@/domain/inventory/renderInitialDelive
 import { auditEvent } from "@/features/contracts/audit-server";
 import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
 import { sendEmail } from "@/services/email/sendEmail";
+import { requireContractParticipant } from "@/lib/auth/serverAuth";
 
 export const runtime = "nodejs";
 // PDF con pdf-lib (JS puro); headroom por inventario extenso / subida a Storage.
@@ -31,6 +32,12 @@ export async function POST(request: Request) {
     }
     const firestore = getAdminFirestore();
     if (!firestore) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });
+
+    const gate = await requireContractParticipant(request, firestore, parsed.data.contractId, {
+      kind: "by_version",
+      contractVersionId: parsed.data.contractVersionId,
+    });
+    if (!gate.ok) return gate.response;
 
     const invSnap = await firestore.collection("inventories").doc(parsed.data.inventoryId).get();
     if (!invSnap.exists) return NextResponse.json({ success: false, errors: [{ field: "inventoryId", message: "Inventario no existe." }] }, { status: 404 });

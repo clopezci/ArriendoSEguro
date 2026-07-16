@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import { validateDocumentNumber } from "@/domain/colombia/document-validation";
+import { fullNameError, FULL_NAME_MAX } from "@/domain/contracts/personName";
 
 const DOCUMENT_ENUM = z.enum(["CC", "CE", "PASAPORTE", "NIT", "OTRO"]);
 
@@ -27,7 +28,13 @@ export const citySchema = z
 
 /** Objeto base antes de refinamientos (permite codebtorSchema.extend). */
 const partyObjectSchema = z.object({
-  fullName: z.string().min(5, "Indica el nombre completo.").max(120),
+  fullName: z
+    .string()
+    .max(FULL_NAME_MAX)
+    .superRefine((v, ctx) => {
+      const err = fullNameError(v);
+      if (err) ctx.addIssue({ code: z.ZodIssueCode.custom, message: err });
+    }),
   documentType: z.preprocess(
     (v) => (String(v) === "TI" ? "CC" : v),
     DOCUMENT_ENUM,

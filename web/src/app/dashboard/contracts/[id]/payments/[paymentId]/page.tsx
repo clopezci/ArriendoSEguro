@@ -43,7 +43,7 @@ export default function PaymentDetailPage() {
 
   useEffect(() => {
     const run = async () => {
-      const res = await fetch(`/api/payments/detail?paymentLogId=${encodeURIComponent(paymentId)}`);
+      const res = await fetch(`/api/payments/detail?paymentLogId=${encodeURIComponent(paymentId)}`, { headers: { ...(await buildAuthHeaders(user)) } });
       const data = await res.json();
       if (res.ok && data.success) {
         setPayment(data.payment as PaymentDetail);
@@ -51,7 +51,7 @@ export default function PaymentDetailPage() {
       }
     };
     void run();
-  }, [paymentId]);
+  }, [paymentId, user]);
 
   if (state !== "ready") return <p className="text-sm text-slate-700">Cargando...</p>;
   if (!payment) return <p className="text-sm text-slate-700">Cargando pago...</p>;

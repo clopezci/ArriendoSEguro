@@ -10,17 +10,12 @@
 import { z } from "zod";
 import { zPhoneCo, citySchema } from "@/features/contracts/party-schemas";
 import { validateDocumentNumber } from "@/domain/colombia/document-validation";
+import { fullNameError } from "@/domain/contracts/personName";
 import type { DocumentType } from "@/domain/contracts/types";
 
-const NAME_RE = /^[A-Za-zÀ-ÿñÑ][A-Za-zÀ-ÿñÑ\s.'-]{4,}$/;
-
-function nameError(v: string): string | null {
-  const t = (v || "").trim();
-  if (t.length < 5) return "Indica el nombre completo (mínimo 5 caracteres).";
-  if (t.length > 120) return "El nombre es demasiado largo.";
-  if (!NAME_RE.test(t)) return "El nombre solo debe llevar letras (sin números).";
-  return null;
-}
+// Regla única de nombre (nombre + apellido, solo letras): compartida con el
+// servidor para que no se pueda burlar. Ver domain/contracts/personName.
+const nameError = fullNameError;
 
 function emailError(v: string): string | null {
   return z.string().email().safeParse((v || "").trim()).success ? null : "Correo electrónico inválido.";

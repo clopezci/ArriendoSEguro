@@ -4,6 +4,8 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 
 export const runtime = "nodejs";
 
+// Ver nota de seguridad en inventory/pdf/[inventoryId]: descarga por enlace, id
+// aleatorio, ruta desde Firestore; protegida por la aleatoriedad del id.
 export async function GET(
   _request: Request,
   context: { params: Promise<{ inventoryId: string }> },

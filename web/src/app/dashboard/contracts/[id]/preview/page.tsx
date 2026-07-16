@@ -682,6 +682,7 @@ export default function PreviewStepPage() {
       try {
         const annexRes = await fetch(
           `/api/contracts/annexes/electronic-signature?contractId=${encodeURIComponent(savedVersion.contractId)}&contractVersionId=${encodeURIComponent(savedVersion.contractVersionId)}`,
+          { headers: { ...(user ? await buildAuthHeaders(user) : {}) } },
         );
         const annexData = (await annexRes.json()) as
           | {
@@ -702,6 +703,7 @@ export default function PreviewStepPage() {
       try {
         const listRes = await fetch(
           `/api/contracts/annexes/list?contractId=${encodeURIComponent(savedVersion.contractId)}&contractVersionId=${encodeURIComponent(savedVersion.contractVersionId)}`,
+          { headers: { ...(user ? await buildAuthHeaders(user) : {}) } },
         );
         const listData = (await listRes.json()) as
           | { success: true; annexes: typeof annexRows }

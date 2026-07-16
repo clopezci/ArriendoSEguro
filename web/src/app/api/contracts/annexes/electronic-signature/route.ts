@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { requireContractParticipant } from "@/lib/auth/serverAuth";
 
 export const runtime = "nodejs";
 
@@ -16,6 +17,11 @@ export async function GET(request: Request) {
     }
     const firestore = getAdminFirestore();
     if (!firestore) return NextResponse.json({ success: true, annex: null });
+    const gate = await requireContractParticipant(request, firestore, contractId, {
+      kind: "by_version",
+      contractVersionId,
+    });
+    if (!gate.ok) return gate.response;
     const snap = await firestore
       .collection("contract_annexes")
       .where("contractId", "==", contractId)

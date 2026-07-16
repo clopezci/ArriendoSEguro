@@ -56,7 +56,7 @@ export default function PaymentsPage() {
       const authH = user ? await buildAuthHeaders(user) : {};
       const list = await fetch(`/api/payments/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`, { headers: { ...authH } }).then((r) => r.json());
       if (list?.success) setPayments(list.payments ?? []);
-      const sch = await fetch(`/api/payments/schedule/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`).then((r) => r.json());
+      const sch = await fetch(`/api/payments/schedule/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`, { headers: { ...authH } }).then((r) => r.json());
       if (sch?.success) setScheduledPayments(sch.scheduledPayments ?? []);
     };
     void run();

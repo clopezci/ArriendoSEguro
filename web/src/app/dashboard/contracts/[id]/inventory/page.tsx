@@ -5,12 +5,15 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { useAuth } from "@/contexts/auth-context";
+import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 
 type InventoryState = "none" | "draft" | "completed";
 
 export default function InventoryHomePage() {
   const id = String(useParams<{ id: string }>().id);
   const { state } = useDraftGuard(id);
+  const { user } = useAuth();
   const [inventoryId, setInventoryId] = useState<string>("");
   const [inventoryState, setInventoryState] = useState<InventoryState>("none");
   const [contractVersionId, setContractVersionId] = useState<string>("");
@@ -23,17 +26,17 @@ export default function InventoryHomePage() {
       const versionId = latest?.version?.id ?? latest?.contract?.currentVersionId ?? "";
       setContractVersionId(versionId);
       if (!versionId) return;
-      const inv = await fetch(`/api/inventory/by-contract?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`).then((r) => r.json());
+      const inv = await fetch(`/api/inventory/by-contract?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json());
       if (inv?.success && inv.inventory) {
         setInventoryId(String(inv.inventory.id));
         setInventoryState(inv.inventory.status === "completed" || inv.inventory.status === "signed" ? "completed" : "draft");
-        const annex = await fetch(`/api/contracts/annexes/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`).then((r) => r.json());
+        const annex = await fetch(`/api/contracts/annexes/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json());
         const hasAct = (annex?.annexes ?? []).some((a: { annexType?: string; status?: string }) => a.annexType === "initial_delivery_act" && a.status === "generated");
         setDeliveryActGenerated(Boolean(hasAct));
       }
     };
     void run();
-  }, [id]);
+  }, [id, user]);
 
   if (state !== "ready") return <p className="text-sm text-slate-700">Cargando...</p>;
 

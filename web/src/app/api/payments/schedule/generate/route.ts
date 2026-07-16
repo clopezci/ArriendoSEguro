@@ -4,6 +4,7 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { scheduleGenerateSchema } from "@/domain/payments/validatePaymentLog";
 import { generatePaymentSchedule } from "@/domain/payments/generatePaymentSchedule";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { requireContractParticipant } from "@/lib/auth/serverAuth";
 
 export const runtime = "nodejs";
 
@@ -18,6 +19,11 @@ export async function POST(request: Request) {
     }
     const firestore = getAdminFirestore();
     if (!firestore) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });
+    const gate = await requireContractParticipant(request, firestore, parsed.data.contractId, {
+      kind: "by_version",
+      contractVersionId: parsed.data.contractVersionId,
+    });
+    if (!gate.ok) return gate.response;
     const versionSnap = await firestore.collection("contract_versions").doc(parsed.data.contractVersionId).get();
     if (!versionSnap.exists) return NextResponse.json({ success: false, errors: [{ field: "contractVersionId", message: "Versión no existe." }] }, { status: 404 });
     const version = versionSnap.data() as {

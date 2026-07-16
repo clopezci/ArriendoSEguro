@@ -70,6 +70,7 @@ export default function PagosRecordatoriosPage() {
       if (Number.isFinite(pd) && pd >= 1 && pd <= 31) setPayDay(pd);
       const sch = await fetch(
         `/api/payments/schedule/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(lv?.version?.id ?? lv?.contract?.currentVersionId ?? "")}`,
+        { headers: { ...(await buildAuthHeaders(user)) } },
       ).then((r) => r.json());
       const d = Number(sch?.reminderSettings?.defaultDaysBefore);
       if (Number.isFinite(d) && d > 0) setDaysBefore(d);
@@ -141,7 +142,7 @@ export default function PagosRecordatoriosPage() {
         try {
           await fetch("/api/payments/schedule/generate", {
             method: "POST",
-            headers: { "content-type": "application/json" },
+            headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
             body: JSON.stringify({
               leaseProcessId: id,
               contractId: id,
