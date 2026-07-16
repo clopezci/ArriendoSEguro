@@ -10,6 +10,7 @@ import { OwnerIncomeReminder } from "@/components/contracts/owner-income-reminde
 import { PropertyDocUpload } from "@/components/contracts/property-doc-upload";
 import { PoderUpload } from "@/components/contracts/poder-upload";
 import { SpecialClauseReviewStatus } from "@/components/contracts/special-clause-review-status";
+import { formatAppDateTime } from "@/lib/datetime/appTime";
 import type { PropertyDocType } from "@/domain/contracts/draftPropertyDocs";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 import { auditEvent } from "@/features/contracts/audit";
@@ -1342,8 +1343,8 @@ export default function PreviewStepPage() {
                     <td className={`px-2 py-1 ${signatureStatusLabel(s.signatureStatus).className}`}>
                       {signatureStatusLabel(s.signatureStatus).text}
                     </td>
-                    <td className="px-2 py-1">{s.sentAt ? new Date(s.sentAt).toLocaleString("es-CO") : "-"}</td>
-                    <td className="px-2 py-1">{s.signedAt ? new Date(s.signedAt).toLocaleString("es-CO") : "-"}</td>
+                    <td className="px-2 py-1">{formatAppDateTime(s.sentAt)}</td>
+                    <td className="px-2 py-1">{formatAppDateTime(s.signedAt)}</td>
                     <td className="px-2 py-1">
                       {s.signingUrl ? (
                         <a

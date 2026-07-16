@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { formatAppDateTime } from "@/lib/datetime/appTime";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { ExpedienteNav } from "@/components/contracts/expediente-nav";
 import { ContractPdfDownloadLink } from "@/components/contracts/contract-pdf-download";
@@ -223,7 +224,7 @@ export default function EvidenciaExpedientePage() {
                       {evidenceAnnex.generatedAt && (
                         <span className="text-slate-500">
                           {" "}
-                          ({new Date(evidenceAnnex.generatedAt).toLocaleString("es-CO")})
+                          ({formatAppDateTime(evidenceAnnex.generatedAt)})
                         </span>
                       )}
                     </li>

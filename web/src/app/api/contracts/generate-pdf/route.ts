@@ -10,6 +10,7 @@ import {
 } from "@/domain/contracts/api-types";
 import { renderContractPdfFromHtml } from "@/domain/contracts/pdf";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { formatAppDateTime } from "@/lib/datetime/appTime";
 import { logServerError } from "@/lib/observability/observability";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
 import { userHasPlusOrDemo } from "@/lib/auth/contractPlusGate";
@@ -167,14 +168,14 @@ export async function POST(request: Request) {
             const r = byParty.get(t)!;
             const estado =
               r.status === "signed"
-                ? `Firmado electronicamente${r.signedAt ? " el " + new Date(r.signedAt).toLocaleString("es-CO") : ""}`
+                ? `Firmado electronicamente${r.signedAt ? " el " + formatAppDateTime(r.signedAt) : ""}`
                 : "Pendiente de firma";
             return `<p>${roleLabel(t)}: ${estado}</p>`;
           })
           .join("");
         const stamp =
           `<h3>Estado de la firma electronica (informativo)</h3>` +
-          `<p>Reflejo generado el ${new Date(generatedAt).toLocaleString("es-CO")}. Este recuadro es solo informativo: la constancia con plena validez legal (fecha, IP y hash de cada firma) es el Anexo de Evidencia de Firma Electronica, que hace parte integral de este contrato (Ley 527 de 1999).</p>` +
+          `<p>Reflejo generado el ${formatAppDateTime(generatedAt)} (hora de Colombia, GMT-5). Este recuadro es solo informativo: la constancia con plena validez legal (fecha, IP y hash de cada firma) es el Anexo de Evidencia de Firma Electronica, que hace parte integral de este contrato (Ley 527 de 1999).</p>` +
           rows;
         const idx = htmlForPdf.lastIndexOf("</article>");
         htmlForPdf = idx >= 0 ? htmlForPdf.slice(0, idx) + stamp + htmlForPdf.slice(idx) : htmlForPdf.replace("</body>", stamp + "</body>");
