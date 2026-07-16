@@ -182,9 +182,10 @@ export async function POST(request: Request) {
       // Mensaje al celular (WhatsApp/SMS según canal) en AMBOS hitos: antes y el
       // día del vencimiento. El enlace para subir el soporte va en el correo.
       const amount = `$${(Number(row.expectedAmount) || 0).toLocaleString("es-CO")}`;
+      const payUrl = `${base}/pago/${token}`;
       const msg = milestone === "before"
-        ? `faltan ${daysBefore} días para el pago de tu arriendo (${amount}). Revisa tu correo para pagar y subir el comprobante.`
-        : `hoy vence tu arriendo (${amount}). Revisa tu correo para pagar y subir el comprobante.`;
+        ? `faltan ${daysBefore} días para el pago de tu arriendo (${amount}). Ingresa para pagar y subir tu comprobante: ${payUrl}`
+        : `hoy vence tu arriendo (${amount}). Ingresa para pagar y subir tu comprobante: ${payUrl}`;
       await phoneReminder(parties.tenant?.phone, msg, row.id ?? d.id);
     }
   }
@@ -247,7 +248,7 @@ export async function POST(request: Request) {
     .catch(() => null);
   for (const d of overdueSnap?.docs ?? []) {
     const row = d.data() as {
-      id?: string; contractId?: string; contractVersionId?: string; periodLabel?: string; dueDate?: string; status?: string;
+      id?: string; contractId?: string; contractVersionId?: string; periodLabel?: string; dueDate?: string; status?: string; expectedAmount?: number;
       escLateWarnedAt?: string; escLastCodebtorDay?: number; escConciliationStatus?: string;
       escConciliationTenantToken?: string; escFinalOwnerNoticeAt?: string; escPersonalCollectionToken?: string; escPersonalCollectionAt?: string;
     };
@@ -267,6 +268,17 @@ export async function POST(request: Request) {
     const spId = row.id ?? d.id;
     const per = row.periodLabel ? ` · ${row.periodLabel}` : "";
     const perP = row.periodLabel ? ` (${row.periodLabel})` : "";
+    // Enlace fresco para pagar/subir el comprobante (el mensaje al celular lo lleva).
+    const escLink = async () =>
+      `${base}/pago/${await createUploadToken(firestore, {
+        contractId: row.contractId!,
+        contractVersionId: row.contractVersionId!,
+        scheduledPaymentId: spId,
+        periodLabel: row.periodLabel ?? "",
+        dueDate: row.dueDate!,
+        expectedAmount: Number(row.expectedAmount) || 0,
+        landlordName: (parties.landlord?.fullName ?? "El arrendador").trim() || "El arrendador",
+      })}`;
 
     // Día 1: aviso al inquilino con link de conciliación.
     if (!row.escLateWarnedAt && tenantEmail) {
@@ -281,8 +293,8 @@ export async function POST(request: Request) {
         relatedEntityType: "payment",
         relatedEntityId: spId,
       });
-      // Mismo aviso al celular del inquilino (WhatsApp/SMS).
-      await phoneReminder(tenantPhone, `no recibimos tu comprobante de pago del arriendo${perP}. Ingresa a la plataforma; si no lo registras, avisaremos también a tu codeudor.`, spId);
+      // Mismo aviso al celular del inquilino (WhatsApp/SMS) CON el enlace.
+      await phoneReminder(tenantPhone, `no recibimos tu comprobante de pago del arriendo${perP}. Ingresa para pagar y subir tu comprobante: ${await escLink()}. Si no lo registras, avisaremos también a tu codeudor.`, spId);
       await d.ref.set({ escLateWarnedAt: now.toISOString(), escConciliationTenantToken: cToken, escConciliationStatus: row.escConciliationStatus ?? "none" }, { merge: true });
       escalations += 1;
       continue;
@@ -304,7 +316,7 @@ export async function POST(request: Request) {
           relatedEntityId: spId,
         });
       }
-      const msg = `sigue pendiente el comprobante del pago del arriendo${perP} (${daysLate} días de mora). Por favor regístralo en la plataforma.`;
+      const msg = `sigue pendiente el comprobante del pago del arriendo${perP} (${daysLate} días de mora). Ingresa para pagar y subir tu comprobante: ${await escLink()}`;
       for (const ph of phones) await phoneReminder(ph, msg, spId);
       await d.ref.set({ escLastCodebtorDay: daysLate }, { merge: true });
       escalations += 1;
