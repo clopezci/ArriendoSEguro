@@ -1,3 +1,4 @@
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { AdSense } from "@/components/analytics/adsense";
 import { ConsentMode } from "@/components/consent/consent-mode";
@@ -79,6 +80,8 @@ export default function RootLayout({
             <CookieConsentBanner />
           </ReadAloudProvider>
         </AppProviders>
+        {/* Métricas reales de rendimiento (Core Web Vitals) en Vercel; no-op fuera de Vercel. */}
+        <SpeedInsights />
       </body>
     </html>
   );
