@@ -199,6 +199,9 @@ export default function AdminPage() {
   const [ppPromoPercent, setPpPromoPercent] = useState("");
   const [ppPromoName, setPpPromoName] = useState("Lanzamiento");
   const [ppPromoMessage, setPpPromoMessage] = useState("Promoción de lanzamiento por tiempo limitado");
+  // Fechas de vigencia OPCIONALES de la promoción (YYYY-MM-DD; vacío = sin límite).
+  const [ppPromoStart, setPpPromoStart] = useState("");
+  const [ppPromoEnd, setPpPromoEnd] = useState("");
   const [ppResolved, setPpResolved] = useState<{
     checkoutCop: number;
     listCompareCop: number;
@@ -280,6 +283,8 @@ export default function AdminPage() {
             mode: "full" | "promo";
             promoType: "fixed" | "percent" | null;
             promoPercent: number | null;
+            promoStartDate: string | null;
+            promoEndDate: string | null;
           };
           errors?: { message?: string }[];
         };
@@ -293,6 +298,8 @@ export default function AdminPage() {
           setPpPromoPercent(r.promoPercent != null ? String(r.promoPercent) : "");
           setPpPromoName(r.promoName ?? "Lanzamiento");
           setPpPromoMessage(r.promoMessage ?? "Precio promocional por tiempo limitado");
+          setPpPromoStart(r.promoStartDate ?? "");
+          setPpPromoEnd(r.promoEndDate ?? "");
           setPpResolved({
             checkoutCop: r.checkoutCop,
             listCompareCop: r.listCompareCop,
@@ -797,12 +804,22 @@ export default function AdminPage() {
         promoPercent?: number;
         promoName?: string;
         promoMessage?: string;
+        promoStartDate?: string | null;
+        promoEndDate?: string | null;
       } = { mode: ppMode, listCop: listN };
 
       if (ppMode === "promo") {
         body.promoType = ppPromoType;
         body.promoName = ppPromoName.trim();
         body.promoMessage = ppPromoMessage.trim();
+        const start = ppPromoStart.trim();
+        const end = ppPromoEnd.trim();
+        if (start && end && end < start) {
+          setPpPricingErr("La fecha de fin de la promoción no puede ser anterior a la de inicio.");
+          return;
+        }
+        body.promoStartDate = start || null;
+        body.promoEndDate = end || null;
         if (ppPromoType === "fixed") {
           if (!Number.isInteger(fixedN) || fixedN < min || fixedN > max) {
             setPpPricingErr(`El precio promocional debe ser un entero entre ${min.toLocaleString("es-CO")} y ${max.toLocaleString("es-CO")} COP.`);
@@ -1387,6 +1404,46 @@ export default function AdminPage() {
                     className="w-full rounded border border-slate-300 px-2 py-1 text-xs"
                   />
                 </label>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+                  <p className="mb-2 text-[11px] font-medium text-slate-600">
+                    Vigencia de la promoción (opcional). Si dejas las fechas en blanco, la promoción
+                    aplica siempre. Si las fijas, el precio promocional solo se cobra dentro del rango;
+                    fuera de él se cobra el precio pleno automáticamente.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <label className="flex flex-col gap-1 text-[11px] text-slate-600">
+                      Desde
+                      <input
+                        type="date"
+                        aria-label="Fecha de inicio de la promoción"
+                        value={ppPromoStart}
+                        max={ppPromoEnd || undefined}
+                        onChange={(e) => setPpPromoStart(e.target.value)}
+                        className="rounded border border-slate-300 px-2 py-1 text-xs"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] text-slate-600">
+                      Hasta
+                      <input
+                        type="date"
+                        aria-label="Fecha de fin de la promoción"
+                        value={ppPromoEnd}
+                        min={ppPromoStart || undefined}
+                        onChange={(e) => setPpPromoEnd(e.target.value)}
+                        className="rounded border border-slate-300 px-2 py-1 text-xs"
+                      />
+                    </label>
+                    {(ppPromoStart || ppPromoEnd) && (
+                      <button
+                        type="button"
+                        onClick={() => { setPpPromoStart(""); setPpPromoEnd(""); }}
+                        className="self-end rounded border border-slate-300 px-2 py-1 text-[11px] text-slate-600"
+                      >
+                        Quitar fechas
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 

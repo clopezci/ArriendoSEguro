@@ -32,6 +32,9 @@ const patchSchema = z
     promoPercent: z.number().min(0.1).max(95).optional(),
     promoName: z.string().trim().max(60).optional(),
     promoMessage: z.string().trim().max(160).optional(),
+    // Fechas de vigencia OPCIONALES (YYYY-MM-DD); null/ausente = sin límite.
+    promoStartDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+    promoEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.mode !== "promo") return;
@@ -48,6 +51,13 @@ const patchSchema = z
         code: z.ZodIssueCode.custom,
         message: "Indica el % de descuento de la promoción.",
         path: ["promoPercent"],
+      });
+    }
+    if (data.promoStartDate && data.promoEndDate && data.promoEndDate < data.promoStartDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "La fecha de fin de la promoción no puede ser anterior a la de inicio.",
+        path: ["promoEndDate"],
       });
     }
   });
@@ -124,6 +134,8 @@ export async function PATCH(request: Request) {
       promoPercent: isPromo && promoType === "percent" ? (d.promoPercent ?? null) : null,
       promoName: isPromo ? (d.promoName?.trim() || null) : null,
       promoMessage: isPromo ? (d.promoMessage?.trim() || null) : null,
+      promoStartDate: isPromo ? (d.promoStartDate ?? null) : null,
+      promoEndDate: isPromo ? (d.promoEndDate ?? null) : null,
       // Limpia campos del esquema anterior para no confundir el resolver.
       preset: FieldValue.delete(),
       customCheckoutCop: FieldValue.delete(),
