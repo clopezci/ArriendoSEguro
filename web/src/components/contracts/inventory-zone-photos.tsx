@@ -89,9 +89,25 @@ export function InventoryZonePhotos({
     <div className="mt-2">
       <p className="text-xs font-medium text-slate-700">Fotos de la zona</p>
       <div className="mt-1 flex flex-wrap items-center gap-2">
-        {/* Sin `capture`: en móvil el sistema ofrece Cámara o Galería; en escritorio, elegir archivo. */}
-        <label className="cursor-pointer rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-500">
-          {busy ? "Subiendo…" : "📷 Tomar o elegir foto"}
+        {/* Dos opciones EXPLÍCITAS: algunos navegadores/webviews, sin `capture`,
+            abrían la galería directo sin ofrecer la cámara. */}
+        <label className={`cursor-pointer rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-500 ${busy ? "cursor-not-allowed opacity-50" : ""}`}>
+          {busy ? "Subiendo…" : "📷 Tomar foto"}
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="sr-only"
+            disabled={busy}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void onPick(f);
+              e.currentTarget.value = "";
+            }}
+          />
+        </label>
+        <label className={`cursor-pointer rounded-lg border-2 border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-violet-500 ${busy ? "cursor-not-allowed opacity-50" : ""}`}>
+          🖼️ Galería
           <input
             type="file"
             accept="image/*"

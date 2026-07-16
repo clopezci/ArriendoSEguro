@@ -1,6 +1,7 @@
 "use client";
 
 import { RenewalReminderCard } from "@/components/contracts/renewal-reminder-card";
+import { CustomAlertsCard } from "@/components/contracts/custom-alerts-card";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -44,6 +45,8 @@ export default function AlertasContratoPage() {
         <div className="mt-4">
           <RenewalReminderCard contractId={id} />
         </div>
+
+        <CustomAlertsCard contractId={id} />
 
         <div className="mt-6 flex items-center justify-between gap-2">
           <Link href={`/nuevo/gestionar/${id}/terminar`} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]">← Atrás</Link>
