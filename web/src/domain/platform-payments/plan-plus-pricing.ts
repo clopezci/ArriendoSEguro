@@ -47,6 +47,11 @@ const storedSchema = z.object({
   promoPercent: z.number().min(0.1).max(95).nullable().optional(),
   promoName: z.string().max(60).nullable().optional(),
   promoMessage: z.string().max(160).nullable().optional(),
+  // Fechas de vigencia OPCIONALES (YYYY-MM-DD). Si se fijan, la promoción solo
+  // aplica dentro del rango [inicio, fin] inclusive; fuera de él se cobra el
+  // precio pleno. Si se dejan vacías, la promoción aplica siempre (como antes).
+  promoStartDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  promoEndDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
   updatedAt: z.string().optional(),
   updatedByEmail: z.string().optional(),
 });
@@ -73,7 +78,21 @@ export type ResolvedPlanPlusPricing = {
   mode: PlanPlusPricingMode;
   promoType: PlanPlusPromoType | null;
   promoPercent: number | null;
+  /** Fechas de vigencia de la promoción (o null si no se fijaron). */
+  promoStartDate: string | null;
+  promoEndDate: string | null;
 };
+
+/** ¿La promoción está vigente HOY según sus fechas? Sin fechas = siempre vigente. */
+export function isPromoActiveByDate(
+  start: string | null | undefined,
+  end: string | null | undefined,
+  todayIso: string = new Date().toISOString().slice(0, 10),
+): boolean {
+  if (start && todayIso < start) return false;
+  if (end && todayIso > end) return false;
+  return true;
+}
 
 function clampCop(n: number): number {
   return Math.min(CUSTOM_MAX_COP, Math.max(CUSTOM_MIN_COP, Math.floor(n)));
@@ -94,11 +113,16 @@ export function getDefaultResolvedPlanPlusPricing(): ResolvedPlanPlusPricing {
     mode: "promo",
     promoType: "fixed",
     promoPercent: null,
+    promoStartDate: null,
+    promoEndDate: null,
   };
 }
 
 function resolveNew(data: z.infer<typeof storedSchema>): ResolvedPlanPlusPricing {
   const listCop = clampCop(data.listCop ?? CONTRACT_LIST_PRICE_COP);
+
+  const promoStartDate = data.promoStartDate ?? null;
+  const promoEndDate = data.promoEndDate ?? null;
 
   if (data.mode === "full") {
     return {
@@ -110,22 +134,27 @@ function resolveNew(data: z.infer<typeof storedSchema>): ResolvedPlanPlusPricing
       mode: "full",
       promoType: null,
       promoPercent: null,
+      promoStartDate: null,
+      promoEndDate: null,
     };
   }
 
   const promoType: PlanPlusPromoType = data.promoType ?? "fixed";
-  let checkout: number;
+  let promoCheckout: number;
   let promoPercent: number | null = null;
   if (promoType === "percent") {
     const pct = data.promoPercent ?? 0;
     promoPercent = pct;
-    checkout = clampCop(roundToHundred(listCop * (1 - pct / 100)));
+    promoCheckout = clampCop(roundToHundred(listCop * (1 - pct / 100)));
   } else {
-    checkout = data.promoFixedCop != null ? clampCop(data.promoFixedCop) : CONTRACT_EARLY_BIRD_PRICE_COP;
+    promoCheckout = data.promoFixedCop != null ? clampCop(data.promoFixedCop) : CONTRACT_EARLY_BIRD_PRICE_COP;
   }
   // La promoción nunca puede superar el precio pleno.
-  if (checkout > listCop) checkout = listCop;
-  const isPromo = checkout < listCop;
+  if (promoCheckout > listCop) promoCheckout = listCop;
+  // Vigente solo si hay descuento Y estamos dentro de las fechas (si se fijaron).
+  const dateActive = isPromoActiveByDate(promoStartDate, promoEndDate);
+  const isPromo = promoCheckout < listCop && dateActive;
+  const checkout = isPromo ? promoCheckout : listCop;
 
   return {
     checkoutCop: checkout,
@@ -136,6 +165,8 @@ function resolveNew(data: z.infer<typeof storedSchema>): ResolvedPlanPlusPricing
     mode: "promo",
     promoType,
     promoPercent,
+    promoStartDate,
+    promoEndDate,
   };
 }
 
@@ -150,6 +181,8 @@ function resolveLegacy(data: z.infer<typeof legacySchema>): ResolvedPlanPlusPric
       mode: "full",
       promoType: null,
       promoPercent: null,
+      promoStartDate: null,
+      promoEndDate: null,
     };
   }
   if (data.preset === "custom" && data.customCheckoutCop != null) {
@@ -169,6 +202,8 @@ function resolveLegacy(data: z.infer<typeof legacySchema>): ResolvedPlanPlusPric
       mode: "promo",
       promoType: "fixed",
       promoPercent: null,
+      promoStartDate: null,
+      promoEndDate: null,
     };
   }
   // promo_49900 (o custom sin monto): promoción de lanzamiento por defecto.
