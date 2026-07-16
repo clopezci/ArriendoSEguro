@@ -1489,15 +1489,23 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
           </div>
           <div>
             <p className="mb-1.5 text-sm font-medium text-slate-600">Notificaciones y comprobantes de pago</p>
-            <p className="mb-2 text-xs text-slate-500">Cómo se maneja el pago del canon. Se refleja en el contrato y en lo que aceptan las partes al firmar.</p>
-            <div className="flex flex-wrap gap-2.5">
-              <button type="button" onClick={() => setA({ ...a, paymentSupportPolicy: "notifications_and_upload" })} className={chip(a.paymentSupportPolicy === "notifications_and_upload")}>Recordatorios + el inquilino sube el soporte</button>
-              <button type="button" onClick={() => setA({ ...a, paymentSupportPolicy: "notifications" })} className={chip(a.paymentSupportPolicy === "notifications")}>Solo recordatorios de pago</button>
-              <button type="button" onClick={() => setA({ ...a, paymentSupportPolicy: "none" })} className={chip(a.paymentSupportPolicy === "none")}>Ninguna</button>
+            <p className="mb-2 text-xs text-slate-500">Elige cómo se maneja el pago del canon. Se refleja en el contrato y en lo que aceptan las partes al firmar.</p>
+            <div className="flex flex-col gap-2.5">
+              {([
+                { v: "notifications_and_upload", t: "📩📎 Recordatorios + el inquilino sube el soporte", d: "Le recordamos el pago al inquilino y él debe registrar el comprobante en la plataforma. Si no lo hace, se activa un protocolo de avisos (incluido el codeudor). Deja constancia y facilita el seguimiento. Agrega una cláusula al contrato." },
+                { v: "notifications", t: "🔔 Solo recordatorios de pago", d: "Le recordamos al inquilino cuándo pagar (con tu método de pago o QR), pero no se le exige subir comprobante ni hay protocolo de escalamiento. Sin obligación extra en el contrato." },
+                { v: "none", t: "🚫 Ninguna", d: "No se envían recordatorios ni se pide comprobante. Tú llevas el control del pago por fuera de la plataforma." },
+              ] as const).map((o) => (
+                <button key={o.v} type="button" onClick={() => setA({ ...a, paymentSupportPolicy: o.v })}
+                  className={`rounded-2xl border-2 p-3 text-left transition ${a.paymentSupportPolicy === o.v ? "border-[#5646E5] bg-[#ECE9FB]/50" : "border-slate-200 bg-white hover:border-[#5646E5]"}`}>
+                  <p className="text-sm font-bold text-slate-800">{o.t}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">{o.d}</p>
+                </button>
+              ))}
             </div>
             {a.paymentSupportPolicy === "notifications_and_upload" && (
               <p className="mt-2 rounded-xl border border-amber-300 bg-amber-50 p-2.5 text-[11px] text-amber-900">
-                Se agregará al contrato una cláusula: el inquilino se obliga a registrar el comprobante de cada pago en la plataforma, y si no lo hace se activa el protocolo de recordatorios (incluido el codeudor). <b>Borrador sujeto a revisión legal.</b>
+                Se agregará al contrato una cláusula: el inquilino se obliga a registrar el comprobante de cada pago, y si no lo hace se activa el protocolo de recordatorios (incluido el codeudor). <b>Borrador sujeto a revisión legal.</b>
               </p>
             )}
           </div>
