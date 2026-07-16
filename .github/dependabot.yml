@@ -14,6 +14,19 @@ updates:
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
+    # No proponer saltos de versión MAYOR de estos paquetes: un mayor de Next/React
+    # trae cambios que rompen el build y exigen una migración dedicada (no un PR
+    # automático). Dependabot seguirá proponiendo parches/menores (15.x, 19.x).
+    # Para migrar a Next 16 más adelante se hace a mano, con pruebas.
+    ignore:
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint-config-next"
+        update-types: ["version-update:semver-major"]
 
   # Acciones de GitHub (workflows de CI).
   - package-ecosystem: "github-actions"
