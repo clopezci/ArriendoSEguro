@@ -1,0 +1,23 @@
+# Dependabot: revisa dependencias con vulnerabilidades y propone PRs de actualización.
+# Cubre el punto de seguridad "npm audit / dependencias al día" sin costo.
+# Docs: https://docs.github.com/code-security/dependabot
+version: 2
+updates:
+  # Dependencias de la app Next.js (carpeta web/).
+  - package-ecosystem: "npm"
+    directory: "/web"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels: ["dependencias"]
+    # Agrupa parches/menores en un solo PR para no saturar.
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  # Acciones de GitHub (workflows de CI).
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["ci"]

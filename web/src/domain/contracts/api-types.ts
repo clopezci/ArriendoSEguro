@@ -153,6 +153,18 @@ export const saveDraftVersionRequestSchema = z.object({
   generatedAt: z.string(),
   /** Preferencia de recordatorios de vencimiento (no legal). Opcional. */
   renewalReminderEnabled: z.boolean().optional(),
+  /**
+   * Ingresos declarados SOLO para validar solvencia (ingreso ≥ canon) en el
+   * servidor. NO se persiste: se valida y se descarta (no forma parte del
+   * contrato ni del hash). Opcional: si no viene, el servidor no fuerza la
+   * solvencia (el cliente ya la bloquea) — compatibilidad hacia atrás.
+   */
+  solvency: z
+    .object({
+      tenantMonthlyIncome: z.number().nonnegative().optional(),
+      codebtorMonthlyIncomes: z.array(z.number().nonnegative()).optional(),
+    })
+    .optional(),
 });
 
 export type SaveDraftVersionRequest = z.infer<typeof saveDraftVersionRequestSchema>;

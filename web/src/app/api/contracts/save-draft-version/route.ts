@@ -69,6 +69,29 @@ export async function POST(request: Request) {
       );
     }
 
+    // Solvencia (ingreso ≥ canon), reforzada en el servidor. Los ingresos vienen
+    // en `body.solvency` SOLO para validar y NO se persisten (no se escriben en
+    // `contract_versions`). Si no vienen, no se fuerza aquí (el cliente ya bloquea).
+    const rent = body.contractPayload.lease.monthlyRent;
+    if (rent > 0 && body.solvency) {
+      const solvencyIssues: { field: string; message: string }[] = [];
+      const t = body.solvency.tenantMonthlyIncome;
+      if (typeof t === "number" && t > 0 && t < rent) {
+        solvencyIssues.push({ field: "tenant.income", message: "El ingreso del arrendatario es inferior al canon." });
+      }
+      (body.solvency.codebtorMonthlyIncomes ?? []).forEach((inc, i) => {
+        if (typeof inc === "number" && inc > 0 && inc < rent) {
+          solvencyIssues.push({ field: `codebtor.income[${i}]`, message: "El ingreso de un codeudor es inferior al canon." });
+        }
+      });
+      if (solvencyIssues.length > 0) {
+        return NextResponse.json<SaveDraftVersionResponse>(
+          { success: false, errors: solvencyIssues },
+          { status: 422 },
+        );
+      }
+    }
+
     const recomputed = generateDocumentHash(body.html);
     if (recomputed !== body.documentHash) {
       return NextResponse.json<SaveDraftVersionResponse>(
