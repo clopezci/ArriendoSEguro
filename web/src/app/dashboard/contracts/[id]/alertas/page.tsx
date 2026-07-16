@@ -8,11 +8,8 @@ export default function AlertasContratoPage() {
   const id = String(useParams<{ id: string }>().id);
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#F5F3EF] text-[#17151F]">
-      <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#FFB03A,#FF6B4A)" }} />
-      <div className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full opacity-40 blur-3xl" style={{ background: "radial-gradient(circle,#9B6BFF,#5646E5)" }} />
-
-      <div className="relative z-10 mx-auto max-w-2xl px-6 py-8">
+    <div className="text-[#17151F]">
+      <div className="mx-auto max-w-2xl">
         <div className="mb-6 flex items-center justify-between">
           <Link href={`/nuevo/gestionar/${id}/terminar`} className="flex items-center gap-2 text-sm font-semibold text-[#5646E5] hover:underline">← Volver</Link>
           <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Alertas</span>
