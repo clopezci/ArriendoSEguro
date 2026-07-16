@@ -45,9 +45,11 @@ en un WhatsApp** (ni personal ni Business App). Ese número será el remitente.
    - Categoría: **Utility** (utilidad).
    - Nombre: `recordatorio_pago` (debe coincidir con `WHATSAPP_TEMPLATE_PAYMENT`).
    - Idioma: Español.
-   - Cuerpo (con 2 variables): 
-     > Hola, hoy vence tu arriendo por {{1}}. Ingresa para pagar y subir tu comprobante: {{2}}
-   - Meta la aprueba en ~1–2 días. (La app manda {{1}}=monto, {{2}}=enlace.)
+   - Cuerpo (con **1 variable**, sirve para TODOS los avisos: antes del vencimiento,
+     el vencimiento y los días de mora):
+     > Recordatorio de tu arriendo en ArriendoSeguro: {{1}}
+   - Meta la aprueba en ~1–2 días. (La app manda en {{1}} el texto del recordatorio,
+     p. ej. "hoy vence tu arriendo ($1.500.000). Revisa tu correo para pagar y subir el comprobante.")
 7. Cuando esté aprobada, pon las 4 variables de arriba en Vercel.
 
 **Costo aprox.:** los mensajes "utility" a Colombia cuestan del orden de
@@ -60,7 +62,12 @@ la rama de Twilio al servicio.
 
 ---
 
-## Nota
-Hoy, sin nada de esto, el recordatorio del día del vencimiento sale como **SMS
-corto**. El resto del flujo (escalamiento, conciliación, cobro personal) va por
-**correo**. El cambio a WhatsApp no toca ese resto.
+## Qué mensajes usan este canal (SMS o WhatsApp)
+- Recordatorio **antes** del vencimiento (al inquilino).
+- Recordatorio el **día del vencimiento** (al inquilino).
+- Recordatorios de **mora** (días posteriores): al inquilino y al **codeudor**,
+  cada día hasta que se registre el pago.
+
+El **correo** siempre acompaña (y lleva el enlace para subir el soporte). Las
+acciones con enlace de 1 clic (conciliación, aceptar conciliación, retraso y cobro
+personal) van por **correo**. Sin credenciales de WhatsApp, todo esto sale por **SMS**.
