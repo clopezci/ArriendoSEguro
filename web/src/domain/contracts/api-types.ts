@@ -89,6 +89,7 @@ const payloadSchema = z.object({
     .enum(["VIVIENDA_URBANA", "VIVIENDA_RURAL", "HABITACION", "COMERCIAL", "RURAL_PRODUCTIVO"])
     .optional(),
   specialClauses: specialClausesSchema.optional(),
+  paymentSupportPolicy: z.enum(["none", "notifications", "notifications_and_upload"]).optional(),
   notarization: notarizationSchema.optional(),
   creditCheck: creditCheckSchema.optional(),
   expedienteNotes: z.string().optional(),

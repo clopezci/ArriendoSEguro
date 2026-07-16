@@ -15,7 +15,7 @@ const base: Answers = {
   tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false, tenantIncome: "",
   hasCodebtor: "", codebtorName: "", codebtorMode: "self",
   codebtorDocType: "CC", codebtorDocNumber: "", codebtorCity: "", codebtorEmail: "", codebtorPhone: "", codebtorAuth: false, codebtorIncome: "",
-  utilitiesParty: "", adminParty: "", clauses: [], clauseOther: "",
+  utilitiesParty: "", adminParty: "", paymentSupportPolicy: "notifications", clauses: [], clauseOther: "",
   docMethod: "", docPhone: "", docEmail: "",
 };
 const a = (o: Partial<Answers>): Answers => ({ ...base, ...o });

@@ -93,6 +93,9 @@ export type Answers = {
   // Servicios y cláusulas
   utilitiesParty: "" | "arrendatario" | "arrendador" | "compartido";
   adminParty: "" | "arrendatario" | "arrendador" | "no_aplica";
+  // Política de notificaciones/comprobantes de pago (se refleja como cláusula
+  // condicional en el contrato). Ver domain/contracts paymentSupportPolicy.
+  paymentSupportPolicy: "" | "none" | "notifications" | "notifications_and_upload";
   clauses: string[]; clauseOther: string;
   // Documentos
   docMethod: "" | "self" | "whatsapp" | "email"; docPhone: string; docEmail: string;

@@ -218,6 +218,8 @@ export interface ContractDraft {
    * propaga al contrato `AS-LEASE-MVP-2026.1` activo.
    */
   specialClauses?: SpecialClausesSelection;
+  /** Política de notificaciones/comprobantes de pago (ver ResidentialLeaseContractInput). */
+  paymentSupportPolicy?: "none" | "notifications" | "notifications_and_upload";
   /**
    * Anotaciones complementarias del expediente (texto libre). Visibles en
    * la app y, además, se imprimen al final del contrato como sección
@@ -813,6 +815,7 @@ export function toContractInput(draft: ContractDraft): ResidentialLeaseContractI
     // automáticamente en el HTML del contrato sin costo adicional. La
     // opción «Otra» también se imprime con disclaimer y se tarifa aparte.
     specialClauses: draft.specialClauses,
+    paymentSupportPolicy: draft.paymentSupportPolicy ?? "notifications",
     notarization: draft.notarization,
     // Las anotaciones especiales del expediente sí se imprimen en el
     // contrato como sección complementaria con disclaimer legal explícito,
