@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
 import { PropertyDocumentsPanel } from "@/components/contracts/property-documents-panel";
 import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
@@ -10,6 +10,9 @@ import { getDraft } from "@/features/contracts/wizard-state";
 
 export default function DocumentosPropiedadPage() {
   const id = String(useParams<{ id: string }>().id);
+  const router = useRouter();
+  // Cuando se llega desde "Termina tu contrato", la navegación vuelve a ese flujo.
+  const fromTerminar = useSearchParams().get("from") === "terminar";
   const [contractVersionId, setContractVersionId] = useState("");
   const [isProxy, setIsProxy] = useState(false);
 
@@ -35,12 +38,15 @@ export default function DocumentosPropiedadPage() {
           Adjunta la escritura, el certificado de libertad y tradición o, si actúas como apoderado, el{" "}
           <strong>poder autenticado</strong>. Solo el arrendador puede subir; las partes pueden ver.
         </p>
-        <Link href={`/dashboard/contracts/${id}/evidencias`} className="text-sm text-violet-700 underline">
-          ← Evidencias del expediente
+        <Link
+          href={fromTerminar ? `/nuevo/gestionar/${id}/terminar` : `/dashboard/contracts/${id}/evidencias`}
+          className="text-sm text-violet-700 underline"
+        >
+          ← {fromTerminar ? "Termina tu contrato" : "Evidencias del expediente"}
         </Link>
       </header>
 
-      <ExpedientePostWizardNav contractId={id} />
+      {!fromTerminar && <ExpedientePostWizardNav contractId={id} />}
 
       {isProxy && (
         <p className="rounded-2xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
@@ -63,6 +69,23 @@ export default function DocumentosPropiedadPage() {
       <RequiresSavedContract id={id}>
         <PropertyDocumentsPanel contractId={id} contractVersionId={contractVersionId} highlightPoder={isProxy} />
       </RequiresSavedContract>
+
+      {fromTerminar && (
+        <div className="flex items-center justify-between gap-2 pt-2">
+          <button
+            onClick={() => router.push(`/nuevo/gestionar/${id}/terminar`)}
+            className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5]"
+          >
+            ← Termina tu contrato
+          </button>
+          <button
+            onClick={() => router.push(`/nuevo/gestionar/${id}/terminar`)}
+            className="rounded-2xl bg-[#12B886] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95"
+          >
+            Listo, continuar →
+          </button>
+        </div>
+      )}
     </main>
   );
 }
