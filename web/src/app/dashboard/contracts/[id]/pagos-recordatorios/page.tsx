@@ -20,6 +20,7 @@ export default function PagosRecordatoriosPage() {
   const [qrPreview, setQrPreview] = useState("");
   const [consent, setConsent] = useState(false);
   const [daysBefore, setDaysBefore] = useState(3);
+  const [payDay, setPayDay] = useState<number | null>(null);
   const [versionId, setVersionId] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
@@ -63,6 +64,10 @@ export default function PagosRecordatoriosPage() {
     try {
       const lv = await fetch(`/api/contracts/latest-version?contractId=${encodeURIComponent(id)}`).then((r) => r.json());
       setVersionId(String(lv?.version?.id ?? lv?.contract?.currentVersionId ?? ""));
+      // Día de pago del canon definido en el contrato (para mostrar la relación
+      // con los "días de aviso" y no confundir ambos números).
+      const pd = Number(lv?.version?.contractPayload?.lease?.paymentDueDay);
+      if (Number.isFinite(pd) && pd >= 1 && pd <= 31) setPayDay(pd);
       const sch = await fetch(
         `/api/payments/schedule/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(lv?.version?.id ?? lv?.contract?.currentVersionId ?? "")}`,
       ).then((r) => r.json());
@@ -260,6 +265,12 @@ export default function PagosRecordatoriosPage() {
           </div>
         )}
 
+        {payDay != null && (
+          <div className="mt-4 rounded-2xl border border-[#5646E5]/20 bg-[#ECE9FB]/50 p-3 text-sm text-slate-700">
+            📅 Según tu contrato, el inquilino paga el <strong>día {payDay}</strong> de cada mes. (Lo definiste en el paso de términos del contrato.)
+          </div>
+        )}
+
         <div className="mt-4 rounded-lg border border-slate-200 bg-white/75 p-3">
           <label className="text-sm font-medium text-slate-800">
             Avisar al inquilino con cuántos días de anticipación
@@ -272,7 +283,7 @@ export default function PagosRecordatoriosPage() {
                 onChange={(e) => setDaysBefore(Math.max(1, Math.min(30, Number(e.target.value) || 3)))}
                 className="w-24 rounded border border-slate-300 bg-white px-3 py-1.5 text-sm"
               />
-              <span className="text-xs text-slate-600">días antes de cada vencimiento (por defecto 3).</span>
+              <span className="text-xs text-slate-600">días <strong>antes</strong> de cada vencimiento (no es el día de pago; por defecto 3).</span>
             </div>
           </label>
           <p className="mt-2 text-xs text-slate-500">
