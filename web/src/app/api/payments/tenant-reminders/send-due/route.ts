@@ -9,6 +9,7 @@ import { PAYMENT_SETTINGS_COLLECTION, describePaymentMethodForTenant, type Payme
 import { tenantPaymentReminderEmail, ownerConfirmEscalationEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
 import { sendSms } from "@/services/sms/sendSms";
+import { sendWhatsApp, isWhatsAppConfigured } from "@/services/whatsapp/sendWhatsApp";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { appConfig } from "@/lib/config";
 
@@ -144,16 +145,31 @@ export async function POST(request: Request) {
         { merge: true },
       );
       reminders += 1;
-      // SMS SOLO el día del vencimiento (decisión de costo): un mensaje al inquilino
-      // con el monto y el enlace para subir el soporte. Sin Twilio configurado → mock.
+      // Mensaje SOLO el día del vencimiento. Canal configurable con una variable:
+      // PAYMENT_REMINDER_CHANNEL="whatsapp" (y WhatsApp configurado) → WhatsApp;
+      // en cualquier otro caso → SMS CORTO (1 segmento, sin URL: remite al correo,
+      // para abaratar). Cambiar a WhatsApp = poner esa variable + credenciales.
       if (milestone === "due" && parties.tenant?.phone) {
-        await sendSms({
-          to: parties.tenant.phone,
-          body: `ArriendoSeguro: hoy vence tu arriendo (${`$${(Number(row.expectedAmount) || 0).toLocaleString("es-CO")}`}). Paga y sube tu soporte aqui: ${base}/pago/${token}`,
-          templateCode: "paymentReminderSms",
-          relatedEntityType: "payment",
-          relatedEntityId: row.id ?? d.id,
-        }).catch(() => {});
+        const amount = `$${(Number(row.expectedAmount) || 0).toLocaleString("es-CO")}`;
+        const useWa = (process.env.PAYMENT_REMINDER_CHANNEL || "sms").toLowerCase() === "whatsapp" && isWhatsAppConfigured();
+        if (useWa) {
+          await sendWhatsApp({
+            to: parties.tenant.phone,
+            templateName: process.env.WHATSAPP_TEMPLATE_PAYMENT?.trim() || "recordatorio_pago",
+            bodyParams: [amount, `${base}/pago/${token}`],
+            templateCode: "paymentReminderWa",
+            relatedEntityType: "payment",
+            relatedEntityId: row.id ?? d.id,
+          }).catch(() => {});
+        } else {
+          await sendSms({
+            to: parties.tenant.phone,
+            body: `ArriendoSeguro: hoy vence tu arriendo (${amount}). Revisa tu correo para pagar y subir el comprobante.`,
+            templateCode: "paymentReminderSms",
+            relatedEntityType: "payment",
+            relatedEntityId: row.id ?? d.id,
+          }).catch(() => {});
+        }
       }
     }
   }
