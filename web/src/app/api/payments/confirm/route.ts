@@ -59,18 +59,34 @@ export async function GET(request: Request) {
     { merge: true },
   );
 
-  // Avisa al inquilino.
+  // Avisa a AMBAS partes (inquilino y arrendador) cuando se confirma; en rechazo,
+  // solo al inquilino (el dueño fue quien rechazó).
   try {
     if (data.contractVersionId) {
       const vSnap = await firestore.collection("contract_versions").doc(data.contractVersionId).get();
-      const tenantEmail = ((vSnap.data() as { contractPayload?: { tenant?: { email?: string } } } | undefined)?.contractPayload?.tenant?.email ?? "").trim();
+      const payload = (vSnap.data() as { contractPayload?: { tenant?: { email?: string }; landlord?: { email?: string } } } | undefined)?.contractPayload;
+      const tenantEmail = (payload?.tenant?.email ?? "").trim();
+      const landlordEmail = (payload?.landlord?.email ?? "").trim();
+      const period = data.periodLabel ?? "";
       if (tenantEmail) {
-        const tpl = paymentConfirmedToTenantEmail({ periodLabel: data.periodLabel ?? "", confirmed });
+        const tpl = paymentConfirmedToTenantEmail({ periodLabel: period, confirmed });
         await sendEmail({
           to: tenantEmail,
           subject: tpl.subject,
           html: tpl.html,
           text: tpl.text,
+          templateCode: "paymentConfirmedToTenantEmail",
+          relatedEntityType: "payment",
+          relatedEntityId: docRef.id,
+        });
+      }
+      // Constancia al dueño (solo en confirmación).
+      if (confirmed && landlordEmail) {
+        await sendEmail({
+          to: landlordEmail,
+          subject: `Pago confirmado${period ? ` · ${period}` : ""}`,
+          html: `<p>Confirmaste el pago${period ? ` del periodo <strong>${period.replace(/[<>]/g, "")}</strong>` : ""}. Avisamos a ambas partes y quedó registrado en tu expediente.</p>`,
+          text: `Confirmaste el pago${period ? ` del periodo ${period}` : ""}. Avisamos a ambas partes y quedó registrado.`,
           templateCode: "paymentConfirmedToTenantEmail",
           relatedEntityType: "payment",
           relatedEntityId: docRef.id,
@@ -83,6 +99,6 @@ export async function GET(request: Request) {
 
   auditEvent("payment_owner_confirmed", { confirmed });
   return confirmed
-    ? page("¡Pago confirmado!", "Registramos que recibiste el pago. Avisamos al inquilino. ¡Gracias!", true)
+    ? page("¡Pago confirmado!", "Registramos que recibiste el pago. Avisamos a ambas partes. ¡Gracias!", true)
     : page("Registrado", "Marcamos el pago como pendiente de revisión y avisamos al inquilino.", true);
 }
