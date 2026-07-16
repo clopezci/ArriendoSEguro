@@ -6,9 +6,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, rediseno-frontend-v2]
   pull_request:
-    branches: [main]
+    branches: [main, rediseno-frontend-v2]
 
 # Cancela ejecuciones viejas del mismo ref si llega un push nuevo.
 concurrency:

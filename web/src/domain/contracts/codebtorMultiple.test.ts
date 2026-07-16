@@ -6,14 +6,16 @@ import { renderResidentialLeaseContract } from "./renderResidentialLeaseContract
 import type { PersonParty, ResidentialLeaseContractInput } from "./types";
 
 function person(n: string): PersonParty {
+  // Datos VÁLIDOS (nombre + apellido reales, documento numérico): el render
+  // ejecuta validateContractData, que ahora exige formato correcto.
   return {
-    fullName: `Persona ${n}`,
+    fullName: `Persona ${n} Gómez`,
     documentType: "CC",
-    documentNumber: `100${n}`,
+    documentNumber: `1000${n.charCodeAt(0)}`,
     city: "Bogotá",
     email: `p${n}@x.com`,
     phone: "3000000000",
-    notificationAddress: `Calle ${n}`,
+    notificationAddress: `Calle 12 # 3-45`,
   };
 }
 
@@ -63,14 +65,14 @@ test("resolveCodebtors prioriza la lista; cae al singular", () => {
 
 test("buildContractVariables llena claves base y sufijadas", () => {
   const vars = buildContractVariables(baseInput({ solidaryCoDebtors: [person("A"), person("B")] }));
-  assert.equal(vars.NOMBRE_CODEUDOR, "Persona A");
-  assert.equal(vars.NOMBRE_CODEUDOR_2, "Persona B");
-  assert.equal(vars.DOCUMENTO_CODEUDOR_2, "CC 100B");
+  assert.equal(vars.NOMBRE_CODEUDOR, "Persona A Gómez");
+  assert.equal(vars.NOMBRE_CODEUDOR_2, "Persona B Gómez");
+  assert.equal(vars.DOCUMENTO_CODEUDOR_2, `CC 1000${"B".charCodeAt(0)}`);
 });
 
 test("un solo codeudor (singular) genera variables idénticas a hoy", () => {
   const vars = buildContractVariables(baseInput({ hasSolidaryCoDebtor: true, solidaryCoDebtor: person("C") }));
-  assert.equal(vars.NOMBRE_CODEUDOR, "Persona C");
+  assert.equal(vars.NOMBRE_CODEUDOR, "Persona C Gómez");
   assert.equal(vars.NOMBRE_CODEUDOR_2, undefined); // no hay segundo
 });
 

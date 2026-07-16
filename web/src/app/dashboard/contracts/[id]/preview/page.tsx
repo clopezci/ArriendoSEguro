@@ -481,6 +481,15 @@ export default function PreviewStepPage() {
           hasSolidaryCoDebtor: d.hasSolidaryCoDebtor,
           generatedAt: versionInfo.generatedAt,
           renewalReminderEnabled: d.renewalReminderEnabled ?? true,
+          // Ingresos SOLO para validar solvencia (ingreso ≥ canon) en el servidor.
+          // No se persisten: el servidor los valida y los descarta.
+          solvency: {
+            tenantMonthlyIncome: d.tenantMonthlyIncome,
+            codebtorMonthlyIncomes: [
+              d.solidaryCoDebtor?.economicSupport?.monthlyIncome,
+              ...(d.solidaryCoDebtors ?? []).map((c) => c?.economicSupport?.monthlyIncome),
+            ].filter((x): x is number => typeof x === "number" && x > 0),
+          },
         }),
       });
       const data = (await res.json()) as SaveDraftVersionResponse;
