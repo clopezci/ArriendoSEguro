@@ -46,6 +46,7 @@ export default function PlansPage() {
   const [error, setError] = useState("");
   const [checkoutUrl, setCheckoutUrl] = useState("");
   const [orderId, setOrderId] = useState("");
+  const [showRedirectConfirm, setShowRedirectConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pricing, setPricing] = useState<ActivePricing | null>(null);
   const [leaseProcessId, setLeaseProcessId] = useState<string | null>(null);
@@ -256,8 +257,15 @@ export default function PlansPage() {
       };
       if (!res.ok || !data.success) throw new Error(data.errors?.[0]?.message ?? "No se pudo crear orden.");
       setOrderId(data.orderId ?? "");
-      setCheckoutUrl(data.checkoutUrl ?? "");
-      setMsg("Orden creada. Completa el pago para activar Plan Plus.");
+      const url = data.checkoutUrl ?? "";
+      setCheckoutUrl(url);
+      if (url) {
+        // En vez de dejar un enlace suelto abajo, mostramos la confirmación de
+        // redirección al sitio externo de pago; al aceptar, redirige directo.
+        setShowRedirectConfirm(true);
+      } else {
+        setError("No recibimos el enlace de pago. Intenta de nuevo.");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al crear orden.");
     } finally {
@@ -481,16 +489,6 @@ export default function PlansPage() {
               ? `Pagar ${formatCopPlain(cart.totalCop)} COP`
               : "Activar Plan Plus"}
           </button>
-          {checkoutUrl && (
-            <a
-              href={checkoutUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 block text-center text-sm text-sky-700 underline"
-            >
-              Ir al checkout seguro (externo)
-            </a>
-          )}
           {internal && process.env.NODE_ENV !== "production" && orderId && (
             <div className="mt-3 flex flex-wrap gap-2">
               <button
@@ -549,6 +547,40 @@ export default function PlansPage() {
           </p>
         )}
       </div>
+
+      {/* Confirmación de redirección al sitio externo de pago (Wompi) */}
+      {showRedirectConfirm && checkoutUrl && (
+        <div role="dialog" aria-modal="true" aria-labelledby="pay-redirect-title" className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center">
+          <button type="button" aria-label="Cancelar" className="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" onClick={() => setShowRedirectConfirm(false)} />
+          <div className="relative z-[101] w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_24px_60px_rgba(86,70,229,0.25)]">
+            <div className="flex items-center gap-2">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-xl" aria-hidden="true">🔒</span>
+              <h2 id="pay-redirect-title" className="text-lg font-black tracking-tight text-[#17151F]">Vas a un sitio de pago externo</h2>
+            </div>
+            <p className="mt-3 text-sm text-slate-700">
+              Te llevaremos a <strong>Wompi</strong>, nuestra pasarela de pago segura, para completar tu compra.
+              ArriendoSeguro <strong>no procesa ni guarda</strong> los datos de tu tarjeta. Al terminar, volverás
+              automáticamente para continuar.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowRedirectConfirm(false)}
+                className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => { window.location.href = checkoutUrl; }}
+                className="rounded-2xl bg-[#12B886] px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 hover:brightness-105 active:scale-95"
+              >
+                Ir al sitio de pago →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -6,6 +6,7 @@ import { isExpedienteCompleto } from "@/lib/dashboard/expediente-ui";
 import { getAllDrafts, type ContractDraft } from "@/features/contracts/wizard-state";
 import { useFreeTier } from "@/lib/useFreeTier";
 import { MACRO_STEPS } from "@/features/contracts/steps5";
+import { OwnerTipsCarousel } from "@/components/dashboard/owner-tips-carousel";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -104,6 +105,9 @@ export function HomeDashboardPanel() {
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Tu arriendo, paso a paso</h1>
         <p className="text-slate-600">Crea, firma y gestiona tu contrato de arrendamiento en un flujo guiado.</p>
       </header>
+
+      {/* Consejos rotativos para arrendar mejor */}
+      <OwnerTipsCarousel />
 
       {/* Acción principal */}
       <section className="rounded-2xl border border-violet-300 bg-gradient-to-br from-violet-50 to-white p-5 shadow-[0_10px_28px_rgba(139,92,246,0.16)]">
