@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { PARTNER_CATEGORY_LABELS, type PartnerCategory } from "@/domain/partners/partners";
 
-type Partner = { id: string; name: string; category: string; description: string; websiteUrl: string };
+export type Partner = { id: string; name: string; category: string; description: string; websiteUrl: string };
 
 function categoryLabel(c: string): string {
   return PARTNER_CATEGORY_LABELS[c as PartnerCategory] ?? "Servicio";
@@ -97,20 +97,22 @@ export function PartnersDirectory() {
   );
 }
 
-function ContactModal({
+export function ContactModal({
   partner,
   userEmail,
   onClose,
+  defaultMessage = "",
 }: {
   partner: Partner;
   userEmail: string;
   onClose: () => void;
+  defaultMessage?: string;
 }) {
   const { user } = useAuth();
   const panelRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(defaultMessage);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
