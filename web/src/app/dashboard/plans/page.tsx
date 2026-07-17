@@ -275,7 +275,7 @@ export default function PlansPage() {
     }
   }
 
-  async function createPlusOrder() {
+  async function createPlusOrder(provider?: "breb") {
     if (!user) return;
     setLoading(true);
     setMsg("");
@@ -284,7 +284,11 @@ export default function PlansPage() {
       const res = await fetch("/api/platform-payments/create-order", {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ planCode: "plus", ...(leaseProcessId ? { leaseProcessId } : {}) }),
+        body: JSON.stringify({
+          planCode: "plus",
+          ...(leaseProcessId ? { leaseProcessId } : {}),
+          ...(provider ? { paymentProvider: provider } : {}),
+        }),
       });
       const data = (await res.json()) as {
         success?: boolean;
@@ -297,9 +301,14 @@ export default function PlansPage() {
       const url = data.checkoutUrl ?? "";
       setCheckoutUrl(url);
       if (url) {
-        // En vez de dejar un enlace suelto abajo, mostramos la confirmación de
-        // redirección al sitio externo de pago; al aceptar, redirige directo.
-        setShowRedirectConfirm(true);
+        if (provider === "breb") {
+          // Bre-B usa nuestra propia página interna de QR/llave (mismo origen).
+          window.location.href = url;
+        } else {
+          // En vez de dejar un enlace suelto abajo, mostramos la confirmación de
+          // redirección al sitio externo de pago; al aceptar, redirige directo.
+          setShowRedirectConfirm(true);
+        }
       } else {
         setError("No recibimos el enlace de pago. Intenta de nuevo.");
       }
@@ -534,6 +543,16 @@ export default function PlansPage() {
               ? `Pagar ${formatCopPlain(cart.totalCop)} COP`
               : "Activar Plan Plus"}
           </button>
+          {process.env.NEXT_PUBLIC_BREB_ENABLED === "true" && (
+            <button
+              type="button"
+              onClick={() => void createPlusOrder("breb")}
+              disabled={loading}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-emerald-500 px-4 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+            >
+              <span aria-hidden="true">⚡</span> Pagar con Bre-B (QR / llave)
+            </button>
+          )}
           {internal && process.env.NODE_ENV !== "production" && orderId && (
             <div className="mt-3 flex flex-wrap gap-2">
               <button

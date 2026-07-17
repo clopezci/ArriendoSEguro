@@ -48,6 +48,7 @@ export async function processHubWompiEvent(
   firestore: Firestore,
   event: { event?: string; data?: { transaction?: WompiTx } },
   nowMs: number,
+  providerLabel: "wompi" | "breb" = "wompi",
 ): Promise<{ httpStatus: number; body: Record<string, unknown> }> {
   const tx = event.data?.transaction;
   const providerReference = tx?.reference ?? "";
@@ -98,7 +99,7 @@ export async function processHubWompiEvent(
     id: payRef.id,
     orderId: order.id,
     appId: order.appId,
-    provider: "wompi",
+    provider: providerLabel,
     providerPaymentId: providerPaymentId || payRef.id,
     amountInCents,
     currency: currency || order.currency,

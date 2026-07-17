@@ -4,6 +4,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { authenticateHubRequest } from "@/lib/hub/authenticateHubRequest";
 import { buildWompiCheckoutUrl } from "@/domain/platform-payments/wompi-checkout";
+import { createBrebCollection, isBrebEnabled } from "@/domain/platform-payments/breb-checkout";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,8 @@ const schema = z.object({
   customerFullName: z.string().max(120).optional(),
   redirectUrl: z.string().url().max(500),
   metadata: z.record(z.string(), z.unknown()).optional(),
+  // Proveedor de pago para esta orden (por defecto Wompi).
+  provider: z.enum(["wompi", "breb"]).optional(),
 });
 
 /**
@@ -53,18 +56,34 @@ export async function POST(request: Request) {
   const providerReference = `HUB_${orderRef.id}`;
   const now = new Date(nowMs).toISOString();
 
-  const checkoutUrl = buildWompiCheckoutUrl({
-    reference: providerReference,
-    amountInCents: parsed.data.amountInCents,
-    currency,
-    redirectUrl: parsed.data.redirectUrl,
-    customerEmail: parsed.data.customerEmail,
-    customerFullName: parsed.data.customerFullName,
-  });
+  // Proveedor: Wompi por defecto; Bre-B si la app lo pide y está habilitado.
+  const provider: "wompi" | "breb" = parsed.data.provider === "breb" && isBrebEnabled() ? "breb" : "wompi";
+  let checkoutUrl: string;
+  if (provider === "breb") {
+    const col = await createBrebCollection({
+      reference: providerReference,
+      amountInCents: parsed.data.amountInCents,
+      currency,
+      redirectUrl: parsed.data.redirectUrl,
+      customerEmail: parsed.data.customerEmail,
+      customerFullName: parsed.data.customerFullName,
+    });
+    checkoutUrl = col.checkoutUrl;
+  } else {
+    checkoutUrl = buildWompiCheckoutUrl({
+      reference: providerReference,
+      amountInCents: parsed.data.amountInCents,
+      currency,
+      redirectUrl: parsed.data.redirectUrl,
+      customerEmail: parsed.data.customerEmail,
+      customerFullName: parsed.data.customerFullName,
+    });
+  }
 
   await orderRef.set({
     id: orderRef.id,
     appId: auth.app.id,
+    provider,
     amountInCents: parsed.data.amountInCents,
     currency,
     externalReference: parsed.data.externalReference ?? null,
@@ -84,6 +103,7 @@ export async function POST(request: Request) {
     success: true,
     orderId: orderRef.id,
     reference: providerReference,
+    provider,
     checkoutUrl,
     status: "pending",
   });

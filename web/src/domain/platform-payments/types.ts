@@ -1,6 +1,6 @@
 export type PlatformPlanCode = "basic_demo" | "plus" | "premium_future";
 export type PlatformOrderPlanCode = "plus";
-export type PlatformProvider = "mock" | "wompi";
+export type PlatformProvider = "mock" | "wompi" | "breb";
 export type PlatformCurrency = "COP";
 
 export type PlatformOrderStatus =
