@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 const schema = z.object({
   planCode: z.literal("plus"),
   leaseProcessId: z.string().min(3).optional(),
-  paymentProvider: z.enum(["mock", "wompi"]).optional(),
+  paymentProvider: z.enum(["mock", "wompi", "breb"]).optional(),
 });
 
 export async function POST(request: Request) {
