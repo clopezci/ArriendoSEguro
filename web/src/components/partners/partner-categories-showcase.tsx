@@ -13,6 +13,8 @@ const CATEGORIES: Cat[] = [
   { id: "mantenimiento", label: "Mantenimiento y hogar", icon: "🔧", desc: "Plomería, electricidad, pintura y reparaciones del inmueble." },
   { id: "juridica", label: "Asesoría jurídica", icon: "⚖️", desc: "Un abogado para dudas, revisión o un proceso, si lo necesitas." },
   { id: "cobranza", label: "Agencia de cobranza", icon: "📞", desc: "Gestión de cartera y cobro cuando hay mora." },
+  { id: "seguro_hogar", label: "Seguro de hogar (mensual)", icon: "🏠", desc: "Protege la casa ante daños comunes (inundación de lavadora, cortos, incendio) por una cuota mensual." },
+  { id: "financiamiento", label: "Financiamiento del arriendo", icon: "💸", desc: "Si el inquilino tiene una mala racha, un aliado financiero adelanta el mes y él lo paga en cuotas; el dueño recibe a tiempo." },
 ];
 
 export function PartnerCategoriesShowcase() {
