@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { aggregateReviews } from "./aggregate";
+import { aggregateReviews, recencyWeight, RECENCY_HALF_LIFE_DAYS, RECENCY_WEIGHT_FLOOR } from "./aggregate";
 import {
   detectFraudSignals,
   maxSeverity,
@@ -20,6 +20,42 @@ test("aggregateReviews combina varias reseñas por dirección y global", () => {
   assert.equal(ltt?.overallAverage, 4); // (5+3)/2
   const payment = ltt?.perCriterion.find((c) => c.key === "payment");
   assert.equal(payment?.average, 4.5);
+});
+
+test("recencyWeight: hoy=1, vida media=0.5, muy antiguo→piso", () => {
+  const now = Date.parse("2026-06-01T00:00:00.000Z");
+  const day = 86_400_000;
+  assert.equal(recencyWeight("2026-06-01T00:00:00.000Z", now), 1);
+  const halfLife = new Date(now - RECENCY_HALF_LIFE_DAYS * day).toISOString();
+  assert.ok(Math.abs(recencyWeight(halfLife, now) - 0.5) < 1e-9);
+  const ancient = new Date(now - 5 * 365 * day).toISOString();
+  assert.equal(recencyWeight(ancient, now), RECENCY_WEIGHT_FLOOR);
+  // Sin fecha o fecha inválida → peso neutro 1 (compatibilidad).
+  assert.equal(recencyWeight(undefined, now), 1);
+  assert.equal(recencyWeight("no-es-fecha", now), 1);
+  // Fecha futura (desfase de reloj) → no supera 1.
+  assert.equal(recencyWeight("2027-01-01T00:00:00.000Z", now), 1);
+});
+
+test("aggregateReviews pondera la reseña reciente por encima de la antigua", () => {
+  const now = Date.parse("2026-06-01T00:00:00.000Z");
+  const day = 86_400_000;
+  const reciente = new Date(now - 10 * day).toISOString(); // hace 10 días → peso ~1
+  const antigua = new Date(now - 3 * 365 * day).toISOString(); // hace 3 años → piso 0.25
+  const agg = aggregateReviews(
+    [
+      { direction: "landlord_to_tenant", overall: 5, ratings: { payment: 5 }, createdAt: reciente },
+      { direction: "landlord_to_tenant", overall: 1, ratings: { payment: 1 }, createdAt: antigua },
+    ],
+    { nowMs: now },
+  );
+  // Promedio plano sería 3; ponderado debe acercarse mucho más al 5 reciente.
+  assert.ok(agg.overallAverage > 4, `esperaba >4, fue ${agg.overallAverage}`);
+  const payment = agg.byDirection[0]?.perCriterion.find((c) => c.key === "payment");
+  assert.ok((payment?.average ?? 0) > 4, `esperaba criterio >4, fue ${payment?.average}`);
+  // El conteo sigue siendo el número real de reseñas.
+  assert.equal(agg.byDirection[0]?.reviewsCount, 2);
+  assert.equal(agg.totalReviews, 2);
 });
 
 test("aggregateReviews vacío → ceros", () => {

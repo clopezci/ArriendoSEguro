@@ -55,6 +55,11 @@ export default function MiReputacionPage() {
           Promedio de estrellas que has recibido en tus arriendos, por variable. Es privado: solo tú lo ves; nadie puede
           buscarte por cédula.
         </p>
+        <p className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs text-slate-600">
+          El promedio pondera más tu <strong>comportamiento reciente</strong> que el histórico antiguo, para reflejar tu
+          situación actual y premiar la mejora. Como titular de tus datos puedes conocer, actualizar y rectificar esta
+          información (Ley 1581 de 2012).
+        </p>
       </header>
 
       {loading && <p className="text-sm text-slate-600">Cargando…</p>}
