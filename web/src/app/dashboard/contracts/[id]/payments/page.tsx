@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { visualPaymentState } from "@/domain/payments/paymentStatus";
 import { PaymentsExportCard } from "@/components/payments/payments-export-card";
+import { CollectionAllyCard } from "@/components/payments/collection-ally-card";
 
 type Payment = {
   id: string;
@@ -205,6 +206,9 @@ export default function PaymentsPage() {
           <Card label="Estado general" value={summary.allGood ? "Al día" : "Revisar"} />
         </section>
       )}
+
+      {/* Sugerencia contextual: aliado de cobranza si hay mora alta (≥10 días). */}
+      <CollectionAllyCard scheduledPayments={scheduledPayments} userEmail={user?.email ?? ""} />
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Link href={`/dashboard/contracts/${id}/payment-schedule`} className="rounded bg-[#5646E5] px-3 py-2 text-sm font-semibold text-white">
