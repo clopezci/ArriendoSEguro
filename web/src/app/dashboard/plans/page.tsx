@@ -47,6 +47,7 @@ export default function PlansPage() {
   const [checkoutUrl, setCheckoutUrl] = useState("");
   const [orderId, setOrderId] = useState("");
   const [showRedirectConfirm, setShowRedirectConfirm] = useState(false);
+  const [brebViaWompi, setBrebViaWompi] = useState(false);
   const [removingClause, setRemovingClause] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pricing, setPricing] = useState<ActivePricing | null>(null);
@@ -546,11 +547,11 @@ export default function PlansPage() {
           {process.env.NEXT_PUBLIC_BREB_ENABLED === "true" && (
             <button
               type="button"
-              onClick={() => void createPlusOrder("breb")}
+              onClick={() => { setBrebViaWompi(true); void createPlusOrder(); }}
               disabled={loading}
               className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-emerald-500 px-4 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
             >
-              <span aria-hidden="true">⚡</span> Pagar con Bre-B (QR / llave)
+              <span aria-hidden="true">⚡</span> Pagar con Bre-B
             </button>
           )}
           {internal && process.env.NODE_ENV !== "production" && orderId && (
@@ -615,7 +616,7 @@ export default function PlansPage() {
       {/* Confirmación de redirección al sitio externo de pago (Wompi) */}
       {showRedirectConfirm && checkoutUrl && (
         <div role="dialog" aria-modal="true" aria-labelledby="pay-redirect-title" className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center">
-          <button type="button" aria-label="Cancelar" className="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" onClick={() => setShowRedirectConfirm(false)} />
+          <button type="button" aria-label="Cancelar" className="absolute inset-0 bg-slate-900/45 backdrop-blur-sm" onClick={() => { setShowRedirectConfirm(false); setBrebViaWompi(false); }} />
           <div className="relative z-[101] w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_24px_60px_rgba(86,70,229,0.25)]">
             <div className="flex items-center gap-2">
               <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-100 text-xl" aria-hidden="true">🔒</span>
@@ -626,10 +627,15 @@ export default function PlansPage() {
               ArriendoSeguro <strong>no procesa ni guarda</strong> los datos de tu tarjeta. Al terminar, volverás
               automáticamente para continuar.
             </p>
+            {brebViaWompi && (
+              <p className="mt-2 rounded-xl border border-emerald-300 bg-emerald-50 p-2.5 text-xs font-medium text-emerald-800">
+                ⚡ En la pasarela, elige <strong>Bre-B</strong> como método de pago para pagar al instante desde tu app bancaria.
+              </p>
+            )}
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
-                onClick={() => setShowRedirectConfirm(false)}
+                onClick={() => { setShowRedirectConfirm(false); setBrebViaWompi(false); }}
                 className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 hover:bg-slate-50"
               >
                 Cancelar
