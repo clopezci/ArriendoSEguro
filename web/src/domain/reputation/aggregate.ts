@@ -45,6 +45,29 @@ export const RECENCY_HALF_LIFE_DAYS = 180;
 export const RECENCY_WEIGHT_FLOOR = 0.25;
 const DAY_MS = 86_400_000;
 
+/**
+ * Caducidad legal del dato de reputación: las calificaciones con más de estos
+ * años **dejan de contar** y se **borran** por un cron. Alinea con el principio
+ * de temporalidad (Ley 1581 de 2012) y con el tope de permanencia del dato
+ * negativo (~4 años, Ley 1266 de 2008). Lo reciente es lo que importa.
+ */
+export const REPUTATION_RETENTION_YEARS = 4;
+
+/** Instante (ms) antes del cual una reseña ya caducó. */
+export function retentionCutoffMs(nowMs: number): number {
+  const d = new Date(nowMs);
+  d.setFullYear(d.getFullYear() - REPUTATION_RETENTION_YEARS);
+  return d.getTime();
+}
+
+/** ¿La reseña ya caducó? Sin fecha válida se considera vigente (conservador). */
+export function isReviewExpired(createdAt: string | undefined, nowMs: number): boolean {
+  if (!createdAt) return false;
+  const t = Date.parse(createdAt);
+  if (!Number.isFinite(t)) return false;
+  return t < retentionCutoffMs(nowMs);
+}
+
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
@@ -81,6 +104,8 @@ export function aggregateReviews(
   for (const r of reviews) {
     const direction = String(r.direction ?? "");
     if (!direction) continue;
+    // Caducidad: las reseñas vencidas no cuentan (aunque el cron aún no las borre).
+    if (isReviewExpired(r.createdAt, nowMs)) continue;
     const ratings = r.ratings ?? {};
     const overall = Number(r.overall ?? 0);
     const w = recencyWeight(r.createdAt, nowMs);

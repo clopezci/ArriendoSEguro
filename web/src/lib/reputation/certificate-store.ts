@@ -84,6 +84,34 @@ export async function revokeCertificate(firestore: Firestore, ownerUid: string, 
   return true;
 }
 
+/**
+ * Housekeeping: borra los certificados ya caducados (su enlace dejó de servir).
+ * No es dato de reputación en sí (es un enlace efímero), pero mantiene limpia la
+ * colección. Idempotente y por lotes.
+ */
+export async function purgeExpiredCertificates(
+  firestore: Firestore,
+  nowMs: number = Date.now(),
+): Promise<{ deleted: number }> {
+  const nowIso = new Date(nowMs).toISOString();
+  const snap = await firestore
+    .collection(CERTIFICATE_COLLECTION)
+    .where("expiresAt", "<", nowIso)
+    .get()
+    .catch(() => null);
+  const docs = snap?.docs ?? [];
+  let deleted = 0;
+  for (let i = 0; i < docs.length; i += 400) {
+    const batch = firestore.batch();
+    for (const d of docs.slice(i, i + 400)) {
+      batch.delete(d.ref);
+      deleted += 1;
+    }
+    await batch.commit();
+  }
+  return { deleted };
+}
+
 export type CertificateView =
   | { ok: true; subjectEmail: string; aggregate: { totalReviews: number; overallAverage: number; byDirection: unknown[] } }
   | { ok: false; reason: "not_found" | "revoked" | "expired" };
