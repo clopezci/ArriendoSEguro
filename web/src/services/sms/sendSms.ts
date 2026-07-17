@@ -18,6 +18,7 @@ export type SmsTemplateCode =
   | "renewalReminderSms"
   | "paymentReminderSms"
   | "reputationLowRatingSms"
+  | "maintenanceSms"
   | "genericSms";
 
 export type SendSmsInput = {
