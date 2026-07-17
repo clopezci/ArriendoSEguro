@@ -80,6 +80,35 @@ export type ReplicaReason = (typeof REPLICA_REASONS)[number];
 export const REPLICA_TEXT_MAX = 1000;
 
 /**
+ * Umbral de "calificación baja": una variable con este valor o menos dispara el
+ * aviso de réplica al calificado (correo + celular) con ventana de respuesta.
+ */
+export const LOW_RATING_THRESHOLD = 2;
+
+/**
+ * Ventana **sugerida** (no un plazo que caduque) para que el calificado responda
+ * pronto. El derecho de réplica/rectificación es PERMANENTE bajo la Ley 1581 de
+ * 2012: nunca se extingue por vencer estas horas.
+ */
+export const REPLICA_WINDOW_HOURS = 48;
+
+/**
+ * Devuelve las variables calificadas en o por debajo del umbral (las "bajas"),
+ * con su etiqueta legible, ordenadas de la más baja a la menos baja. Vacío si
+ * ninguna es baja.
+ */
+export function lowCriteria(
+  direction: ReputationDirection,
+  values: Record<string, number>,
+): { key: string; label: string; value: number }[] {
+  const byKey = new Map(REPUTATION_CRITERIA[direction].map((c) => [c.key, c.label]));
+  return Object.entries(values)
+    .filter(([, v]) => typeof v === "number" && v <= LOW_RATING_THRESHOLD)
+    .map(([key, value]) => ({ key, label: byKey.get(key) ?? key, value: Number(value) }))
+    .sort((a, b) => a.value - b.value);
+}
+
+/**
  * Valida un mapa de calificaciones: deben estar exactamente las claves del
  * criterio de la dirección, cada una entera entre 1 y 5.
  */

@@ -22,6 +22,7 @@ export type EmailTemplateCode =
   | "specialClauseReviewEmail"
   | "initialDeliveryActEmail"
   | "reputationReviewReceivedEmail"
+  | "reputationLowRatingEmail"
   | "contractRenewalDocEmail"
   | "partnerInterestEmail"
   | "customAlertEmail"

@@ -20,6 +20,9 @@ type ReviewView = {
   overall: number;
   raterRole: string;
   updatedAt: string;
+  lowRating: boolean;
+  lowCriteriaKeys: string[];
+  replyDeadline: string | null;
   reply: ReplyView;
 } | null;
 
@@ -38,6 +41,9 @@ async function readReview(
     overall: Number(x.overall ?? 0),
     raterRole: String(x.raterRole ?? ""),
     updatedAt: String(x.updatedAt ?? ""),
+    lowRating: Boolean(x.lowRating),
+    lowCriteriaKeys: Array.isArray(x.lowCriteriaKeys) ? (x.lowCriteriaKeys as string[]) : [],
+    replyDeadline: x.replyDeadline ? String(x.replyDeadline) : null,
     reply: rawReply
       ? {
           reason: String(rawReply.reason ?? ""),
