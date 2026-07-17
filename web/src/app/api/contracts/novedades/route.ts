@@ -9,8 +9,7 @@ import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
 import { persistExpedienteAttachment } from "@/domain/contracts/persistExpedienteAttachment";
 import { sendEmail } from "@/services/email/sendEmail";
 import { expedienteNovedadEmail } from "@/services/email/emailTemplates";
-import { sendSms } from "@/services/sms/sendSms";
-import { isNonPaymentPhoneEnabled } from "@/domain/notifications/channelPolicy";
+import { sendPhoneNotice } from "@/services/notify/phoneChannel";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { shouldBlockForPlus, plusRequiredResponse } from "@/lib/auth/contractPlusGate";
 
@@ -233,23 +232,20 @@ export async function POST(request: Request) {
         : hasCodebtor && payload?.solidaryCoDebtor
           ? [payload.solidaryCoDebtor]
           : [];
-    // Modo híbrido: el aviso por SMS de novedades va apagado salvo flag (el correo siempre sale).
-    const phoneTargets = isNonPaymentPhoneEnabled()
-      ? [payload?.landlord, payload?.tenant, ...codebtorPhoneTargets]
-          .filter((p): p is NonNullable<typeof p> => Boolean(p?.phone))
-          .filter((p) => (p.email ?? "").toLowerCase() !== authorEmailLc)
-      : [];
-    // SMS solo para clientes de pago: este endpoint ya exige Plus/demo al actor
-    // (shouldBlockForPlus arriba), por lo que el tier gratis nunca llega aquí.
-    const smsBody = `ArriendoSeguro: ${authorName} registró una novedad (${tipoLabel}) en tu arriendo. Revísala en la plataforma.`;
+    // Complemento por WhatsApp (el correo es la base). Solo sale si el interruptor
+    // maestro de WhatsApp está encendido; si no, queda solo el correo.
+    const phoneTargets = [payload?.landlord, payload?.tenant, ...codebtorPhoneTargets]
+      .filter((p): p is NonNullable<typeof p> => Boolean(p?.phone))
+      .filter((p) => (p.email ?? "").toLowerCase() !== authorEmailLc);
+    const phoneMsg = `${authorName} registró una novedad (${tipoLabel}) en tu arriendo. Revísala en la plataforma.`;
     const seenPhones = new Set<string>();
     for (const p of phoneTargets) {
       if (seenPhones.has(p.phone)) continue;
       seenPhones.add(p.phone);
-      await sendSms({
+      await sendPhoneNotice({
         to: p.phone,
-        body: smsBody,
-        templateCode: "expedienteNovedadSms",
+        message: phoneMsg,
+        templateCode: "expedienteNovedadWa",
         relatedEntityType: "contract",
         relatedEntityId: parsed.data.contractId,
       });

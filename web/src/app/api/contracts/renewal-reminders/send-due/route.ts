@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { FieldValue } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireCronAuth } from "@/lib/security/cron";
 import { dueRenewalReminder, daysUntilEnd } from "@/domain/contracts/renewalReminder";
 import { contractRenewalReminderEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
-import { sendSms } from "@/services/sms/sendSms";
+import { sendPhoneNotice } from "@/services/notify/phoneChannel";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { logServerError } from "@/lib/observability/observability";
 import type { ResidentialLeaseContractInput, PersonParty } from "@/domain/contracts/types";
@@ -82,17 +81,15 @@ export async function POST(request: Request) {
             relatedEntityId: doc.id,
           });
         }
-        // SMS solo para clientes de pago: el cron solo procesa contratos
-        // `signed`, y firmar exige Plus/demo, así que el tier gratis no llega aquí.
-        if (party.phone) {
-          await sendSms({
-            to: party.phone,
-            body: `ArriendoSeguro: tu contrato de arriendo vence el ${endDate} (~${days} días). Recuerda el preaviso de 3 meses. Decide renovación o terminación en la plataforma.`,
-            templateCode: "renewalReminderSms",
-            relatedEntityType: "contract",
-            relatedEntityId: doc.id,
-          });
-        }
+        // Complemento por WhatsApp (el correo es la base). Solo sale si el
+        // interruptor maestro de WhatsApp está encendido.
+        await sendPhoneNotice({
+          to: party.phone,
+          message: `Tu contrato de arriendo vence el ${endDate} (~${days} días). Recuerda el preaviso de 3 meses. Decide renovación o terminación en la plataforma.`,
+          templateCode: "renewalReminderWa",
+          relatedEntityType: "contract",
+          relatedEntityId: doc.id,
+        });
       }
 
       const stamp = now.toISOString();

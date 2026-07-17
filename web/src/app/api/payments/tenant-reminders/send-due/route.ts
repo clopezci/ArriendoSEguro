@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { FieldValue } from "firebase-admin/firestore";
 import type { Firestore } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireCronAuth } from "@/lib/security/cron";
@@ -8,7 +7,6 @@ import { createUploadToken } from "@/lib/payments/uploadTokenStore";
 import { PAYMENT_SETTINGS_COLLECTION, describePaymentMethodForTenant, type PaymentSettings } from "@/domain/payments/paymentSettings";
 import { tenantPaymentReminderEmail, ownerConfirmEscalationEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
-import { isWhatsAppConfigured } from "@/services/whatsapp/sendWhatsApp";
 import { sendPhoneNotice } from "@/services/notify/phoneChannel";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { appConfig } from "@/lib/config";
@@ -46,21 +44,17 @@ function codebtorContacts(p: VersionParties): Array<{ email: string; phone: stri
 }
 
 /**
- * Envía un recordatorio al CELULAR por el canal configurado:
- * PAYMENT_REMINDER_CHANNEL="whatsapp" (y WhatsApp configurado) → WhatsApp con
- * plantilla (1 variable = el mensaje); en otro caso → SMS. `msg` es el texto
- * (sin marca; el SMS le antepone "ArriendoSeguro:"). No incluye URLs largas: el
- * enlace para subir el soporte va en el CORREO.
+ * Complemento al CELULAR (WhatsApp) del recordatorio de pago. El correo es la
+ * base; esto solo sale si el interruptor maestro `NOTIFICATIONS_WHATSAPP_ENABLED`
+ * está encendido. `msg` es el texto que llena la plantilla de 1 variable.
  */
 async function phoneReminder(to: string | undefined, msg: string, relatedId: string): Promise<void> {
-  const useWa = (process.env.PAYMENT_REMINDER_CHANNEL || "sms").toLowerCase() === "whatsapp" && isWhatsAppConfigured();
   await sendPhoneNotice({
     to,
     message: msg,
-    templateCode: useWa ? "paymentReminderWa" : "paymentReminderSms",
+    templateCode: "paymentReminderWa",
     relatedEntityType: "payment",
     relatedEntityId: relatedId,
-    whatsapp: { enabled: useWa, templateName: process.env.WHATSAPP_TEMPLATE_PAYMENT?.trim() || "recordatorio_pago" },
   });
 }
 
