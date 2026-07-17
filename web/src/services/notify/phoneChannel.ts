@@ -1,5 +1,5 @@
 import { sendWhatsApp, isWhatsAppConfigured } from "@/services/whatsapp/sendWhatsApp";
-import { isWhatsAppComplementEnabled, whatsAppGenericTemplate } from "@/domain/notifications/channelPolicy";
+import { isWhatsAppComplementEnabled, resolveWhatsAppTemplate } from "@/domain/notifications/channelPolicy";
 
 /**
  * Envía un aviso al CELULAR como **complemento por WhatsApp** (el correo es la
@@ -24,7 +24,7 @@ export async function sendPhoneNotice(params: {
 
   await sendWhatsApp({
     to: phone,
-    templateName: whatsAppGenericTemplate(),
+    templateName: resolveWhatsAppTemplate(params.templateCode),
     bodyParams: [params.message],
     templateCode: params.templateCode,
     relatedEntityType: params.relatedEntityType,
