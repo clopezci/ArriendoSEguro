@@ -4,22 +4,12 @@ import { z } from "zod";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getLegalConfig } from "@/domain/legal/legalConfig";
-import { sendEmail } from "@/services/email/sendEmail";
-import { specialClauseReviewEmail } from "@/services/email/emailTemplates";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { SPECIAL_CLAUSE_REVIEWS_COLLECTION } from "@/domain/contracts/specialClauseReview";
 
 export const runtime = "nodejs";
 
 const DRAFTS_COLLECTION = "contract_drafts";
-
-function appBaseUrl() {
-  return (
-    process.env.APP_BASE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
-}
 
 /** Extrae de forma defensiva el contacto del dueño desde el payload del borrador. */
 function readOwnerContact(payload: unknown): { name: string; email: string; phone: string } {
@@ -133,49 +123,28 @@ export async function POST(request: Request) {
       requesterPhone: owner.phone,
       proposedText: clauseText.trim(),
       priceCop: config.specialClausePriceCop,
-      // Si el usuario reeditó el texto, la revisión previa deja de ser válida.
-      ...(existing && !sameText ? { status: "pending", finalText: "", respondedAt: null } : {}),
+      // Si el usuario reeditó el texto, la revisión previa deja de ser válida
+      // (y si ya se había notificado, se limpia para reenviar tras el pago).
+      ...(existing && !sameText ? { status: "pending", finalText: "", respondedAt: null, emailSentAt: null } : {}),
+      // Reactiva una revisión que estaba cancelada al volver a agregar la cláusula.
+      ...(existingData?.status === "cancelled" ? { status: "pending", emailSentAt: null } : {}),
       ...(existing ? {} : { status: "pending", createdAt: nowIso }),
       updatedAt: nowIso,
     },
     { merge: true },
   );
 
-  // Sin aliado jurídico configurado: no es un error del usuario. La solicitud
-  // queda como "pending" (para el semáforo) pero no hay a quién notificar.
-  if (emails.length === 0) {
-    return NextResponse.json({ success: true, notified: 0, reason: "no_legal_partner", token, status: "pending" });
-  }
-
-  // Dedupe de correo: si ya está notificado (o resuelto) y el texto no cambió, no reenviamos.
-  if (existing && sameText && (existingData?.status === "pending" || existingData?.status === "drafted")) {
-    return NextResponse.json({ success: true, notified: 0, reason: "already_notified", token, status: existingData?.status ?? "pending" });
-  }
-
-  const reviewUrl = `${appBaseUrl()}/aliado/clausula/${token}`;
-  const tpl = specialClauseReviewEmail({
-    contractId: contractDraftId,
-    requesterName: owner.name,
-    requesterEmail,
-    requesterPhone: owner.phone,
-    clauseText: clauseText.trim(),
-    priceCop: config.specialClausePriceCop,
-    reviewUrl,
+  auditEvent("special_clause_review_requested", { contractId: contractDraftId, hasLegalPartner: emails.length > 0 });
+  // IMPORTANTE: el correo al aliado jurídico NO se envía aquí. Se difiere hasta
+  // que el contrato se PAGUE (webhook / mock-approve) mediante
+  // notifyLegalPartnerForPaidClause. Así, si el usuario no paga o quita la
+  // cláusula al final, el abogado nunca es notificado.
+  return NextResponse.json({
+    success: true,
+    notified: 0,
+    deferred: true,
+    reason: emails.length === 0 ? "no_legal_partner" : "deferred_until_payment",
+    token,
+    status: "pending",
   });
-
-  let notified = 0;
-  for (const to of emails) {
-    const r = await sendEmail({
-      to,
-      subject: tpl.subject,
-      html: tpl.html,
-      text: tpl.text,
-      templateCode: "specialClauseReviewEmail",
-      relatedEntityType: "contract",
-      relatedEntityId: contractDraftId,
-    });
-    if (r.status === "sent" || r.status === "mock") notified += 1;
-  }
-  auditEvent("special_clause_review_requested", { contractId: contractDraftId, recipients: emails.length });
-  return NextResponse.json({ success: true, notified, token, status: "pending" });
 }

@@ -8,6 +8,7 @@ import { persistExpedienteAttachment } from "@/domain/contracts/persistExpedient
 import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
 import { sendEmail } from "@/services/email/sendEmail";
 import { sendSms } from "@/services/sms/sendSms";
+import { isNonPaymentPhoneEnabled } from "@/domain/notifications/channelPolicy";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { logServerError } from "@/lib/observability/observability";
 
@@ -149,9 +150,12 @@ export async function POST(request: Request) {
       });
     }
     const authorEmailLc = (participant.user.email ?? "").toLowerCase();
-    const phoneTargets = [payload?.landlord, payload?.tenant]
-      .filter((p): p is NonNullable<typeof p> => Boolean(p?.phone))
-      .filter((p) => (p.email ?? "").toLowerCase() !== authorEmailLc);
+    // Modo híbrido: el aviso por SMS de mantenimiento va apagado salvo flag (el correo siempre sale).
+    const phoneTargets = isNonPaymentPhoneEnabled()
+      ? [payload?.landlord, payload?.tenant]
+          .filter((p): p is NonNullable<typeof p> => Boolean(p?.phone))
+          .filter((p) => (p.email ?? "").toLowerCase() !== authorEmailLc)
+      : [];
     const seen = new Set<string>();
     for (const p of phoneTargets) {
       if (seen.has(p.phone!)) continue;

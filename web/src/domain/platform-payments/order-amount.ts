@@ -11,6 +11,7 @@ import type { Firestore } from "firebase-admin/firestore";
 import { getResolvedPlanPlusPricing } from "./plan-plus-pricing";
 import { getLegalConfig } from "@/domain/legal/legalConfig";
 import { SPECIAL_CLAUSE_OTHER_ID } from "@/features/contracts/special-clauses";
+import { SPECIAL_CLAUSE_REVIEWS_COLLECTION } from "@/domain/contracts/specialClauseReview";
 
 export type OrderLineItem = { code: string; label: string; amountCop: number };
 
@@ -25,9 +26,40 @@ export type PlanPlusOrderAmount = {
   promoMessage: string | null;
 };
 
-/** ¿El expediente incluye la cláusula «Otra» (con costo)? */
+function scHasOther(sc: { enabled?: boolean; selected?: string[] } | undefined): boolean {
+  return Boolean(sc?.enabled) && Array.isArray(sc?.selected) && sc.selected.includes(SPECIAL_CLAUSE_OTHER_ID);
+}
+
+/**
+ * ¿El expediente incluye la cláusula «Otra» (con costo)? Se evalúa de forma
+ * robusta para que el cobro aparezca en el carrito aunque la versión guardada
+ * esté rezagada respecto de la selección del usuario:
+ *  1) Si hay una **revisión** de la cláusula, ella manda: pendiente/borrador →
+ *     cobra; cancelada/declinada → NO cobra (así "quitar la cláusula" se respeta).
+ *  2) Si no hay revisión, mira el **borrador vivo** (contract_drafts).
+ *  3) En última instancia, la **versión guardada** (contract_versions).
+ */
 async function leaseHasCostedSpecialClause(firestore: Firestore, leaseProcessId: string): Promise<boolean> {
   try {
+    // 1) Revisión de la cláusula (fuente más confiable del cobro).
+    const revSnap = await firestore
+      .collection(SPECIAL_CLAUSE_REVIEWS_COLLECTION)
+      .where("contractDraftId", "==", leaseProcessId)
+      .limit(1)
+      .get();
+    if (!revSnap.empty) {
+      const st = String((revSnap.docs[0].data() as { status?: string }).status ?? "pending");
+      return st !== "cancelled" && st !== "declined";
+    }
+
+    // 2) Borrador vivo.
+    const draftSnap = await firestore.collection("contract_drafts").doc(leaseProcessId).get();
+    const draftSc = (
+      draftSnap.data() as { payload?: { specialClauses?: { enabled?: boolean; selected?: string[] } } } | undefined
+    )?.payload?.specialClauses;
+    if (scHasOther(draftSc)) return true;
+
+    // 3) Versión guardada.
     const contractSnap = await firestore.collection("contracts").doc(leaseProcessId).get();
     const currentVersionId = (contractSnap.data() as { currentVersionId?: string } | undefined)?.currentVersionId;
     if (!currentVersionId) return false;
@@ -37,8 +69,7 @@ async function leaseHasCostedSpecialClause(firestore: Firestore, leaseProcessId:
         | { contractPayload?: { specialClauses?: { enabled?: boolean; selected?: string[] } } }
         | undefined
     )?.contractPayload?.specialClauses;
-    if (!sc?.enabled) return false;
-    return Array.isArray(sc.selected) && sc.selected.includes(SPECIAL_CLAUSE_OTHER_ID);
+    return scHasOther(sc);
   } catch {
     return false;
   }

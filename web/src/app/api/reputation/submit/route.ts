@@ -20,6 +20,7 @@ import {
 import { sendEmail } from "@/services/email/sendEmail";
 import { sendPhoneNotice } from "@/services/notify/phoneChannel";
 import { isWhatsAppConfigured } from "@/services/whatsapp/sendWhatsApp";
+import { isNonPaymentPhoneEnabled } from "@/domain/notifications/channelPolicy";
 
 export const runtime = "nodejs";
 
@@ -213,7 +214,8 @@ export async function POST(request: Request) {
 
         // Si la calificación es baja, además avisamos al CELULAR (WhatsApp si hay
         // plantilla aprobada configurada; si no, SMS corto). El correo lleva el enlace.
-        if (isLow && subjectPhone) {
+        // Modo híbrido: el aviso al celular de reputación está apagado salvo flag.
+        if (isLow && subjectPhone && isNonPaymentPhoneEnabled()) {
           const waTemplate = process.env.WHATSAPP_TEMPLATE_REPUTATION?.trim();
           const useWa = isWhatsAppConfigured() && !!waTemplate;
           const firstLabel = lowList[0]?.label ?? "una variable";

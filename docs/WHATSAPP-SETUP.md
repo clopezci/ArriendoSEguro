@@ -33,6 +33,20 @@ correo siempre lo acompaña con el enlace para responder).
 Redeploy y listo: los recordatorios salen por WhatsApp. Para volver a SMS, cambia
 `PAYMENT_REMINDER_CHANNEL` a `sms` (o bórrala).
 
+## Modo híbrido (por defecto): celular solo para pagos
+Por defecto, **solo los pagos y la mora** usan el canal al celular (WhatsApp/SMS).
+El resto de avisos (reputación, mantenimiento, novedades) van **solo por correo**,
+para concentrar el costo de mensajería donde importa (cobrar). El correo siempre
+sale en todos los casos.
+
+Si algún día quieres que esos avisos secundarios TAMBIÉN salgan al celular:
+
+```
+NON_PAYMENT_PHONE_ENABLED = true
+```
+
+Sin esa variable (recomendado), los bloques que no son de pago no gastan SMS/WhatsApp.
+
 ---
 
 ## Cómo abrir WhatsApp Business (Cloud API de Meta) — la vía oficial y más barata
