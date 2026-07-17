@@ -21,8 +21,23 @@ type ReviewView = {
   overall: number;
   raterRole: string;
   updatedAt: string;
+  lowRating?: boolean;
+  lowCriteriaKeys?: string[];
+  replyDeadline?: string | null;
   reply: ReplyView;
 } | null;
+
+/** Texto amable del tiempo restante para replicar (o vencido). */
+function replyWindowLabel(deadlineIso: string | null | undefined): { text: string; expired: boolean } | null {
+  if (!deadlineIso) return null;
+  const ms = Date.parse(deadlineIso) - Date.now();
+  if (!Number.isFinite(ms)) return null;
+  if (ms <= 0) return { text: "Pasó la ventana sugerida de 48 horas, pero tu derecho de réplica sigue disponible.", expired: true };
+  const hours = Math.floor(ms / (60 * 60 * 1000));
+  if (hours >= 1) return { text: `Te sugerimos responder dentro de ~${hours} h (ventana sugerida de 48 horas).`, expired: false };
+  const mins = Math.max(1, Math.floor(ms / (60 * 1000)));
+  return { text: `Te sugerimos responder dentro de ~${mins} min (ventana sugerida de 48 horas).`, expired: false };
+}
 
 type ForContract = {
   success: boolean;
@@ -234,6 +249,20 @@ export function ReputationPanel({ contractId }: { contractId: string }) {
         <h3 className="text-sm font-semibold text-slate-900">Calificación que recibiste</h3>
         {info.counterpartReview ? (
           <div className="mt-2">
+            {info.counterpartReview.lowRating && (() => {
+              const w = replyWindowLabel(info.counterpartReview.replyDeadline);
+              return (
+                <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 p-3">
+                  <p className="text-sm font-semibold text-amber-900">
+                    Recibiste una calificación baja
+                  </p>
+                  <p className="mt-1 text-xs text-amber-800">
+                    Puedes ejercer tu <strong>derecho de réplica y rectificación</strong> aquí abajo (Ley 1581 de 2012).{" "}
+                    {w?.text ?? "Te sugerimos responder pronto; el derecho permanece disponible siempre."}
+                  </p>
+                </div>
+              );
+            })()}
             <p className="text-sm text-slate-800">
               Promedio: <StarRating name="recibida" value={Math.round(info.counterpartReview.overall)} readOnly />{" "}
               <span className="text-xs text-slate-500">({info.counterpartReview.overall.toFixed(1)} / 5)</span>

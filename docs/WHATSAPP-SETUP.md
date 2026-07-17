@@ -18,6 +18,18 @@ WHATSAPP_TEMPLATE_PAYMENT = recordatorio_pago   (nombre de tu plantilla aprobada
 WHATSAPP_LANG             = es                  (opcional; idioma de la plantilla)
 ```
 
+### Opcional: aviso de calificación baja por WhatsApp
+El aviso al calificado cuando recibe una **calificación baja** (con ventana de 48h
+para replicar) sale por **SMS** por defecto. Si quieres que salga por WhatsApp,
+crea otra plantilla **Utility** de 1 variable (p. ej. `calificacion_baja`) y añade:
+
+```
+WHATSAPP_TEMPLATE_REPUTATION = calificacion_baja
+```
+
+Sin esta variable, el aviso de calificación baja sigue saliendo por SMS (y el
+correo siempre lo acompaña con el enlace para responder).
+
 Redeploy y listo: los recordatorios salen por WhatsApp. Para volver a SMS, cambia
 `PAYMENT_REMINDER_CHANNEL` a `sms` (o bórrala).
 

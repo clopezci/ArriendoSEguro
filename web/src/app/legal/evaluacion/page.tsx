@@ -76,11 +76,14 @@ export default function EvaluacionPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-900">7. Rectificación o revisión futura</h2>
+        <h2 className="text-lg font-semibold text-slate-900">7. Derecho de réplica y rectificación</h2>
         <p>
-          Si usted considera que una calificación o dato es inexacto y la función lo permite, podrá solicitar revisión
-          por los canales de soporte. Las políticas de publicación podrán actualizarse; se le informará de cambios
-          relevantes.
+          Cuando la otra parte le califica, usted es titular de esos datos y tiene <strong>derecho de réplica y
+          rectificación</strong> (Ley 1581 de 2012): puede dejar su versión desde su expediente, y quedará registrada
+          junto a la calificación. Si la calificación es baja, se lo avisamos por correo y mensaje al celular con una
+          <strong> ventana sugerida de 48 horas</strong> para que responda pronto; sin embargo, este derecho{" "}
+          <strong>no caduca</strong> por ese plazo y permanece disponible mientras exista la calificación. También puede
+          solicitar revisión por los canales de soporte. Se le informará de cambios relevantes en la política.
         </p>
       </section>
 
