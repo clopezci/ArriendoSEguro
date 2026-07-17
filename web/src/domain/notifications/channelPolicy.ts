@@ -16,9 +16,8 @@ export function isWhatsAppComplementEnabled(): boolean {
 }
 
 /**
- * Plantilla de WhatsApp (utility, 1 variable) usada para TODOS los avisos. Se
- * puede fijar una neutral con `WHATSAPP_TEMPLATE_GENERIC`; si no, cae a la de
- * pagos (`WHATSAPP_TEMPLATE_PAYMENT`) o al nombre por defecto.
+ * Plantilla de WhatsApp (utility, 1 variable) usada como comodín si no hay una
+ * específica por tipo. Fija una neutral con `WHATSAPP_TEMPLATE_GENERIC`.
  */
 export function whatsAppGenericTemplate(): string {
   return (
@@ -26,4 +25,29 @@ export function whatsAppGenericTemplate(): string {
     process.env.WHATSAPP_TEMPLATE_PAYMENT?.trim() ||
     "recordatorio_pago"
   );
+}
+
+/**
+ * Resuelve la plantilla de WhatsApp **según el tipo de aviso** (el `templateCode`
+ * que envía cada bloque), con **fallback a la genérica/neutra**. Así puedes:
+ *  - Arrancar con UNA sola plantilla neutra (`WHATSAPP_TEMPLATE_GENERIC`) para todo.
+ *  - Migrar sin tocar código: al definir la env var específica de un tipo, ese
+ *    aviso empieza a usar SU plantilla; los demás siguen con la neutra.
+ *
+ * Env vars por tipo (todas opcionales):
+ *   WHATSAPP_TEMPLATE_PAYMENT      recordatorios de pago / mora
+ *   WHATSAPP_TEMPLATE_REPUTATION   calificación baja (réplica)
+ *   WHATSAPP_TEMPLATE_MAINTENANCE  reparaciones / mantenimiento
+ *   WHATSAPP_TEMPLATE_NOVEDAD      novedades del expediente
+ *   WHATSAPP_TEMPLATE_RENEWAL      preaviso de vencimiento / renovación
+ */
+export function resolveWhatsAppTemplate(templateCode: string): string {
+  const byType: Record<string, string | undefined> = {
+    paymentReminderWa: process.env.WHATSAPP_TEMPLATE_PAYMENT?.trim(),
+    reputationLowRatingWa: process.env.WHATSAPP_TEMPLATE_REPUTATION?.trim(),
+    maintenanceWa: process.env.WHATSAPP_TEMPLATE_MAINTENANCE?.trim(),
+    expedienteNovedadWa: process.env.WHATSAPP_TEMPLATE_NOVEDAD?.trim(),
+    renewalReminderWa: process.env.WHATSAPP_TEMPLATE_RENEWAL?.trim(),
+  };
+  return byType[templateCode] || whatsAppGenericTemplate();
 }

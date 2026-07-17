@@ -30,6 +30,30 @@ WHATSAPP_LANG                  = es                  (opcional; idioma de la pla
 > para TODOS los avisos (el texto del aviso va en `{{1}}`). Si no la defines, cae a
 > `WHATSAPP_TEMPLATE_PAYMENT` o al nombre por defecto `recordatorio_pago`.
 
+### Plantilla por tipo de aviso (opcional, para pulir cada mensaje)
+El texto FIJO de una plantilla puede no encajar con todos los avisos (p. ej. la de
+pagos dice "…si ya realizaste el pago, ignora"). Puedes usar **una plantilla por
+tipo**: define solo la que quieras; las demás caen a `WHATSAPP_TEMPLATE_GENERIC`.
+
+```
+WHATSAPP_TEMPLATE_PAYMENT      = recordatorio_pago     (pagos / mora)
+WHATSAPP_TEMPLATE_REPUTATION   = calificacion_baja     (calificación baja / réplica)
+WHATSAPP_TEMPLATE_MAINTENANCE  = mantenimiento         (reparaciones)
+WHATSAPP_TEMPLATE_NOVEDAD      = novedad               (novedades del expediente)
+WHATSAPP_TEMPLATE_RENEWAL      = renovacion            (vencimiento / renovación)
+```
+
+**Regla de Meta:** la variable `{{1}}` **no puede ir al principio ni al final** del
+cuerpo — siempre texto fijo antes y después. Idioma: **es_CO** (Spanish COL).
+
+Cuerpos sugeridos (categoría **Utility**, 1 variable):
+- **Neutra (para todo):** `Hola, tienes una novedad de tu arriendo en ArriendoSeguro: {{1}} Ingresa a la plataforma para verla.`
+- **Pago (ya la tienes):** `Recordatorio de tu arriendo en ArriendoSeguro: {{1}} Si ya realizaste el pago, ignora este mensaje.`
+- **Mantenimiento:** `Novedad de mantenimiento en tu arriendo (ArriendoSeguro): {{1}} Ingresa a la plataforma para responder.`
+- **Novedad:** `Tienes una nueva novedad en tu arriendo (ArriendoSeguro): {{1}} Revísala en la plataforma.`
+- **Calificación:** `Recibiste una calificación de tu arriendo en ArriendoSeguro: {{1}} Ingresa para ejercer tu derecho de réplica.`
+- **Renovación:** `Aviso de vencimiento de tu contrato en ArriendoSeguro: {{1}} Ingresa para decidir renovación o terminación.`
+
 ---
 
 ## Cómo abrir WhatsApp Business (Cloud API de Meta) — la vía oficial y más barata
