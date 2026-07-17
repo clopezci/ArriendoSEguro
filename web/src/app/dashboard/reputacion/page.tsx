@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { StarRating } from "@/components/reputation/star-rating";
 import { ReputationConsentSections } from "@/components/reputation/consent-sections";
+import { CertificateShare } from "@/components/reputation/certificate-share";
 import { REPUTATION_DIRECTION_LABELS, type ReputationDirection } from "@/domain/reputation/criteria";
 
 type DirSummary = {
@@ -102,6 +103,8 @@ export default function MiReputacionPage() {
             </ul>
           </section>
         ))}
+
+      <CertificateShare />
 
       <ReputationConsentSections />
 
