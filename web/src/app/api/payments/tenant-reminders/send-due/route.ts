@@ -8,8 +8,8 @@ import { createUploadToken } from "@/lib/payments/uploadTokenStore";
 import { PAYMENT_SETTINGS_COLLECTION, describePaymentMethodForTenant, type PaymentSettings } from "@/domain/payments/paymentSettings";
 import { tenantPaymentReminderEmail, ownerConfirmEscalationEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
-import { sendSms } from "@/services/sms/sendSms";
-import { sendWhatsApp, isWhatsAppConfigured } from "@/services/whatsapp/sendWhatsApp";
+import { isWhatsAppConfigured } from "@/services/whatsapp/sendWhatsApp";
+import { sendPhoneNotice } from "@/services/notify/phoneChannel";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { appConfig } from "@/lib/config";
 
@@ -53,27 +53,15 @@ function codebtorContacts(p: VersionParties): Array<{ email: string; phone: stri
  * enlace para subir el soporte va en el CORREO.
  */
 async function phoneReminder(to: string | undefined, msg: string, relatedId: string): Promise<void> {
-  const phone = (to ?? "").trim();
-  if (!phone) return;
   const useWa = (process.env.PAYMENT_REMINDER_CHANNEL || "sms").toLowerCase() === "whatsapp" && isWhatsAppConfigured();
-  if (useWa) {
-    await sendWhatsApp({
-      to: phone,
-      templateName: process.env.WHATSAPP_TEMPLATE_PAYMENT?.trim() || "recordatorio_pago",
-      bodyParams: [msg],
-      templateCode: "paymentReminderWa",
-      relatedEntityType: "payment",
-      relatedEntityId: relatedId,
-    }).catch(() => {});
-  } else {
-    await sendSms({
-      to: phone,
-      body: `ArriendoSeguro: ${msg}`,
-      templateCode: "paymentReminderSms",
-      relatedEntityType: "payment",
-      relatedEntityId: relatedId,
-    }).catch(() => {});
-  }
+  await sendPhoneNotice({
+    to,
+    message: msg,
+    templateCode: useWa ? "paymentReminderWa" : "paymentReminderSms",
+    relatedEntityType: "payment",
+    relatedEntityId: relatedId,
+    whatsapp: { enabled: useWa, templateName: process.env.WHATSAPP_TEMPLATE_PAYMENT?.trim() || "recordatorio_pago" },
+  });
 }
 
 /**
@@ -318,6 +306,19 @@ export async function POST(request: Request) {
       }
       const msg = `sigue pendiente el comprobante del pago del arriendo${perP} (${daysLate} días de mora). Ingresa para pagar y subir tu comprobante: ${await escLink()}`;
       for (const ph of phones) await phoneReminder(ph, msg, spId);
+      // Copia informativa al dueño: que sepa que el proceso está en curso.
+      if (landlordEmail) {
+        const conCod = cods.length > 0 ? " y su(s) codeudor(es)" : "";
+        await sendEmail({
+          to: landlordEmail,
+          subject: `Aviso: arriendo en mora${per} (${daysLate} días)`,
+          html: `<p>Te informamos que el pago del canon${perP} sigue <strong>sin comprobante registrado</strong> (${daysLate} días de mora).</p><p>Estamos enviando recordatorios al inquilino${conCod} para que registre el pago. Si a los 7 días de mora aún no hay comprobante, te avisaremos para que decidas registrar el <em>retraso y cobro personal</em>.</p><p>Esta es una copia informativa; no necesitas hacer nada por ahora.</p>`,
+          text: `Aviso: el pago del canon${perP} sigue sin comprobante (${daysLate} días de mora). Seguimos recordándole al inquilino${conCod}. A los 7 días te avisaremos para registrar retraso y cobro personal. Copia informativa; no necesitas hacer nada por ahora.`,
+          templateCode: "paymentEscalationEmail",
+          relatedEntityType: "payment",
+          relatedEntityId: spId,
+        });
+      }
       await d.ref.set({ escLastCodebtorDay: daysLate }, { merge: true });
       escalations += 1;
       continue;
