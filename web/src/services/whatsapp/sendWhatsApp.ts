@@ -56,7 +56,9 @@ function toMetaNumber(raw: string | null | undefined): string | null {
 async function sendViaMeta(to: string, input: SendWhatsAppInput): Promise<{ ok: boolean; errorMessage?: string }> {
   const token = process.env.WHATSAPP_CLOUD_TOKEN!.trim();
   const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID!.trim();
-  const lang = input.languageCode || process.env.WHATSAPP_LANG?.trim() || "es";
+  // Idioma por defecto es_CO: las plantillas se registraron como "Spanish (COL)".
+  // Si tu plantilla usa otro código, ponlo en WHATSAPP_LANG.
+  const lang = input.languageCode || process.env.WHATSAPP_LANG?.trim() || "es_CO";
   const components = (input.bodyParams && input.bodyParams.length > 0)
     ? [{ type: "body", parameters: input.bodyParams.map((t) => ({ type: "text", text: String(t).slice(0, 900) })) }]
     : [];
