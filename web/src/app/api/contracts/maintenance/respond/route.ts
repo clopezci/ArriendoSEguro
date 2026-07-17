@@ -7,6 +7,7 @@ import type { MaintenanceRequest } from "@/domain/maintenance/maintenance";
 import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
 import { sendEmail } from "@/services/email/sendEmail";
 import { sendSms } from "@/services/sms/sendSms";
+import { isNonPaymentPhoneEnabled } from "@/domain/notifications/channelPolicy";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { logServerError } from "@/lib/observability/observability";
 
@@ -107,7 +108,7 @@ export async function POST(request: Request) {
         relatedEntityType: "contract",
         relatedEntityId: contractId,
       });
-      if (tenantPhone) {
+      if (tenantPhone && isNonPaymentPhoneEnabled()) {
         await sendSms({
           to: tenantPhone,
           body: `ArriendoSeguro: el arrendador ${accepted ? "aceptó" : "rechazó"} tu solicitud de reparación "${cur.title}". Revísala en la plataforma.`,

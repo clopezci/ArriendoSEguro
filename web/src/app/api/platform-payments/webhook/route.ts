@@ -7,6 +7,7 @@ import { decideWebhookHandling } from "@/domain/platform-payments/webhook-logic"
 import { processHubWompiEvent } from "@/domain/hub/hub-webhook";
 import { plusAccessConfirmedEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
+import { notifyLegalPartnerForPaidClause } from "@/lib/legal/notifySpecialClause";
 import { logServerError } from "@/lib/observability/observability";
 
 export const runtime = "nodejs";
@@ -225,6 +226,9 @@ export async function POST(request: Request) {
           status: emailResult.status,
         });
       }
+      // Pago aprobado: recién ahora se notifica al aliado jurídico la cláusula
+      // «Otra» (si la hay). Antes del pago el abogado no se molesta.
+      await notifyLegalPartnerForPaidClause(firestore, order.leaseProcessId).catch(() => {});
       return NextResponse.json({ success: true, status: "approved" });
     }
     const mappedOrderStatus = decision.status;

@@ -47,6 +47,7 @@ export default function PlansPage() {
   const [checkoutUrl, setCheckoutUrl] = useState("");
   const [orderId, setOrderId] = useState("");
   const [showRedirectConfirm, setShowRedirectConfirm] = useState(false);
+  const [removingClause, setRemovingClause] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pricing, setPricing] = useState<ActivePricing | null>(null);
   const [leaseProcessId, setLeaseProcessId] = useState<string | null>(null);
@@ -237,6 +238,42 @@ export default function PlansPage() {
       }
     })();
   }, [user]);
+
+  // Quitar la cláusula «Otra» en el último momento (antes de pagar): la borra del
+  // contrato, cancela la revisión y evita el correo al abogado; luego recarga el
+  // carrito para reflejar el nuevo total sin ese cargo.
+  async function removeClause() {
+    if (!user || !leaseProcessId) return;
+    setRemovingClause(true);
+    setMsg("");
+    setError("");
+    try {
+      const res = await fetch("/api/contracts/special-clause/remove", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ contractId: leaseProcessId }),
+      });
+      const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      if (!res.ok || !j.success) {
+        setError(j.errors?.[0]?.message ?? "No se pudo quitar la cláusula.");
+        return;
+      }
+      const pr = await fetch(`/api/platform-payments/order-preview?leaseProcessId=${encodeURIComponent(leaseProcessId)}`, {
+        headers: { ...(await buildAuthHeaders(user)) },
+      });
+      const pj = (await pr.json()) as { success?: boolean; lineItems?: OrderLineItem[]; totalCop?: number; hasCostedClause?: boolean };
+      if (pr.ok && pj.success && Array.isArray(pj.lineItems)) {
+        setCart({ lineItems: pj.lineItems, totalCop: Number(pj.totalCop) || 0, hasCostedClause: Boolean(pj.hasCostedClause) });
+      } else {
+        setCart(null);
+      }
+      setMsg("Quitaste la cláusula personalizada. No se cobrará ni se enviará al abogado.");
+    } catch {
+      setError("Error de red al quitar la cláusula.");
+    } finally {
+      setRemovingClause(false);
+    }
+  }
 
   async function createPlusOrder() {
     if (!user) return;
@@ -477,6 +514,14 @@ export default function PlansPage() {
               <p className="mt-1 text-xs text-slate-500">
                 Incluye la cláusula personalizada «Otra» que agregaste al contrato.
               </p>
+              <button
+                type="button"
+                onClick={() => void removeClause()}
+                disabled={removingClause}
+                className="mt-2 text-xs font-semibold text-rose-600 underline disabled:opacity-50"
+              >
+                {removingClause ? "Quitando…" : "Quitar esta cláusula (mejor no la quiero)"}
+              </button>
             </div>
           )}
           <button

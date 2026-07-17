@@ -10,6 +10,7 @@ import { persistExpedienteAttachment } from "@/domain/contracts/persistExpedient
 import { sendEmail } from "@/services/email/sendEmail";
 import { expedienteNovedadEmail } from "@/services/email/emailTemplates";
 import { sendSms } from "@/services/sms/sendSms";
+import { isNonPaymentPhoneEnabled } from "@/domain/notifications/channelPolicy";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { shouldBlockForPlus, plusRequiredResponse } from "@/lib/auth/contractPlusGate";
 
@@ -232,9 +233,12 @@ export async function POST(request: Request) {
         : hasCodebtor && payload?.solidaryCoDebtor
           ? [payload.solidaryCoDebtor]
           : [];
-    const phoneTargets = [payload?.landlord, payload?.tenant, ...codebtorPhoneTargets]
-      .filter((p): p is NonNullable<typeof p> => Boolean(p?.phone))
-      .filter((p) => (p.email ?? "").toLowerCase() !== authorEmailLc);
+    // Modo híbrido: el aviso por SMS de novedades va apagado salvo flag (el correo siempre sale).
+    const phoneTargets = isNonPaymentPhoneEnabled()
+      ? [payload?.landlord, payload?.tenant, ...codebtorPhoneTargets]
+          .filter((p): p is NonNullable<typeof p> => Boolean(p?.phone))
+          .filter((p) => (p.email ?? "").toLowerCase() !== authorEmailLc)
+      : [];
     // SMS solo para clientes de pago: este endpoint ya exige Plus/demo al actor
     // (shouldBlockForPlus arriba), por lo que el tier gratis nunca llega aquí.
     const smsBody = `ArriendoSeguro: ${authorName} registró una novedad (${tipoLabel}) en tu arriendo. Revísala en la plataforma.`;

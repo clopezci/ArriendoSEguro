@@ -4,6 +4,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import { requireAuthenticatedUser, requestClientIp, requestUserAgent } from "@/lib/auth/serverAuth";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
+import { notifyLegalPartnerForPaidClause } from "@/lib/legal/notifySpecialClause";
 
 export const runtime = "nodejs";
 
@@ -122,6 +123,9 @@ export async function POST(request: Request) {
       userId: order.userId,
       planCode: "plus",
     });
+
+    // Pago (mock) aprobado: notifica al aliado jurídico la cláusula «Otra» si la hay.
+    await notifyLegalPartnerForPaidClause(firestore, order.leaseProcessId).catch(() => {});
 
     return NextResponse.json({ success: true, orderStatus: "approved", entitlementId: entitlementRef.id });
   } catch {
