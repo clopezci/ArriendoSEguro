@@ -6,8 +6,7 @@ import { applyOwnerResponse, isInDispute, MAINTENANCE_REASON_MAX } from "@/domai
 import type { MaintenanceRequest } from "@/domain/maintenance/maintenance";
 import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
 import { sendEmail } from "@/services/email/sendEmail";
-import { sendSms } from "@/services/sms/sendSms";
-import { isNonPaymentPhoneEnabled } from "@/domain/notifications/channelPolicy";
+import { sendPhoneNotice } from "@/services/notify/phoneChannel";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { logServerError } from "@/lib/observability/observability";
 
@@ -108,15 +107,13 @@ export async function POST(request: Request) {
         relatedEntityType: "contract",
         relatedEntityId: contractId,
       });
-      if (tenantPhone && isNonPaymentPhoneEnabled()) {
-        await sendSms({
-          to: tenantPhone,
-          body: `ArriendoSeguro: el arrendador ${accepted ? "aceptó" : "rechazó"} tu solicitud de reparación "${cur.title}". Revísala en la plataforma.`,
-          templateCode: "maintenanceSms",
-          relatedEntityType: "contract",
-          relatedEntityId: contractId,
-        });
-      }
+      await sendPhoneNotice({
+        to: tenantPhone,
+        message: `El arrendador ${accepted ? "aceptó" : "rechazó"} tu solicitud de reparación "${cur.title}". Revísala en la plataforma.`,
+        templateCode: "maintenanceWa",
+        relatedEntityType: "contract",
+        relatedEntityId: contractId,
+      });
     }
 
     auditEvent("maintenance_responded", { contractId, requestId, action, status: next.status, dispute });

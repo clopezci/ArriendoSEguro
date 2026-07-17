@@ -7,8 +7,7 @@ import { resolveNovedadRecipientEmails } from "@/domain/contracts/novedades/reci
 import { persistExpedienteAttachment } from "@/domain/contracts/persistExpedienteAttachment";
 import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
 import { sendEmail } from "@/services/email/sendEmail";
-import { sendSms } from "@/services/sms/sendSms";
-import { isNonPaymentPhoneEnabled } from "@/domain/notifications/channelPolicy";
+import { sendPhoneNotice } from "@/services/notify/phoneChannel";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { logServerError } from "@/lib/observability/observability";
 
@@ -150,20 +149,19 @@ export async function POST(request: Request) {
       });
     }
     const authorEmailLc = (participant.user.email ?? "").toLowerCase();
-    // Modo híbrido: el aviso por SMS de mantenimiento va apagado salvo flag (el correo siempre sale).
-    const phoneTargets = isNonPaymentPhoneEnabled()
-      ? [payload?.landlord, payload?.tenant]
-          .filter((p): p is NonNullable<typeof p> => Boolean(p?.phone))
-          .filter((p) => (p.email ?? "").toLowerCase() !== authorEmailLc)
-      : [];
+    // Complemento por WhatsApp (el correo es la base). Solo sale si el interruptor
+    // maestro de WhatsApp está encendido; si no, queda solo el correo.
+    const phoneTargets = [payload?.landlord, payload?.tenant]
+      .filter((p): p is NonNullable<typeof p> => Boolean(p?.phone))
+      .filter((p) => (p.email ?? "").toLowerCase() !== authorEmailLc);
     const seen = new Set<string>();
     for (const p of phoneTargets) {
       if (seen.has(p.phone!)) continue;
       seen.add(p.phone!);
-      await sendSms({
+      await sendPhoneNotice({
         to: p.phone!,
-        body: `ArriendoSeguro: nueva solicitud de reparación (${catLabel}) en tu arriendo. Revísala y responde en la plataforma.`,
-        templateCode: "maintenanceSms",
+        message: `Nueva solicitud de reparación (${catLabel}) en tu arriendo. Revísala y responde en la plataforma.`,
+        templateCode: "maintenanceWa",
         relatedEntityType: "contract",
         relatedEntityId: contractId,
       });

@@ -1,51 +1,34 @@
-# Activar WhatsApp para los recordatorios (paso a paso)
+# Activar WhatsApp (interruptor único, para pruebas y producción)
 
-La función interna **ya está montada** (`services/whatsapp/sendWhatsApp.ts`). Los
-recordatorios de pago del **día del vencimiento** pueden salir por **WhatsApp** en
-vez de SMS con **solo poner unas variables de entorno** en Vercel. Mientras no las
-pongas, sale un **SMS corto** (1 segmento, más barato) — o "mock" si tampoco hay SMS.
+Modelo de la app: **el correo es la base** (siempre sale, en todos los avisos).
+**WhatsApp es un complemento** que se prende/apaga con **UNA sola variable** en
+TODOS los bloques a la vez (pagos, mora, reputación, mantenimiento, novedades,
+renovación). Así lo prendes para hacer pruebas y lo apagas hasta el lanzamiento.
 
 ---
 
-## Cambiar a WhatsApp = 4 variables en Vercel (cuando tengas la cuenta)
+## Prender WhatsApp = 1 interruptor + credenciales
+
 En Vercel → tu proyecto → **Settings → Environment Variables**:
 
 ```
-PAYMENT_REMINDER_CHANNEL = whatsapp
-WHATSAPP_CLOUD_TOKEN      = (token permanente de tu app de Meta)
-WHATSAPP_PHONE_NUMBER_ID  = (id del número de WhatsApp Business)
-WHATSAPP_TEMPLATE_PAYMENT = recordatorio_pago   (nombre de tu plantilla aprobada)
-WHATSAPP_LANG             = es                  (opcional; idioma de la plantilla)
+NOTIFICATIONS_WHATSAPP_ENABLED = true      ← el interruptor maestro (on/off)
+WHATSAPP_CLOUD_TOKEN           = (token permanente de tu app de Meta)
+WHATSAPP_PHONE_NUMBER_ID       = (id del número de WhatsApp Business)
+WHATSAPP_TEMPLATE_GENERIC      = recordatorio_pago   (tu plantilla aprobada, 1 variable)
+WHATSAPP_LANG                  = es                  (opcional; idioma de la plantilla)
 ```
 
-### Opcional: aviso de calificación baja por WhatsApp
-El aviso al calificado cuando recibe una **calificación baja** (con ventana de 48h
-para replicar) sale por **SMS** por defecto. Si quieres que salga por WhatsApp,
-crea otra plantilla **Utility** de 1 variable (p. ej. `calificacion_baja`) y añade:
+- Con `NOTIFICATIONS_WHATSAPP_ENABLED=true` **y** las credenciales puestas → todos
+  los avisos al celular salen por **WhatsApp** (además del correo).
+- **Apagar:** pon `NOTIFICATIONS_WHATSAPP_ENABLED=false` (o bórrala). Todo vuelve a
+  salir **solo por correo**, al instante, sin tocar nada más.
+- Mientras la plantilla de Meta esté **en revisión** o no pongas credenciales, el
+  complemento no envía nada (queda solo el correo), aunque el interruptor esté en `true`.
 
-```
-WHATSAPP_TEMPLATE_REPUTATION = calificacion_baja
-```
-
-Sin esta variable, el aviso de calificación baja sigue saliendo por SMS (y el
-correo siempre lo acompaña con el enlace para responder).
-
-Redeploy y listo: los recordatorios salen por WhatsApp. Para volver a SMS, cambia
-`PAYMENT_REMINDER_CHANNEL` a `sms` (o bórrala).
-
-## Modo híbrido (por defecto): celular solo para pagos
-Por defecto, **solo los pagos y la mora** usan el canal al celular (WhatsApp/SMS).
-El resto de avisos (reputación, mantenimiento, novedades) van **solo por correo**,
-para concentrar el costo de mensajería donde importa (cobrar). El correo siempre
-sale en todos los casos.
-
-Si algún día quieres que esos avisos secundarios TAMBIÉN salgan al celular:
-
-```
-NON_PAYMENT_PHONE_ENABLED = true
-```
-
-Sin esa variable (recomendado), los bloques que no son de pago no gastan SMS/WhatsApp.
+> `WHATSAPP_TEMPLATE_GENERIC` es una plantilla **utility de 1 variable** que sirve
+> para TODOS los avisos (el texto del aviso va en `{{1}}`). Si no la defines, cae a
+> `WHATSAPP_TEMPLATE_PAYMENT` o al nombre por defecto `recordatorio_pago`.
 
 ---
 
@@ -69,31 +52,25 @@ en un WhatsApp** (ni personal ni Business App). Ese número será el remitente.
 6. **Registra la plantilla** (obligatorio: los mensajes que inicia el negocio deben
    usar plantilla aprobada). En **WhatsApp → Message Templates → Create template**:
    - Categoría: **Utility** (utilidad).
-   - Nombre: `recordatorio_pago` (debe coincidir con `WHATSAPP_TEMPLATE_PAYMENT`).
+   - Nombre: `recordatorio_pago` (o el que pongas en `WHATSAPP_TEMPLATE_GENERIC`).
    - Idioma: Español.
-   - Cuerpo (con **1 variable**, sirve para TODOS los avisos: antes del vencimiento,
-     el vencimiento y los días de mora):
+   - Cuerpo (con **1 variable**, sirve para TODOS los avisos):
      > Recordatorio de tu arriendo en ArriendoSeguro: {{1}}
-   - Meta la aprueba en ~1–2 días. (La app manda en {{1}} el texto del recordatorio,
-     p. ej. "hoy vence tu arriendo ($1.500.000). Revisa tu correo para pagar y subir el comprobante.")
-7. Cuando esté aprobada, pon las 4 variables de arriba en Vercel.
+   - Meta la aprueba en ~1–2 días.
+7. Cuando esté aprobada, pon el interruptor + las credenciales de arriba en Vercel.
 
 **Costo aprox.:** los mensajes "utility" a Colombia cuestan del orden de
 US$0.005–0.02 cada uno (más barato que un SMS y con mucha mejor apertura). Los
 precios los fija Meta y cambian; confírmalos en su página de precios.
 
-**Alternativa más fácil de montar (con costo un poco mayor):** Twilio WhatsApp,
-que gestiona la relación con Meta por ti. Si prefieres esa vía, avísame y agrego
-la rama de Twilio al servicio.
-
 ---
 
-## Qué mensajes usan este canal (SMS o WhatsApp)
-- Recordatorio **antes** del vencimiento (al inquilino).
-- Recordatorio el **día del vencimiento** (al inquilino).
-- Recordatorios de **mora** (días posteriores): al inquilino y al **codeudor**,
-  cada día hasta que se registre el pago.
+## Qué avisos usan el complemento WhatsApp (cuando está encendido)
+- Recordatorios de pago (antes y el día del vencimiento) y toda la **mora**.
+- **Reputación**: aviso de calificación baja (ventana de réplica de 48h).
+- **Mantenimiento/reparaciones**: solicitud reportada y respuesta del dueño.
+- **Novedades** del expediente.
+- **Renovación**: preaviso de vencimiento del contrato.
 
-El **correo** siempre acompaña (y lleva el enlace para subir el soporte). Las
-acciones con enlace de 1 clic (conciliación, aceptar conciliación, retraso y cobro
-personal) van por **correo**. Sin credenciales de WhatsApp, todo esto sale por **SMS**.
+El **correo** siempre acompaña (y lleva los enlaces). Con el interruptor apagado,
+todos estos avisos salen **solo por correo**.

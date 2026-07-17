@@ -1,17 +1,15 @@
-import { sendSms, type SmsTemplateCode } from "@/services/sms/sendSms";
-import { sendWhatsApp } from "@/services/whatsapp/sendWhatsApp";
+import { sendWhatsApp, isWhatsAppConfigured } from "@/services/whatsapp/sendWhatsApp";
+import { isWhatsAppComplementEnabled, whatsAppGenericTemplate } from "@/domain/notifications/channelPolicy";
 
 /**
- * Envío de una notificación corta al CELULAR por el canal disponible, con el
- * MISMO patrón en toda la app (recordatorios de pago, calificaciones, etc.):
+ * Envía un aviso al CELULAR como **complemento por WhatsApp** (el correo es la
+ * base y lo manda cada bloque por su cuenta). Solo hace algo si el interruptor
+ * maestro `NOTIFICATIONS_WHATSAPP_ENABLED` está encendido Y hay credenciales de
+ * WhatsApp; de lo contrario no envía nada (queda solo el correo).
  *
- *  - Si `whatsapp.enabled` y hay una plantilla aprobada → WhatsApp (plantilla de
- *    1 variable = el mensaje). Cada caso de uso pasa SU plantilla aprobada por
- *    Meta (no se reutiliza la de pagos para otros fines).
- *  - En caso contrario → SMS (texto libre, sin plantilla; se antepone la marca).
- *  - Sin proveedor configurado, ambos servicios caen a "mock" (no cobran).
- *
- * Best-effort: nunca lanza; si el envío falla, no rompe el flujo de negocio.
+ * Un único punto para toda la app: prender/apagar WhatsApp en TODOS los bloques
+ * (pagos, mora, reputación, mantenimiento, novedades, renovación) con una sola
+ * variable de entorno. Best-effort: nunca lanza.
  */
 export async function sendPhoneNotice(params: {
   to: string | undefined | null;
@@ -19,29 +17,16 @@ export async function sendPhoneNotice(params: {
   templateCode: string;
   relatedEntityType: string;
   relatedEntityId: string;
-  whatsapp?: { enabled: boolean; templateName: string; languageCode?: string };
 }): Promise<void> {
   const phone = (params.to ?? "").trim();
   if (!phone) return;
+  if (!isWhatsAppComplementEnabled() || !isWhatsAppConfigured()) return;
 
-  if (params.whatsapp?.enabled && params.whatsapp.templateName.trim()) {
-    await sendWhatsApp({
-      to: phone,
-      templateName: params.whatsapp.templateName.trim(),
-      bodyParams: [params.message],
-      languageCode: params.whatsapp.languageCode,
-      templateCode: params.templateCode,
-      relatedEntityType: params.relatedEntityType,
-      relatedEntityId: params.relatedEntityId,
-    }).catch(() => {});
-    return;
-  }
-
-  await sendSms({
+  await sendWhatsApp({
     to: phone,
-    body: `ArriendoSeguro: ${params.message}`,
-    // El canal SMS solo recibe códigos SMS en tiempo de ejecución (rama else).
-    templateCode: params.templateCode as SmsTemplateCode,
+    templateName: whatsAppGenericTemplate(),
+    bodyParams: [params.message],
+    templateCode: params.templateCode,
     relatedEntityType: params.relatedEntityType,
     relatedEntityId: params.relatedEntityId,
   }).catch(() => {});
