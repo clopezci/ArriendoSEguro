@@ -1,6 +1,13 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { aggregateReviews, recencyWeight, RECENCY_HALF_LIFE_DAYS, RECENCY_WEIGHT_FLOOR } from "./aggregate";
+import {
+  aggregateReviews,
+  recencyWeight,
+  isReviewExpired,
+  REPUTATION_RETENTION_YEARS,
+  RECENCY_HALF_LIFE_DAYS,
+  RECENCY_WEIGHT_FLOOR,
+} from "./aggregate";
 import {
   detectFraudSignals,
   maxSeverity,
@@ -56,6 +63,27 @@ test("aggregateReviews pondera la reseña reciente por encima de la antigua", ()
   // El conteo sigue siendo el número real de reseñas.
   assert.equal(agg.byDirection[0]?.reviewsCount, 2);
   assert.equal(agg.totalReviews, 2);
+});
+
+test("caducidad: reseña con más de 4 años ni caduca ni cuenta", () => {
+  const now = Date.parse("2026-06-01T00:00:00.000Z");
+  const day = 86_400_000;
+  const vieja = new Date(now - (REPUTATION_RETENTION_YEARS + 1) * 365 * day).toISOString(); // 5 años
+  const reciente = new Date(now - 30 * day).toISOString();
+  assert.equal(isReviewExpired(vieja, now), true);
+  assert.equal(isReviewExpired(reciente, now), false);
+  assert.equal(isReviewExpired(undefined, now), false); // sin fecha: vigente (conservador)
+
+  const agg = aggregateReviews(
+    [
+      { direction: "landlord_to_tenant", overall: 1, ratings: { payment: 1 }, createdAt: vieja }, // caducada
+      { direction: "landlord_to_tenant", overall: 5, ratings: { payment: 5 }, createdAt: reciente },
+    ],
+    { nowMs: now },
+  );
+  // La caducada no cuenta: solo la reciente (5).
+  assert.equal(agg.totalReviews, 1);
+  assert.equal(agg.overallAverage, 5);
 });
 
 test("aggregateReviews vacío → ceros", () => {

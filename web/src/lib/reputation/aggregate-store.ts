@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { FieldValue } from "firebase-admin/firestore";
 import type { Firestore } from "firebase-admin/firestore";
-import { aggregateReviews } from "@/domain/reputation/aggregate";
+import { aggregateReviews, retentionCutoffMs } from "@/domain/reputation/aggregate";
 import {
   detectFraudSignals,
   maxSeverity,
@@ -54,6 +54,43 @@ export async function recomputeAggregateForSubject(firestore: Firestore, subject
       },
       { merge: true },
     );
+}
+
+/**
+ * **Caducidad**: borra las reseñas cuya fecha de creación supera la retención
+ * (REPUTATION_RETENTION_YEARS) y recalcula el agregado de los titulares
+ * afectados. Cumple el principio de temporalidad (Ley 1581) y la permanencia
+ * máxima del dato (Ley 1266). Idempotente y por lotes.
+ */
+export async function purgeExpiredReviews(
+  firestore: Firestore,
+  nowMs: number = Date.now(),
+): Promise<{ deleted: number; subjectsRecomputed: number }> {
+  const cutoffIso = new Date(retentionCutoffMs(nowMs)).toISOString();
+  const snap = await firestore
+    .collection(REVIEWS_COLLECTION)
+    .where("createdAt", "<", cutoffIso)
+    .get()
+    .catch(() => null);
+  const docs = snap?.docs ?? [];
+  if (docs.length === 0) return { deleted: 0, subjectsRecomputed: 0 };
+
+  const affected = new Set<string>();
+  let deleted = 0;
+  for (let i = 0; i < docs.length; i += 400) {
+    const batch = firestore.batch();
+    for (const d of docs.slice(i, i + 400)) {
+      const email = normalizeEmail(String((d.data() as { subjectEmail?: string }).subjectEmail ?? ""));
+      if (email) affected.add(email);
+      batch.delete(d.ref);
+      deleted += 1;
+    }
+    await batch.commit();
+  }
+  for (const email of affected) {
+    await recomputeAggregateForSubject(firestore, email);
+  }
+  return { deleted, subjectsRecomputed: affected.size };
 }
 
 /**
