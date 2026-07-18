@@ -80,6 +80,7 @@ export default function DocumentosTerminarPage() {
               docType={docType}
               onDocType={(v: PropertyDocType) => setDocType(v)}
               expectedName={expectedName}
+              expectedAddress={draft?.property?.address ?? ""}
               actingAs={actingAs}
             />
             {isProxy && <PoderUpload contractDraftId={id} />}
