@@ -161,7 +161,7 @@ export default function PaymentsPage() {
   }
 
   return (
-    <WizardShell title="Registro de pagos" currentStep={11} contractId={id} variant="extra" phase="posventa">
+    <WizardShell title="Registro de pagos" currentStep={11} contractId={id} variant="extra" phase="posventa" lean>
       <RequiresSavedContract id={id}>
       {/* Cómo funciona (para que no se pierda) */}
       <div className="rounded-lg border border-violet-200 bg-violet-50/50 p-3 text-xs leading-relaxed text-slate-700">

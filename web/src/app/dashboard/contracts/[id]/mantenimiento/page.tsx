@@ -201,7 +201,7 @@ export default function MantenimientoPage() {
 
   return (
     <div className="mx-auto max-w-3xl p-4 sm:p-6">
-      <WizardShell title="Reparaciones y mantenimiento" currentStep={13} contractId={id} variant="extra" phase="posventa">
+      <WizardShell title="Reparaciones y mantenimiento" currentStep={13} contractId={id} variant="extra" phase="posventa" lean>
         <p className="mb-4 text-sm text-slate-700">
           El inquilino <strong>reporta una reparación</strong>; el dueño la <strong>acepta o rechaza</strong>. Si hay
           desacuerdos repetidos, la solicitud entra <strong>en disputa</strong> y ambos pueden consultar con un abogado

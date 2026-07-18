@@ -59,7 +59,7 @@ export default function DeliveryActPage() {
   }
 
   return (
-    <WizardShell title="Acta de entrega inicial" currentStep={11} contractId={id} variant="extra" macroStep="acta">
+    <WizardShell title="Acta de entrega inicial" currentStep={11} contractId={id} variant="extra" macroStep="acta" lean>
       {error && <p className="mb-3 text-sm text-rose-700">{error}</p>}
       {ok && <p className="mb-3 rounded-2xl border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-800">{ok}</p>}
 

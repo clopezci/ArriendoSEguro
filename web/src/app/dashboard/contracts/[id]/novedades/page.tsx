@@ -111,6 +111,7 @@ export default function NovedadesExpedientePage() {
         contractId={id}
         variant="extra"
         phase="posventa"
+        lean
       >
         <p
           className="mb-4 text-sm text-slate-700"

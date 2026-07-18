@@ -105,7 +105,7 @@ export default function PaymentDetailPage() {
   }
 
   return (
-    <WizardShell title="Detalle de pago" currentStep={11} contractId={contractId} variant="extra">
+    <WizardShell title="Detalle de pago" currentStep={11} contractId={contractId} variant="extra" lean>
       {error && <p className="mb-3 text-sm text-rose-700">{error}</p>}
       <div className="grid gap-3 md:grid-cols-2">
         <Input label="Periodo" value={paymentData.periodLabel} onChange={(v) => setPayment((prev) => (prev ? { ...prev, periodLabel: v } : prev))} />
