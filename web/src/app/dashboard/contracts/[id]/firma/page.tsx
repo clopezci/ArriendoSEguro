@@ -47,7 +47,7 @@ export default function FirmaOptionsPage() {
                   contrato), tu <strong>siguiente contrato queda gratis con la firma incluida</strong>. Es nuestra forma de
                   crecer contigo.
                 </p>
-                <Link href="/dashboard/plans" className="mt-4 inline-flex rounded-2xl bg-[#12B886] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">
+                <Link href={`/dashboard/plans?contract=${encodeURIComponent(id)}`} className="mt-4 inline-flex rounded-2xl bg-[#12B886] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">
                   Invitar y conseguirlo gratis →
                 </Link>
               </div>
@@ -64,7 +64,7 @@ export default function FirmaOptionsPage() {
                   ¿Necesitas firmar ya? Actívala con un <strong>pago único de $10.000</strong> para este contrato, sin
                   suscripción.
                 </p>
-                <Link href="/dashboard/plans?intent=firma-unica" className="mt-4 inline-flex rounded-2xl bg-[#5646E5] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95">
+                <Link href={`/dashboard/plans?intent=firma-unica&contract=${encodeURIComponent(id)}`} className="mt-4 inline-flex rounded-2xl bg-[#5646E5] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95">
                   Pagar y firmar →
                 </Link>
                 <p className="mt-2 text-[11px] text-slate-400">
@@ -85,7 +85,7 @@ export default function FirmaOptionsPage() {
                   electrónica</strong>, el <strong>inventario, el acta de entrega, la posventa, los recordatorios</strong> y
                   todo el respaldo de este contrato.
                 </p>
-                <Link href="/dashboard/plans" className="mt-4 inline-flex rounded-2xl bg-[#FF6B4A] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95">
+                <Link href={`/dashboard/plans?contract=${encodeURIComponent(id)}`} className="mt-4 inline-flex rounded-2xl bg-[#FF6B4A] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95">
                   Ver el plan de introducción →
                 </Link>
               </div>

@@ -38,6 +38,7 @@ export function WizardShell({
   phase,
   macroStep,
   hideGuide = false,
+  lean = false,
 }: {
   title: string;
   currentStep: number;
@@ -52,6 +53,10 @@ export function WizardShell({
   /** Oculta la tarjeta descriptiva `StepGuide` (útil si la pantalla ya tiene su
    * propio sub-stepper y esa tarjeta solo satura). */
   hideGuide?: boolean;
+  /** Modo LEAN (solo para `extra`): herramienta puntual de posventa (p. ej.
+   * Reparaciones). Muestra solo el título + "Volver a la posventa", SIN el
+   * rastreador de pasos ni la guía genérica — que no corresponden a esta pantalla. */
+  lean?: boolean;
 }) {
   const clamped = Math.min(Math.max(currentStep, 1), steps.length);
   const active: MacroStepKey | "posventa" =
@@ -73,15 +78,19 @@ export function WizardShell({
               ← Volver a la posventa
             </Link>
           </div>
-          <p className="mt-2 text-sm text-slate-600">
-            Gestión posventa del contrato. Vuelve al centro de control cuando quieras con el enlace de arriba.
-          </p>
-          <div className="mt-3">
-            <WizardSteps5 id={contractId} active={active} />
-          </div>
-          <div className="mt-2">
-            <StepGuide currentStep={clamped} variant="extra" />
-          </div>
+          {!lean && (
+            <>
+              <p className="mt-2 text-sm text-slate-600">
+                Gestión posventa del contrato. Vuelve al centro de control cuando quieras con el enlace de arriba.
+              </p>
+              <div className="mt-3">
+                <WizardSteps5 id={contractId} active={active} />
+              </div>
+              <div className="mt-2">
+                <StepGuide currentStep={clamped} variant="extra" />
+              </div>
+            </>
+          )}
         </div>
         <div className="rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-[0_10px_30px_rgba(86,70,229,0.10)]">
           {children}
