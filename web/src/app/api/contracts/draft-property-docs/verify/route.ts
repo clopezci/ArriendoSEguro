@@ -5,6 +5,7 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { DRAFT_PROPERTY_DOCS_COLLECTION } from "@/domain/contracts/draftPropertyDocs";
 import { addressMatches } from "@/domain/documents/documentMatch";
+import { extractDocContent } from "@/lib/documents/extractDocContent";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,7 +57,7 @@ function nameMatches(expected: string, found: string[]): boolean {
 }
 
 const VISION_PROMPT =
-  "Eres un extractor de datos. La imagen es un documento colombiano que soporta la propiedad de un inmueble " +
+  "Eres un extractor de datos. El contenido corresponde a un documento colombiano que soporta la propiedad de un inmueble " +
   "(certificado de tradición y libertad, recibo de servicios públicos, impuesto predial o escritura pública). " +
   'Devuelve EXCLUSIVAMENTE un JSON con la forma {"names": ["..."], "address": "..."} donde "names" es el/los ' +
   'nombre(s) del PROPIETARIO o TITULAR y "address" es la DIRECCIÓN del inmueble tal como aparecen en el documento. ' +
@@ -109,35 +110,33 @@ export async function POST(request: Request) {
 
   const contentType = (latest.contentType ?? "").toLowerCase();
   const fileName = (latest.fileName ?? "").toLowerCase();
-  const isImage = contentType.startsWith("image/") || /\.(jpe?g|png|webp)$/.test(fileName);
-  if (!isImage) {
-    // Los modelos de visión no leen PDF directamente; no bloqueamos.
-    return NextResponse.json({ success: true, available: true, status: "skipped", reason: "pdf" });
-  }
 
-  // Descarga los bytes y arma el data URL (tope de tamaño para el proveedor).
+  // Descarga el documento y extrae su contenido (imagen, o TEXTO de PDF/Word).
   const gsPrefix = `gs://${bucketName}/`;
   const objectPath = (latest.storagePath ?? "").startsWith(gsPrefix) ? (latest.storagePath ?? "").slice(gsPrefix.length) : "";
   if (!objectPath) return NextResponse.json({ success: true, available: true, status: "skipped", reason: "no_doc" });
 
-  let dataUrl = "";
+  let extracted: Awaited<ReturnType<typeof extractDocContent>>;
   try {
     const [buf] = await getStorage().bucket(bucketName).file(objectPath).download();
-    if (buf.length > 4 * 1024 * 1024) {
-      return NextResponse.json({ success: true, available: true, status: "skipped", reason: "too_large" });
-    }
-    const mime = contentType.startsWith("image/") ? contentType : fileName.endsWith(".png") ? "image/png" : fileName.endsWith(".webp") ? "image/webp" : "image/jpeg";
-    dataUrl = `data:${mime};base64,${buf.toString("base64")}`;
+    extracted = await extractDocContent(buf, contentType, fileName);
   } catch {
     return NextResponse.json({ success: true, available: true, status: "skipped", reason: "download_error" });
   }
+  if (extracted.kind === "unsupported") {
+    // PDF escaneado o formato no soportado: no bloqueamos, lo cubre el juramento.
+    return NextResponse.json({ success: true, available: true, status: "skipped", reason: extracted.reason });
+  }
 
   const baseUrl = (process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/$/, "");
-  const candidates = [
-    ...new Set(
-      ([process.env.AI_VISION_MODEL?.trim(), "meta-llama/llama-4-scout-17b-16e-instruct", "meta-llama/llama-4-maverick-17b-128e-instruct"].filter(Boolean)) as string[],
-    ),
-  ];
+  // Modelo de VISIÓN para imágenes; de TEXTO para PDF/Word.
+  const candidates = extracted.kind === "image"
+    ? ([...new Set(([process.env.AI_VISION_MODEL?.trim(), "meta-llama/llama-4-scout-17b-16e-instruct", "meta-llama/llama-4-maverick-17b-128e-instruct"].filter(Boolean)) as string[])])
+    : ([...new Set(([process.env.AI_MODEL?.trim(), "llama-3.3-70b-versatile", "llama-3.1-8b-instant"].filter(Boolean)) as string[])]);
+  const messages =
+    extracted.kind === "image"
+      ? [{ role: "user", content: [{ type: "text", text: VISION_PROMPT }, { type: "image_url", image_url: { url: extracted.imageDataUrl } }] }]
+      : [{ role: "user", content: `${VISION_PROMPT}\n\nTEXTO DEL DOCUMENTO:\n"""\n${extracted.text}\n"""` }];
 
   for (const model of candidates) {
     try {
@@ -145,20 +144,7 @@ export async function POST(request: Request) {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
         cache: "no-store",
-        body: JSON.stringify({
-          model,
-          temperature: 0,
-          max_tokens: 300,
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: VISION_PROMPT },
-                { type: "image_url", image_url: { url: dataUrl } },
-              ],
-            },
-          ],
-        }),
+        body: JSON.stringify({ model, temperature: 0, max_tokens: 300, messages }),
       });
       if (!res.ok) {
         if (res.status === 401 || res.status === 403) break; // key inválida
