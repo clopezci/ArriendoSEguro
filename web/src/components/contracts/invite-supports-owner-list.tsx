@@ -3,32 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { verdictBadge, type SupportVerdict as Verdict } from "@/domain/documents/verdictBadge";
 
 type Row = { id: string; role: string; fileName: string; sizeBytes: number; uploadedAt: string; uploadedByName: string };
-type Verdict = { status: string; label?: string; reason?: string };
-
-/** Texto + estilo del veredicto de la validación IA (asistiva, no bloqueante). */
-function verdictBadge(v: Verdict, label?: string): { text: string; cls: string } | null {
-  const l = v.label || label || "documento";
-  switch (v.status) {
-    case "checking":
-      return { text: "Revisando con IA…", cls: "border-slate-200 bg-slate-50 text-slate-500" };
-    case "match":
-      return { text: "✓ Coincide", cls: "border-emerald-200 bg-emerald-50 text-emerald-700" };
-    case "mismatch":
-      return { text: "⚠ Nombre/número no coincide", cls: "border-rose-300 bg-rose-50 text-rose-700" };
-    case "wrong_type":
-      return { text: `⚠ No parece ser ${l}`, cls: "border-rose-300 bg-rose-50 text-rose-700" };
-    case "unreadable":
-      return { text: "No se pudo leer (revisa a ojo)", cls: "border-amber-200 bg-amber-50 text-amber-700" };
-    case "skipped":
-      return ["pdf_scanned", "doc_legacy", "unsupported_format", "pdf_error", "docx_error", "docx_empty"].includes(v.reason ?? "")
-        ? { text: "No se pudo leer (escaneado); revisa a ojo", cls: "border-amber-200 bg-amber-50 text-amber-700" }
-        : null;
-    default:
-      return null;
-  }
-}
 
 /**
  * Lado del DUEÑO: muestra (y deja descargar) los documentos que subió el
