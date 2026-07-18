@@ -4,6 +4,7 @@ import { getStorage } from "firebase-admin/storage";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { DRAFT_PROPERTY_DOCS_COLLECTION } from "@/domain/contracts/draftPropertyDocs";
+import { addressMatches } from "@/domain/documents/documentMatch";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ export const dynamic = "force-dynamic";
 const schema = z.object({
   contractDraftId: z.string().min(1),
   expectedName: z.string().max(160).optional(),
+  expectedAddress: z.string().max(200).optional(),
   actingAs: z.enum(["owner", "proxy"]).optional(),
 });
 
@@ -56,9 +58,9 @@ function nameMatches(expected: string, found: string[]): boolean {
 const VISION_PROMPT =
   "Eres un extractor de datos. La imagen es un documento colombiano que soporta la propiedad de un inmueble " +
   "(certificado de tradición y libertad, recibo de servicios públicos, impuesto predial o escritura pública). " +
-  'Devuelve EXCLUSIVAMENTE un JSON con la forma {"names": ["..."]} que contenga el/los nombre(s) del PROPIETARIO ' +
-  "o TITULAR tal como aparecen en el documento. No incluyas direcciones, números ni texto adicional. " +
-  'Si el documento es ilegible o no encuentras un nombre, devuelve {"names": []}.';
+  'Devuelve EXCLUSIVAMENTE un JSON con la forma {"names": ["..."], "address": "..."} donde "names" es el/los ' +
+  'nombre(s) del PROPIETARIO o TITULAR y "address" es la DIRECCIÓN del inmueble tal como aparecen en el documento. ' +
+  'Si no encuentras el dato, usa lista vacía o cadena vacía. No agregues texto adicional.';
 
 function extractJsonBlock(s: string): string {
   const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -79,6 +81,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ success: false, error: "invalid_input" }, { status: 422 });
 
   const expectedName = (parsed.data.expectedName ?? "").trim();
+  const expectedAddress = (parsed.data.expectedAddress ?? "").trim();
   if (!expectedName) {
     // Apoderado sin nombre del poderdante capturado, u otro caso sin referencia:
     // no hay contra qué comparar; la declaración jurada (capa 1) cubre el caso.
@@ -164,17 +167,38 @@ export async function POST(request: Request) {
       const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
       const content = json.choices?.[0]?.message?.content ?? "";
       let names: string[] = [];
+      let address = "";
       try {
-        const obj = JSON.parse(extractJsonBlock(content)) as { names?: unknown };
+        const obj = JSON.parse(extractJsonBlock(content)) as { names?: unknown; address?: unknown };
         if (Array.isArray(obj.names)) names = obj.names.filter((x): x is string => typeof x === "string").slice(0, 10);
+        if (typeof obj.address === "string") address = obj.address;
       } catch {
         continue;
       }
-      if (names.length === 0) {
+      if (names.length === 0 && !address) {
         return NextResponse.json({ success: true, available: true, status: "unreadable" });
       }
-      const status = nameMatches(expectedName, names) ? "match" : "mismatch";
-      return NextResponse.json({ success: true, available: true, status, names, expectedName });
+      // Veredicto por campo (nombre y, si se pasó, dirección). Rojo si CUALQUIERA
+      // no coincide. Nunca bloquea: la declaración jurada es la protección real.
+      const nameStatus = names.length > 0 ? (nameMatches(expectedName, names) ? "match" : "mismatch") : "unclear";
+      const addressStatus = expectedAddress ? addressMatches(expectedAddress, address) : "match";
+      const status =
+        nameStatus === "mismatch" || addressStatus === "mismatch"
+          ? "mismatch"
+          : nameStatus === "match"
+            ? "match"
+            : "unreadable";
+      return NextResponse.json({
+        success: true,
+        available: true,
+        status,
+        names,
+        address,
+        nameStatus,
+        addressStatus,
+        expectedName,
+        expectedAddress: expectedAddress || undefined,
+      });
     } catch {
       /* red: intenta el siguiente modelo */
     }

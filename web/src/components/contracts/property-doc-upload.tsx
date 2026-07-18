@@ -19,6 +19,7 @@ export function PropertyDocUpload({
   docType,
   onDocType,
   expectedName,
+  expectedAddress,
   actingAs,
   onUploaded,
 }: {
@@ -27,6 +28,8 @@ export function PropertyDocUpload({
   onDocType: (v: PropertyDocType) => void;
   /** Nombre contra el que se coteja el documento (arrendador; vacío si apoderado sin poderdante). */
   expectedName?: string;
+  /** Dirección del inmueble contra la que se coteja el documento (opcional). */
+  expectedAddress?: string;
   actingAs?: "" | "owner" | "proxy";
   /** Se llama tras subir con éxito (para refrescar estados externos, p. ej. pendientes). */
   onUploaded?: () => void;
@@ -35,7 +38,7 @@ export function PropertyDocUpload({
   const [docs, setDocs] = useState<DraftPropertyDocRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-  const [verify, setVerify] = useState<{ status: VerifyStatus; names?: string[]; reason?: string } | null>(null);
+  const [verify, setVerify] = useState<{ status: VerifyStatus; names?: string[]; reason?: string; addressStatus?: string } | null>(null);
   const [overrideAck, setOverrideAck] = useState(false);
   // Si ya hay documento, mostramos recogido; "Cambiar / subir otro" expande el bloque.
   const [expanded, setExpanded] = useState(false);
@@ -48,14 +51,14 @@ export function PropertyDocUpload({
       const res = await fetch("/api/contracts/draft-property-docs/verify", {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ contractDraftId, expectedName: expectedName ?? "", actingAs: actingAs || undefined }),
+        body: JSON.stringify({ contractDraftId, expectedName: expectedName ?? "", expectedAddress: expectedAddress ?? "", actingAs: actingAs || undefined }),
       });
-      const j = (await res.json()) as { status?: VerifyStatus; names?: string[]; reason?: string };
-      setVerify(res.ok && j.status ? { status: j.status, names: j.names, reason: j.reason } : { status: "skipped" });
+      const j = (await res.json()) as { status?: VerifyStatus; names?: string[]; reason?: string; addressStatus?: string };
+      setVerify(res.ok && j.status ? { status: j.status, names: j.names, reason: j.reason, addressStatus: j.addressStatus } : { status: "skipped" });
     } catch {
       setVerify({ status: "skipped" });
     }
-  }, [user, contractDraftId, expectedName, actingAs]);
+  }, [user, contractDraftId, expectedName, expectedAddress, actingAs]);
 
   const refresh = useCallback(async () => {
     if (!user || !contractDraftId) return;
@@ -191,8 +194,13 @@ export function PropertyDocUpload({
           )}
           {verify.status === "mismatch" && (
             <>
-              ⚠️ <b>Posible diferencia:</b> la revisión automática <b>no encontró el nombre de {expectedName}</b> en el documento
-              {verify.names && verify.names.length > 0 ? ` (leyó: ${verify.names.slice(0, 3).join(", ")})` : ""}. Verifica que subiste el documento correcto.
+              ⚠️ <b>Posible diferencia:</b>{" "}
+              {verify.addressStatus === "mismatch" ? (
+                <>la <b>dirección del inmueble</b> del documento no coincide con la que ingresaste{expectedAddress ? ` (${expectedAddress})` : ""}. </>
+              ) : (
+                <>la revisión automática <b>no encontró el nombre de {expectedName}</b> en el documento{verify.names && verify.names.length > 0 ? ` (leyó: ${verify.names.slice(0, 3).join(", ")})` : ""}. </>
+              )}
+              Verifica que subiste el documento correcto.
               La revisión IA es orientativa y no vinculante: <b>puedes corregir el documento</b> o, si estás seguro, aceptar la declaración para <b>avanzar de todos modos</b>.
               <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border-2 border-rose-300 bg-white/70 p-2 text-[11px] text-slate-700">
                 <input

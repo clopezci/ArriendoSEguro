@@ -905,6 +905,7 @@ export default function PreviewStepPage() {
           docType={propDocType}
           onDocType={(v) => { setPropDocType(v); updateDraft(id, (d) => ({ ...d, property: { ...d.property, propertyDocType: v } as typeof d.property })); }}
           expectedName={activeDraft?.actingAs === "proxy" ? (activeDraft?.grantorFullName ?? "") : (activeDraft?.landlord?.fullName ?? "")}
+          expectedAddress={activeDraft?.property?.address ?? ""}
           actingAs={activeDraft?.actingAs === "proxy" ? "proxy" : "owner"}
           onUploaded={() => void refreshPropertyDocs()}
         />
