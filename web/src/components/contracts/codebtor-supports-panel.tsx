@@ -9,6 +9,7 @@ import {
   type SupportParty,
 } from "@/domain/codebtor-supports/support-schema";
 import { useAuth } from "@/contexts/auth-context";
+import { verdictBadge, type SupportVerdict } from "@/domain/documents/verdictBadge";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -50,6 +51,23 @@ export function PartySupportsPanel({ contractId, variant = "page", party = "code
   const [viewerRole, setViewerRole] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [verdicts, setVerdicts] = useState<Record<string, SupportVerdict>>({});
+
+  async function onVerify(supportId: string) {
+    if (!user || !versionId) return;
+    setVerdicts((p) => ({ ...p, [supportId]: { status: "checking" } }));
+    try {
+      const res = await fetch("/api/codebtor-supports/verify", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ contractId, contractVersionId: versionId, party, supportId }),
+      });
+      const j = (await res.json()) as SupportVerdict & { success?: boolean };
+      setVerdicts((p) => ({ ...p, [supportId]: res.ok && j.success ? j : { status: "skipped" } }));
+    } catch {
+      setVerdicts((p) => ({ ...p, [supportId]: { status: "skipped" } }));
+    }
+  }
 
   const countsByType = useMemo(() => {
     const m = new Map<CodebtorSupportType, number>();
@@ -364,36 +382,51 @@ export function PartySupportsPanel({ contractId, variant = "page", party = "code
               <p className="mt-2 text-sm text-slate-600">Todavía no hay soportes para esta versión.</p>
             ) : (
               <ul className="mt-2 divide-y divide-slate-200 text-sm">
-                {supports.map((s) => (
-                  <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                    <div>
-                      <p className="font-medium text-slate-900">{SUPPORT_LABELS[s.supportType]}</p>
-                      <p className="text-xs text-slate-600">
-                        {s.originalFilename} · {(s.sizeBytes / 1024).toFixed(1)} KB
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        className="rounded border border-slate-300 px-2 py-1 text-xs hover:border-violet-500"
-                        disabled={busy}
-                        onClick={() => void onDownload(s.id, s.originalFilename)}
-                      >
-                        Descargar
-                      </button>
-                      {canUpload && (
+                {supports.map((s) => {
+                  const badge = verdicts[s.id] ? verdictBadge(verdicts[s.id]) : null;
+                  return (
+                  <li key={s.id} className="py-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-slate-900">{SUPPORT_LABELS[s.supportType]}</p>
+                        <p className="text-xs text-slate-600">
+                          {s.originalFilename} · {(s.sizeBytes / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {canUpload && (
+                          <button
+                            type="button"
+                            className="rounded border border-slate-300 px-2 py-1 text-xs font-semibold hover:border-violet-500"
+                            onClick={() => void onVerify(s.id)}
+                          >
+                            Verificar
+                          </button>
+                        )}
                         <button
                           type="button"
-                          className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-800 hover:bg-rose-50"
+                          className="rounded border border-slate-300 px-2 py-1 text-xs hover:border-violet-500"
                           disabled={busy}
-                          onClick={() => void onDelete(s.id)}
+                          onClick={() => void onDownload(s.id, s.originalFilename)}
                         >
-                          Eliminar
+                          Descargar
                         </button>
-                      )}
+                        {canUpload && (
+                          <button
+                            type="button"
+                            className="rounded border border-rose-300 px-2 py-1 text-xs text-rose-800 hover:bg-rose-50"
+                            disabled={busy}
+                            onClick={() => void onDelete(s.id)}
+                          >
+                            Eliminar
+                          </button>
+                        )}
+                      </div>
                     </div>
+                    {badge && <span className={`mt-1.5 inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold ${badge.cls}`}>{badge.text}</span>}
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </section>
