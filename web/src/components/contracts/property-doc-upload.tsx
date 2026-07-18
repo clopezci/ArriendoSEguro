@@ -176,16 +176,14 @@ export function PropertyDocUpload({
         </ul>
       )}
 
-      {verify && (verify.status !== "skipped" || ["pdf", "too_large", "ai_off", "provider_error", "download_error"].includes(verify.reason ?? "")) && (
+      {verify && (verify.status !== "skipped" || ["pdf_scanned", "doc_legacy", "unsupported_format", "pdf_error", "docx_error", "docx_empty", "too_large", "ai_off", "provider_error", "download_error"].includes(verify.reason ?? "")) && (
         <div
           className={`mt-3 rounded-xl border-2 p-3 text-xs ${
             verify.status === "match"
               ? "border-emerald-200 bg-emerald-50 text-emerald-800"
               : verify.status === "mismatch"
                 ? "border-rose-200 bg-rose-50 text-rose-800"
-                : verify.status === "skipped" && verify.reason === "pdf"
-                  ? "border-sky-200 bg-sky-50 text-sky-800"
-                  : "border-slate-200 bg-slate-50 text-slate-600"
+                : "border-slate-200 bg-slate-50 text-slate-600"
           }`}
         >
           {verify.status === "checking" && "Revisando el documento con IA…"}
@@ -220,8 +218,8 @@ export function PropertyDocUpload({
           {verify.status === "unreadable" && (
             <>No pudimos leer el nombre en el documento (revisa que la foto esté nítida). No pasa nada: tu declaración jurada respalda la propiedad.</>
           )}
-          {verify.status === "skipped" && verify.reason === "pdf" && (
-            <>📄 Subiste un <b>PDF</b>: la validación automática por IA solo lee <b>fotos</b> (JPG/PNG/WEBP). Si quieres que la IA verifique que el documento está a nombre de <b>{expectedName || "el propietario"}</b>, sube una <b>foto</b> del documento. De lo contrario puedes continuar: tu declaración jurada lo respalda.</>
+          {verify.status === "skipped" && ["pdf_scanned", "doc_legacy", "unsupported_format", "pdf_error", "docx_error", "docx_empty"].includes(verify.reason ?? "") && (
+            <>📄 No pudimos leer el documento automáticamente (parece <b>escaneado</b> o en un formato no soportado). La IA lee <b>fotos, PDF con texto y Word</b>. Puedes subir una <b>foto nítida</b> o un PDF con texto para que valide el nombre y la dirección, o continuar: tu declaración jurada lo respalda.</>
           )}
           {verify.status === "skipped" && verify.reason === "too_large" && (
             <>El archivo es muy grande para la validación automática. Puedes continuar; tu declaración jurada respalda la propiedad.</>
@@ -231,6 +229,12 @@ export function PropertyDocUpload({
           )}
         </div>
       )}
+
+      <p className="mt-2 text-[10px] leading-snug text-slate-400">
+        Un asistente automatizado revisa este documento para <b>detectar inconsistencias</b> (nombre y dirección).
+        Es orientativo y <b>no vinculante</b>; el documento se procesa únicamente para esta validación. Al subirlo
+        autorizas este tratamiento (Ley 1581 de 2012).
+      </p>
     </div>
   );
 }

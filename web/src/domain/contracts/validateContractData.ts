@@ -54,6 +54,43 @@ function validateParty(prefix: string, party: PersonParty, issues: ValidationIss
   // la presunción del art. 12 de la Ley 820 de 2003 que el contrato deja explícita.
 }
 
+/**
+ * Detecta que una MISMA persona ocupe dos roles (arrendador/inquilino/codeudor),
+ * comparando el número de documento (solo dígitos). Puro y exportado para test.
+ */
+export function duplicatePartyIssues(
+  input: Pick<ResidentialLeaseContractInput, "landlord" | "tenant" | "solidaryCoDebtor" | "solidaryCoDebtors">,
+): ValidationIssue[] {
+  const out: ValidationIssue[] = [];
+  const norm = (v: unknown) => String(v ?? "").replace(/\D+/g, "");
+  const cods =
+    input.solidaryCoDebtors && input.solidaryCoDebtors.length > 0
+      ? input.solidaryCoDebtors
+      : input.solidaryCoDebtor
+        ? [input.solidaryCoDebtor]
+        : [];
+  const roster: { label: string; field: string; doc: string }[] = [
+    { label: "arrendador", field: "landlord.documentNumber", doc: norm(input.landlord?.documentNumber) },
+    { label: "inquilino", field: "tenant.documentNumber", doc: norm(input.tenant?.documentNumber) },
+    ...cods.map((c, i) => ({
+      label: cods.length > 1 ? `codeudor ${i + 1}` : "codeudor",
+      field: i === 0 ? "solidaryCoDebtor.documentNumber" : `solidaryCoDebtors[${i}].documentNumber`,
+      doc: norm(c?.documentNumber),
+    })),
+  ];
+  for (let a = 0; a < roster.length; a++) {
+    for (let b = a + 1; b < roster.length; b++) {
+      if (roster[a].doc && roster[a].doc === roster[b].doc) {
+        out.push({
+          field: roster[b].field,
+          message: `El ${roster[a].label} y el ${roster[b].label} no pueden ser la misma persona (tienen el mismo documento).`,
+        });
+      }
+    }
+  }
+  return out;
+}
+
 export function validateContractData(input: ResidentialLeaseContractInput): ValidationResult {
   const issues: ValidationIssue[] = [];
 
@@ -75,6 +112,10 @@ export function validateContractData(input: ResidentialLeaseContractInput): Vali
       validateParty("solidaryCoDebtor", input.solidaryCoDebtor, issues);
     }
   }
+
+  // Antifraude / integridad: una MISMA persona no puede ocupar dos roles (el
+  // codeudor debe ser OTRA persona distinta del inquilino).
+  issues.push(...duplicatePartyIssues(input));
 
   if (isBlank(input.property.address)) issues.push({ field: "property.address", message: "Dirección del inmueble requerida." });
   if (isBlank(input.property.city)) issues.push({ field: "property.city", message: "Ciudad del inmueble requerida." });
