@@ -52,7 +52,6 @@ export default function PlansPage() {
   const [pricing, setPricing] = useState<ActivePricing | null>(null);
   const [leaseProcessId, setLeaseProcessId] = useState<string | null>(null);
   const [cart, setCart] = useState<CartPreview | null>(null);
-  const [debugInfo, setDebugInfo] = useState<unknown>(null);
   const freeTier = useFreeTier();
   const [entitlements, setEntitlements] = useState<EntitlementsResponse | null>(null);
   const [referral, setReferral] = useState<{
@@ -137,16 +136,14 @@ export default function PlansPage() {
   // (Plan Plus + cláusula «Otra» si aplica) para ese expediente.
   useEffect(() => {
     if (typeof window === "undefined" || !user) return;
-    const qs = new URLSearchParams(window.location.search);
-    const lease = qs.get("contract");
+    const lease = new URLSearchParams(window.location.search).get("contract");
     if (!lease) return;
-    const wantDebug = qs.get("debug") === "1";
     setLeaseProcessId(lease);
     let cancelled = false;
     void (async () => {
       try {
         const res = await fetch(
-          `/api/platform-payments/order-preview?leaseProcessId=${encodeURIComponent(lease)}${wantDebug ? "&debug=1" : ""}`,
+          `/api/platform-payments/order-preview?leaseProcessId=${encodeURIComponent(lease)}`,
           { headers: { ...(await buildAuthHeaders(user)) } },
         );
         const j = (await res.json()) as {
@@ -154,7 +151,6 @@ export default function PlansPage() {
           lineItems?: OrderLineItem[];
           totalCop?: number;
           hasCostedClause?: boolean;
-          debug?: unknown;
         };
         if (!cancelled && res.ok && j.success && Array.isArray(j.lineItems)) {
           setCart({
@@ -163,7 +159,6 @@ export default function PlansPage() {
             hasCostedClause: Boolean(j.hasCostedClause),
           });
         }
-        if (!cancelled && wantDebug) setDebugInfo(j.debug ?? { note: "sin debug en la respuesta", raw: j });
       } catch {
         /* sin red: se mostrará el precio simple del Plan Plus */
       }
@@ -542,14 +537,6 @@ export default function PlansPage() {
                   Plan Plus para activar y firmar este contrato.
                 </p>
               )}
-            </div>
-          )}
-          {debugInfo != null && (
-            <div className="mt-4 rounded-xl border border-amber-400 bg-amber-50 p-3 text-xs">
-              <p className="mb-1 font-semibold text-amber-800">Diagnóstico de la cláusula (debug)</p>
-              <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words text-[11px] text-slate-800">
-                {JSON.stringify(debugInfo, null, 2)}
-              </pre>
             </div>
           )}
           <button
