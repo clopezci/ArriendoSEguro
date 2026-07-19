@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import { computePlanPlusOrderAmount } from "@/domain/platform-payments/order-amount";
+import { computePlanPlusOrderAmount, debugSpecialClauseSignals } from "@/domain/platform-payments/order-amount";
 
 export const runtime = "nodejs";
 
@@ -22,8 +22,17 @@ export async function GET(request: Request) {
     );
   }
 
-  const leaseProcessId = new URL(request.url).searchParams.get("leaseProcessId");
+  const url = new URL(request.url);
+  const leaseProcessId = url.searchParams.get("leaseProcessId");
   const amount = await computePlanPlusOrderAmount(firestore, { leaseProcessId });
+
+  // Diagnóstico opcional (?debug=1): expone las señales crudas que deciden si se
+  // cobra la cláusula «Otra», para depurar sin adivinar. Solo para el expediente
+  // indicado y el usuario autenticado.
+  const debug =
+    url.searchParams.get("debug") === "1" && leaseProcessId
+      ? await debugSpecialClauseSignals(firestore, leaseProcessId)
+      : undefined;
 
   return NextResponse.json({
     success: true,
@@ -35,5 +44,6 @@ export async function GET(request: Request) {
     totalCop: amount.totalCop,
     promoName: amount.promoName,
     promoMessage: amount.promoMessage,
+    ...(debug ? { debug } : {}),
   });
 }

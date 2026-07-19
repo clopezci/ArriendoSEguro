@@ -10,7 +10,6 @@ import {
   formatCopPlain,
   PER_CONTRACT_PAYMENT_NOTICE,
 } from "@/lib/product-pricing";
-import { ReferralPanel } from "@/components/referrals/referral-panel";
 import {
   referralDiscountedCheckoutCop,
   type ReferralStatus,
@@ -432,8 +431,6 @@ export default function PlansPage() {
         </div>
       )}
 
-      <ReferralPanel />
-
       {msg && (
         <p className="rounded border border-emerald-500/40 bg-emerald-900/20 p-2 text-sm text-emerald-700">{msg}</p>
       )}
@@ -441,7 +438,7 @@ export default function PlansPage() {
         <p className="rounded border border-rose-600/40 bg-rose-900/20 p-2 text-sm text-rose-700">{error}</p>
       )}
 
-      <div className={`grid gap-6 ${freeTier.enabled ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
+      <div className={`grid gap-6 ${freeTier.enabled ? "md:grid-cols-2" : "md:grid-cols-1"}`}>
         {freeTier.enabled && (
           <article className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(0,0,0,0.12)]">
             <h2 className="text-xl font-semibold text-slate-900">{freeTier.label}</h2>
@@ -506,7 +503,7 @@ export default function PlansPage() {
             <li>Recordatorios</li>
             <li>Anexos</li>
           </ul>
-          {cart && cart.hasCostedClause && (
+          {cart && (
             <div className="mt-4 rounded-xl border border-violet-300 bg-violet-50/60 p-3 text-sm">
               <p className="mb-2 font-semibold text-slate-800">Tu carrito para este contrato</p>
               <ul className="space-y-1">
@@ -521,17 +518,25 @@ export default function PlansPage() {
                 <span className="font-semibold">Total a pagar</span>
                 <span className="text-base font-bold text-violet-700">{formatCopPlain(cart.totalCop)} COP</span>
               </div>
-              <p className="mt-1 text-xs text-slate-500">
-                Incluye la cláusula personalizada «Otra» que agregaste al contrato.
-              </p>
-              <button
-                type="button"
-                onClick={() => void removeClause()}
-                disabled={removingClause}
-                className="mt-2 text-xs font-semibold text-rose-600 underline disabled:opacity-50"
-              >
-                {removingClause ? "Quitando…" : "Quitar esta cláusula (mejor no la quiero)"}
-              </button>
+              {cart.hasCostedClause ? (
+                <>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Incluye la cláusula personalizada «Otra» que agregaste al contrato.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void removeClause()}
+                    disabled={removingClause}
+                    className="mt-2 text-xs font-semibold text-rose-600 underline disabled:opacity-50"
+                  >
+                    {removingClause ? "Quitando…" : "Quitar esta cláusula (mejor no la quiero)"}
+                  </button>
+                </>
+              ) : (
+                <p className="mt-1 text-xs text-slate-500">
+                  Plan Plus para activar y firmar este contrato.
+                </p>
+              )}
             </div>
           )}
           <button
@@ -540,7 +545,7 @@ export default function PlansPage() {
             disabled={loading}
             className="mt-6 w-full rounded-xl bg-[#5646E5] px-4 py-3 text-sm font-semibold text-white shadow-[0_0_18px_rgba(139,92,246,0.35)] hover:brightness-105 disabled:opacity-50"
           >
-            {cart && cart.hasCostedClause
+            {cart
               ? `Pagar ${formatCopPlain(cart.totalCop)} COP`
               : "Activar Plan Plus"}
           </button>
@@ -573,31 +578,6 @@ export default function PlansPage() {
               </button>
             </div>
           )}
-        </article>
-
-        <article className="rounded-2xl border border-slate-300 bg-white/65 p-6 opacity-95 shadow-[0_10px_24px_rgba(0,0,0,0.2)]">
-          <h2 className="text-xl font-semibold text-slate-900">Aliados (opcional)</h2>
-          <p className="mt-2 text-sm font-medium uppercase tracking-wide text-slate-500">Servicios de terceros</p>
-          <p className="mt-4 text-sm text-slate-600">
-            No es un plan: son servicios de aliados con <strong>costo aparte</strong> que tú decides tomar según tu
-            necesidad. Por ejemplo:
-          </p>
-          <ul className="mt-3 space-y-2 text-sm text-slate-700">
-            <li>Seguro de arrendamiento</li>
-            <li>Estudio de crédito</li>
-            <li>Autenticación notarial</li>
-            <li>Cobranza</li>
-            <li>Asesoría jurídica</li>
-          </ul>
-          <p className="mt-4 text-xs text-slate-500">
-            Los presta y cobra directamente el aliado, bajo sus condiciones. Se habilitan progresivamente.
-          </p>
-          <a
-            href="/dashboard/aliados"
-            className="mt-6 block w-full rounded-lg border border-violet-500 px-4 py-3 text-center text-sm font-semibold text-violet-700 hover:bg-violet-50"
-          >
-            Ver aliados disponibles
-          </a>
         </article>
       </div>
 
