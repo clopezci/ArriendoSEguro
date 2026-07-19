@@ -31,17 +31,29 @@ function scHasOther(sc: { enabled?: boolean; selected?: string[] } | undefined):
 }
 
 /**
- * ¿El expediente incluye la cláusula «Otra» (con costo)? Se evalúa de forma
- * robusta para que el cobro aparezca en el carrito aunque la versión guardada
- * esté rezagada respecto de la selección del usuario:
- *  1) Si hay una **revisión** de la cláusula, ella manda: pendiente/borrador →
- *     cobra; cancelada/declinada → NO cobra (así "quitar la cláusula" se respeta).
- *  2) Si no hay revisión, mira el **borrador vivo** (contract_drafts).
- *  3) En última instancia, la **versión guardada** (contract_versions).
+ * ¿El expediente incluye la cláusula «Otra» (con costo)? Se evalúa priorizando la
+ * **selección ACTUAL** del usuario, para que el cobro aparezca aunque haya restos
+ * de pruebas anteriores:
+ *  1) **Borrador vivo** (contract_drafts): si tiene «Otra», cobra. Es la selección
+ *     que el usuario ve en pantalla. Una revisión "cancelada" de una prueba previa
+ *     NO debe bloquear una cláusula re-agregada.
+ *  2) **Revisión ACTIVA** (pendiente/borrador) como respaldo si el borrador aún no
+ *     se sincronizó al servidor. Una revisión cancelada/declinada NO aporta cobro.
+ *  3) **Versión guardada** (contract_versions) como último recurso.
+ *
+ * Al "Quitar la cláusula", el endpoint de remoción limpia borrador + versión y
+ * cancela la revisión, así que las tres señales quedan en falso → no cobra.
  */
 async function leaseHasCostedSpecialClause(firestore: Firestore, leaseProcessId: string): Promise<boolean> {
   try {
-    // 1) Revisión de la cláusula (fuente más confiable del cobro).
+    // 1) Borrador vivo (selección actual del usuario) manda.
+    const draftSnap = await firestore.collection("contract_drafts").doc(leaseProcessId).get();
+    const draftSc = (
+      draftSnap.data() as { payload?: { specialClauses?: { enabled?: boolean; selected?: string[] } } } | undefined
+    )?.payload?.specialClauses;
+    if (scHasOther(draftSc)) return true;
+
+    // 2) Revisión ACTIVA (pendiente/borrador) como respaldo. Cancelada/declinada NO cobra.
     const revSnap = await firestore
       .collection(SPECIAL_CLAUSE_REVIEWS_COLLECTION)
       .where("contractDraftId", "==", leaseProcessId)
@@ -49,15 +61,8 @@ async function leaseHasCostedSpecialClause(firestore: Firestore, leaseProcessId:
       .get();
     if (!revSnap.empty) {
       const st = String((revSnap.docs[0].data() as { status?: string }).status ?? "pending");
-      return st !== "cancelled" && st !== "declined";
+      if (st !== "cancelled" && st !== "declined") return true;
     }
-
-    // 2) Borrador vivo.
-    const draftSnap = await firestore.collection("contract_drafts").doc(leaseProcessId).get();
-    const draftSc = (
-      draftSnap.data() as { payload?: { specialClauses?: { enabled?: boolean; selected?: string[] } } } | undefined
-    )?.payload?.specialClauses;
-    if (scHasOther(draftSc)) return true;
 
     // 3) Versión guardada.
     const contractSnap = await firestore.collection("contracts").doc(leaseProcessId).get();
