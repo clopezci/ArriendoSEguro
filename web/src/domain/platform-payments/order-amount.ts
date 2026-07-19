@@ -80,6 +80,81 @@ async function leaseHasCostedSpecialClause(firestore: Firestore, leaseProcessId:
   }
 }
 
+/**
+ * Diagnóstico: devuelve las tres señales crudas que decide `leaseHasCostedSpecialClause`,
+ * para depurar por qué un expediente cobra (o no) la cláusula «Otra» SIN adivinar.
+ * Se expone en `order-preview?debug=1` (solo dueño autenticado).
+ */
+export async function debugSpecialClauseSignals(
+  firestore: Firestore,
+  leaseProcessId: string,
+): Promise<{
+  otherId: string;
+  draftExists: boolean;
+  draftSelected: string[] | null;
+  draftHasOther: boolean;
+  reviewExists: boolean;
+  reviewStatus: string | null;
+  reviewCounts: boolean;
+  versionId: string | null;
+  versionSelected: string[] | null;
+  versionHasOther: boolean;
+  decision: boolean;
+}> {
+  const out = {
+    otherId: SPECIAL_CLAUSE_OTHER_ID,
+    draftExists: false,
+    draftSelected: null as string[] | null,
+    draftHasOther: false,
+    reviewExists: false,
+    reviewStatus: null as string | null,
+    reviewCounts: false,
+    versionId: null as string | null,
+    versionSelected: null as string[] | null,
+    versionHasOther: false,
+    decision: false,
+  };
+  try {
+    const draftSnap = await firestore.collection("contract_drafts").doc(leaseProcessId).get();
+    out.draftExists = draftSnap.exists;
+    const draftSc = (
+      draftSnap.data() as { payload?: { specialClauses?: { enabled?: boolean; selected?: string[] } } } | undefined
+    )?.payload?.specialClauses;
+    out.draftSelected = Array.isArray(draftSc?.selected) ? draftSc!.selected! : null;
+    out.draftHasOther = scHasOther(draftSc);
+
+    const revSnap = await firestore
+      .collection(SPECIAL_CLAUSE_REVIEWS_COLLECTION)
+      .where("contractDraftId", "==", leaseProcessId)
+      .limit(1)
+      .get();
+    out.reviewExists = !revSnap.empty;
+    if (!revSnap.empty) {
+      const st = String((revSnap.docs[0].data() as { status?: string }).status ?? "pending");
+      out.reviewStatus = st;
+      out.reviewCounts = st !== "cancelled" && st !== "declined";
+    }
+
+    const contractSnap = await firestore.collection("contracts").doc(leaseProcessId).get();
+    const currentVersionId = (contractSnap.data() as { currentVersionId?: string } | undefined)?.currentVersionId ?? null;
+    out.versionId = currentVersionId;
+    if (currentVersionId) {
+      const versionSnap = await firestore.collection("contract_versions").doc(currentVersionId).get();
+      const sc = (
+        versionSnap.data() as
+          | { contractPayload?: { specialClauses?: { enabled?: boolean; selected?: string[] } } }
+          | undefined
+      )?.contractPayload?.specialClauses;
+      out.versionSelected = Array.isArray(sc?.selected) ? sc!.selected! : null;
+      out.versionHasOther = scHasOther(sc);
+    }
+    out.decision = out.draftHasOther || out.reviewCounts || out.versionHasOther;
+  } catch {
+    /* mejor esfuerzo: devolvemos lo que se pudo leer */
+  }
+  return out;
+}
+
 export async function computePlanPlusOrderAmount(
   firestore: Firestore,
   opts: { leaseProcessId?: string | null },

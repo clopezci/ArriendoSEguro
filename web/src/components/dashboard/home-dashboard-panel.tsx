@@ -7,6 +7,8 @@ import { getAllDrafts, type ContractDraft } from "@/features/contracts/wizard-st
 import { useFreeTier } from "@/lib/useFreeTier";
 import { MACRO_STEPS } from "@/features/contracts/steps5";
 import { OwnerTipsCarousel } from "@/components/dashboard/owner-tips-carousel";
+import { ReferralPanel } from "@/components/referrals/referral-panel";
+import { AlliesTeaser } from "@/components/dashboard/allies-teaser";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -219,6 +221,11 @@ export function HomeDashboardPanel() {
           </li>
         </ol>
       </section>
+
+      {/* Publicidad interna (cerrable): referidos y aliados. Fuera del flujo de
+          pago, aquí sí generan valor y no distraen del "solo pagar". */}
+      <ReferralPanel dismissible />
+      <AlliesTeaser />
 
       {/* Elección al tocar "Arma tu expediente" cuando ya hay contrato */}
       {step1Choice && (

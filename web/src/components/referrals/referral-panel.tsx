@@ -20,11 +20,18 @@ type ReferralMe = {
   program?: { enabled: boolean; discountPercent: number };
 };
 
-/** Tarjeta "Invita y gana": enlace propio, conteo y estado del descuento. */
-export function ReferralPanel() {
+const REFERRAL_DISMISS_KEY = "promo_referral_dismissed";
+
+/**
+ * Tarjeta "Invita y gana": enlace propio, conteo y estado del descuento.
+ * Con `dismissible`, se comporta como publicidad interna: el usuario la puede
+ * cerrar (se recuerda en localStorage) para no estorbar el flujo.
+ */
+export function ReferralPanel({ dismissible = false }: { dismissible?: boolean }) {
   const { user } = useAuth();
   const [data, setData] = useState<ReferralMe | null>(null);
   const [copied, setCopied] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -41,6 +48,25 @@ export function ReferralPanel() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!dismissible || typeof window === "undefined") return;
+    try {
+      if (window.localStorage.getItem(REFERRAL_DISMISS_KEY) === "1") setDismissed(true);
+    } catch {
+      /* localStorage no disponible: la mostramos */
+    }
+  }, [dismissible]);
+
+  function dismiss() {
+    setDismissed(true);
+    try {
+      window.localStorage.setItem(REFERRAL_DISMISS_KEY, "1");
+    } catch {
+      /* sin persistencia: al menos se oculta esta sesión */
+    }
+  }
+
+  if (dismissible && dismissed) return null;
   if (!data?.code || !data.program?.enabled) return null;
 
   const link = data.link ?? "";
@@ -61,8 +87,18 @@ export function ReferralPanel() {
   }
 
   return (
-    <section className="rounded-2xl border border-violet-300 bg-gradient-to-br from-violet-50 to-white p-5 shadow-[0_10px_24px_rgba(139,92,246,0.16)]">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <section className="relative rounded-2xl border border-violet-300 bg-gradient-to-br from-violet-50 to-white p-5 shadow-[0_10px_24px_rgba(139,92,246,0.16)]">
+      {dismissible && (
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Cerrar esta sugerencia"
+          className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-white hover:text-slate-700"
+        >
+          ✕
+        </button>
+      )}
+      <div className="flex flex-wrap items-start justify-between gap-3 pr-8">
         <div>
           <h2 className="text-lg font-bold text-slate-900">Invita y gana un contrato gratis</h2>
           <p className="mt-1 text-sm text-slate-600">
