@@ -52,16 +52,29 @@ test("expediente inexistente: no rompe, solo Plan Plus", async () => {
   assert.equal(r.hasCostedClause, false);
 });
 
-test("revisión CANCELADA manda: no cobra aunque la versión tenga «Otra»", async () => {
+test("borrador con «Otra» + revisión CANCELADA vieja → SÍ cobra (el borrador manda)", async () => {
+  // Caso del re-test: el usuario había 'Quitado' antes (revisión cancelada) y
+  // ahora re-agrega la cláusula (borrador con OTRA). Debe cobrar.
   const fs = createMockFirestore();
-  seedContractWithClause(fs, ["OTRA"]);
+  fs.seed("contract_drafts", "lease1", { payload: { specialClauses: { enabled: true, selected: ["OTRA"] } } });
+  fs.seed("special_clause_reviews", "rev1", { contractDraftId: "lease1", status: "cancelled" });
+  const r = await computePlanPlusOrderAmount(fs as unknown as Firestore, { leaseProcessId: "lease1" });
+  assert.equal(r.hasCostedClause, true);
+  assert.equal(r.totalCop, 99900);
+});
+
+test("tras 'Quitar' (borrador y versión SIN «Otra» + revisión cancelada) → NO cobra", async () => {
+  const fs = createMockFirestore();
+  fs.seed("contract_drafts", "lease1", { payload: { specialClauses: { enabled: false, selected: [] } } });
+  fs.seed("contracts", "lease1", { currentVersionId: "v1" });
+  fs.seed("contract_versions", "v1", { contractPayload: { specialClauses: { enabled: false, selected: [] } } });
   fs.seed("special_clause_reviews", "rev1", { contractDraftId: "lease1", status: "cancelled" });
   const r = await computePlanPlusOrderAmount(fs as unknown as Firestore, { leaseProcessId: "lease1" });
   assert.equal(r.hasCostedClause, false);
   assert.equal(r.totalCop, 49900);
 });
 
-test("revisión PENDIENTE manda: cobra aunque la versión no tenga «Otra»", async () => {
+test("revisión PENDIENTE (respaldo) sin borrador con «Otra» → cobra", async () => {
   const fs = createMockFirestore();
   fs.seed("contracts", "lease1", { currentVersionId: "v1" });
   fs.seed("contract_versions", "v1", { contractPayload: { specialClauses: { enabled: false, selected: [] } } });
