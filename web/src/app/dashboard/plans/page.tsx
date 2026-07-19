@@ -547,11 +547,11 @@ export default function PlansPage() {
           {process.env.NEXT_PUBLIC_BREB_ENABLED === "true" && (
             <button
               type="button"
-              onClick={() => { setBrebViaWompi(true); void createPlusOrder(); }}
+              onClick={() => void createPlusOrder("breb")}
               disabled={loading}
               className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-emerald-500 px-4 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
             >
-              <span aria-hidden="true">⚡</span> Pagar con Bre-B
+              <span aria-hidden="true">⚡</span> Pagar con Bre-B (QR / llave)
             </button>
           )}
           {internal && process.env.NODE_ENV !== "production" && orderId && (
