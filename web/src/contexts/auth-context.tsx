@@ -93,26 +93,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async (): Promise<string> => {
     if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
-    const auth = getAuthClient();
-    // La sesión de Google debe PERSISTIR (recordar en el dispositivo). Sin esto,
-    // quedaba con la persistencia previa (p. ej. de un email con remember=false) y
-    // se perdía al navegar → parecía que "no se guardó / lo botó".
-    await applyPersistence(auth, true);
+    // IMPORTANTE: NO poner ningún `await` antes de signInWithPopup. El navegador
+    // exige que el popup (window.open) se abra de forma SÍNCRONA dentro del gesto
+    // del clic; cualquier await previo (p. ej. setPersistence) consume el gesto y
+    // el popup se bloquea → auth/internal-error. La persistencia por defecto ya es
+    // local (browserLocalPersistence), que es justo lo que queremos.
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    // Popup (no redirect) para no perder el estado del recorrido en el que está.
-    const cred = await signInWithPopup(auth, provider);
+    const cred = await signInWithPopup(getAuthClient(), provider);
     return cred.user.uid;
-  }, [applyPersistence]);
+  }, []);
 
   const signInWithGoogleRedirect = useCallback(async () => {
     if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
-    const auth = getAuthClient();
-    await applyPersistence(auth, true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    await signInWithRedirect(auth, provider);
-  }, [applyPersistence]);
+    await signInWithRedirect(getAuthClient(), provider);
+  }, []);
 
   const consumeGoogleRedirect = useCallback(async (): Promise<string | null> => {
     if (!isFirebaseClientConfigured()) return null;
