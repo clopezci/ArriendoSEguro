@@ -9,6 +9,7 @@ import { MACRO_STEPS } from "@/features/contracts/steps5";
 import { OwnerTipsCarousel } from "@/components/dashboard/owner-tips-carousel";
 import { ReferralPanel } from "@/components/referrals/referral-panel";
 import { AlliesTeaser } from "@/components/dashboard/allies-teaser";
+import { IntroPromoBanner } from "@/components/promo/intro-promo-banner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -222,8 +223,9 @@ export function HomeDashboardPanel() {
         </ol>
       </section>
 
-      {/* Publicidad interna (cerrable): referidos y aliados. Fuera del flujo de
-          pago, aquí sí generan valor y no distraen del "solo pagar". */}
+      {/* Publicidad interna (cerrable): promo de introducción, referidos y aliados.
+          Fuera del flujo de pago, aquí sí generan valor y no distraen del "solo pagar". */}
+      {!plusActive && <IntroPromoBanner />}
       <ReferralPanel dismissible />
       <AlliesTeaser />
 
