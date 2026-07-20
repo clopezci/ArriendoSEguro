@@ -26,8 +26,12 @@ export default function GestionarContratosPage() {
     // Trae del servidor los borradores del usuario (persistencia entre equipos):
     // así aparecen aquí los creados en otro dispositivo.
     if (user) { try { await pullServerDraftsIntoLocal(); } catch { /* seguimos con lo local */ } }
+    // Solo los contratos de la sesión ACTUAL: si hay usuario, los suyos; si no hay
+    // sesión, solo los del borrador "invitado" en curso. NUNCA todos (antes `!user`
+    // mostraba los de CUALQUIER cuenta que quedara en este equipo → se veía "la
+    // cuenta anterior").
     const all = getAllDrafts()
-      .filter((d) => !user || d.userId === user.uid)
+      .filter((d) => (user ? d.userId === user.uid : d.userId === "invitado"))
       .sort((a, b) => new Date(b.lastUpdatedAt).getTime() - new Date(a.lastUpdatedAt).getTime());
     setDrafts(all);
   }, [user]);
