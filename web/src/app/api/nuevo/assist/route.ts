@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 
 export const runtime = "nodejs";
 
@@ -68,9 +67,10 @@ function extractJsonBlock(s: string): string {
 }
 
 export async function POST(request: Request) {
-  const auth = await requireAuthenticatedUser(request);
-  if (!auth.ok) return auth.response;
-
+  // Asistente de PRE-llenado / ayuda: aparece en la primera pantalla de /nuevo,
+  // ANTES de registrarse. Por eso NO exige sesión: no lee ni escribe datos del
+  // usuario; solo envía a la IA el texto que la propia persona escribe. (El
+  // tamaño del texto está acotado por el schema para limitar el costo.)
   const apiKey = process.env.AI_API_KEY?.trim();
   if (!apiKey) {
     // No configurado: el cliente muestra una nota, sin romper el flujo.
