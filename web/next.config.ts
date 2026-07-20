@@ -23,12 +23,18 @@ const appDir = path.dirname(fileURLToPath(import.meta.url));
  */
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://www.gstatic.com https://www.googletagmanager.com",
+  // apis.google.com: el SDK de Firebase Auth carga el cliente de Google (gapi)
+  // para el acceso con Google por POPUP (escritorio). Sin él, el popup falla con
+  // `auth/internal-error` ("Google no está disponible aquí").
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://www.gstatic.com https://www.googletagmanager.com https://apis.google.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebase.googleapis.com https://challenges.cloudflare.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://stats.g.doubleclick.net https://*.ingest.us.sentry.io https://*.ingest.sentry.io",
-  "frame-src 'self' https://challenges.cloudflare.com",
+  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebase.googleapis.com https://apis.google.com https://challenges.cloudflare.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://stats.g.doubleclick.net https://*.ingest.us.sentry.io https://*.ingest.sentry.io",
+  // frame-src: el acceso con Google usa un iframe oculto al authDomain de Firebase
+  // (`*.firebaseapp.com`) y a Google (apis/accounts). Sin estos, el popup de Google
+  // se bloquea. (El redirect de móvil no usa iframe, por eso sí funcionaba.)
+  "frame-src 'self' https://challenges.cloudflare.com https://apis.google.com https://accounts.google.com https://*.firebaseapp.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

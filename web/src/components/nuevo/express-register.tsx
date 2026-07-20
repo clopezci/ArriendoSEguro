@@ -143,6 +143,17 @@ export function ExpressRegister({
       await recordConsent();
       onAuthenticated(uid); // ya quedó logueado, seguimos en el recorrido
     } catch (err) {
+      // Fallback: si el popup falla por error interno/red (iframe bloqueado, etc.),
+      // reintentamos con REDIRECT (no usa iframe). El padre guarda el avance.
+      const code = (err as { code?: string })?.code ?? "";
+      if ((code.includes("internal-error") || code.includes("network")) && onGoogleRedirect) {
+        try {
+          await onGoogleRedirect(); // navega fuera; la vuelta la maneja el padre
+          return;
+        } catch {
+          /* si el redirect tampoco puede, mostramos el mensaje claro abajo */
+        }
+      }
       setError(googleError(err));
     } finally {
       setBusy(false);
