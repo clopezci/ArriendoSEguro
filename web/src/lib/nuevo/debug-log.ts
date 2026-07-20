@@ -50,10 +50,11 @@ export function logDebug(ev: string, data?: unknown): void {
   const s = ss();
   if (!s) return;
   try {
-    // console para quien tenga la consola abierta.
+    // Diagnóstico SOLO cuando está activo (?debug=1). En operación normal es un
+    // no-op total: ni consola ni sessionStorage (nada de ruido para el usuario).
+    if (s.getItem(FLAG_KEY) !== "1") return;
     // eslint-disable-next-line no-console
     console.log(`[nuevo] ${ev}`, data ?? "");
-    if (s.getItem(FLAG_KEY) !== "1") return; // sin panel: no acumulamos
     const now = new Date();
     const t = `${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}.${String(now.getMilliseconds()).padStart(3, "0")}`;
     const arr = getDebugLog();
