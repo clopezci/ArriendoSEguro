@@ -30,7 +30,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebase.googleapis.com https://apis.google.com https://challenges.cloudflare.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://stats.g.doubleclick.net https://*.ingest.us.sentry.io https://*.ingest.sentry.io",
+  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebase.googleapis.com https://apis.google.com https://accounts.google.com https://*.firebaseapp.com https://www.gstatic.com https://challenges.cloudflare.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://stats.g.doubleclick.net https://*.ingest.us.sentry.io https://*.ingest.sentry.io",
   // frame-src: el acceso con Google usa un iframe oculto al authDomain de Firebase
   // (`*.firebaseapp.com`) y a Google (apis/accounts). Sin estos, el popup de Google
   // se bloquea. (El redirect de móvil no usa iframe, por eso sí funcionaba.)
