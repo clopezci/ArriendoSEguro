@@ -518,24 +518,24 @@ export default function NuevoPage() {
       sessionStorage.removeItem(GOOGLE_RESUME_KEY);
       let saved: { draftId: string | null; answers: Answers } | null = null;
       try { saved = JSON.parse(raw); } catch { saved = null; }
-      if (!saved?.draftId) return;
-      setDraftId(saved.draftId);
-      draftIdRef.current = saved.draftId;
-      setARaw(saved.answers);
-      // Consentimiento Habeas Data (aceptado antes de irse a Google).
-      try {
-        const cu = getAuthClient().currentUser;
-        if (cu) await fetch("/api/consents/register", {
-          method: "POST",
-          headers: { "content-type": "application/json", ...(await buildAuthHeaders(cu)) },
-          body: JSON.stringify({ version: CONSENT_CURRENT_VERSION, surface: "REGISTRATION" }),
-        });
-      } catch { /* el wizard lo reintenta */ }
-      const updated = updateDraft(saved.draftId, (d) => ({ ...d, userId: uid }));
-      if (updated) void flushDraftToServer(updated).then(() => void pullServerDraftsIntoLocal());
+      const did = saved?.draftId ?? draftIdRef.current;
+      // Solo RECLAMAMOS el borrador a la cuenta (userId) + consentimiento. La
+      // navegación (volver a tu paso) la hace el restaurador por ACTIVE_KEY, así
+      // que aunque este resume falle o llegue tarde, NUNCA quedas en "home".
       setGate(null);
-      setMode("flow");
-      setI(nextActiveIndex(BASIC_TOTAL - 1, saved.answers));
+      if (did) {
+        try {
+          const cu = getAuthClient().currentUser;
+          if (cu) await fetch("/api/consents/register", {
+            method: "POST",
+            headers: { "content-type": "application/json", ...(await buildAuthHeaders(cu)) },
+            body: JSON.stringify({ version: CONSENT_CURRENT_VERSION, surface: "REGISTRATION" }),
+          });
+        } catch { /* el wizard lo reintenta */ }
+        const updated = updateDraft(did, (d) => ({ ...d, userId: uid }));
+        if (updated) void flushDraftToServer(updated).then(() => void pullServerDraftsIntoLocal());
+      }
+      logDebug("resume.claimed", { did, uid });
     })();
   }, [consumeGoogleRedirect, user]);
 
@@ -577,11 +577,16 @@ export default function NuevoPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!serverSynced) return; // esperamos el pull del servidor primero
-    if (sessionStorage.getItem(GOOGLE_RESUME_KEY)) return; // Google tiene prioridad
+    // Restaura SIEMPRE el recorrido activo (por ?id= o por "borrador activo"),
+    // incluso al volver de Google. Antes se cedía la prioridad al resume de
+    // Google, pero si ese fallaba el timing quedabas en "home". Ahora ACTIVE_KEY
+    // te devuelve a tu paso sí o sí; el resume de Google solo reclama el borrador
+    // a tu cuenta (userId) y el consentimiento, sin controlar la navegación.
     const id = new URLSearchParams(window.location.search).get("id");
-    if (id) { restoreDraft(id); return; }
+    if (id) { restoreDraft(id); logDebug("restore.byId", { id }); return; }
     const active = window.localStorage.getItem(ACTIVE_KEY);
-    if (active) restoreDraft(active);
+    if (active) { restoreDraft(active); logDebug("restore.active", { active }); }
+    else logDebug("restore.none", { serverSynced });
   }, [restoreDraft, serverSynced]);
 
   // Mientras el usuario avanza (o edita), guardamos snapshot + puntero activo en
