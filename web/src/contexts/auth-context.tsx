@@ -93,19 +93,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = useCallback(async (): Promise<string> => {
     if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
+    const auth = getAuthClient();
+    // La sesión de Google debe PERSISTIR (recordar en el dispositivo). Sin esto,
+    // quedaba con la persistencia previa (p. ej. de un email con remember=false) y
+    // se perdía al navegar → parecía que "no se guardó / lo botó".
+    await applyPersistence(auth, true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
     // Popup (no redirect) para no perder el estado del recorrido en el que está.
-    const cred = await signInWithPopup(getAuthClient(), provider);
+    const cred = await signInWithPopup(auth, provider);
     return cred.user.uid;
-  }, []);
+  }, [applyPersistence]);
 
   const signInWithGoogleRedirect = useCallback(async () => {
     if (!isFirebaseClientConfigured()) throw new Error("Firebase no configurado");
+    const auth = getAuthClient();
+    await applyPersistence(auth, true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    await signInWithRedirect(getAuthClient(), provider);
-  }, []);
+    await signInWithRedirect(auth, provider);
+  }, [applyPersistence]);
 
   const consumeGoogleRedirect = useCallback(async (): Promise<string | null> => {
     if (!isFirebaseClientConfigured()) return null;
