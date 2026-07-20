@@ -153,9 +153,20 @@ export function ExpressRegister({
       // Capturamos el error COMPLETO para diagnóstico (no solo el code).
       const e = err as { code?: string; message?: string; name?: string };
       logDebug("er.google.popup_error", { code: e?.code, message: e?.message, name: e?.name });
-      // NOTA: NO caemos a redirect en escritorio. En este dominio el redirect no
-      // cuaja sesión (getRedirectResult null) y solo bota al inicio. Preferimos
-      // mostrar el error y dejar al usuario en la pantalla (puede usar correo).
+      // Si el popup falla (bloqueado por una extensión/navegador, internal-error,
+      // etc.), caemos a REDIRECT: es una navegación completa que las extensiones
+      // casi nunca bloquean. El padre guarda el avance y al volver continúa el
+      // recorrido (el resume ya usa la sesión activa aunque getRedirectResult
+      // venga null). Así Google funciona incluso con el popup bloqueado.
+      if (onGoogleRedirect) {
+        try {
+          logDebug("er.google.redirect_start", { reason: "popup_failed" });
+          await onGoogleRedirect(); // navega fuera; la vuelta la maneja el padre
+          return;
+        } catch {
+          /* si el redirect tampoco puede, mostramos el mensaje claro abajo */
+        }
+      }
       setError(googleError(err));
     } finally {
       setBusy(false);
