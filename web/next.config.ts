@@ -50,10 +50,32 @@ const nextConfig: NextConfig = {
    * lo carga en runtime, donde la importación dinámica nunca se ejecuta.
    */
   serverExternalPackages: ["resend", "firebase-admin"],
+  /**
+   * Autenticación desde el PROPIO dominio (anti-bloqueadores). Firebase Auth
+   * normalmente sirve su "handler" de OAuth desde `<proyecto>.firebaseapp.com`,
+   * que las extensiones de rastreo/seguridad suelen bloquear. Si en Vercel se
+   * fija `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=arriendoseguro.app`, el SDK pedirá
+   * `/__/auth/...` en NUESTRO dominio y aquí lo redirigimos (proxy) al handler
+   * real de Firebase. Así la auth es de primera parte y no la bloquean.
+   *
+   * Requiere además (config del usuario): agregar
+   * `https://arriendoseguro.app/__/auth/handler` a las "Authorized redirect URIs"
+   * del cliente OAuth en Google Cloud. Si no se fija el env, estas reglas quedan
+   * inertes (nadie pide /__/auth en este dominio).
+   */
+  async rewrites() {
+    const firebaseAuthHost = "https://arriendoseguro-c5602.firebaseapp.com";
+    return [
+      { source: "/__/auth/:path*", destination: `${firebaseAuthHost}/__/auth/:path*` },
+      { source: "/__/firebase/:path*", destination: `${firebaseAuthHost}/__/firebase/:path*` },
+    ];
+  },
   async headers() {
     return [
       {
-        source: "/(.*)",
+        // Excluimos `/__/` (el handler de Firebase proxeado): no debe llevar
+        // nuestra CSP restrictiva ni X-Frame-Options, o rompería el login.
+        source: "/((?!__/).*)",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
