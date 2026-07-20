@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { DeleteContractModal } from "@/components/nuevo/delete-contract-modal";
+import { AccountMenu } from "@/components/nuevo/account-menu";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
@@ -41,7 +42,10 @@ export default function GestionarContratosPage() {
       <div className="relative z-10 mx-auto max-w-3xl px-6 py-8">
         <div className="mb-8 flex items-center justify-between">
           <Link href="/nuevo" className="flex items-center gap-2 text-sm font-semibold text-[#5646E5] hover:underline">← Inicio</Link>
-          <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Vista nueva (beta)</span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Vista nueva (beta)</span>
+            <AccountMenu />
+          </div>
         </div>
 
         <h1 className="text-balance text-4xl font-extrabold leading-none tracking-tight">Mis contratos</h1>

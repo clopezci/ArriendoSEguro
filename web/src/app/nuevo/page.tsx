@@ -11,6 +11,7 @@ import { flushDraftToServer, pullServerDraftsIntoLocal } from "@/features/contra
 import { getAuthClient } from "@/lib/firebase/client";
 import { CONSENT_CURRENT_VERSION } from "@/domain/consents/consentVersions";
 import { JourneyScene } from "@/components/nuevo/journey-scene";
+import { AccountMenu } from "@/components/nuevo/account-menu";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { validateStep, type Answers } from "@/lib/nuevo/validation";
 import { pesosEnLetras } from "@/lib/nuevo/pesos-en-letras";
@@ -907,6 +908,7 @@ export default function NuevoPage() {
               </button>
             )}
             <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Vista nueva (beta)</span>
+            <AccountMenu />
           </div>
         </div>
 
