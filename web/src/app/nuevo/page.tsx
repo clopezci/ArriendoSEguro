@@ -447,7 +447,12 @@ export default function NuevoPage() {
     // Guarda un snapshot para poder RETOMAR este borrador paso a paso luego.
     saveResume(draftIdRef.current, aRef.current, iRef.current);
     // Al terminar lo básico (50%), si no hay sesión, exigimos crear cuenta.
-    if (iRef.current === BASIC_TOTAL - 1 && !userRef.current) { setGate("register"); return; }
+    // Consultamos la sesión REAL del SDK además del estado de React (`user`), que
+    // puede ir un paso atrás justo tras entrar con Google → antes reaparecía el
+    // login en bucle aunque ya estuvieras logueado.
+    const loggedIn = Boolean(userRef.current) || Boolean(getAuthClient().currentUser);
+    logDebug("next.gateCheck", { i: iRef.current, basicLast: BASIC_TOTAL - 1, userRef: Boolean(userRef.current), sdkUser: Boolean(getAuthClient().currentUser), loggedIn });
+    if (iRef.current === BASIC_TOTAL - 1 && !loggedIn) { setGate("register"); return; }
     const ni = nextActiveIndex(iRef.current, aRef.current);
     if (ni >= QUESTIONS.length) { setMode("review"); return; }
     setI(ni);
