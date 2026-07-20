@@ -12,6 +12,8 @@ import { getAuthClient } from "@/lib/firebase/client";
 import { CONSENT_CURRENT_VERSION } from "@/domain/consents/consentVersions";
 import { JourneyScene } from "@/components/nuevo/journey-scene";
 import { AccountMenu } from "@/components/nuevo/account-menu";
+import { NuevoDebugPanel } from "@/components/nuevo/nuevo-debug-panel";
+import { logDebug } from "@/lib/nuevo/debug-log";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { validateStep, type Answers } from "@/lib/nuevo/validation";
 import { pesosEnLetras } from "@/lib/nuevo/pesos-en-letras";
@@ -276,6 +278,12 @@ export default function NuevoPage() {
   const iRef = useRef(i); iRef.current = i;
   const modeRef = useRef(mode); modeRef.current = mode;
   const gateRef = useRef(gate); gateRef.current = gate;
+
+  // DIAGNÓSTICO: registra cada cambio de estado del recorrido para ver quién y
+  // cuándo manda a "home" tras entrar con Google (visible con ?debug=1).
+  useEffect(() => {
+    logDebug("state", { mode, gate });
+  }, [mode, gate]);
   const voiceModeRef = useRef(voiceMode); voiceModeRef.current = voiceMode;
   const draftIdRef = useRef<string | null>(null);
   const onTranscriptRef = useRef<(t: string) => void>(() => {});
@@ -475,6 +483,7 @@ export default function NuevoPage() {
     // Continuamos SIEMPRE en el recorrido (nunca en "home"): primer paso adicional
     // activo, o al resumen si ya no quedan pasos.
     const ni = nextActiveIndex(BASIC_TOTAL - 1, aRef.current);
+    logDebug("onRegistered", { uid, ni, willReview: ni >= QUESTIONS.length });
     if (ni >= QUESTIONS.length) { setMode("review"); return; }
     setMode("flow");
     setI(ni);
@@ -502,7 +511,9 @@ export default function NuevoPage() {
       // (el SDK ya lo procesó vía onAuthStateChanged). En ese caso usamos la sesión
       // activa. Si aún no hay sesión, NO borramos la marca: el efecto se repite al
       // cargar `user` (está en las deps) y restauramos ahí, sin caer al inicio.
-      const uid = (await consumeGoogleRedirect()) ?? user?.uid ?? getAuthClient().currentUser?.uid ?? null;
+      const redirectUid = await consumeGoogleRedirect();
+      const uid = redirectUid ?? user?.uid ?? getAuthClient().currentUser?.uid ?? null;
+      logDebug("resume", { redirectUid, userUid: user?.uid ?? null, currentUid: getAuthClient().currentUser?.uid ?? null, uid });
       if (!uid) return;
       sessionStorage.removeItem(GOOGLE_RESUME_KEY);
       let saved: { draftId: string | null; answers: Answers } | null = null;
@@ -898,6 +909,7 @@ export default function NuevoPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#F5F3EF] text-[#17151F]">
+      <NuevoDebugPanel />
       <OathEvidenceToast />
       <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full opacity-50 blur-3xl" style={{ background: "radial-gradient(circle,#9B6BFF,#5646E5)" }} />
       <div className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full opacity-50 blur-3xl" style={{ background: "radial-gradient(circle,#FFB03A,#FF6B4A)" }} />

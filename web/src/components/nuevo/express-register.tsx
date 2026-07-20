@@ -6,6 +6,7 @@ import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { mapFirebaseAuthError } from "@/lib/auth/firebase-errors";
 import { CONSENT_CURRENT_VERSION } from "@/domain/consents/consentVersions";
 import { getAuthClient } from "@/lib/firebase/client";
+import { logDebug } from "@/lib/nuevo/debug-log";
 import { useMemo, useState } from "react";
 
 /**
@@ -119,9 +120,11 @@ export function ExpressRegister({
 
   async function submitGoogle() {
     setError(null);
+    logDebug("er.google.click", { consent });
     if (!consent) {
       setConsentInvalid(true);
       setError("Marca la aceptación de tratamiento de datos para continuar con Google.");
+      logDebug("er.google.blocked_consent");
       return;
     }
     const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
@@ -130,24 +133,30 @@ export function ExpressRegister({
     if (isMobile && onGoogleRedirect) {
       setBusy(true);
       try {
+        logDebug("er.google.redirect_start", { reason: "mobile" });
         await onGoogleRedirect(); // navega fuera; la vuelta la maneja el padre
       } catch (err) {
         setError(googleError(err));
+        logDebug("er.google.redirect_error", { code: (err as { code?: string })?.code });
         setBusy(false);
       }
       return;
     }
     setBusy(true);
     try {
+      logDebug("er.google.popup_try");
       const uid = await signInWithGoogle();
+      logDebug("er.google.popup_ok", { uid });
       await recordConsent();
       onAuthenticated(uid); // ya quedó logueado, seguimos en el recorrido
     } catch (err) {
       // Fallback: si el popup falla por error interno/red (iframe bloqueado, etc.),
       // reintentamos con REDIRECT (no usa iframe). El padre guarda el avance.
       const code = (err as { code?: string })?.code ?? "";
+      logDebug("er.google.popup_error", { code });
       if ((code.includes("internal-error") || code.includes("network")) && onGoogleRedirect) {
         try {
+          logDebug("er.google.redirect_start", { reason: "fallback" });
           await onGoogleRedirect(); // navega fuera; la vuelta la maneja el padre
           return;
         } catch {
