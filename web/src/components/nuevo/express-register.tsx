@@ -150,19 +150,12 @@ export function ExpressRegister({
       await recordConsent();
       onAuthenticated(uid); // ya quedó logueado, seguimos en el recorrido
     } catch (err) {
-      // Fallback: si el popup falla por error interno/red (iframe bloqueado, etc.),
-      // reintentamos con REDIRECT (no usa iframe). El padre guarda el avance.
-      const code = (err as { code?: string })?.code ?? "";
-      logDebug("er.google.popup_error", { code });
-      if ((code.includes("internal-error") || code.includes("network")) && onGoogleRedirect) {
-        try {
-          logDebug("er.google.redirect_start", { reason: "fallback" });
-          await onGoogleRedirect(); // navega fuera; la vuelta la maneja el padre
-          return;
-        } catch {
-          /* si el redirect tampoco puede, mostramos el mensaje claro abajo */
-        }
-      }
+      // Capturamos el error COMPLETO para diagnóstico (no solo el code).
+      const e = err as { code?: string; message?: string; name?: string };
+      logDebug("er.google.popup_error", { code: e?.code, message: e?.message, name: e?.name });
+      // NOTA: NO caemos a redirect en escritorio. En este dominio el redirect no
+      // cuaja sesión (getRedirectResult null) y solo bota al inicio. Preferimos
+      // mostrar el error y dejar al usuario en la pantalla (puede usar correo).
       setError(googleError(err));
     } finally {
       setBusy(false);
