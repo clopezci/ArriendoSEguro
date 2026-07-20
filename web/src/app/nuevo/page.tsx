@@ -1003,10 +1003,12 @@ export default function NuevoPage() {
               </div>
 
               <div className="mt-6 flex items-center gap-3">
-                <button onClick={next} className="rounded-2xl bg-[#FF6B4A] px-7 py-4 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95">
+                {i > 0 && (
+                  <button onClick={back} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-base font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5] active:scale-95">← Atrás</button>
+                )}
+                <button onClick={next} className="ml-auto rounded-2xl bg-[#FF6B4A] px-7 py-4 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95">
                   {i >= QUESTIONS.length - 1 ? "Finalizar →" : i === BASIC_TOTAL - 1 ? "Terminar lo básico →" : "Continuar"}
                 </button>
-                <button onClick={back} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-base font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5] active:scale-95">← Atrás</button>
               </div>
 
               <JourneyScene pct={pct} stepIndex={i} />
@@ -1103,13 +1105,13 @@ export default function NuevoPage() {
               </label>
 
               <div className="mt-6 flex items-center gap-3">
+                <button onClick={() => { setMode("flow"); setI(prevActiveIndex(QUESTIONS.length, a)); }} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-base font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5] active:scale-95">← Atrás</button>
                 <button
                   onClick={confirmReview}
                   disabled={!reviewOath}
-                  className="rounded-2xl bg-[#FF6B4A] px-7 py-4 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50">
+                  className="ml-auto rounded-2xl bg-[#FF6B4A] px-7 py-4 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50">
                   Confirmar y continuar →
                 </button>
-                <button onClick={() => { setMode("flow"); setI(prevActiveIndex(QUESTIONS.length, a)); }} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-base font-bold text-slate-600 transition hover:border-[#5646E5] hover:text-[#5646E5] active:scale-95">← Atrás</button>
               </div>
             </motion.section>
           )}

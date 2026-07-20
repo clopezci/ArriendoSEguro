@@ -28,7 +28,17 @@ export const INTRO_PROMO_TITLE = "Precio de introducción: $49.900 por todo el c
  * si invitas a 3 personas que usen la app.
  */
 export const INTRO_PROMO_MESSAGE =
-  "Aprovecha: tu primer contrato tiene un precio de introducción de $49.900 (una fracción de lo que cuesta tu arriendo) e incluye la firma electrónica. Y tu segundo contrato puede ser GRATIS si lo compartes con 3 personas y al menos 2 de ellas lo usan (crean su contrato).";
+  "Tu primer contrato tiene un precio de introducción de $49.900 (pago único, no mensual) e incluye TODO: firma electrónica con evidencia (Ley 527), inventario con fotos y acta de entrega, registro de pagos con recordatorios, novedades y mantenimiento, historial de reputación y el paquete de evidencia descargable. Además, tu segundo contrato puede ser GRATIS si lo compartes con 3 personas y al menos 2 de ellas lo usan (crean su contrato).";
+
+/** Lista corta de lo que incluye el contrato (para banners con viñetas). */
+export const INTRO_PROMO_INCLUDES: string[] = [
+  "Firma electrónica con evidencia (Ley 527)",
+  "Inventario con fotos y acta de entrega",
+  "Registro de pagos con recordatorios",
+  "Novedades y mantenimiento",
+  "Historial de reputación",
+  "Paquete de evidencia descargable",
+];
 
 export function formatCop(amount: number): string {
   return new Intl.NumberFormat("es-CO", {
