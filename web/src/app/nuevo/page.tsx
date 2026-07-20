@@ -472,7 +472,12 @@ export default function NuevoPage() {
       if (updated) void flushDraftToServer(updated).then(() => void pullServerDraftsIntoLocal());
     }
     setGate(null);
-    setI(nextActiveIndex(BASIC_TOTAL - 1, aRef.current)); // primer paso adicional activo
+    // Continuamos SIEMPRE en el recorrido (nunca en "home"): primer paso adicional
+    // activo, o al resumen si ya no quedan pasos.
+    const ni = nextActiveIndex(BASIC_TOTAL - 1, aRef.current);
+    if (ni >= QUESTIONS.length) { setMode("review"); return; }
+    setMode("flow");
+    setI(ni);
   }, []);
 
   // Google en móvil por REDIRECT: guardamos el avance (borrador + respuestas)
@@ -493,9 +498,13 @@ export default function NuevoPage() {
     const raw = typeof window !== "undefined" ? sessionStorage.getItem(GOOGLE_RESUME_KEY) : null;
     if (!raw) return;
     (async () => {
-      const uid = await consumeGoogleRedirect();
+      // getRedirectResult puede devolver null aunque el usuario YA quedó logueado
+      // (el SDK ya lo procesó vía onAuthStateChanged). En ese caso usamos la sesión
+      // activa. Si aún no hay sesión, NO borramos la marca: el efecto se repite al
+      // cargar `user` (está en las deps) y restauramos ahí, sin caer al inicio.
+      const uid = (await consumeGoogleRedirect()) ?? user?.uid ?? getAuthClient().currentUser?.uid ?? null;
+      if (!uid) return;
       sessionStorage.removeItem(GOOGLE_RESUME_KEY);
-      if (!uid) return; // redirect no completado / falló → se queda en inicio
       let saved: { draftId: string | null; answers: Answers } | null = null;
       try { saved = JSON.parse(raw); } catch { saved = null; }
       if (!saved?.draftId) return;
@@ -517,7 +526,7 @@ export default function NuevoPage() {
       setMode("flow");
       setI(nextActiveIndex(BASIC_TOTAL - 1, saved.answers));
     })();
-  }, [consumeGoogleRedirect]);
+  }, [consumeGoogleRedirect, user]);
 
   // Restaura un borrador en el recorrido. Con snapshot usa el paso EXACTO donde
   // quedó (para "Continuar" y para recargas); sin snapshot reconstruye desde el
