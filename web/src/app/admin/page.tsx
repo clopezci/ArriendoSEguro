@@ -168,6 +168,7 @@ export default function AdminPage() {
   const [partnerMsg, setPartnerMsg] = useState("");
   const [partnerBusy, setPartnerBusy] = useState(false);
   const [loadError, setLoadError] = useState("");
+  const [denied, setDenied] = useState(false);
   const [grantEmail, setGrantEmail] = useState("");
   const [grantMsg, setGrantMsg] = useState("");
   const [grantErr, setGrantErr] = useState("");
@@ -266,11 +267,13 @@ export default function AdminPage() {
     try {
       const res = await fetch("/api/admin/dashboard", { headers: { ...(await buildAuthHeaders(user)) } });
       const json = (await res.json()) as DashboardPayload;
-      if (res.status === 403) {
+      if (res.status === 403 || res.status === 401) {
         setLoadError("No autorizado: tu cuenta no está en la lista de administradores del servidor.");
+        setDenied(true);
         setData(null);
         return;
       }
+      setDenied(false);
       if (!res.ok || !json.success) {
         setLoadError(json.errors?.[0]?.message ?? "No se pudo cargar el panel.");
         setData(null);
@@ -1251,6 +1254,36 @@ export default function AdminPage() {
 
   const emailLc = user.email?.toLowerCase() ?? "";
   const hintMismatch = mounted && hintSet.size > 0 && !hintSet.has(emailLc);
+
+  // Anti-parpadeo: mientras la primera carga está en vuelo (aún no sabemos si
+  // eres admin), no pintamos el cascarón vacío del panel.
+  if (!denied && !data && !loadError) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center bg-slate-100 text-slate-600">
+        <p className="text-sm">Cargando panel…</p>
+      </div>
+    );
+  }
+
+  // El servidor denegó el acceso: NO renderizamos el panel (ni cascarón ni
+  // controles). Solo el aviso. La autorización real ya la hace el servidor en
+  // cada ruta; esto además evita la confusión de "parece que entré".
+  if (denied) {
+    return (
+      <div className="min-h-screen bg-slate-50 text-slate-800">
+        <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-6 text-center">
+          <p className="text-xs font-medium uppercase tracking-wide text-violet-400">Herramienta interna</p>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900">Acceso restringido</h1>
+          <div className="mt-4 rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-800">
+            No autorizado: tu cuenta no está en la lista de administradores del servidor.
+          </div>
+          <Link href="/dashboard" className="mt-5 rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-800 hover:border-slate-500">
+            Volver al inicio
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
