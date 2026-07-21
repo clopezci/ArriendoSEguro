@@ -171,8 +171,9 @@ export const CONTRACT_TEMPLATE = `
     De forma <strong>opcional y alternativa</strong>, las partes podrán además <strong>autenticar</strong> este contrato
     ante notaría pública: descargarán el documento desde la plataforma, surtirán el trámite de autenticación y cargarán
     de nuevo el documento autenticado en el expediente. La autenticación notarial no sustituye la firma electrónica aquí
-    pactada, sino que la refuerza para los efectos previstos por la ley. Arriendo Seguro habilitará próximamente un aliado
-    de <strong>notariado digital</strong> que permitirá realizar este trámite de manera totalmente electrónica.
+    pactada, sino que la refuerza para los efectos previstos por la ley. Adicionalmente, las partes cuentan con la opción
+    de surtir la firma y autenticación digital de manera totalmente electrónica y gratuita a través de la Agencia Nacional
+    Digital del Estado colombiano (Decreto 620 de 2020), conforme a las indicaciones disponibles en la plataforma.
   </p>
 
   <h2>DÉCIMA TERCERA. TRATAMIENTO DE DATOS PERSONALES</h2>

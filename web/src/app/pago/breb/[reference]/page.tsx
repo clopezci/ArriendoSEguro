@@ -12,6 +12,7 @@ type Info = {
   status?: string;
   llave?: string;
   merchantName?: string;
+  qrImageUrl?: string;
   internalMode?: boolean;
   devSimulate?: boolean;
   adminConfirm?: boolean;
@@ -145,7 +146,14 @@ export default function BrebPaymentPage() {
             ) : (
               <p className="mt-2 text-sm text-rose-600">Aún no hay una llave Bre-B configurada.</p>
             )}
-            {info.internalMode ? (
+            {info.qrImageUrl ? (
+              // QR REAL del banco (Bancolombia "Paga aquí"): sí lo leen las apps bancarias.
+              <div className="mt-3 flex flex-col items-center gap-1">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={info.qrImageUrl} alt="Código QR Bre-B del comercio" className="h-60 w-60 rounded-lg bg-white object-contain p-1" />
+                <p className="text-[11px] text-slate-500">Escanea con la app de tu banco (Bre-B) y paga el valor exacto.</p>
+              </div>
+            ) : info.internalMode ? (
               <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-2 text-[12px] text-amber-900">
                 Abre tu app bancaria, entra a <strong>Bre-B</strong> y envía el pago a la
                 {" "}<strong>llave</strong> de arriba por el <strong>valor exacto</strong>. Al recibirlo, se confirma.
@@ -165,9 +173,11 @@ export default function BrebPaymentPage() {
           <ol className="list-decimal space-y-1 rounded-2xl border border-slate-200 bg-slate-50 p-4 pl-8 text-sm text-slate-700">
             <li>Abre la app de tu banco o billetera y entra a <strong>Bre-B</strong>.</li>
             <li>
-              {info.internalMode
-                ? "Paga a la llave de arriba por el valor exacto."
-                : "Escanea el QR, o paga a la llave de arriba por el valor exacto."}
+              {info.qrImageUrl
+                ? "Escanea el QR de arriba, o paga a la llave, por el valor exacto."
+                : info.internalMode
+                  ? "Paga a la llave de arriba por el valor exacto."
+                  : "Escanea el QR, o paga a la llave de arriba por el valor exacto."}
             </li>
             <li>Al confirmarse el pago, esta página te llevará de vuelta automáticamente.</li>
           </ol>

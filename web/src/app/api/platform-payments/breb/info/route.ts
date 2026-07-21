@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
-import { brebLlave, brebMerchantName, isBrebConfigured } from "@/domain/platform-payments/breb-checkout";
+import { brebLlave, brebMerchantName, brebQrImageUrl, isBrebConfigured } from "@/domain/platform-payments/breb-checkout";
 import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
 
 export const runtime = "nodejs";
@@ -42,6 +42,7 @@ export async function GET(request: Request) {
     status: order.status,
     llave: brebLlave(),
     merchantName: brebMerchantName(),
+    qrImageUrl: brebQrImageUrl(),
     // En modo interno (sin proveedor real), el pago se confirma manualmente / mock.
     internalMode: !isBrebConfigured(),
     devSimulate: process.env.NODE_ENV !== "production",
