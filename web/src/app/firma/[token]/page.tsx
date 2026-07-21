@@ -2,6 +2,8 @@
 
 import { SIGNING_CONSENT_TEXTS, SIGNING_DATA_CONFIRMATION_TEXT } from "@/domain/signatures/signingConsentTexts";
 import { ReadAloudButton } from "@/components/a11y/read-aloud-button";
+import { ResponsibilityAlertsBlock } from "@/components/contracts/responsibility-alerts-block";
+import type { ResponsibilitySignal } from "@/domain/contracts/responsibilityAlerts";
 import { formatAppDateTime } from "@/lib/datetime/appTime";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -48,6 +50,21 @@ export default function SignatureTokenPage() {
   const [otpCode, setOtpCode] = useState("");
   const [otpBusy, setOtpBusy] = useState(false);
   const [otpInfo, setOtpInfo] = useState("");
+  const [resp, setResp] = useState<{ intro: string; signals: ResponsibilitySignal[] } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(`/api/contracts/responsibility-alerts/by-token?token=${encodeURIComponent(token)}`);
+        const j = (await r.json()) as { success?: boolean; intro?: string; signals?: ResponsibilitySignal[] };
+        if (!cancelled && j.success && j.intro) setResp({ intro: j.intro, signals: j.signals ?? [] });
+      } catch {
+        /* si no hay constancia aún, no se muestra el bloque */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token]);
 
   async function loadTokenInfo() {
     setLoading(true);
@@ -433,6 +450,9 @@ export default function SignatureTokenPage() {
             </div>
           ) : (
             <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/80 p-3">
+              {resp && (
+                <ResponsibilityAlertsBlock intro={resp.intro} signals={resp.signals} audience="tenant" />
+              )}
               <div className="flex items-center justify-between gap-2">
                 <h2 className="text-sm font-semibold text-slate-900">Paso 2 — Declaraciones y firma</h2>
                 <ReadAloudButton

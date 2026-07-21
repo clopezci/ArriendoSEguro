@@ -10,6 +10,8 @@ import { OwnerIncomeReminder } from "@/components/contracts/owner-income-reminde
 import { PropertyDocUpload } from "@/components/contracts/property-doc-upload";
 import { PoderUpload } from "@/components/contracts/poder-upload";
 import { SpecialClauseReviewStatus } from "@/components/contracts/special-clause-review-status";
+import { ResponsibilityAlertsBlock } from "@/components/contracts/responsibility-alerts-block";
+import type { ResponsibilitySignal } from "@/domain/contracts/responsibilityAlerts";
 import { formatAppDateTime } from "@/lib/datetime/appTime";
 import { INTRO_PROMO_TITLE, INTRO_PROMO_MESSAGE } from "@/lib/product-pricing";
 import type { PropertyDocType } from "@/domain/contracts/draftPropertyDocs";
@@ -202,6 +204,8 @@ export default function PreviewStepPage() {
   const [propertyDocCount, setPropertyDocCount] = useState<number | null>(null);
   const [poderDocCount, setPoderDocCount] = useState<number | null>(null);
   const [propDocType, setPropDocType] = useState<PropertyDocType | "">("");
+  const [propertyDocVerdict, setPropertyDocVerdict] = useState<"match" | "mismatch" | "unreadable" | "skipped" | null>(null);
+  const [respAlerts, setRespAlerts] = useState<{ intro: string; signals: ResponsibilitySignal[] } | null>(null);
   // Revisión y cierre PASO A PASO (bento): una sección a la vez. Reúne TODO el
   // contenido de la pantalla en secciones para no apilarlo (antes eran 8 scrolls).
   // Sección inicial: por defecto "revisar", pero si volvemos del pago con
@@ -770,6 +774,43 @@ export default function PreviewStepPage() {
     };
   }, [id, savedVersion]);
 
+  // Genera y CONGELA la "Constancia de alertas y responsabilidad" como anexo del
+  // expediente cuando ya hay versión guardada, y trae las señales para el dueño.
+  useEffect(() => {
+    if (!user || !savedVersion || !activeDraft) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const proxy = activeDraft.actingAs === "proxy";
+        const hasPropertyDoc = (propertyDocCount ?? 0) > 0;
+        const aiRan = propertyDocVerdict === "match" || propertyDocVerdict === "mismatch" || propertyDocVerdict === "unreadable";
+        const codebtor = activeDraft.solidaryCoDebtor as { fullName?: string; economicSupport?: { monthlyIncome?: number } } | undefined;
+        const res = await fetch("/api/contracts/responsibility-alerts", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+          body: JSON.stringify({
+            contractId: savedVersion.contractId,
+            contractVersionId: savedVersion.contractVersionId,
+            actingAs: proxy ? "proxy" : "owner",
+            grantorName: activeDraft.grantorFullName ?? undefined,
+            hasPropertyDoc,
+            hasPoderDoc: (poderDocCount ?? 0) > 0,
+            propertyDocVerdict: hasPropertyDoc ? (propertyDocVerdict ?? "skipped") : "none",
+            aiAvailable: aiRan,
+            tenantIncomeCop: Number(activeDraft.tenantMonthlyIncome ?? 0) || undefined,
+            codebtorName: codebtor?.fullName || undefined,
+            codebtorIncomeCop: Number(codebtor?.economicSupport?.monthlyIncome ?? 0) || undefined,
+          }),
+        });
+        const j = (await res.json()) as { success?: boolean; intro?: string; signals?: ResponsibilitySignal[] };
+        if (!cancelled && j.success && j.intro) setRespAlerts({ intro: j.intro, signals: j.signals ?? [] });
+      } catch {
+        /* si falla, no bloquea el flujo de firma */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, savedVersion, activeDraft, propertyDocCount, poderDocCount, propertyDocVerdict]);
+
   // Refresco manual del estado de firmas (botón "Actualizar estado"): re-consulta
   // la lista para que el dueño vea, sin recargar, quién ya firmó.
   async function refreshSignatures() {
@@ -908,6 +949,7 @@ export default function PreviewStepPage() {
           expectedAddress={activeDraft?.property?.address ?? ""}
           actingAs={activeDraft?.actingAs === "proxy" ? "proxy" : "owner"}
           onUploaded={() => void refreshPropertyDocs()}
+          onVerify={(status) => setPropertyDocVerdict(status)}
         />
         {activeDraft?.actingAs === "proxy" && (
           <div className="mt-2">
@@ -1145,6 +1187,11 @@ export default function PreviewStepPage() {
           <p className="text-sm font-semibold text-slate-900">
             Paso 2 · Firma electrónica <span className="text-emerald-700">(incluida)</span>
           </p>
+          {respAlerts && (
+            <div className="mt-3">
+              <ResponsibilityAlertsBlock intro={respAlerts.intro} signals={respAlerts.signals} audience="owner" />
+            </div>
+          )}
           {!(plusActive || demoActive) ? (
             <div className="mt-2 rounded-2xl border-2 border-[#FF6B4A]/40 bg-gradient-to-br from-[#FFF4EF] to-[#FFE9DF] p-4">
               <p className="inline-flex items-center gap-2 rounded-full bg-[#FF6B4A]/15 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-[#C7361A]">

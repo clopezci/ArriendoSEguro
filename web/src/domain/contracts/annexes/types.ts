@@ -6,7 +6,8 @@ export type ContractAnnexType =
   | "electronic_signature_evidence"
   | "notarial_authentication"
   | "data_processing_authorizations"
-  | "structured_evaluation";
+  | "structured_evaluation"
+  | "responsibility_alerts";
 
 export type ContractAnnexStatus = "pending" | "generated" | "signed" | "voided";
 

@@ -11,6 +11,7 @@ export const ANNEX_TITLES: Record<ContractAnnexType, string> = {
   notarial_authentication: "Anexo — Copia autenticada en notaría (opcional)",
   data_processing_authorizations: "Anexo No. 6 - Autorizaciones de tratamiento de datos",
   structured_evaluation: "Anexo No. 7 - Evaluación estructurada",
+  responsibility_alerts: "Anexo — Constancia de alertas y responsabilidad",
 };
 
 export const ANNEX_PLACEHOLDER_HTML: Partial<Record<ContractAnnexType, string>> = {
