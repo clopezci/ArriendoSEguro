@@ -18,9 +18,6 @@ export function IngresarForm() {
     signIn,
     signUp,
     resetPassword,
-    signInWithGoogle,
-    signInWithGoogleRedirect,
-    consumeGoogleRedirect,
     configError,
     loading: authLoading,
   } = useAuth();
@@ -86,20 +83,10 @@ export function IngresarForm() {
     }
   }, []);
 
-  // Vuelta del acceso con Google por REDIRECT (móvil): consumimos el resultado
-  // y, si entró, registramos consentimiento (best-effort) y pasamos al panel.
-  useEffect(() => {
-    void (async () => {
-      const uid = await consumeGoogleRedirect();
-      if (uid) {
-        await registerConsentBestEffort();
-        goPanel();
-      }
-    })();
-  }, [consumeGoogleRedirect, registerConsentBestEffort, goPanel]);
-
-  /** Acceso/registro con Google: popup en escritorio, redirect en móvil. */
-  async function submitGoogle() {
+  /** Acceso/registro con Google del lado del SERVIDOR: el backend hace el OAuth y
+   *  crea la sesión; el navegador nunca carga scripts de Google → funciona con
+   *  cualquier extensión/bloqueador. Volvemos a `redirect`. */
+  function submitGoogle() {
     setError(null);
     setNotice(null);
     if (mode === "crear" && !consentAccepted) {
@@ -107,24 +94,8 @@ export function IngresarForm() {
       setError("Para crear tu cuenta con Google debes aceptar el tratamiento de datos personales (Ley 1581 de 2012).");
       return;
     }
-    const isMobile =
-      typeof navigator !== "undefined" && /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     setSending(true);
-    try {
-      if (isMobile) {
-        // Navega fuera; al volver, el efecto de arriba consume el resultado y entra.
-        await signInWithGoogleRedirect();
-        return;
-      }
-      await signInWithGoogle();
-      await registerConsentBestEffort();
-      setFailedAttempts(0);
-      goPanel();
-    } catch (err) {
-      setError(mapFirebaseAuthError(err));
-    } finally {
-      setSending(false);
-    }
+    window.location.href = `/api/auth/google/start?next=${encodeURIComponent(redirect)}`;
   }
 
   const humanExpected = useMemo(() => {

@@ -131,7 +131,6 @@ const EMPTY: Answers = {
 
 const BASIC_TOTAL = QUESTIONS.filter((q) => q.basic).length;
 
-const GOOGLE_RESUME_KEY = "nuevo_google_resume";
 const RESUME_PREFIX = "nuevo_resume_";
 /** Id del borrador que el usuario tiene abierto ahora mismo en el recorrido.
  * Sirve para que, si RECARGA la página (o hace pull-to-refresh), vuelva justo
@@ -227,7 +226,7 @@ function answersFromDraft(d: ContractDraft): Answers {
 }
 
 export default function NuevoPage() {
-  const { user, signInWithGoogleRedirect, consumeGoogleRedirect } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const [mode, setMode] = useState<"home" | "flow" | "review" | "done">("home");
   const [reviewOath, setReviewOath] = useState(false); // juramento del inmueble
@@ -494,55 +493,31 @@ export default function NuevoPage() {
     setI(ni);
   }, []);
 
-  // Google en móvil por REDIRECT: guardamos el avance (borrador + respuestas)
-  // antes de navegar a Google, para restaurarlo intacto al volver.
-  const startGoogleRedirect = useCallback(async () => {
-    try {
-      sessionStorage.setItem(GOOGLE_RESUME_KEY, JSON.stringify({ draftId: draftIdRef.current, answers: aRef.current }));
-      await signInWithGoogleRedirect();
-    } catch {
-      sessionStorage.removeItem(GOOGLE_RESUME_KEY);
-      throw new Error("google-redirect-failed");
-    }
-  }, [signInWithGoogleRedirect]);
-
-  // Al montar: si volvemos de Google (redirect), rehidratamos el recorrido y
-  // continuamos exactamente donde estábamos, con la sesión ya activa.
+  // Al INICIAR SESIÓN (incluido el login con Google del lado del servidor, que
+  // vuelve a /nuevo ya logueado), el borrador activo —creado como "invitado"— se
+  // RECLAMA a la cuenta: se le pone el userId y se registra el consentimiento.
+  // Así aparece en "Mis contratos" y el gate de registro queda satisfecho, sin
+  // depender de popups ni de recursos de Google en el navegador.
   useEffect(() => {
-    const raw = typeof window !== "undefined" ? sessionStorage.getItem(GOOGLE_RESUME_KEY) : null;
-    if (!raw) return;
-    (async () => {
-      // getRedirectResult puede devolver null aunque el usuario YA quedó logueado
-      // (el SDK ya lo procesó vía onAuthStateChanged). En ese caso usamos la sesión
-      // activa. Si aún no hay sesión, NO borramos la marca: el efecto se repite al
-      // cargar `user` (está en las deps) y restauramos ahí, sin caer al inicio.
-      const redirectUid = await consumeGoogleRedirect();
-      const uid = redirectUid ?? user?.uid ?? getAuthClient().currentUser?.uid ?? null;
-      logDebug("resume", { redirectUid, userUid: user?.uid ?? null, currentUid: getAuthClient().currentUser?.uid ?? null, uid });
-      if (!uid) return;
-      sessionStorage.removeItem(GOOGLE_RESUME_KEY);
-      let saved: { draftId: string | null; answers: Answers } | null = null;
-      try { saved = JSON.parse(raw); } catch { saved = null; }
-      const did = saved?.draftId ?? draftIdRef.current;
-      // Solo RECLAMAMOS el borrador a la cuenta (userId) + consentimiento. La
-      // navegación (volver a tu paso) la hace el restaurador por ACTIVE_KEY, así
-      // que aunque este resume falle o llegue tarde, NUNCA quedas en "home".
-      setGate(null);
-      if (did) {
-        try {
-          const cu = getAuthClient().currentUser;
-          if (cu) await fetch("/api/consents/register", {
-            method: "POST",
-            headers: { "content-type": "application/json", ...(await buildAuthHeaders(cu)) },
-            body: JSON.stringify({ version: CONSENT_CURRENT_VERSION, surface: "REGISTRATION" }),
-          });
-        } catch { /* el wizard lo reintenta */ }
-        const updated = updateDraft(did, (d) => ({ ...d, userId: uid }));
-        if (updated) void flushDraftToServer(updated).then(() => void pullServerDraftsIntoLocal());
-      }
-      logDebug("resume.claimed", { did, uid });
+    if (!user) return;
+    const active = typeof window !== "undefined" ? window.localStorage.getItem(ACTIVE_KEY) : null;
+    if (!active) return;
+    const d = getDraft(active);
+    if (!d || d.userId === user.uid) return;
+    const updated = updateDraft(active, (x) => ({ ...x, userId: user.uid }));
+    if (updated) void flushDraftToServer(updated).then(() => void pullServerDraftsIntoLocal());
+    void (async () => {
+      try {
+        const cu = getAuthClient().currentUser;
+        if (cu) await fetch("/api/consents/register", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...(await buildAuthHeaders(cu)) },
+          body: JSON.stringify({ version: CONSENT_CURRENT_VERSION, surface: "REGISTRATION" }),
+        });
+      } catch { /* el wizard lo reintenta */ }
     })();
-  }, [consumeGoogleRedirect, user]);
+    logDebug("draft.claimed", { active, uid: user.uid });
+  }, [user]);
 
   // Restaura un borrador en el recorrido. Con snapshot usa el paso EXACTO donde
   // quedó (para "Continuar" y para recargas); sin snapshot reconstruye desde el
@@ -1001,7 +976,7 @@ export default function NuevoPage() {
               <ProgressBar pct={50} />
               <p className="mt-4 text-center text-sm font-semibold text-[#5646E5]">¡Lo básico está listo! 🎉</p>
               <div className="mt-4">
-                <ExpressRegister defaultEmail={a.email} onAuthenticated={onRegistered} onGoogleRedirect={startGoogleRedirect} />
+                <ExpressRegister defaultEmail={a.email} onAuthenticated={onRegistered} />
               </div>
               <div className="mt-4 text-center">
                 <button onClick={() => setGate(null)} className="text-sm font-bold text-slate-500 hover:text-[#17151F]">← Volver a revisar lo básico</button>
