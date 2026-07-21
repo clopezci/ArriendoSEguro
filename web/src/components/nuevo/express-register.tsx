@@ -6,8 +6,7 @@ import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { mapFirebaseAuthError } from "@/lib/auth/firebase-errors";
 import { CONSENT_CURRENT_VERSION } from "@/domain/consents/consentVersions";
 import { getAuthClient } from "@/lib/firebase/client";
-import { logDebug } from "@/lib/nuevo/debug-log";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 /**
  * Registro exprés a mitad del recorrido (50%). Con lo básico ya diligenciado,
@@ -18,18 +17,6 @@ import { useMemo, useState } from "react";
  * No sustituye a /ingresar: reutiliza la MISMA mecánica (signUp/signIn del
  * contexto de auth y POST /api/consents/register) para no divergir.
  */
-
-/** Mensajes claros para fallos típicos del acceso con Google (móvil incluido). */
-function googleError(err: unknown): string {
-  const code = (err as { code?: string })?.code ?? "";
-  if (code.includes("popup-blocked") || code.includes("popup-closed") || code.includes("cancelled-popup"))
-    return "El navegador bloqueó la ventana de Google. Permite ventanas emergentes, o crea tu cuenta con correo y contraseña aquí abajo.";
-  if (code.includes("unauthorized-domain"))
-    return "Este enlace aún no está autorizado para Google. Por ahora crea tu cuenta con correo y contraseña.";
-  if (code.includes("internal-error") || code.includes("network"))
-    return "No pudimos abrir Google — una extensión de tu navegador (bloqueador de anuncios, privacidad o antivirus) lo está bloqueando. Crea tu cuenta con correo y contraseña aquí abajo: funciona igual y en 20 segundos.";
-  return (err as { message?: string })?.message || "No se pudo entrar con Google. Usa tu correo y contraseña.";
-}
 
 function scorePassword(pw: string): { score: number; label: string; color: string } {
   let s = 0;
@@ -63,14 +50,11 @@ function generatePassword(): string {
 export function ExpressRegister({
   defaultEmail,
   onAuthenticated,
-  onGoogleRedirect,
 }: {
   defaultEmail: string;
   onAuthenticated: (uid: string) => void;
-  /** En móvil el popup de Google falla; el padre guarda el avance y usa redirect. */
-  onGoogleRedirect?: () => Promise<void>;
 }) {
-  const { signUp, signIn, signInWithGoogle } = useAuth();
+  const { signUp, signIn } = useAuth();
   const [mode, setMode] = useState<"crear" | "iniciar">("crear");
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState("");
@@ -83,6 +67,13 @@ export function ExpressRegister({
   const [error, setError] = useState<string | null>(null);
 
   const strength = useMemo(() => scorePassword(password), [password]);
+
+  // Si volvemos de un intento fallido de Google (server-side), mostramos aviso.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const ge = new URLSearchParams(window.location.search).get("googleError");
+    if (ge) setError("No se pudo entrar con Google en este momento. Intenta de nuevo o crea tu cuenta con correo y contraseña aquí abajo.");
+  }, []);
 
   function autogenerate() {
     const pw = generatePassword();
@@ -118,50 +109,20 @@ export function ExpressRegister({
     }
   }
 
-  async function submitGoogle() {
+  function submitGoogle() {
     setError(null);
-    logDebug("er.google.click", { consent });
     if (!consent) {
       setConsentInvalid(true);
       setError("Marca la aceptación de tratamiento de datos para continuar con Google.");
-      logDebug("er.google.blocked_consent");
       return;
     }
-    const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-    // En móvil el popup de Google falla (auth/internal-error); usamos redirect:
-    // el padre guarda el avance y navega a Google. Al volver, continúa solo.
-    if (isMobile && onGoogleRedirect) {
-      setBusy(true);
-      try {
-        logDebug("er.google.redirect_start", { reason: "mobile" });
-        await onGoogleRedirect(); // navega fuera; la vuelta la maneja el padre
-      } catch (err) {
-        setError(googleError(err));
-        logDebug("er.google.redirect_error", { code: (err as { code?: string })?.code });
-        setBusy(false);
-      }
-      return;
-    }
+    // Login con Google del lado del SERVIDOR: navegamos a nuestro backend, que
+    // hace TODO el OAuth y crea la sesión. El navegador nunca carga scripts de
+    // Google → funciona con cualquier extensión/bloqueador. Volvemos a /nuevo ya
+    // logueados y el recorrido continúa (el borrador se restaura por sí solo).
     setBusy(true);
-    try {
-      logDebug("er.google.popup_try");
-      const uid = await signInWithGoogle();
-      logDebug("er.google.popup_ok", { uid });
-      await recordConsent();
-      onAuthenticated(uid); // ya quedó logueado, seguimos en el recorrido
-    } catch (err) {
-      // Capturamos el error COMPLETO para diagnóstico (no solo el code).
-      const e = err as { code?: string; message?: string; name?: string };
-      logDebug("er.google.popup_error", { code: e?.code, message: e?.message, name: e?.name });
-      // NO reintentamos con redirect en escritorio: si una extensión bloquea los
-      // dominios de Google, el redirect tampoco cuaja sesión y solo genera un
-      // BUCLE (recarga → mismo paso → vuelve a pedir Google). Mejor mostramos un
-      // mensaje claro y dejamos crear la cuenta con correo/contraseña aquí mismo,
-      // que funciona siempre y no depende de recursos de Google.
-      setError(googleError(err));
-    } finally {
-      setBusy(false);
-    }
+    const next = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/nuevo";
+    window.location.href = `/api/auth/google/start?next=${encodeURIComponent(next)}`;
   }
 
   async function submit() {
