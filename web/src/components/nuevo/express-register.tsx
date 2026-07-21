@@ -27,7 +27,7 @@ function googleError(err: unknown): string {
   if (code.includes("unauthorized-domain"))
     return "Este enlace aún no está autorizado para Google. Por ahora crea tu cuenta con correo y contraseña.";
   if (code.includes("internal-error") || code.includes("network"))
-    return "Google no está disponible aquí en este momento. Crea tu cuenta con correo y contraseña (funciona igual de bien).";
+    return "No pudimos abrir Google — una extensión de tu navegador (bloqueador de anuncios, privacidad o antivirus) lo está bloqueando. Crea tu cuenta con correo y contraseña aquí abajo: funciona igual y en 20 segundos.";
   return (err as { message?: string })?.message || "No se pudo entrar con Google. Usa tu correo y contraseña.";
 }
 
@@ -153,20 +153,11 @@ export function ExpressRegister({
       // Capturamos el error COMPLETO para diagnóstico (no solo el code).
       const e = err as { code?: string; message?: string; name?: string };
       logDebug("er.google.popup_error", { code: e?.code, message: e?.message, name: e?.name });
-      // Si el popup falla (bloqueado por una extensión/navegador, internal-error,
-      // etc.), caemos a REDIRECT: es una navegación completa que las extensiones
-      // casi nunca bloquean. El padre guarda el avance y al volver continúa el
-      // recorrido (el resume ya usa la sesión activa aunque getRedirectResult
-      // venga null). Así Google funciona incluso con el popup bloqueado.
-      if (onGoogleRedirect) {
-        try {
-          logDebug("er.google.redirect_start", { reason: "popup_failed" });
-          await onGoogleRedirect(); // navega fuera; la vuelta la maneja el padre
-          return;
-        } catch {
-          /* si el redirect tampoco puede, mostramos el mensaje claro abajo */
-        }
-      }
+      // NO reintentamos con redirect en escritorio: si una extensión bloquea los
+      // dominios de Google, el redirect tampoco cuaja sesión y solo genera un
+      // BUCLE (recarga → mismo paso → vuelve a pedir Google). Mejor mostramos un
+      // mensaje claro y dejamos crear la cuenta con correo/contraseña aquí mismo,
+      // que funciona siempre y no depende de recursos de Google.
       setError(googleError(err));
     } finally {
       setBusy(false);
