@@ -44,6 +44,13 @@ export interface SpecialClausesSelection {
   enabled: boolean;
   selected: string[];
   freeText?: string;
+  /**
+   * Cantidad de cláusulas «Otra» (texto libre) que la persona quiere incluir.
+   * Cada una tiene el costo unitario configurable (`specialClausePriceCop`), así
+   * que el cobro total = precio unitario × otherCount. Por defecto 1 cuando hay
+   * «Otra». Solo aplica si `selected` incluye "OTRA".
+   */
+  otherCount?: number;
   costNotified: boolean;
   /**
    * Estado de la revisión de la cláusula libre «Otra» por el aliado jurídico.
