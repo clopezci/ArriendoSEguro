@@ -22,6 +22,7 @@ export function PropertyDocUpload({
   expectedAddress,
   actingAs,
   onUploaded,
+  onVerify,
 }: {
   contractDraftId: string;
   docType: string;
@@ -33,6 +34,8 @@ export function PropertyDocUpload({
   actingAs?: "" | "owner" | "proxy";
   /** Se llama tras subir con éxito (para refrescar estados externos, p. ej. pendientes). */
   onUploaded?: () => void;
+  /** Reporta al padre el veredicto de la validación asistida (para la constancia). */
+  onVerify?: (status: "match" | "mismatch" | "unreadable" | "skipped") => void;
 }) {
   const { user } = useAuth();
   const [docs, setDocs] = useState<DraftPropertyDocRow[]>([]);
@@ -54,11 +57,14 @@ export function PropertyDocUpload({
         body: JSON.stringify({ contractDraftId, expectedName: expectedName ?? "", expectedAddress: expectedAddress ?? "", actingAs: actingAs || undefined }),
       });
       const j = (await res.json()) as { status?: VerifyStatus; names?: string[]; reason?: string; addressStatus?: string };
-      setVerify(res.ok && j.status ? { status: j.status, names: j.names, reason: j.reason, addressStatus: j.addressStatus } : { status: "skipped" });
+      const status: VerifyStatus = res.ok && j.status ? j.status : "skipped";
+      setVerify({ status, names: j.names, reason: j.reason, addressStatus: j.addressStatus });
+      if (status !== "checking") onVerify?.(status);
     } catch {
       setVerify({ status: "skipped" });
+      onVerify?.("skipped");
     }
-  }, [user, contractDraftId, expectedName, expectedAddress, actingAs]);
+  }, [user, contractDraftId, expectedName, expectedAddress, actingAs, onVerify]);
 
   const refresh = useCallback(async () => {
     if (!user || !contractDraftId) return;

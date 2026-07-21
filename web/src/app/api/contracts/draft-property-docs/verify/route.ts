@@ -116,28 +116,51 @@ export async function POST(request: Request) {
   const objectPath = (latest.storagePath ?? "").startsWith(gsPrefix) ? (latest.storagePath ?? "").slice(gsPrefix.length) : "";
   if (!objectPath) return NextResponse.json({ success: true, available: true, status: "skipped", reason: "no_doc" });
 
-  let extracted: Awaited<ReturnType<typeof extractDocContent>>;
+  // Para IMÁGENES pasamos a Groq una URL firmada (la descarga el proveedor); así
+  // evitamos el tope de base64 (causa típica de fallo con fotos de celular) y no
+  // dependemos del límite local de tamaño. Para PDF/Word extraemos el texto.
+  const isImage = contentType.startsWith("image/") || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(fileName);
+  let visionImageUrl: string | null = null;
+  let textContent: string | null = null;
   try {
-    const [buf] = await getStorage().bucket(bucketName).file(objectPath).download();
-    extracted = await extractDocContent(buf, contentType, fileName);
+    if (isImage) {
+      try {
+        const [signed] = await getStorage()
+          .bucket(bucketName)
+          .file(objectPath)
+          .getSignedUrl({ action: "read", expires: Date.now() + 15 * 60 * 1000 });
+        visionImageUrl = signed;
+      } catch {
+        // Sin credenciales para firmar: caemos a base64 (con el tope local).
+        const [buf] = await getStorage().bucket(bucketName).file(objectPath).download();
+        const ex = await extractDocContent(buf, contentType, fileName);
+        if (ex.kind === "image") visionImageUrl = ex.imageDataUrl;
+        else if (ex.kind === "text") textContent = ex.text;
+        else return NextResponse.json({ success: true, available: true, status: "skipped", reason: ex.reason });
+      }
+    } else {
+      const [buf] = await getStorage().bucket(bucketName).file(objectPath).download();
+      const ex = await extractDocContent(buf, contentType, fileName);
+      if (ex.kind === "text") textContent = ex.text;
+      else if (ex.kind === "image") visionImageUrl = ex.imageDataUrl;
+      else return NextResponse.json({ success: true, available: true, status: "skipped", reason: ex.reason });
+    }
   } catch {
     return NextResponse.json({ success: true, available: true, status: "skipped", reason: "download_error" });
   }
-  if (extracted.kind === "unsupported") {
-    // PDF escaneado o formato no soportado: no bloqueamos, lo cubre el juramento.
-    return NextResponse.json({ success: true, available: true, status: "skipped", reason: extracted.reason });
-  }
 
+  const useVision = Boolean(visionImageUrl);
   const baseUrl = (process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/$/, "");
   // Modelo de VISIÓN para imágenes; de TEXTO para PDF/Word.
-  const candidates = extracted.kind === "image"
+  const candidates = useVision
     ? ([...new Set(([process.env.AI_VISION_MODEL?.trim(), "meta-llama/llama-4-scout-17b-16e-instruct", "meta-llama/llama-4-maverick-17b-128e-instruct"].filter(Boolean)) as string[])])
     : ([...new Set(([process.env.AI_MODEL?.trim(), "llama-3.3-70b-versatile", "llama-3.1-8b-instant"].filter(Boolean)) as string[])]);
   const messages =
-    extracted.kind === "image"
-      ? [{ role: "user", content: [{ type: "text", text: VISION_PROMPT }, { type: "image_url", image_url: { url: extracted.imageDataUrl } }] }]
-      : [{ role: "user", content: `${VISION_PROMPT}\n\nTEXTO DEL DOCUMENTO:\n"""\n${extracted.text}\n"""` }];
+    useVision
+      ? [{ role: "user", content: [{ type: "text", text: VISION_PROMPT }, { type: "image_url", image_url: { url: visionImageUrl } }] }]
+      : [{ role: "user", content: `${VISION_PROMPT}\n\nTEXTO DEL DOCUMENTO:\n"""\n${textContent ?? ""}\n"""` }];
 
+  let providerDetail = "";
   for (const model of candidates) {
     try {
       const res = await fetch(`${baseUrl}/chat/completions`, {
@@ -147,6 +170,8 @@ export async function POST(request: Request) {
         body: JSON.stringify({ model, temperature: 0, max_tokens: 300, messages }),
       });
       if (!res.ok) {
+        providerDetail = `${res.status} ${model}: ${(await res.text().catch(() => "")).slice(0, 300)}`;
+        if (process.env.NODE_ENV !== "production") console.error("property-doc verify provider", providerDetail);
         if (res.status === 401 || res.status === 403) break; // key inválida
         continue; // prueba el siguiente modelo
       }
@@ -185,11 +210,13 @@ export async function POST(request: Request) {
         expectedName,
         expectedAddress: expectedAddress || undefined,
       });
-    } catch {
+    } catch (err) {
+      providerDetail = err instanceof Error ? err.message : "network";
       /* red: intenta el siguiente modelo */
     }
   }
 
-  // Ningún modelo de visión respondió: no bloqueamos, lo cubre el juramento.
-  return NextResponse.json({ success: true, available: true, status: "skipped", reason: "provider_error" });
+  // Ningún modelo respondió: no bloqueamos, lo cubre el juramento. Incluimos el
+  // detalle del proveedor (útil para diagnosticar modelo caído / imagen inválida).
+  return NextResponse.json({ success: true, available: true, status: "skipped", reason: "provider_error", providerDetail });
 }
