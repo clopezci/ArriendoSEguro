@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { recordErrorEvent } from "@/lib/observability/observability";
 import { maybeSendErrorAlert } from "@/lib/observability/errorAlert";
+import { isBenignClientError } from "@/lib/observability/ignore-noise";
 import {
   RATE_LIMIT_RULES,
   checkRateLimit,
@@ -49,6 +50,9 @@ export async function POST(request: Request) {
     const parsed = schema.safeParse(body);
     if (!parsed.success) return new NextResponse(null, { status: 204 });
     const data = parsed.data;
+
+    // Ruido benigno de terceros: no se registra ni dispara alertas.
+    if (isBenignClientError(data.message)) return new NextResponse(null, { status: 204 });
 
     const firestore = getAdminFirestore();
     if (!firestore) return new NextResponse(null, { status: 204 });
