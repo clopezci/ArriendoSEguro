@@ -33,6 +33,10 @@ export function LegalFooter() {
           ))}
           <CookiePreferencesLink />
         </nav>
+        <p className="mt-5 text-center text-xs text-slate-500">
+          © {new Date().getFullYear()} ArriendoSeguro · Creado por{" "}
+          <span className="font-extrabold tracking-tight text-[#5646E5]">Lotic</span>
+        </p>
       </div>
     </footer>
   );
