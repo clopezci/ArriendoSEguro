@@ -145,19 +145,30 @@ export default function BrebPaymentPage() {
             ) : (
               <p className="mt-2 text-sm text-rose-600">Aún no hay una llave Bre-B configurada.</p>
             )}
-            {qr && (
-              <div className="mt-3 flex flex-col items-center gap-1">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={qr} alt="Código QR Bre-B" className="h-52 w-52" />
-                <p className="text-[11px] text-slate-500">Escanea con tu app bancaria</p>
-              </div>
+            {info.internalMode ? (
+              <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-2 text-[12px] text-amber-900">
+                Abre tu app bancaria, entra a <strong>Bre-B</strong> y envía el pago a la
+                {" "}<strong>llave</strong> de arriba por el <strong>valor exacto</strong>. Al recibirlo, se confirma.
+              </p>
+            ) : (
+              qr && (
+                <div className="mt-3 flex flex-col items-center gap-1">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={qr} alt="Código QR Bre-B" className="h-52 w-52" />
+                  <p className="text-[11px] text-slate-500">Escanea con tu app bancaria</p>
+                </div>
+              )
             )}
             <p className="mt-2 text-[11px] text-slate-500">Referencia: {reference}</p>
           </section>
 
           <ol className="list-decimal space-y-1 rounded-2xl border border-slate-200 bg-slate-50 p-4 pl-8 text-sm text-slate-700">
             <li>Abre la app de tu banco o billetera y entra a <strong>Bre-B</strong>.</li>
-            <li>Escanea el QR, o paga a la <strong>llave</strong> de arriba por el valor exacto.</li>
+            <li>
+              {info.internalMode
+                ? "Paga a la llave de arriba por el valor exacto."
+                : "Escanea el QR, o paga a la llave de arriba por el valor exacto."}
+            </li>
             <li>Al confirmarse el pago, esta página te llevará de vuelta automáticamente.</li>
           </ol>
 

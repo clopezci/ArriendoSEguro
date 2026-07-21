@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { recordErrorEvent } from "@/lib/observability/observability";
+import { maybeSendErrorAlert } from "@/lib/observability/errorAlert";
 import {
   RATE_LIMIT_RULES,
   checkRateLimit,
@@ -63,6 +64,10 @@ export async function POST(request: Request) {
       userAgent: request.headers.get("user-agent"),
       appVersion: data.appVersion ?? null,
     });
+
+    // Evalúa y, si corresponde (umbral + fuera de cooldown), avisa AL INSTANTE
+    // por correo/Telegram. Best-effort: nunca perturba la respuesta al cliente.
+    await maybeSendErrorAlert(firestore).catch(() => {});
 
     return new NextResponse(null, { status: 204 });
   } catch {
