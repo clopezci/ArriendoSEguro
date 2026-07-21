@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { INTRO_PROMO_TITLE, INTRO_PROMO_INCLUDES } from "@/lib/product-pricing";
+import { INTRO_PROMO_INCLUDES, CONTRACT_LIST_PRICE_COP, CONTRACT_EARLY_BIRD_PRICE_COP, formatCopPlain } from "@/lib/product-pricing";
 
 const INTRO_PROMO_DISMISS_KEY = "promo_intro_dismissed";
 
@@ -48,9 +48,14 @@ export function IntroPromoBanner({ className = "" }: { className?: string }) {
       >
         ✕
       </button>
-      <p className="pr-8 text-sm font-black text-[#C7361A]">🎉 {INTRO_PROMO_TITLE}</p>
+      <p className="pr-8 text-sm font-black text-[#C7361A]">🎉 Precio de introducción</p>
+      <p className="mt-1 flex flex-wrap items-baseline gap-2">
+        <span className="text-base font-normal text-slate-400 line-through">{formatCopPlain(CONTRACT_LIST_PRICE_COP)}</span>
+        <span className="text-2xl font-black text-[#C7361A]">{formatCopPlain(CONTRACT_EARLY_BIRD_PRICE_COP)}</span>
+        <span className="text-[11px] font-semibold text-slate-500">por TODO el contrato · pago único (no mensual)</span>
+      </p>
       <p className="mt-1 text-[13px] text-slate-700">
-        Pago único por contrato (no mensual). <strong>Incluye todo esto:</strong>
+        <strong>Incluye todo esto:</strong>
       </p>
       <ul className="mt-2 grid gap-x-4 gap-y-1 text-[13px] text-slate-700 sm:grid-cols-2">
         {INTRO_PROMO_INCLUDES.map((item) => (
