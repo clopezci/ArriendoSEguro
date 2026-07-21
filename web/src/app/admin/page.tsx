@@ -139,6 +139,8 @@ export default function AdminPage() {
     errorAlertCooldownMinutes: number;
   } | null>(null);
   const [obsThresholdInput, setObsThresholdInput] = useState("");
+  const [tgMsg, setTgMsg] = useState("");
+  const [tgBusy, setTgBusy] = useState(false);
   const [incidents, setIncidents] = useState<
     { id: string; title: string; body: string; severity: string; status: string; createdAt: string }[]
   >([]);
@@ -624,6 +626,30 @@ export default function AdminPage() {
       setStatusMsg("Error de red.");
     } finally {
       setStatusBusy(false);
+    }
+  }
+
+  async function testTelegram() {
+    if (!user) return;
+    setTgBusy(true);
+    setTgMsg("");
+    try {
+      const res = await fetch("/api/admin/observability/test-telegram", {
+        method: "POST",
+        headers: { ...(await buildAuthHeaders(user)) },
+      });
+      const json = (await res.json()) as { success?: boolean; configured?: boolean; errors?: { message?: string }[] };
+      if (json.success) {
+        setTgMsg("✅ Enviado. Revisa tu Telegram.");
+      } else if (json.configured === false) {
+        setTgMsg("Falta configurar TELEGRAM_BOT_TOKEN y TELEGRAM_CHAT_ID en Vercel.");
+      } else {
+        setTgMsg(json.errors?.[0]?.message ?? "No se pudo enviar.");
+      }
+    } catch {
+      setTgMsg("Error de red.");
+    } finally {
+      setTgBusy(false);
     }
   }
 
@@ -2030,6 +2056,21 @@ export default function AdminPage() {
                 ? `${obsConfig.errorAlertEnabled ? "activas" : "inactivas"} · ventana ${obsConfig.errorAlertWindowMinutes} min`
                 : "…"}
             </span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              disabled={tgBusy}
+              onClick={() => void testTelegram()}
+              className="rounded border border-cyan-500 bg-cyan-600 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+            >
+              {tgBusy ? "…" : "Probar Telegram"}
+            </button>
+            <span className="text-[11px] text-slate-600">
+              Alertas de error también salen por Telegram (canal instantáneo, sin plantillas).
+            </span>
+            {tgMsg && <span className="text-[11px] font-medium text-slate-800">{tgMsg}</span>}
           </div>
 
           <div className="mt-4">
