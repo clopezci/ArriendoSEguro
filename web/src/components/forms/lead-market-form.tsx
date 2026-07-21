@@ -537,10 +537,10 @@ export function LeadMarketForm({
             </Field>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-slate-800 dark:text-slate-800">
+          <label className="block">
+            <span className="block text-sm font-medium text-slate-800 dark:text-slate-800">
               Correo electrónico para recibir acceso temprano (opcional)
-            </label>
+            </span>
             <input
               type="email"
               className="input mt-1"
@@ -549,7 +549,7 @@ export function LeadMarketForm({
               onChange={(e) => setValues((v) => ({ ...v, email: e.target.value }))}
               autoComplete="email"
             />
-          </div>
+          </label>
 
           <label className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-700">
             <input
@@ -618,21 +618,23 @@ function Field({
   errorMessage?: string;
   children: React.ReactNode;
 }) {
+  // Usamos <label> como envoltorio: el control queda como descendiente y así
+  // queda ASOCIADO a su etiqueta (nombre accesible), sin cambiar el diseño.
   return (
-    <div>
-      <p
+    <label className="block">
+      <span
         className={
           invalid
-            ? "text-sm font-medium text-rose-700 dark:text-rose-700"
-            : "text-sm font-medium text-slate-800 dark:text-slate-800"
+            ? "block text-sm font-medium text-rose-700 dark:text-rose-700"
+            : "block text-sm font-medium text-slate-800 dark:text-slate-800"
         }
       >
         {label}
-      </p>
+      </span>
       <div className="mt-1">{children}</div>
       {invalid && errorMessage && (
-        <p className="mt-1 text-xs font-medium text-rose-700 dark:text-rose-700">{errorMessage}</p>
+        <span className="mt-1 block text-xs font-medium text-rose-700 dark:text-rose-700">{errorMessage}</span>
       )}
-    </div>
+    </label>
   );
 }
