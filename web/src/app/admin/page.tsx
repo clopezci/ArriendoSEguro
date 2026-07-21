@@ -178,6 +178,11 @@ export default function AdminPage() {
   } | null>(null);
   /** Limite inicial de expedientes reales para Plan Plus manual (1–50). */
   const [grantMaxContracts, setGrantMaxContracts] = useState("");
+  const [grants, setGrants] = useState<
+    { id: string; userEmail: string; accessType: string; maxContractsAllowed: number; contractsUsed: number; validUntil: string | null; createdAt: string | null }[] | null
+  >(null);
+  const [grantsBusy, setGrantsBusy] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
   /** Ajustar cupos de testers con Plus ya creado. */
   const [quotaMaxInput, setQuotaMaxInput] = useState("");
   const [quotaSlotsInput, setQuotaSlotsInput] = useState("1");
@@ -2308,6 +2313,71 @@ export default function AdminPage() {
                 <p className="mt-1">{grantErr}</p>
               </div>
             )}
+
+            {/* Accesos Plus vigentes (los que diste a testers) + revocar. */}
+            <div className="mt-4 border-t border-slate-200 pt-3">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-xs font-semibold text-slate-800">Accesos Plus vigentes (testers) — ver y revocar</h3>
+                <button
+                  type="button"
+                  disabled={grantsBusy}
+                  onClick={async () => {
+                    if (!user) return;
+                    setGrantsBusy(true);
+                    try {
+                      const res = await fetch("/api/admin/access-grants", { headers: { ...(await buildAuthHeaders(user)) } });
+                      const j = (await res.json()) as { success?: boolean; grants?: typeof grants };
+                      if (res.ok && j.success && Array.isArray(j.grants)) setGrants(j.grants);
+                    } finally {
+                      setGrantsBusy(false);
+                    }
+                  }}
+                  className="rounded-lg border border-slate-300 px-2 py-1 text-[11px] font-medium text-slate-700 disabled:opacity-50"
+                >
+                  {grantsBusy ? "…" : grants ? "Actualizar" : "Ver accesos vigentes"}
+                </button>
+              </div>
+              {grants && grants.length === 0 && (
+                <p className="mt-2 text-[11px] text-slate-500">No hay accesos Plus activos.</p>
+              )}
+              {grants && grants.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {grants.map((gr) => (
+                    <li key={gr.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px]">
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium text-slate-800">{gr.userEmail || "(sin correo)"}</span>
+                        <span className="text-slate-500">
+                          {gr.contractsUsed}/{gr.maxContractsAllowed} expedientes · vence{" "}
+                          {gr.validUntil ? new Date(gr.validUntil).toLocaleDateString("es-CO") : "—"}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        disabled={revokingId === gr.id}
+                        onClick={async () => {
+                          if (!user) return;
+                          setRevokingId(gr.id);
+                          try {
+                            const res = await fetch("/api/admin/access-grants", {
+                              method: "POST",
+                              headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+                              body: JSON.stringify({ entitlementId: gr.id }),
+                            });
+                            const j = (await res.json()) as { success?: boolean };
+                            if (res.ok && j.success) setGrants((prev) => (prev ? prev.filter((x) => x.id !== gr.id) : prev));
+                          } finally {
+                            setRevokingId(null);
+                          }
+                        }}
+                        className="flex-none rounded-lg border border-rose-300 px-2 py-1 font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                      >
+                        {revokingId === gr.id ? "…" : "Revocar"}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
             <div className="mt-4 border-t border-slate-200 pt-3">
               <h3 className="text-xs font-semibold text-slate-800">
