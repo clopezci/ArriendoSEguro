@@ -26,8 +26,16 @@ export type PlanPlusOrderAmount = {
   promoMessage: string | null;
 };
 
-function scHasOther(sc: { enabled?: boolean; selected?: string[] } | undefined): boolean {
+type ScShape = { enabled?: boolean; selected?: string[]; otherCount?: number };
+
+function scHasOther(sc: ScShape | undefined): boolean {
   return Boolean(sc?.enabled) && Array.isArray(sc?.selected) && sc.selected.includes(SPECIAL_CLAUSE_OTHER_ID);
+}
+
+/** Número de cláusulas «Otra» (con costo): 0 si no hay; si hay, al menos 1. */
+function scOtherCount(sc: ScShape | undefined): number {
+  if (!scHasOther(sc)) return 0;
+  return Math.min(20, Math.max(1, Math.floor(Number(sc?.otherCount) || 1)));
 }
 
 /**
@@ -44,14 +52,13 @@ function scHasOther(sc: { enabled?: boolean; selected?: string[] } | undefined):
  * Al "Quitar la cláusula", el endpoint de remoción limpia borrador + versión y
  * cancela la revisión, así que las tres señales quedan en falso → no cobra.
  */
-async function leaseHasCostedSpecialClause(firestore: Firestore, leaseProcessId: string): Promise<boolean> {
+async function leaseSpecialClauseUnits(firestore: Firestore, leaseProcessId: string): Promise<number> {
   try {
     // 1) Borrador vivo (selección actual del usuario) manda.
     const draftSnap = await firestore.collection("contract_drafts").doc(leaseProcessId).get();
-    const draftSc = (
-      draftSnap.data() as { payload?: { specialClauses?: { enabled?: boolean; selected?: string[] } } } | undefined
-    )?.payload?.specialClauses;
-    if (scHasOther(draftSc)) return true;
+    const draftSc = (draftSnap.data() as { payload?: { specialClauses?: ScShape } } | undefined)?.payload?.specialClauses;
+    const draftUnits = scOtherCount(draftSc);
+    if (draftUnits > 0) return draftUnits;
 
     // 2) Revisión ACTIVA (pendiente/borrador) como respaldo. Cancelada/declinada NO cobra.
     const revSnap = await firestore
@@ -60,23 +67,20 @@ async function leaseHasCostedSpecialClause(firestore: Firestore, leaseProcessId:
       .limit(1)
       .get();
     if (!revSnap.empty) {
-      const st = String((revSnap.docs[0].data() as { status?: string }).status ?? "pending");
-      if (st !== "cancelled" && st !== "declined") return true;
+      const r = revSnap.docs[0].data() as { status?: string; otherCount?: number };
+      const st = String(r.status ?? "pending");
+      if (st !== "cancelled" && st !== "declined") return Math.min(20, Math.max(1, Math.floor(Number(r.otherCount) || 1)));
     }
 
     // 3) Versión guardada.
     const contractSnap = await firestore.collection("contracts").doc(leaseProcessId).get();
     const currentVersionId = (contractSnap.data() as { currentVersionId?: string } | undefined)?.currentVersionId;
-    if (!currentVersionId) return false;
+    if (!currentVersionId) return 0;
     const versionSnap = await firestore.collection("contract_versions").doc(currentVersionId).get();
-    const sc = (
-      versionSnap.data() as
-        | { contractPayload?: { specialClauses?: { enabled?: boolean; selected?: string[] } } }
-        | undefined
-    )?.contractPayload?.specialClauses;
-    return scHasOther(sc);
+    const sc = (versionSnap.data() as { contractPayload?: { specialClauses?: ScShape } } | undefined)?.contractPayload?.specialClauses;
+    return scOtherCount(sc);
   } catch {
-    return false;
+    return 0;
   }
 }
 
@@ -166,23 +170,26 @@ export async function computePlanPlusOrderAmount(
   ];
 
   let clauseCop = 0;
-  let hasCostedClause = false;
+  let clauseUnits = 0;
   if (opts.leaseProcessId) {
-    hasCostedClause = await leaseHasCostedSpecialClause(firestore, opts.leaseProcessId);
-    if (hasCostedClause) {
+    clauseUnits = await leaseSpecialClauseUnits(firestore, opts.leaseProcessId);
+    if (clauseUnits > 0) {
       const legal = await getLegalConfig(firestore);
-      clauseCop = Math.max(0, Math.floor(Number(legal.specialClausePriceCop) || 0));
+      const unitCop = Math.max(0, Math.floor(Number(legal.specialClausePriceCop) || 0));
+      clauseCop = unitCop * clauseUnits;
       if (clauseCop > 0) {
         lineItems.push({
           code: "special_clause_other",
-          label: "Cláusula personalizada «Otra»",
+          label: clauseUnits > 1
+            ? `Cláusulas personalizadas «Otra» (${clauseUnits} × $${unitCop.toLocaleString("es-CO")})`
+            : "Cláusula personalizada «Otra»",
           amountCop: clauseCop,
         });
       }
     }
   }
 
-  const hasCharge = hasCostedClause && clauseCop > 0;
+  const hasCharge = clauseUnits > 0 && clauseCop > 0;
   return {
     planPlusCop,
     listCompareCop: pricing.listCompareCop,

@@ -125,7 +125,7 @@ const EMPTY: Answers = {
   tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false, tenantIncome: "",
   hasCodebtor: "", codebtorName: "", codebtorMode: "self",
   codebtorDocType: "CC", codebtorDocNumber: "", codebtorCity: "", codebtorEmail: "", codebtorPhone: "", codebtorAuth: false, codebtorIncome: "",
-  utilitiesParty: "", adminParty: "", paymentSupportPolicy: "notifications", clauses: [], clauseOther: "",
+  utilitiesParty: "", adminParty: "", paymentSupportPolicy: "notifications", clauses: [], clauseOther: "", clauseCount: 1,
   docMethod: "", docPhone: "", docEmail: "",
 };
 
@@ -222,6 +222,7 @@ function answersFromDraft(d: ContractDraft): Answers {
     paymentSupportPolicy: (d.paymentSupportPolicy as Answers["paymentSupportPolicy"]) || "notifications",
     clauses: d.specialClauses?.selected ? [...d.specialClauses.selected] : [],
     clauseOther: d.specialClauses?.freeText || "",
+    clauseCount: Math.max(1, Math.floor(Number(d.specialClauses?.otherCount) || 1)),
   };
 }
 
@@ -416,6 +417,7 @@ export default function NuevoPage() {
             enabled: true,
             selected: n.clauses,
             freeText: n.clauses.includes("OTRA") ? n.clauseOther.trim() || undefined : undefined,
+            otherCount: n.clauses.includes("OTRA") ? Math.max(1, Math.floor(n.clauseCount) || 1) : undefined,
             costNotified: n.clauses.includes("OTRA"),
           }
         : { enabled: false, selected: [], freeText: undefined, costNotified: false },
@@ -1546,13 +1548,32 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
           </div>
           {otraOn && (
             <div className="rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4">
-              <textarea value={a.clauseOther} onChange={(e) => setA({ ...a, clauseOther: e.target.value })} rows={3}
-                placeholder="Describe la cláusula acordada entre las partes…"
-                className="w-full rounded-xl border-2 border-slate-200 p-3 text-sm outline-none transition focus:border-[#5646E5]" />
-              <p className="mt-2 text-xs font-medium text-amber-800">
-                La cláusula «Otra» (texto libre) tiene un <b>costo adicional que se suma al Plan Plus</b>
-                {clausePriceCop != null ? <> de <b>${clausePriceCop.toLocaleString("es-CO")}</b></> : null}
-                {" "}(la revisa un abogado). Se confirma al pagar.
+              <p className="text-sm font-bold text-amber-900">
+                Cada cláusula «Otra» cuesta {clausePriceCop != null ? `$${clausePriceCop.toLocaleString("es-CO")}` : "un valor adicional"} (la revisa un abogado).
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <label htmlFor="clause-count" className="text-xs font-semibold text-amber-900">¿Cuántas cláusulas «Otra» quieres incluir?</label>
+                <div className="inline-flex items-center overflow-hidden rounded-xl border-2 border-amber-300 bg-white">
+                  <button type="button" aria-label="Menos" onClick={() => setA({ ...a, clauseCount: Math.max(1, (a.clauseCount || 1) - 1) })} className="px-3 py-1.5 text-lg font-black text-amber-700 hover:bg-amber-50">−</button>
+                  <input id="clause-count" inputMode="numeric" value={String(a.clauseCount || 1)}
+                    onChange={(e) => { const n = Math.min(20, Math.max(1, Number(onlyDigits(e.target.value)) || 1)); setA({ ...a, clauseCount: n }); }}
+                    className="w-12 border-x-2 border-amber-200 py-1.5 text-center text-sm font-bold text-slate-900 outline-none" />
+                  <button type="button" aria-label="Más" onClick={() => setA({ ...a, clauseCount: Math.min(20, (a.clauseCount || 1) + 1) })} className="px-3 py-1.5 text-lg font-black text-amber-700 hover:bg-amber-50">+</button>
+                </div>
+              </div>
+              {clausePriceCop != null && (
+                <p className="mt-2 text-sm font-black text-[#C7361A]">
+                  Total cláusulas «Otra»: ${clausePriceCop.toLocaleString("es-CO")} × {a.clauseCount || 1} = ${(clausePriceCop * (a.clauseCount || 1)).toLocaleString("es-CO")}
+                </p>
+              )}
+              <label htmlFor="clause-text" className="mt-3 block text-xs font-semibold text-amber-900">
+                Describe claramente cada cláusula (qué se acuerda entre las partes). Si son varias, <b>numéralas</b>:
+              </label>
+              <textarea id="clause-text" value={a.clauseOther} onChange={(e) => setA({ ...a, clauseOther: e.target.value })} rows={a.clauseCount > 1 ? 5 : 3}
+                placeholder={a.clauseCount > 1 ? "1) El arrendatario no realizará fiestas después de las 10 p. m.\n2) No se permite subarrendar el inmueble.\n3) …" : "Ej.: El arrendatario no realizará fiestas con música amplificada después de las 10 p. m."}
+                className="mt-1 w-full rounded-xl border-2 border-slate-200 p-3 text-sm outline-none transition focus:border-[#5646E5]" />
+              <p className="mt-2 text-[11px] text-amber-800">
+                El costo se suma al Plan Plus y <b>se confirma al pagar</b>. Un abogado revisa la redacción final.
               </p>
             </div>
           )}

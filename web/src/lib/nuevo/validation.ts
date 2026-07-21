@@ -96,7 +96,7 @@ export type Answers = {
   // Política de notificaciones/comprobantes de pago (se refleja como cláusula
   // condicional en el contrato). Ver domain/contracts paymentSupportPolicy.
   paymentSupportPolicy: "" | "none" | "notifications" | "notifications_and_upload";
-  clauses: string[]; clauseOther: string;
+  clauses: string[]; clauseOther: string; clauseCount: number;
   // Documentos
   docMethod: "" | "self" | "whatsapp" | "email"; docPhone: string; docEmail: string;
 };

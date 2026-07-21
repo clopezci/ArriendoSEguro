@@ -72,7 +72,7 @@ export function ExpressRegister({
   useEffect(() => {
     if (typeof window === "undefined") return;
     const ge = new URLSearchParams(window.location.search).get("googleError");
-    if (ge) setError("No se pudo entrar con Google en este momento. Intenta de nuevo o crea tu cuenta con correo y contraseña aquí abajo.");
+    if (ge) setError(`No se pudo entrar con Google (motivo: ${ge}). Intenta de nuevo o crea tu cuenta con correo y contraseña aquí abajo.`);
   }, []);
 
   function autogenerate() {
