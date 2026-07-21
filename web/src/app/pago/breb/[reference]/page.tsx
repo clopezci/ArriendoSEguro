@@ -14,6 +14,7 @@ type Info = {
   merchantName?: string;
   internalMode?: boolean;
   devSimulate?: boolean;
+  adminConfirm?: boolean;
   error?: string;
 };
 
@@ -160,14 +161,21 @@ export default function BrebPaymentPage() {
             <li>Al confirmarse el pago, esta página te llevará de vuelta automáticamente.</li>
           </ol>
 
-          {info.devSimulate && (
+          {(info.devSimulate || info.adminConfirm) && (
             <button
               type="button"
               onClick={() => void simulatePaid()}
               className="w-full rounded-2xl border-2 border-emerald-500 px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-50"
             >
-              Simular pago aprobado (solo pruebas)
+              {info.adminConfirm
+                ? "Confirmar pago recibido (soy el comercio)"
+                : "Simular pago aprobado (solo pruebas)"}
             </button>
+          )}
+          {info.adminConfirm && (
+            <p className="text-center text-[11px] text-slate-500">
+              Solo tú (comercio) ves este botón. Confírmalo cuando el pago Bre-B llegue a tu cuenta.
+            </p>
           )}
 
           <p className="text-center text-[11px] text-slate-400">

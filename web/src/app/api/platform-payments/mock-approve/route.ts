@@ -5,6 +5,7 @@ import { requireAuthenticatedUser, requestClientIp, requestUserAgent } from "@/l
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
 import { notifyLegalPartnerForPaidClause } from "@/lib/legal/notifySpecialClause";
+import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
 
 export const runtime = "nodejs";
 
@@ -20,9 +21,12 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
-  if (process.env.NODE_ENV === "production") {
+  // En producción, solo un admin/comercio puede confirmar manualmente (Bre-B
+  // interno no tiene webhook; el comercio marca "recibí el pago"). Los usuarios
+  // normales nunca pueden auto-aprobarse una orden.
+  if (process.env.NODE_ENV === "production" && !isInternalAdminEmail(auth.user.email)) {
     return NextResponse.json(
-      { success: false, errors: [{ field: "server", message: "Endpoint mock no disponible en producción." }] },
+      { success: false, errors: [{ field: "server", message: "Solo el comercio puede confirmar el pago manualmente." }] },
       { status: 403 },
     );
   }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { brebLlave, brebMerchantName, isBrebConfigured } from "@/domain/platform-payments/breb-checkout";
+import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
 
 export const runtime = "nodejs";
 
@@ -44,5 +45,11 @@ export async function GET(request: Request) {
     // En modo interno (sin proveedor real), el pago se confirma manualmente / mock.
     internalMode: !isBrebConfigured(),
     devSimulate: process.env.NODE_ENV !== "production",
+    // En producción + modo interno, el comercio (admin) puede confirmar "recibí el
+    // pago" — Bre-B interno no tiene webhook que lo apruebe automáticamente.
+    adminConfirm:
+      process.env.NODE_ENV === "production" &&
+      !isBrebConfigured() &&
+      isInternalAdminEmail(auth.user.email),
   });
 }
