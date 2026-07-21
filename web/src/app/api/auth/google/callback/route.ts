@@ -74,7 +74,18 @@ export async function GET(request: NextRequest) {
         grant_type: "authorization_code",
       }),
     });
-    if (!tokenRes.ok) return redirectWithError(origin, next, "token_exchange_failed");
+    if (!tokenRes.ok) {
+      // Capturamos el error EXACTO de Google para diagnosticar sin adivinar:
+      // invalid_client (secreto/ID no coinciden), redirect_uri_mismatch, etc.
+      const body = await tokenRes.text().catch(() => "");
+      let gerr = "";
+      try {
+        gerr = String((JSON.parse(body) as { error?: string }).error ?? "");
+      } catch {
+        /* respuesta no-JSON */
+      }
+      return redirectWithError(origin, next, `token_exchange_${gerr || tokenRes.status}`);
+    }
     const tok = (await tokenRes.json()) as { id_token?: string };
     if (!tok.id_token) return redirectWithError(origin, next, "no_id_token");
 
