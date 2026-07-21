@@ -12,8 +12,6 @@ import { getAuthClient } from "@/lib/firebase/client";
 import { CONSENT_CURRENT_VERSION } from "@/domain/consents/consentVersions";
 import { JourneyScene } from "@/components/nuevo/journey-scene";
 import { AccountMenu } from "@/components/nuevo/account-menu";
-import { NuevoDebugPanel } from "@/components/nuevo/nuevo-debug-panel";
-import { logDebug } from "@/lib/nuevo/debug-log";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { validateStep, type Answers } from "@/lib/nuevo/validation";
 import { pesosEnLetras } from "@/lib/nuevo/pesos-en-letras";
@@ -278,12 +276,6 @@ export default function NuevoPage() {
   const iRef = useRef(i); iRef.current = i;
   const modeRef = useRef(mode); modeRef.current = mode;
   const gateRef = useRef(gate); gateRef.current = gate;
-
-  // DIAGNÓSTICO: registra cada cambio de estado del recorrido para ver quién y
-  // cuándo manda a "home" tras entrar con Google (visible con ?debug=1).
-  useEffect(() => {
-    logDebug("state", { mode, gate });
-  }, [mode, gate]);
   const voiceModeRef = useRef(voiceMode); voiceModeRef.current = voiceMode;
   const draftIdRef = useRef<string | null>(null);
   const onTranscriptRef = useRef<(t: string) => void>(() => {});
@@ -452,7 +444,6 @@ export default function NuevoPage() {
     // puede ir un paso atrás justo tras entrar con Google → antes reaparecía el
     // login en bucle aunque ya estuvieras logueado.
     const loggedIn = Boolean(userRef.current) || Boolean(getAuthClient().currentUser);
-    logDebug("next.gateCheck", { i: iRef.current, basicLast: BASIC_TOTAL - 1, userRef: Boolean(userRef.current), sdkUser: Boolean(getAuthClient().currentUser), loggedIn });
     if (iRef.current === BASIC_TOTAL - 1 && !loggedIn) { setGate("register"); return; }
     const ni = nextActiveIndex(iRef.current, aRef.current);
     if (ni >= QUESTIONS.length) { setMode("review"); return; }
@@ -489,7 +480,6 @@ export default function NuevoPage() {
     // Continuamos SIEMPRE en el recorrido (nunca en "home"): primer paso adicional
     // activo, o al resumen si ya no quedan pasos.
     const ni = nextActiveIndex(BASIC_TOTAL - 1, aRef.current);
-    logDebug("onRegistered", { uid, ni, willReview: ni >= QUESTIONS.length });
     if (ni >= QUESTIONS.length) { setMode("review"); return; }
     setMode("flow");
     setI(ni);
@@ -518,7 +508,6 @@ export default function NuevoPage() {
         });
       } catch { /* el wizard lo reintenta */ }
     })();
-    logDebug("draft.claimed", { active, uid: user.uid });
   }, [user]);
 
   // Restaura un borrador en el recorrido. Con snapshot usa el paso EXACTO donde
@@ -565,10 +554,9 @@ export default function NuevoPage() {
     // te devuelve a tu paso sí o sí; el resume de Google solo reclama el borrador
     // a tu cuenta (userId) y el consentimiento, sin controlar la navegación.
     const id = new URLSearchParams(window.location.search).get("id");
-    if (id) { restoreDraft(id); logDebug("restore.byId", { id }); return; }
+    if (id) { restoreDraft(id); return; }
     const active = window.localStorage.getItem(ACTIVE_KEY);
-    if (active) { restoreDraft(active); logDebug("restore.active", { active }); }
-    else logDebug("restore.none", { serverSynced });
+    if (active) restoreDraft(active);
   }, [restoreDraft, serverSynced]);
 
   // Mientras el usuario avanza (o edita), guardamos snapshot + puntero activo en
@@ -901,7 +889,6 @@ export default function NuevoPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#F5F3EF] text-[#17151F]">
-      <NuevoDebugPanel />
       <OathEvidenceToast />
       <div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full opacity-50 blur-3xl" style={{ background: "radial-gradient(circle,#9B6BFF,#5646E5)" }} />
       <div className="pointer-events-none absolute -bottom-28 -left-24 h-72 w-72 rounded-full opacity-50 blur-3xl" style={{ background: "radial-gradient(circle,#FFB03A,#FF6B4A)" }} />
