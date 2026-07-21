@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { isBenignClientError } from "@/lib/observability/ignore-noise";
 
 /**
  * Captura automática de errores del navegador (alternativa propia a Sentry).
@@ -27,6 +28,7 @@ export function ClientErrorReporter() {
       try {
         const message = (payload.message || "").trim();
         if (!message) return;
+        if (isBenignClientError(message)) return; // ruido de terceros: no registrar
         const key = `${payload.kind}|${message.slice(0, 200)}|${payload.source ?? ""}`;
         if (seen.has(key)) return;
         if (sent >= MAX_PER_PAGELOAD) return;
