@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { getAllDrafts, type ContractDraft } from "@/features/contracts/wizard-state";
-import { pullServerDraftsIntoLocal } from "@/features/contracts/draft-server-sync";
+import { pullServerDraftsIntoLocal, flushAllLocalDraftsToServer } from "@/features/contracts/draft-server-sync";
 import { isExpedienteCompleto } from "@/lib/dashboard/expediente-ui";
 
 /**
@@ -23,9 +23,14 @@ export default function GestionarContratosPage() {
   const [deleting, setDeleting] = useState<ContractDraft | null>(null);
 
   const load = useCallback(async () => {
-    // Trae del servidor los borradores del usuario (persistencia entre equipos):
-    // así aparecen aquí los creados en otro dispositivo.
-    if (user) { try { await pullServerDraftsIntoLocal(); } catch { /* seguimos con lo local */ } }
+    // Reconciliación entre dispositivos: primero EMPUJAMOS los borradores locales
+    // que no se hayan sincronizado (p. ej. del celular) y luego TRAEMOS los del
+    // servidor. Así ambos equipos convergen al mismo listado (arregla "11 en el
+    // celular vs 5 en el PC").
+    if (user) {
+      try { await flushAllLocalDraftsToServer(user.uid); } catch { /* best-effort */ }
+      try { await pullServerDraftsIntoLocal(); } catch { /* seguimos con lo local */ }
+    }
     // Solo los contratos de la sesión ACTUAL: si hay usuario, los suyos; si no hay
     // sesión, solo los del borrador "invitado" en curso. NUNCA todos (antes `!user`
     // mostraba los de CUALQUIER cuenta que quedara en este equipo → se veía "la

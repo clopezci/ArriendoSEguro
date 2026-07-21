@@ -26,7 +26,11 @@ const EXTRACT_SYSTEM =
   "name, docType, docNumber, phone, email, ownerCity, " +
   "address, city, department, canon, " +
   "tenantName, tenantDocType, tenantDocNumber, tenantCity, tenantEmail, tenantPhone, tenantIncome, " +
-  "hasCodebtor, codebtorName, codebtorDocType, codebtorDocNumber, codebtorCity, codebtorEmail, codebtorPhone, codebtorIncome. " +
+  "hasCodebtor, codebtorName, codebtorDocType, codebtorDocNumber, codebtorCity, codebtorEmail, codebtorPhone, codebtorIncome, " +
+  "specialClause. " +
+  "specialClause = si la persona describe una CLÁUSULA ESPECIAL o acuerdo adicional que quiere en el contrato (p. ej. " +
+  "'no se permiten mascotas', 'prohibido subarrendar', 'no fiestas después de las 10 pm'), copia ese texto tal cual; " +
+  "cadena vacía \"\" si no menciona ninguna. NO inventes cláusulas. " +
   "Significado: las claves SIN prefijo (name, docType, docNumber, phone, email, ownerCity) son del ARRENDADOR (dueño). " +
   "address/city/department/canon son del INMUEBLE. Las claves con prefijo tenant* son del ARRENDATARIO (inquilino) y " +
   "codebtor* del CODEUDOR. Asigna cada dato a la persona correcta según a quién se refiera el texto. " +

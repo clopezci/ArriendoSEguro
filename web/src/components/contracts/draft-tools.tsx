@@ -1,7 +1,6 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-context";
-import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import {
   getDraft,
   type ContractDraft,
@@ -36,46 +35,11 @@ export function useDraftGuard(id: string) {
         router.replace(`/ingresar?redirect=/dashboard/contracts/${id}/contract-type`);
         return;
       }
-      try {
-        const res = await fetch("/api/access/entitlements/me", {
-          headers: { ...(await buildAuthHeaders(user)) },
-        });
-        const data = (await res.json()) as {
-          success?: boolean;
-          plusActive?: boolean;
-          demoActive?: boolean;
-        };
-        if (cancelled) return;
-        const allowed = res.ok && data.success && (data.plusActive || data.demoActive);
-        if (!allowed) {
-          // Tier gratis: si está habilitado, el usuario PUEDE ver/editar su
-          // expediente y generar el contrato con marca de agua (firma y posventa
-          // siguen siendo Plus, gatadas en el backend). Solo lo mandamos a "Mis
-          // arriendos" si el tier gratis está apagado. Sin este chequeo, quien
-          // crea por el flujo nuevo (gratis) rebotaba en bucle a "Mis arriendos".
-          let freeEnabled = false;
-          try {
-            const ft = (await fetch("/api/free-tier").then((r) => r.json())) as { success?: boolean; enabled?: boolean };
-            freeEnabled = Boolean(ft?.success && ft?.enabled);
-          } catch {
-            /* sin red: no bloqueamos al dueño de su propio expediente */
-            freeEnabled = true;
-          }
-          if (cancelled) return;
-          if (!freeEnabled) {
-            router.replace("/dashboard/leases");
-            return;
-          }
-        }
-      } catch {
-        if (cancelled) return;
-        // Si no podemos consultar entitlements en este momento, no bloqueamos
-        // al usuario que ya está dentro de su propio expediente: redirigirlo
-        // a "Mis arriendos" lo dejaría con la misma pantalla rota. La acción
-        // realmente sensible (guardar versión, generar PDF, firmar) ya valida
-        // permisos en el backend.
-      }
-      if (cancelled) return;
+      // Es el expediente del PROPIO usuario: SIEMPRE puede ver/revisar el resumen
+      // de su contrato. Antes, si no tenía Plus/demo y el tier gratis estaba
+      // apagado, se rebotaba a "Mis arriendos" (no llegaba al resumen de su propio
+      // expediente). Las acciones de pago (guardar versión, PDF, firma, posventa)
+      // siguen gateadas dentro de su sección y en el backend.
       let found = getDraft(id);
       // Deep-link desde otro dispositivo: si no está en localStorage, intenta
       // traerlo del servidor antes de bloquear.

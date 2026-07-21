@@ -817,6 +817,11 @@ export default function NuevoPage() {
         codebtorName, codebtorDocType: norm(pick("codebtorDocType", cod, "docType", "tipoDocumento")), codebtorDocNumber: codebtorDoc,
         codebtorCity: pick("codebtorCity", cod, "city", "ciudad"), codebtorEmail: pick("codebtorEmail", cod, "email", "correo"),
         codebtorPhone: digits(pick("codebtorPhone", cod, "phone", "telefono", "celular")), codebtorIncome: digits(pick("codebtorIncome", cod, "income", "ingreso", "ingresos")),
+        // Cláusula especial libre («Otra»): si la persona describió una cláusula
+        // adicional en su relato, la incluimos como «Otra» con su texto.
+        ...(str(d.specialClause).trim()
+          ? { clauses: ["OTRA"], clauseOther: str(d.specialClause).trim() }
+          : {}),
       };
       const draft = createContractDraft({ userId: user?.uid ?? "invitado", accessStatus: "free", isDemo: false });
       setDraftId(draft.id); draftIdRef.current = draft.id;
