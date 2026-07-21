@@ -1127,6 +1127,15 @@ export default function PreviewStepPage() {
               <span className="text-xs text-slate-500">Espera a que termine la vista previa (se genera sola).</span>
             )}
           </div>
+          {/* Errores del guardado, JUNTO al botón (antes solo se veían arriba, y en
+              móvil quedaban fuera de vista: parecía "no pasa nada" y no continuaba). */}
+          {renderErrors.length > 0 && (
+            <div className="mt-2 rounded-lg border border-rose-300 bg-rose-50 p-2 text-xs text-rose-800" role="alert">
+              {renderErrors.map((msg, i) => (
+                <p key={i} className="mt-0.5 first:mt-0">• {msg}</p>
+              ))}
+            </div>
+          )}
         </div>
         )}
 
