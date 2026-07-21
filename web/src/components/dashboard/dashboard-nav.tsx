@@ -3,8 +3,9 @@
 import { useAuth } from "@/contexts/auth-context";
 import { canSeeInternalDashboardTools } from "@/lib/dashboard/internal-tools";
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Item = { href: string; label: string };
 type Group = { label: string; items: Item[] };
@@ -33,42 +34,75 @@ const ADMIN_ITEMS: Item[] = [
   { href: "/panel/expediente", label: "Panel legacy" },
 ];
 
-/** Menú desplegable de escritorio, accesible, con cierre al hacer clic fuera. */
+/**
+ * Menú desplegable de escritorio, accesible. El panel se renderiza en un PORTAL
+ * a `document.body` con posición `fixed`, para que SIEMPRE quede por encima del
+ * contenido de la página (antes quedaba "detrás" porque el header/páginas crean
+ * contextos de apilamiento que lo tapaban).
+ */
 function NavDropdown({ label, items, pathname }: { label: string; items: Item[]; pathname: string | null }) {
   const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState<{ top: number; right: number } | null>(null);
+  const [mounted, setMounted] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
   const active = items.some((i) => pathname === i.href || pathname?.startsWith(`${i.href}/`));
+
+  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("resize", close);
+    window.addEventListener("scroll", close, true);
+    return () => {
+      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, [open]);
+
+  function toggle() {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setCoords({ top: r.bottom + 6, right: Math.max(8, window.innerWidth - r.right) });
+    }
+    setOpen((v) => !v);
+  }
+
   return (
     <div className="relative">
       <button
+        ref={btnRef}
         type="button"
         aria-haspopup="menu"
         aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         className={`rounded-md px-2.5 py-1.5 transition-colors ${active ? "bg-violet-600/20 text-violet-800" : "text-slate-700 hover:bg-slate-200"}`}
       >
         {label} <span aria-hidden="true">▾</span>
       </button>
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" aria-hidden="true" onClick={() => setOpen(false)} />
-          <div
-            role="menu"
-            className="absolute right-0 z-20 mt-1 min-w-[13rem] rounded-lg border border-slate-200 bg-white py-1 shadow-lg"
-          >
-            {items.map((i) => (
-              <Link
-                key={i.href}
-                href={i.href}
-                role="menuitem"
-                onClick={() => setOpen(false)}
-                className="block px-3 py-2 text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-800"
-              >
-                {i.label}
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
+      {mounted && open && coords &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-[9998]" aria-hidden="true" onClick={() => setOpen(false)} />
+            <div
+              role="menu"
+              style={{ position: "fixed", top: coords.top, right: coords.right }}
+              className="z-[9999] min-w-[13rem] rounded-lg border border-slate-200 bg-white py-1 shadow-2xl"
+            >
+              {items.map((i) => (
+                <Link
+                  key={i.href}
+                  href={i.href}
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className="block px-3 py-2 text-sm text-slate-700 hover:bg-violet-50 hover:text-violet-800"
+                >
+                  {i.label}
+                </Link>
+              ))}
+            </div>
+          </>,
+          document.body,
+        )}
     </div>
   );
 }
@@ -78,6 +112,8 @@ export function DashboardNav() {
   const pathname = usePathname();
   const internal = canSeeInternalDashboardTools(user?.email ?? null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const topActive = (href: string) =>
     href === "/dashboard" ? pathname === "/dashboard" : pathname === href || pathname?.startsWith(`${href}/`);
@@ -142,9 +178,11 @@ export function DashboardNav() {
         Menú
       </button>
 
-      {/* ── Móvil / tablet: panel lateral ── */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-[100] lg:hidden">
+      {/* ── Móvil / tablet: panel lateral (en PORTAL para que no quede detrás
+             del contenido de la página) ── */}
+      {mounted && mobileOpen &&
+        createPortal(
+        <div className="fixed inset-0 z-[9999] lg:hidden">
           <div className="absolute inset-0 bg-slate-900/50" onClick={() => setMobileOpen(false)} aria-hidden="true" />
           <div className="absolute right-0 top-0 flex h-full w-[82%] max-w-xs flex-col overflow-y-auto bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
@@ -205,8 +243,9 @@ export function DashboardNav() {
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </div>,
+          document.body,
+        )}
     </>
   );
 }

@@ -1392,7 +1392,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               {["6", "12", "24", "36"].map((m) => (
                 <button key={m} type="button" onClick={() => setA({ ...a, termMonths: m })} className={chip(a.termMonths === m)}>{m} meses</button>
               ))}
-              <input inputMode="numeric" value={["6", "12", "24", "36"].includes(a.termMonths) ? "" : a.termMonths} onChange={(e) => setA({ ...a, termMonths: onlyDigits(e.target.value) })} className={`w-28 rounded-2xl border-2 px-3 py-3 text-center text-[15px] outline-none focus:border-[#5646E5] ${!["6", "12", "24", "36"].includes(a.termMonths) && a.termMonths ? "border-[#5646E5] bg-[#ECE9FB]" : "border-slate-200"}`} placeholder="Otro (meses)" />
+              <input inputMode="numeric" value={a.termMonths} onChange={(e) => setA({ ...a, termMonths: onlyDigits(e.target.value) })} className={`w-28 rounded-2xl border-2 px-3 py-3 text-center text-[15px] outline-none focus:border-[#5646E5] ${!["6", "12", "24", "36"].includes(a.termMonths) && a.termMonths ? "border-[#5646E5] bg-[#ECE9FB]" : "border-slate-200"}`} placeholder="Meses" />
             </div>
           </div>
           <div>
@@ -1636,7 +1636,7 @@ function PartyFields({ docType, docNumber, city, email, phone, auth, authLabel, 
       <InputMic type="email" autoComplete="email" placeholder="✉️ Correo" value={email} onChange={(e) => onChange({ ...base, email: e.target.value })} voice={(t) => onChange({ ...base, email: cleanEmail(t) })} />
       <InputMic type="tel" autoComplete="tel" placeholder="📱 Celular" value={phone} onChange={(e) => onChange({ ...base, phone: e.target.value })} voice={(t) => onChange({ ...base, phone: onlyDigits(t) })} />
       <div>
-        <InputMic inputMode="numeric" placeholder="💵 Ingreso mensual aproximado" value={income} onChange={(e) => onIncome(onlyDigits(e.target.value))} voice={(t) => onIncome(onlyDigits(t))} />
+        <InputMic inputMode="numeric" placeholder="💵 Ingreso mensual aproximado" value={income ? Number(income).toLocaleString("es-CO") : ""} onChange={(e) => onIncome(onlyDigits(e.target.value))} voice={(t) => onIncome(onlyDigits(t))} />
         <IncomeSuggestion rentReference={rentReference} income={incomeNum} who={who} />
       </div>
       <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
