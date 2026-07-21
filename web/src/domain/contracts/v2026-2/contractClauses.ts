@@ -380,8 +380,9 @@ export const CLAUSULA_ESPECIALES_V2026_2 = `
 
 /**
  * Cláusula condicional para autenticación notarial. Solo aparece si el
- * usuario seleccionó "sí" en el paso del bloque 9. Indica el procedimiento
- * y el aliado digital próximo.
+ * usuario seleccionó "sí" en el paso del bloque 9. Indica el procedimiento y
+ * la opción de firma/autenticación digital del Estado (Agencia Nacional
+ * Digital), ya disponible.
  */
 export const CLAUSULA_NOTARIZACION_V2026_2 = `
 <h2>VIGÉSIMA CUARTA. AUTENTICACIÓN NOTARIAL</h2>
@@ -392,8 +393,9 @@ export const CLAUSULA_NOTARIZACION_V2026_2 = `
 </p>
 <p>
   La autenticación notarial no sustituye los efectos de la firma electrónica de la cláusula DÉCIMA SEXTA, sino que la
-  refuerza para los efectos previstos por la ley. Próximamente, Arriendo Seguro habilitará un aliado de notariado
-  digital que permitirá realizar este trámite de manera totalmente electrónica.
+  refuerza para los efectos previstos por la ley. Adicionalmente, las partes cuentan con la opción de surtir la firma y
+  autenticación digital de manera totalmente electrónica y gratuita a través de la Agencia Nacional Digital del Estado
+  colombiano (Decreto 620 de 2020), conforme a las indicaciones disponibles en la plataforma Arriendo Seguro.
 </p>
 `;
 

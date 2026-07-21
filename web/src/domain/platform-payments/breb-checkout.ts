@@ -39,6 +39,21 @@ export function brebMerchantName(): string {
   return process.env.BREB_MERCHANT_NAME?.trim() || appConfig.name;
 }
 
+/**
+ * URL de la IMAGEN del QR Bre-B real del comercio (la que genera tu banco, p. ej.
+ * Bancolombia "Paga aquí"). Ese QR SÍ lo leen las apps bancarias. Si se define,
+ * la página de pago la muestra en lugar del QR interno (que no es escaneable).
+ * Súbela a un lugar accesible (p. ej. /public de la app o el enlace del QR
+ * digital del banco) y pon la URL en BREB_QR_IMAGE_URL o NEXT_PUBLIC_BREB_QR_URL.
+ */
+export function brebQrImageUrl(): string {
+  return (
+    process.env.BREB_QR_IMAGE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_BREB_QR_URL?.trim() ||
+    ""
+  );
+}
+
 export type BrebCollection = {
   /** URL a la que se envía al pagador (página interna de QR/llave o la del proveedor). */
   checkoutUrl: string;

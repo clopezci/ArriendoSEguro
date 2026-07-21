@@ -150,7 +150,7 @@ export function buildNotarialAuthenticationAnnex(input: {
       <p>Versión contractual: ${input.contractVersionId}</p>
       <p>Fecha de registro de la carga en la plataforma (UTC): ${input.uploadedAtIso}</p>
       <p>Rol de quien subió el archivo: ${input.uploadedByRole}</p>
-      <p><strong>Importante:</strong> ArriendoSeguro no actúa como notaría ni revisa el contenido del documento autenticado. Este anexo solo archiva el PDF que cargaste como parte del expediente. Para notariado digital con aliado, estamos trabajando en integraciones futuras.</p>
+      <p><strong>Importante:</strong> ArriendoSeguro no actúa como notaría ni revisa el contenido del documento autenticado. Este anexo solo archiva el PDF que cargaste como parte del expediente. Si prefieres un trámite totalmente electrónico, el Estado colombiano ofrece firma y autenticación digital gratuita a través de la Agencia Nacional Digital (Decreto 620 de 2020); la plataforma te indica cómo hacerlo.</p>
       <p><strong>Marco legal (orientación general):</strong> la autenticación de documentos y competencias notariales se rigen por la normativa colombiana aplicable. Si tienes dudas, consulta a un notario o a tu asesor jurídico.</p>
     </article>
   `;
