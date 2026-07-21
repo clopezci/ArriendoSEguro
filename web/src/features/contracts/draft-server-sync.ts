@@ -71,6 +71,29 @@ export async function flushDraftToServer(draft: ContractDraft): Promise<boolean>
   }
 }
 
+/**
+ * Empuja al servidor TODOS los borradores locales del usuario (no demo). Sirve
+ * para reconciliar dispositivos: si en el celular quedaron borradores que nunca
+ * se sincronizaron, al abrir "Mis contratos" se suben y aparecen también en el
+ * computador (y viceversa). Best-effort; no bloquea si alguno falla.
+ */
+export async function flushAllLocalDraftsToServer(userId: string): Promise<void> {
+  if (typeof window === "undefined" || !userId) return;
+  const headers = await currentAuthHeaders();
+  if (!headers) return;
+  const mine = getAllDrafts().filter((d) => d.userId === userId && !d.isDemo && d.id);
+  await Promise.allSettled(
+    mine.map((draft) =>
+      fetch("/api/contracts/drafts", {
+        method: "PUT",
+        headers: { "content-type": "application/json", ...headers },
+        body: JSON.stringify({ draft }),
+        keepalive: true,
+      }).catch(() => {}),
+    ),
+  );
+}
+
 /** Empuja el borrador al servidor con debounce por id (no bloquea la UI). */
 export function syncDraftToServer(draft: ContractDraft): void {
   if (typeof window === "undefined") return;
