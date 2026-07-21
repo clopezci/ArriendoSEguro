@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { SPECIAL_CLAUSE_REVIEWS_COLLECTION } from "@/domain/contracts/specialClauseReview";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { sendEmail } from "@/services/email/sendEmail";
 
 export const runtime = "nodejs";
 
@@ -136,6 +137,30 @@ export async function POST(
     } catch {
       /* si el borrador ya no existe, la revisión sigue siendo la fuente de verdad */
     }
+  }
+
+  // Aviso al CLIENTE (dueño) de que su cláusula ya fue resuelta (best-effort).
+  const ownerEmail = (review.requesterEmail ?? "").trim();
+  if (ownerEmail) {
+    const base = (process.env.APP_BASE_URL?.trim() || process.env.NEXT_PUBLIC_APP_URL?.trim() || "https://arriendoseguro.app").replace(/\/$/, "");
+    const link = contractDraftId ? `${base}/dashboard/contracts/${contractDraftId}/preview` : base;
+    const isDrafted = status === "drafted";
+    const subject = isDrafted ? "Tu cláusula especial ya está lista ✅" : "Sobre tu cláusula especial";
+    const body = isDrafted
+      ? `Hola,\n\nEl abogado revisó y registró la redacción FINAL de tu cláusula especial «Otra». Ya quedó incorporada a tu contrato en ArriendoSeguro.\n\nÁbrelo para ver la versión final: ${link}\n\n— ArriendoSeguro`
+      : `Hola,\n\nEl abogado revisó tu cláusula especial «Otra» y indicó que NO procede tal como estaba redactada. Puedes ajustarla o retirarla desde tu contrato. Si ya pagaste su valor, escríbenos para gestionarlo.\n\nTu contrato: ${link}\n\n— ArriendoSeguro`;
+    const html = `<p>Hola,</p>${isDrafted
+      ? `<p>El abogado revisó y registró la redacción <strong>FINAL</strong> de tu cláusula especial «Otra». Ya quedó incorporada a tu contrato en ArriendoSeguro.</p><p><a href="${link}">Abre tu contrato para ver la versión final →</a></p>`
+      : `<p>El abogado revisó tu cláusula especial «Otra» e indicó que <strong>no procede</strong> tal como estaba redactada. Puedes ajustarla o retirarla desde tu contrato. Si ya pagaste su valor, escríbenos para gestionarlo.</p><p><a href="${link}">Ir a tu contrato →</a></p>`}<p>— ArriendoSeguro</p>`;
+    await sendEmail({
+      to: ownerEmail,
+      subject,
+      html,
+      text: body,
+      templateCode: "specialClauseResolvedOwner",
+      relatedEntityType: "contract",
+      relatedEntityId: contractDraftId ?? "",
+    }).catch(() => {});
   }
 
   auditEvent("special_clause_review_answered", { contractId: contractDraftId ?? "", status });

@@ -20,6 +20,7 @@ export type EmailTemplateCode =
   | "tenantPaymentReminderEmail"
   | "ownerConfirmEscalationEmail"
   | "specialClauseReviewEmail"
+  | "specialClauseResolvedOwner"
   | "initialDeliveryActEmail"
   | "reputationReviewReceivedEmail"
   | "reputationLowRatingEmail"

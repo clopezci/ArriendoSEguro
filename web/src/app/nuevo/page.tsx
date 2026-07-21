@@ -1559,9 +1559,21 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               <textarea id="clause-text" value={a.clauseOther} onChange={(e) => setA({ ...a, clauseOther: e.target.value })} rows={a.clauseCount > 1 ? 5 : 3}
                 placeholder={a.clauseCount > 1 ? "1) El arrendatario no realizará fiestas después de las 10 p. m.\n2) No se permite subarrendar el inmueble.\n3) …" : "Ej.: El arrendatario no realizará fiestas con música amplificada después de las 10 p. m."}
                 className="mt-1 w-full rounded-xl border-2 border-slate-200 p-3 text-sm outline-none transition focus:border-[#5646E5]" />
-              <p className="mt-2 text-[11px] text-amber-800">
-                El costo se suma al Plan Plus y <b>se confirma al pagar</b>. Un abogado revisa la redacción final.
-              </p>
+              <div className="mt-3 rounded-xl border border-amber-300 bg-white/70 p-3 text-[11px] leading-relaxed text-amber-900">
+                <p className="font-bold">📝 Cómo funcionan estas cláusulas</p>
+                <p className="mt-1">
+                  Un <b>abogado redacta</b> la versión legal de cada cláusula «Otra». Por eso, en el contrato que generas
+                  ahora <b>todavía no verás su texto definitivo</b> — puedes seguir avanzando con normalidad.
+                </p>
+                <p className="mt-1">
+                  Al <b>pagar</b>, le enviamos tu solicitud al abogado. Cuando registre la redacción final, <b>se incorpora
+                  sola a tu contrato</b> y <b>te avisamos por correo</b>. Si ya avanzaste, tu contrato se actualiza cuando
+                  esté lista.
+                </p>
+                <p className="mt-1">
+                  Si al final <b>quitas</b> estas cláusulas, no se envían al abogado, no se cobran y no quedan en el contrato.
+                </p>
+              </div>
             </div>
           )}
           <p className="text-xs text-slate-500">Puedes continuar sin cláusulas especiales. Las que elijas se redactan con texto legal en el contrato.</p>
