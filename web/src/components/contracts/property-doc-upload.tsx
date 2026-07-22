@@ -12,7 +12,7 @@ import { PROPERTY_DOC_TYPES, PROPERTY_DOC_LABELS, PODER_DOC_TYPE, type PropertyD
  * otro) y lo SUBE. Reusa el patrón de subida por URL firmada (sign → PUT →
  * submit). Etapa de borrador (autenticado por el dueño, keyed por draftId).
  */
-type VerifyStatus = "match" | "mismatch" | "unreadable" | "skipped" | "checking";
+type VerifyStatus = "match" | "mismatch" | "wrong_type" | "unreadable" | "skipped" | "checking";
 
 export function PropertyDocUpload({
   contractDraftId,
@@ -35,7 +35,7 @@ export function PropertyDocUpload({
   /** Se llama tras subir con éxito (para refrescar estados externos, p. ej. pendientes). */
   onUploaded?: () => void;
   /** Reporta al padre el veredicto de la validación asistida (para la constancia). */
-  onVerify?: (status: "match" | "mismatch" | "unreadable" | "skipped") => void;
+  onVerify?: (status: "match" | "mismatch" | "wrong_type" | "unreadable" | "skipped") => void;
 }) {
   const { user } = useAuth();
   const [docs, setDocs] = useState<DraftPropertyDocRow[]>([]);
@@ -129,6 +129,39 @@ export function PropertyDocUpload({
     }
   }
 
+  // Valida una sola vez cuando ya hay documentos al montar (así el veredicto se
+  // muestra aunque recargues la página, no solo justo después de subir).
+  const verifiedOnce = useRef(false);
+  useEffect(() => {
+    if (docs.length > 0 && !verifiedOnce.current) {
+      verifiedOnce.current = true;
+      void runVerify();
+    }
+  }, [docs.length, runVerify]);
+
+  async function remove(id: string) {
+    if (!user) return;
+    if (!confirm("¿Quitar este documento? Esta acción no se puede deshacer.")) return;
+    try {
+      const res = await fetch("/api/contracts/draft-property-docs/delete", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        setVerify(null);
+        setMsg("");
+        verifiedOnce.current = false;
+        await refresh();
+        onUploaded?.();
+      } else {
+        setMsg("No se pudo quitar el documento. Intenta de nuevo.");
+      }
+    } catch {
+      setMsg("Error de red al quitar el documento.");
+    }
+  }
+
   const hasDocs = docs.length > 0;
   const showFull = !hasDocs || expanded;
   return (
@@ -176,7 +209,10 @@ export function PropertyDocUpload({
           {docs.map((d) => (
             <li key={d.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-700">
               <span className="truncate">📎 {PROPERTY_DOC_LABELS[d.docType as PropertyDocType] ?? d.docType} · {d.fileName}</span>
-              <button type="button" onClick={() => void download(d.id)} className="flex-none rounded-lg bg-[#5646E5] px-3 py-1 text-[11px] font-bold text-white transition hover:brightness-105">Ver</button>
+              <span className="flex flex-none items-center gap-1.5">
+                <button type="button" onClick={() => void download(d.id)} className="rounded-lg bg-[#5646E5] px-3 py-1 text-[11px] font-bold text-white transition hover:brightness-105">Ver</button>
+                <button type="button" onClick={() => void remove(d.id)} aria-label="Quitar este documento" className="rounded-lg border border-rose-300 bg-white px-2.5 py-1 text-[11px] font-bold text-rose-600 transition hover:bg-rose-50">Quitar</button>
+              </span>
             </li>
           ))}
         </ul>
@@ -187,7 +223,7 @@ export function PropertyDocUpload({
           className={`mt-3 rounded-xl border-2 p-3 text-xs ${
             verify.status === "match"
               ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : verify.status === "mismatch"
+              : verify.status === "mismatch" || verify.status === "wrong_type"
                 ? "border-rose-200 bg-rose-50 text-rose-800"
                 : "border-slate-200 bg-slate-50 text-slate-600"
           }`}
@@ -217,6 +253,25 @@ export function PropertyDocUpload({
                   Declaro que, pese a la alerta, el documento <b>sí respalda la propiedad</b> y que estoy facultado para arrendar. Asumo la
                   responsabilidad de su veracidad y <b>eximo a ArriendoSeguro</b> de cualquier reclamación por la titularidad o la
                   autenticidad del documento. Queda registrado con evidencia (fecha e IP).
+                </span>
+              </label>
+            </>
+          )}
+          {verify.status === "wrong_type" && (
+            <>
+              ⚠️ <b>Este archivo no parece un documento de propiedad</b> (certificado de tradición, recibo de
+              servicios públicos, impuesto predial o escritura). Revisa que hayas subido el documento correcto.
+              La revisión IA es orientativa; si estás seguro, acepta para <b>avanzar de todos modos</b>.
+              <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border-2 border-rose-300 bg-white/70 p-2 text-[11px] text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={overrideAck}
+                  onChange={(e) => { const v = e.target.checked; if (v && !overrideAck) void captureOathEvidence("property_wrong_type_override", contractDraftId); setOverrideAck(v); }}
+                  className="mt-0.5 h-4 w-4 flex-none accent-[#5646E5]"
+                />
+                <span>
+                  Declaro que el documento subido <b>sí respalda la propiedad</b> y asumo la responsabilidad de su
+                  veracidad, <b>eximiendo a ArriendoSeguro</b> de cualquier reclamación. Queda registrado (fecha e IP).
                 </span>
               </label>
             </>
