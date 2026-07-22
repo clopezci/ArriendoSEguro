@@ -41,7 +41,7 @@ export function PropertyDocUpload({
   const [docs, setDocs] = useState<DraftPropertyDocRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-  const [verify, setVerify] = useState<{ status: VerifyStatus; names?: string[]; reason?: string; addressStatus?: string } | null>(null);
+  const [verify, setVerify] = useState<{ status: VerifyStatus; names?: string[]; reason?: string; addressStatus?: string; providerDetail?: string } | null>(null);
   const [overrideAck, setOverrideAck] = useState(false);
   // Si ya hay documento, mostramos recogido; "Cambiar / subir otro" expande el bloque.
   const [expanded, setExpanded] = useState(false);
@@ -56,9 +56,9 @@ export function PropertyDocUpload({
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
         body: JSON.stringify({ contractDraftId, expectedName: expectedName ?? "", expectedAddress: expectedAddress ?? "", actingAs: actingAs || undefined }),
       });
-      const j = (await res.json()) as { status?: VerifyStatus; names?: string[]; reason?: string; addressStatus?: string };
+      const j = (await res.json()) as { status?: VerifyStatus; names?: string[]; reason?: string; addressStatus?: string; providerDetail?: string };
       const status: VerifyStatus = res.ok && j.status ? j.status : "skipped";
-      setVerify({ status, names: j.names, reason: j.reason, addressStatus: j.addressStatus });
+      setVerify({ status, names: j.names, reason: j.reason, addressStatus: j.addressStatus, providerDetail: j.providerDetail });
       if (status !== "checking") onVerify?.(status);
     } catch {
       setVerify({ status: "skipped" });
@@ -286,7 +286,12 @@ export function PropertyDocUpload({
             <>El archivo es muy grande para la validación automática. Puedes continuar; tu declaración jurada respalda la propiedad.</>
           )}
           {verify.status === "skipped" && ["ai_off", "provider_error", "download_error"].includes(verify.reason ?? "") && (
-            <>La validación automática por IA no está disponible en este momento. Puedes continuar; tu declaración jurada respalda la propiedad.</>
+            <>
+              La validación automática no se pudo completar en este momento. Puedes continuar; tu declaración jurada respalda la propiedad.
+              {verify.providerDetail ? (
+                <span className="mt-1 block break-all text-[10px] text-slate-400">Detalle técnico: {verify.providerDetail}</span>
+              ) : null}
+            </>
           )}
         </div>
       )}

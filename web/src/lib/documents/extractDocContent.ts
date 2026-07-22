@@ -16,7 +16,7 @@ export type ExtractedContent =
   | { kind: "unsupported"; reason: string };
 
 const MAX_TEXT_CHARS = 15_000;
-const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 function guessMime(contentType: string, fileName: string): string {
   const ct = contentType.toLowerCase();
