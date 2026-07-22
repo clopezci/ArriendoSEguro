@@ -69,6 +69,21 @@ export function InviteSupportsUpload({
     }
   }
 
+  async function remove(id: string) {
+    if (!window.confirm("¿Quitar este documento? Esta acción no se puede deshacer.")) return;
+    try {
+      const res = await fetch("/api/party-invite/support/delete", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token, id }),
+      });
+      if (res.ok) { setMsg(""); await refresh(); }
+      else setMsg("No se pudo quitar el documento. Intenta de nuevo.");
+    } catch {
+      setMsg("Error de red al quitar el documento.");
+    }
+  }
+
   const uploadedFor = (key: string) => supports.find((s) => s.docKey === key);
   // Documentos ya subidos que NO corresponden a una casilla requerida (adicionales
   // o cargados antes de exigir la lista).
@@ -103,7 +118,10 @@ export function InviteSupportsUpload({
                   {done && <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">Subido</span>}
                 </div>
                 {done ? (
-                  <p className="mt-1 truncate text-[11px] text-slate-500">{done.fileName}</p>
+                  <div className="mt-1 flex items-center justify-between gap-2">
+                    <p className="truncate text-[11px] text-slate-500">{done.fileName}</p>
+                    <button type="button" onClick={() => void remove(done.id)} aria-label="Quitar documento" className="flex-none rounded-lg border border-rose-300 bg-white px-2 py-0.5 text-[11px] font-bold text-rose-600 hover:bg-rose-50">Quitar</button>
+                  </div>
                 ) : (
                   <input
                     type="file"
@@ -140,7 +158,8 @@ export function InviteSupportsUpload({
           {extras.map((s) => (
             <li key={s.id} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-700">
               <span aria-hidden="true">✓</span>
-              <span className="truncate">{s.fileName}</span>
+              <span className="flex-1 truncate">{s.fileName}</span>
+              <button type="button" onClick={() => void remove(s.id)} aria-label="Quitar documento" className="flex-none rounded-lg border border-rose-300 bg-white px-2 py-0.5 text-[11px] font-bold text-rose-600 hover:bg-rose-50">Quitar</button>
             </li>
           ))}
         </ul>

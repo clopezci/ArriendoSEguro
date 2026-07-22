@@ -74,6 +74,22 @@ export function PoderUpload({ contractDraftId, onUploaded }: { contractDraftId: 
     }
   }
 
+  async function remove(id: string) {
+    if (!user) return;
+    if (!confirm("¿Quitar el poder? Esta acción no se puede deshacer.")) return;
+    try {
+      const res = await fetch("/api/contracts/draft-property-docs/delete", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) { setMsg(""); await refresh(); onUploaded?.(); }
+      else setMsg("No se pudo quitar el poder. Intenta de nuevo.");
+    } catch {
+      setMsg("Error de red al quitar el poder.");
+    }
+  }
+
   const hasDocs = docs.length > 0;
   const showFull = !hasDocs || expanded;
   return (
@@ -103,7 +119,10 @@ export function PoderUpload({ contractDraftId, onUploaded }: { contractDraftId: 
           {docs.map((d) => (
             <li key={d.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white/80 px-3 py-2 text-xs text-slate-700">
               <span className="truncate">📎 {d.fileName}</span>
-              <button type="button" onClick={() => void download(d.id)} className="flex-none rounded-lg bg-[#5646E5] px-3 py-1 text-[11px] font-bold text-white transition hover:brightness-105">Ver</button>
+              <span className="flex flex-none items-center gap-1.5">
+                <button type="button" onClick={() => void download(d.id)} className="rounded-lg bg-[#5646E5] px-3 py-1 text-[11px] font-bold text-white transition hover:brightness-105">Ver</button>
+                <button type="button" onClick={() => void remove(d.id)} aria-label="Quitar el poder" className="rounded-lg border border-rose-300 bg-white px-2.5 py-1 text-[11px] font-bold text-rose-600 transition hover:bg-rose-50">Quitar</button>
+              </span>
             </li>
           ))}
         </ul>
