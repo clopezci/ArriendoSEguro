@@ -62,16 +62,27 @@ export async function POST(request: Request) {
   const objectPath = (doc.storagePath ?? "").startsWith(gsPrefix) ? (doc.storagePath ?? "").slice(gsPrefix.length) : "";
   if (!objectPath) return NextResponse.json({ success: true, status: "skipped", reason: "no_doc" });
 
-  let bytes: Buffer;
+  const contentType = (doc.contentType ?? "").toLowerCase();
+  const fileName = (doc.originalFilename ?? "").toLowerCase();
+  const isImage = contentType.startsWith("image/") || /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(fileName);
+
+  let bytes: Buffer | undefined;
+  let imageUrl: string | undefined;
   try {
-    const [buf] = await getStorage().bucket(bucketName).file(objectPath).download();
-    bytes = buf;
+    if (isImage) {
+      const [url] = await getStorage().bucket(bucketName).file(objectPath).getSignedUrl({ action: "read", expires: Date.now() + 15 * 60 * 1000 });
+      imageUrl = url;
+    } else {
+      const [buf] = await getStorage().bucket(bucketName).file(objectPath).download();
+      bytes = buf;
+    }
   } catch {
     return NextResponse.json({ success: true, status: "skipped", reason: "download_error" });
   }
 
   const result = await validateSupportDoc({
     bytes,
+    imageUrl,
     contentType: doc.contentType ?? "",
     fileName: doc.originalFilename ?? "",
     docKey: doc.supportType,

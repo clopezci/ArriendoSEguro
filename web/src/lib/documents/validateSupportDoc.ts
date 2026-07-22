@@ -74,12 +74,15 @@ async function callAi(
 }
 
 export async function validateSupportDoc(params: {
-  bytes: Buffer;
+  bytes?: Buffer;
   contentType: string;
   fileName: string;
   docKey: string;
   expectedName?: string;
   expectedDocNumber?: string;
+  /** URL (firmada) de la imagen: si viene, se pasa directo a la IA de visión y se
+   * evita el base64 (que falla con fotos grandes de celular). */
+  imageUrl?: string;
 }): Promise<SupportValidation> {
   const spec = getDocValidationSpec(params.docKey);
   if (!spec) return { status: "skipped", reason: "no_spec" };
@@ -87,8 +90,21 @@ export async function validateSupportDoc(params: {
   const apiKey = process.env.AI_API_KEY?.trim();
   if (!apiKey) return { status: "skipped", reason: "ai_off", label: spec.label };
 
-  const extracted = await extractDocContent(params.bytes, params.contentType, params.fileName);
-  if (extracted.kind === "unsupported") return { status: "skipped", reason: extracted.reason, label: spec.label };
+  // Imagen por URL firmada (preferido) → sin tope de base64. Si no, extrae del buffer.
+  let isImage = false;
+  let visionUrl: string | null = null;
+  let textContent: string | null = null;
+  if (params.imageUrl && params.imageUrl.trim()) {
+    isImage = true;
+    visionUrl = params.imageUrl.trim();
+  } else if (params.bytes) {
+    const extracted = await extractDocContent(params.bytes, params.contentType, params.fileName);
+    if (extracted.kind === "unsupported") return { status: "skipped", reason: extracted.reason, label: spec.label };
+    if (extracted.kind === "image") { isImage = true; visionUrl = extracted.imageDataUrl; }
+    else { textContent = extracted.text; }
+  } else {
+    return { status: "skipped", reason: "no_doc", label: spec.label };
+  }
 
   const prompt =
     `Eres un extractor de datos de documentos colombianos. Este documento DEBERÍA ser: ${spec.typeDescription}. ` +
@@ -97,9 +113,9 @@ export async function validateSupportDoc(params: {
     `"names" son los nombres del TITULAR de la persona; ` +
     `"documentNumber" es el número de identificación/NIT/matrícula si aplica (solo dígitos, o cadena vacía); ` +
     `"docKindMatches" indica si el documento realmente ES del tipo descrito. No agregues texto adicional.` +
-    (extracted.kind === "text" ? `\n\nTEXTO DEL DOCUMENTO:\n"""\n${extracted.text}\n"""` : "");
+    (!isImage && textContent ? `\n\nTEXTO DEL DOCUMENTO:\n"""\n${textContent}\n"""` : "");
 
-  const ai = await callAi(apiKey, extracted.kind === "image", prompt, extracted.kind === "image" ? extracted.imageDataUrl : null);
+  const ai = await callAi(apiKey, isImage, prompt, visionUrl);
   if (!ai) return { status: "skipped", reason: "provider_error", label: spec.label };
 
   if (ai.names.length === 0 && !ai.documentNumber && ai.docKindMatches === null) {
