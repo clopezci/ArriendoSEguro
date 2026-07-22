@@ -204,7 +204,7 @@ export default function PreviewStepPage() {
   const [propertyDocCount, setPropertyDocCount] = useState<number | null>(null);
   const [poderDocCount, setPoderDocCount] = useState<number | null>(null);
   const [propDocType, setPropDocType] = useState<PropertyDocType | "">("");
-  const [propertyDocVerdict, setPropertyDocVerdict] = useState<"match" | "mismatch" | "unreadable" | "skipped" | null>(null);
+  const [propertyDocVerdict, setPropertyDocVerdict] = useState<"match" | "mismatch" | "wrong_type" | "unreadable" | "skipped" | null>(null);
   const [respAlerts, setRespAlerts] = useState<{ intro: string; signals: ResponsibilitySignal[] } | null>(null);
   // Revisión y cierre PASO A PASO (bento): una sección a la vez. Reúne TODO el
   // contenido de la pantalla en secciones para no apilarlo (antes eran 8 scrolls).

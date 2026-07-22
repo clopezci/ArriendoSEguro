@@ -57,11 +57,14 @@ function nameMatches(expected: string, found: string[]): boolean {
 }
 
 const VISION_PROMPT =
-  "Eres un extractor de datos. El contenido corresponde a un documento colombiano que soporta la propiedad de un inmueble " +
+  "Eres un validador de documentos colombianos que soportan la PROPIEDAD de un inmueble " +
   "(certificado de tradición y libertad, recibo de servicios públicos, impuesto predial o escritura pública). " +
-  'Devuelve EXCLUSIVAMENTE un JSON con la forma {"names": ["..."], "address": "..."} donde "names" es el/los ' +
-  'nombre(s) del PROPIETARIO o TITULAR y "address" es la DIRECCIÓN del inmueble tal como aparecen en el documento. ' +
-  'Si no encuentras el dato, usa lista vacía o cadena vacía. No agregues texto adicional.';
+  'Analiza el contenido y devuelve EXCLUSIVAMENTE un JSON con la forma ' +
+  '{"isPropertyDoc": true, "names": ["..."], "address": "..."} donde: ' +
+  '"isPropertyDoc" es true SOLO si el documento realmente es uno de esos tipos, y false si es cualquier otra cosa ' +
+  "(una foto personal, una captura de pantalla, una cédula, un recibo que no es de servicios públicos, un documento no relacionado); " +
+  '"names" son los nombres del PROPIETARIO o TITULAR; "address" es la DIRECCIÓN del inmueble. ' +
+  "Si no aplica, usa lista vacía o cadena vacía. No agregues texto adicional.";
 
 function extractJsonBlock(s: string): string {
   const fence = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -179,12 +182,21 @@ export async function POST(request: Request) {
       const content = json.choices?.[0]?.message?.content ?? "";
       let names: string[] = [];
       let address = "";
+      let isPropertyDoc: boolean | null = null;
       try {
-        const obj = JSON.parse(extractJsonBlock(content)) as { names?: unknown; address?: unknown };
+        const obj = JSON.parse(extractJsonBlock(content)) as { isPropertyDoc?: unknown; names?: unknown; address?: unknown };
         if (Array.isArray(obj.names)) names = obj.names.filter((x): x is string => typeof x === "string").slice(0, 10);
         if (typeof obj.address === "string") address = obj.address;
+        if (typeof obj.isPropertyDoc === "boolean") isPropertyDoc = obj.isPropertyDoc;
       } catch {
         continue;
+      }
+      // El documento claramente NO es un soporte de propiedad → alerta fuerte.
+      if (isPropertyDoc === false) {
+        return NextResponse.json({
+          success: true, available: true, status: "wrong_type",
+          names, address, expectedName, expectedAddress: expectedAddress || undefined,
+        });
       }
       if (names.length === 0 && !address) {
         return NextResponse.json({ success: true, available: true, status: "unreadable" });
