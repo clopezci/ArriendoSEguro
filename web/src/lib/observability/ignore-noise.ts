@@ -9,6 +9,8 @@
  *  - Aborts/errores de red de Safari.
  *  - `webkit.messageHandlers` → navegador in-app de Facebook/Instagram/iOS.
  *  - Bucles de ResizeObserver.
+ *  - `insertBefore`/`removeChild` "not a child" → extensiones de traducción
+ *    (Google Translate) que mutan el DOM que controla React; no es bug de la app.
  */
 const BENIGN_PATTERNS: RegExp[] = [
   /Non-Error promise rejection captured/i,
@@ -22,6 +24,10 @@ const BENIGN_PATTERNS: RegExp[] = [
   /\bcancell?ed\b/i,
   /ResizeObserver loop/i,
   /webkit\.messageHandlers/i,
+  /not a child of this node/i,
+  /insertBefore.*Node/i,
+  /removeChild.*Node/i,
+  /The node (before|to be removed) /i,
 ];
 
 /** ¿El mensaje de error es ruido benigno que debemos ignorar? */
