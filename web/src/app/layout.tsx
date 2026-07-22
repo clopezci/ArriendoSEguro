@@ -11,8 +11,19 @@ import { AppProviders } from "@/components/providers/app-providers";
 import { ReadAloudProvider } from "@/components/a11y/read-aloud";
 import { ReferralTracker } from "@/components/referrals/referral-tracker";
 import { appConfig } from "@/lib/config";
+import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+
+/**
+ * Blindaje contra extensiones de traducción (Google Translate y similares): al
+ * traducir, envuelven textos en <font> y descolocan los nodos que React maneja,
+ * lo que provoca "Failed to execute 'insertBefore'/'removeChild' … not a child".
+ * Este parche hace que esos dos métodos NO lancen cuando el nodo ya no es hijo,
+ * evitando que la app se caiga para quien traduce la página. No afecta el uso
+ * normal (solo cambia el caso que de todos modos iba a fallar).
+ */
+const TRANSLATE_DOM_GUARD = `(function(){try{var N=typeof Node==='function'&&Node.prototype;if(!N)return;var r=N.removeChild;N.removeChild=function(c){if(c&&c.parentNode!==this){return c;}return r.apply(this,arguments);};var i=N.insertBefore;N.insertBefore=function(n,ref){if(ref&&ref.parentNode!==this){return n;}return i.apply(this,arguments);};}catch(e){}})();`;
 
 const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
 
@@ -59,6 +70,7 @@ export default function RootLayout({
   return (
     <html lang="es" className="scroll-smooth">
       <body className="bg-slate-50 font-sans text-slate-900 antialiased">
+        <Script id="translate-dom-guard" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: TRANSLATE_DOM_GUARD }} />
         <ConsentMode />
         <GoogleAnalytics />
         <AdSense />
