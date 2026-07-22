@@ -1,5 +1,6 @@
 import "server-only";
 import { extractDocContent } from "@/lib/documents/extractDocContent";
+import { getVisionProvider } from "@/lib/documents/visionProvider";
 import { getDocValidationSpec } from "@/domain/documents/docValidationSpec";
 import { nameMatches, documentNumberMatches, type MatchVerdict } from "@/domain/documents/documentMatch";
 
@@ -35,9 +36,11 @@ async function callAi(
   promptText: string,
   imageDataUrl: string | null,
 ): Promise<{ names: string[]; documentNumber: string; docKindMatches: boolean | null } | null> {
-  const baseUrl = (process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/$/, "");
-  const candidates = isImage
-    ? ([...new Set(([process.env.AI_VISION_MODEL?.trim(), "meta-llama/llama-4-scout-17b-16e-instruct", "meta-llama/llama-4-maverick-17b-128e-instruct"].filter(Boolean)) as string[])])
+  const vision = isImage ? getVisionProvider() : null;
+  const baseUrl = vision ? vision.baseUrl : (process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/$/, "");
+  const callKey = vision ? vision.apiKey : apiKey;
+  const candidates = vision
+    ? vision.models
     : ([...new Set(([process.env.AI_MODEL?.trim(), "llama-3.3-70b-versatile", "llama-3.1-8b-instant"].filter(Boolean)) as string[])]);
   const messages = isImage
     ? [{ role: "user", content: [{ type: "text", text: promptText }, { type: "image_url", image_url: { url: imageDataUrl } }] }]
@@ -47,7 +50,7 @@ async function callAi(
     try {
       const res = await fetch(`${baseUrl}/chat/completions`, {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
+        headers: { "content-type": "application/json", authorization: `Bearer ${callKey}` },
         cache: "no-store",
         body: JSON.stringify({ model, temperature: 0, max_tokens: 300, messages }),
       });
