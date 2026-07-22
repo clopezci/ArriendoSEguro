@@ -893,6 +893,20 @@ export default function PreviewStepPage() {
         <span>Esta es tu vista previa. Queda listo para firma cuando ambas partes revisen y acepten la versión final.</span>
       </p>
       )}
+      {section === "revisar" && (
+      <a
+        href="/legal/consulta"
+        target="_blank"
+        rel="noreferrer"
+        className="mb-4 flex items-center gap-2 rounded-2xl border border-violet-200 bg-violet-50/60 p-3 text-sm text-violet-900 transition hover:border-violet-400"
+      >
+        <span aria-hidden="true">⚖️</span>
+        <span>
+          <strong>¿Dudas legales?</strong> Pregúntale a la IA sobre tu arriendo (canon, reajuste, terminación, depósitos…). Responde citando la norma.
+        </span>
+        <span className="ml-auto flex-none text-xs font-semibold text-violet-700">Abrir →</span>
+      </a>
+      )}
       {/* Notas del expediente: secundario → plegado para no saturar el cierre. */}
       {section === "revisar" && (
       <details className="group mb-4 rounded-2xl border border-slate-200 bg-white/85 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
