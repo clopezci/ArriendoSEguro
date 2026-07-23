@@ -33,9 +33,17 @@ export function getVisionProvider(): VisionProvider {
     // Proveedor propio: usar SOLO modelos válidos para ESE proveedor. NO mezclar
     // modelos de Groq (darían 404 en Gemini/OpenAI).
     const isGemini = baseUrl.includes("generativelanguage.googleapis.com");
-    const fallback = isGemini ? "gemini-1.5-flash" : "gpt-4o-mini";
-    const primary = visionModel || (isGemini ? "gemini-2.0-flash" : "gpt-4o-mini");
-    models = [...new Set([primary, fallback].filter(Boolean))];
+    if (isGemini) {
+      // Se prueba el configurado primero, luego alias/modelos VIGENTES (Google retira
+      // periódicamente 1.5/2.0). "gemini-flash-latest" apunta siempre al flash actual.
+      models = [
+        ...new Set(
+          [visionModel, "gemini-flash-latest", "gemini-2.5-flash", "gemini-2.0-flash"].filter(Boolean) as string[],
+        ),
+      ];
+    } else {
+      models = [...new Set([visionModel || "gpt-4o-mini", "gpt-4o-mini"].filter(Boolean) as string[])];
+    }
   } else {
     // Por defecto (Groq): modelos de visión de Groq.
     models = ["meta-llama/llama-4-scout-17b-16e-instruct", "meta-llama/llama-4-maverick-17b-128e-instruct"];
