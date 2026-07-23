@@ -24,6 +24,9 @@ const SENTRY_IGNORE_ERRORS: (string | RegExp)[] = [
   "AbortError",
   /Non-Error promise rejection captured/i,
   "ResizeObserver loop", // benigno del navegador
+  "not a child of this node", // extensiones traductoras (Google Translate)
+  /MetaMask/i, // extensión de billetera cripto
+  /ethereum/i,
 ];
 
 /** Opciones compartidas por cliente y servidor. */
