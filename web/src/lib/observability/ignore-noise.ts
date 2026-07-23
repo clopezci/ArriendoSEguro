@@ -28,6 +28,11 @@ const BENIGN_PATTERNS: RegExp[] = [
   /insertBefore.*Node/i,
   /removeChild.*Node/i,
   /The node (before|to be removed) /i,
+  // Extensiones de billetera cripto (MetaMask, etc.) que se inyectan en la página.
+  /MetaMask/i,
+  /ethereum/i,
+  /web3/i,
+  /Cannot redefine property: ethereum/i,
 ];
 
 /** ¿El mensaje de error es ruido benigno que debemos ignorar? */
