@@ -19,22 +19,27 @@ import "server-only";
 export type VisionProvider = { apiKey: string; baseUrl: string; models: string[] };
 
 export function getVisionProvider(): VisionProvider {
-  const apiKey = process.env.AI_VISION_API_KEY?.trim() || process.env.AI_API_KEY?.trim() || "";
-  const baseUrl = (
-    process.env.AI_VISION_BASE_URL?.trim() ||
-    process.env.AI_BASE_URL?.trim() ||
-    "https://api.groq.com/openai/v1"
-  ).replace(/\/$/, "");
-  const models = [
-    ...new Set(
-      [
-        process.env.AI_VISION_MODEL?.trim(),
-        // Defaults de Groq (por si no se configura un proveedor de visión aparte).
-        "meta-llama/llama-4-scout-17b-16e-instruct",
-        "meta-llama/llama-4-maverick-17b-128e-instruct",
-      ].filter(Boolean) as string[],
-    ),
-  ];
+  const visionKey = process.env.AI_VISION_API_KEY?.trim();
+  const visionBase = process.env.AI_VISION_BASE_URL?.trim();
+  const visionModel = process.env.AI_VISION_MODEL?.trim();
+  // ¿Se configuró un proveedor de visión aparte? (cualquiera de las tres variables)
+  const usingCustom = Boolean(visionKey || visionBase || visionModel);
+
+  const apiKey = visionKey || process.env.AI_API_KEY?.trim() || "";
+  const baseUrl = (visionBase || process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/$/, "");
+
+  let models: string[];
+  if (usingCustom) {
+    // Proveedor propio: usar SOLO modelos válidos para ESE proveedor. NO mezclar
+    // modelos de Groq (darían 404 en Gemini/OpenAI).
+    const isGemini = baseUrl.includes("generativelanguage.googleapis.com");
+    const fallback = isGemini ? "gemini-1.5-flash" : "gpt-4o-mini";
+    const primary = visionModel || (isGemini ? "gemini-2.0-flash" : "gpt-4o-mini");
+    models = [...new Set([primary, fallback].filter(Boolean))];
+  } else {
+    // Por defecto (Groq): modelos de visión de Groq.
+    models = ["meta-llama/llama-4-scout-17b-16e-instruct", "meta-llama/llama-4-maverick-17b-128e-instruct"];
+  }
   return { apiKey, baseUrl, models };
 }
 
