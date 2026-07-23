@@ -129,16 +129,8 @@ export function PropertyDocUpload({
     }
   }
 
-  // Valida una sola vez cuando ya hay documentos al montar (así el veredicto se
-  // muestra aunque recargues la página, no solo justo después de subir).
-  const verifiedOnce = useRef(false);
-  useEffect(() => {
-    if (docs.length > 0 && !verifiedOnce.current) {
-      verifiedOnce.current = true;
-      void runVerify();
-    }
-  }, [docs.length, runVerify]);
-
+  // Ahorro de costo: la validación IA corre SOLO al subir (no al reabrir la
+  // página). El veredicto se muestra en el momento de subir el documento.
   async function remove(id: string) {
     if (!user) return;
     if (!confirm("¿Quitar este documento? Esta acción no se puede deshacer.")) return;
@@ -151,7 +143,6 @@ export function PropertyDocUpload({
       if (res.ok) {
         setVerify(null);
         setMsg("");
-        verifiedOnce.current = false;
         await refresh();
         onUploaded?.();
       } else {

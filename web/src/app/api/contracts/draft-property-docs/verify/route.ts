@@ -108,8 +108,10 @@ export async function POST(request: Request) {
   if (!snap || snap.empty) return NextResponse.json({ success: true, available: true, status: "skipped", reason: "no_doc" });
 
   const rows = snap.docs
-    .map((d) => d.data() as { storagePath?: string; contentType?: string; fileName?: string; uploadedAt?: string })
+    .map((d) => d.data() as { storagePath?: string; contentType?: string; fileName?: string; uploadedAt?: string; docType?: string })
+    .filter((r) => r.docType !== "poder") // el poder se valida aparte (verify-poder)
     .sort((a, b) => (b.uploadedAt ?? "").localeCompare(a.uploadedAt ?? ""));
+  if (rows.length === 0) return NextResponse.json({ success: true, available: true, status: "skipped", reason: "no_doc" });
   const latest = rows[0];
 
   const contentType = (latest.contentType ?? "").toLowerCase();

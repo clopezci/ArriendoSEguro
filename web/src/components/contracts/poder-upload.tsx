@@ -18,7 +18,24 @@ export function PoderUpload({ contractDraftId, onUploaded }: { contractDraftId: 
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [expanded, setExpanded] = useState(false);
+  const [verify, setVerify] = useState<{ status: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const runVerify = useCallback(async () => {
+    if (!user || !contractDraftId) return;
+    setVerify({ status: "checking" });
+    try {
+      const res = await fetch("/api/contracts/draft-property-docs/verify-poder", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ contractDraftId }),
+      });
+      const j = (await res.json()) as { status?: string };
+      setVerify({ status: res.ok && j.status ? j.status : "skipped" });
+    } catch {
+      setVerify({ status: "skipped" });
+    }
+  }, [user, contractDraftId]);
 
   const refresh = useCallback(async () => {
     if (!user || !contractDraftId) return;
@@ -55,6 +72,7 @@ export function PoderUpload({ contractDraftId, onUploaded }: { contractDraftId: 
       setMsg("Poder subido ✓");
       await refresh();
       onUploaded?.();
+      void runVerify();
     } catch {
       setMsg("Error de red al subir el poder. Revisa tu conexión e intenta de nuevo.");
     } finally {
@@ -83,7 +101,7 @@ export function PoderUpload({ contractDraftId, onUploaded }: { contractDraftId: 
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
         body: JSON.stringify({ id }),
       });
-      if (res.ok) { setMsg(""); await refresh(); onUploaded?.(); }
+      if (res.ok) { setMsg(""); setVerify(null); await refresh(); onUploaded?.(); }
       else setMsg("No se pudo quitar el poder. Intenta de nuevo.");
     } catch {
       setMsg("Error de red al quitar el poder.");
@@ -126,6 +144,16 @@ export function PoderUpload({ contractDraftId, onUploaded }: { contractDraftId: 
             </li>
           ))}
         </ul>
+      )}
+      {verify?.status === "checking" && <p className="mt-2 text-[11px] text-slate-500">Revisando el poder con IA…</p>}
+      {verify && (verify.status === "wrong_type" || verify.status === "match") && (
+        <div className={`mt-2 rounded-xl border-2 p-2.5 text-xs ${verify.status === "wrong_type" ? "border-rose-200 bg-rose-50 text-rose-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>
+          {verify.status === "wrong_type" ? (
+            <>⚠️ <b>Este archivo no parece un poder</b> (documento legal / autorización). Revisa que hayas subido el documento correcto. Es orientativo; si estás seguro, puedes continuar.</>
+          ) : (
+            <>✓ Revisión IA: el archivo parece un documento/poder válido. Es orientativo; tu declaración jurada respalda la gestión.</>
+          )}
+        </div>
       )}
     </div>
   );
