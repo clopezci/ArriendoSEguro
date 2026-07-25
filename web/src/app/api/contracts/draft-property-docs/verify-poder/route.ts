@@ -6,6 +6,7 @@ import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { DRAFT_PROPERTY_DOCS_COLLECTION } from "@/domain/contracts/draftPropertyDocs";
 import { extractDocContent } from "@/lib/documents/extractDocContent";
 import { getVisionProvider } from "@/lib/documents/visionProvider";
+import { buildUserContent } from "@/lib/documents/visionMessage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -68,22 +69,17 @@ export async function POST(request: Request) {
   const objectPath = (latest.storagePath ?? "").startsWith(gsPrefix) ? (latest.storagePath ?? "").slice(gsPrefix.length) : "";
   if (!objectPath) return NextResponse.json({ success: true, available: true, status: "skipped", reason: "no_doc" });
 
-  let visionImageUrl: string | null = null;
-  let textContent: string | null = null;
+  let extracted: Awaited<ReturnType<typeof extractDocContent>>;
   try {
     const [buf] = await getStorage().bucket(bucketName).file(objectPath).download();
-    const ex = await extractDocContent(buf, (latest.contentType ?? "").toLowerCase(), (latest.fileName ?? "").toLowerCase());
-    if (ex.kind === "image") visionImageUrl = ex.imageDataUrl;
-    else if (ex.kind === "text") textContent = ex.text;
-    else return NextResponse.json({ success: true, available: true, status: "skipped", reason: ex.reason });
+    extracted = await extractDocContent(buf, (latest.contentType ?? "").toLowerCase(), (latest.fileName ?? "").toLowerCase());
   } catch {
     return NextResponse.json({ success: true, available: true, status: "skipped", reason: "download_error" });
   }
-
-  const useVision = Boolean(visionImageUrl);
-  const messages = useVision
-    ? [{ role: "user", content: [{ type: "text", text: POWER_PROMPT }, { type: "image_url", image_url: { url: visionImageUrl } }] }]
-    : [{ role: "user", content: `${POWER_PROMPT}\n\nTEXTO DEL DOCUMENTO:\n"""\n${textContent ?? ""}\n"""` }];
+  if (extracted.kind === "unsupported") {
+    return NextResponse.json({ success: true, available: true, status: "skipped", reason: extracted.reason });
+  }
+  const messages = [{ role: "user", content: buildUserContent(POWER_PROMPT, extracted) }];
 
   let providerDetail = "";
   for (const model of vision.models) {

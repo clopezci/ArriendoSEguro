@@ -47,6 +47,16 @@ export default function PlansPage() {
   const [orderId, setOrderId] = useState("");
   const [showRedirectConfirm, setShowRedirectConfirm] = useState(false);
   const [brebViaWompi, setBrebViaWompi] = useState(false);
+  const [brebEnabled, setBrebEnabled] = useState(process.env.NEXT_PUBLIC_BREB_ENABLED === "true");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/platform-payments/breb/status", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j: { enabled?: boolean }) => { if (!cancelled && j?.enabled) setBrebEnabled(true); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
   const [removingClause, setRemovingClause] = useState(false);
   const [loading, setLoading] = useState(false);
   const [pricing, setPricing] = useState<ActivePricing | null>(null);
@@ -549,7 +559,7 @@ export default function PlansPage() {
               ? `Pagar ${formatCopPlain(cart.totalCop)} COP`
               : "Activar Plan Plus"}
           </button>
-          {process.env.NEXT_PUBLIC_BREB_ENABLED === "true" && (
+          {brebEnabled && (
             <button
               type="button"
               onClick={() => void createPlusOrder("breb")}

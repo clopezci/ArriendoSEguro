@@ -13,10 +13,12 @@ import "server-only";
 export type ExtractedContent =
   | { kind: "image"; imageDataUrl: string; mime: string }
   | { kind: "text"; text: string }
+  | { kind: "pdf"; pdfDataUrl: string } // PDF (incl. ESCANEADO) → se envía como archivo a la IA de visión
   | { kind: "unsupported"; reason: string };
 
 const MAX_TEXT_CHARS = 15_000;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_PDF_BYTES = 20 * 1024 * 1024;
 
 function guessMime(contentType: string, fileName: string): string {
   const ct = contentType.toLowerCase();
@@ -51,9 +53,16 @@ export async function extractDocContent(
       const pdf = await getDocumentProxy(new Uint8Array(bytes));
       const { text } = await extractText(pdf, { mergePages: true });
       const clean = (typeof text === "string" ? text : (text as string[]).join("\n")).trim();
-      if (clean.length < 20) return { kind: "unsupported", reason: "pdf_scanned" };
+      if (clean.length < 20) {
+        // Escaneado (sin capa de texto): enviamos el PDF como ARCHIVO a la IA de
+        // visión (OpenAI lo rasteriza y lo lee). Así también se validan escaneados.
+        if (bytes.length > MAX_PDF_BYTES) return { kind: "unsupported", reason: "too_large" };
+        return { kind: "pdf", pdfDataUrl: `data:application/pdf;base64,${bytes.toString("base64")}` };
+      }
       return { kind: "text", text: clean.slice(0, MAX_TEXT_CHARS) };
     } catch {
+      // Falló la extracción de texto: intentamos como archivo PDF a la IA de visión.
+      if (bytes.length <= MAX_PDF_BYTES) return { kind: "pdf", pdfDataUrl: `data:application/pdf;base64,${bytes.toString("base64")}` };
       return { kind: "unsupported", reason: "pdf_error" };
     }
   }

@@ -7,6 +7,7 @@ import { DRAFT_PROPERTY_DOCS_COLLECTION } from "@/domain/contracts/draftProperty
 import { addressMatches } from "@/domain/documents/documentMatch";
 import { extractDocContent } from "@/lib/documents/extractDocContent";
 import { getVisionProvider } from "@/lib/documents/visionProvider";
+import { buildUserContent, needsVision } from "@/lib/documents/visionMessage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -122,31 +123,27 @@ export async function POST(request: Request) {
   const objectPath = (latest.storagePath ?? "").startsWith(gsPrefix) ? (latest.storagePath ?? "").slice(gsPrefix.length) : "";
   if (!objectPath) return NextResponse.json({ success: true, available: true, status: "skipped", reason: "no_doc" });
 
-  // Descargamos el archivo y usamos BASE64 (universal: lo aceptan OpenAI, Gemini
-  // y Groq). Para PDF/Word extraemos el texto.
-  let visionImageUrl: string | null = null;
-  let textContent: string | null = null;
+  // Extraemos el contenido: imagen (base64), PDF con texto (texto), PDF escaneado
+  // (archivo a la IA de visión) o Word (texto).
+  let extracted: Awaited<ReturnType<typeof extractDocContent>>;
   try {
     const [buf] = await getStorage().bucket(bucketName).file(objectPath).download();
-    const ex = await extractDocContent(buf, contentType, fileName);
-    if (ex.kind === "image") visionImageUrl = ex.imageDataUrl;
-    else if (ex.kind === "text") textContent = ex.text;
-    else return NextResponse.json({ success: true, available: true, status: "skipped", reason: ex.reason });
+    extracted = await extractDocContent(buf, contentType, fileName);
   } catch {
     return NextResponse.json({ success: true, available: true, status: "skipped", reason: "download_error" });
   }
+  if (extracted.kind === "unsupported") {
+    return NextResponse.json({ success: true, available: true, status: "skipped", reason: extracted.reason });
+  }
 
-  const useVision = Boolean(visionImageUrl);
+  const useVision = needsVision(extracted);
   const vision = getVisionProvider();
   const textBase = (process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/$/, "");
   const textModels = [...new Set(([process.env.AI_MODEL?.trim(), "llama-3.3-70b-versatile", "llama-3.1-8b-instant"].filter(Boolean)) as string[])];
   const baseUrl = useVision ? vision.baseUrl : textBase;
   const callKey = useVision ? vision.apiKey : apiKey;
   const candidates = useVision ? vision.models : textModels;
-  const messages =
-    useVision
-      ? [{ role: "user", content: [{ type: "text", text: VISION_PROMPT }, { type: "image_url", image_url: { url: visionImageUrl } }] }]
-      : [{ role: "user", content: `${VISION_PROMPT}\n\nTEXTO DEL DOCUMENTO:\n"""\n${textContent ?? ""}\n"""` }];
+  const messages = [{ role: "user", content: buildUserContent(VISION_PROMPT, extracted) }];
 
   let providerDetail = "";
   for (const model of candidates) {
