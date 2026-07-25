@@ -1,6 +1,7 @@
 import "server-only";
-import { extractDocContent } from "@/lib/documents/extractDocContent";
+import { extractDocContent, type ExtractedContent } from "@/lib/documents/extractDocContent";
 import { getVisionProvider } from "@/lib/documents/visionProvider";
+import { buildUserContent, needsVision } from "@/lib/documents/visionMessage";
 import { getDocValidationSpec } from "@/domain/documents/docValidationSpec";
 import { nameMatches, documentNumberMatches, type MatchVerdict } from "@/domain/documents/documentMatch";
 
@@ -32,19 +33,17 @@ function extractJsonBlock(s: string): string {
 
 async function callAi(
   apiKey: string,
-  isImage: boolean,
   promptText: string,
-  imageDataUrl: string | null,
+  ex: ExtractedContent,
 ): Promise<{ names: string[]; documentNumber: string; docKindMatches: boolean | null } | null> {
-  const vision = isImage ? getVisionProvider() : null;
+  const useVision = needsVision(ex);
+  const vision = useVision ? getVisionProvider() : null;
   const baseUrl = vision ? vision.baseUrl : (process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/$/, "");
   const callKey = vision ? vision.apiKey : apiKey;
   const candidates = vision
     ? vision.models
     : ([...new Set(([process.env.AI_MODEL?.trim(), "llama-3.3-70b-versatile", "llama-3.1-8b-instant"].filter(Boolean)) as string[])]);
-  const messages = isImage
-    ? [{ role: "user", content: [{ type: "text", text: promptText }, { type: "image_url", image_url: { url: imageDataUrl } }] }]
-    : [{ role: "user", content: promptText }];
+  const messages = [{ role: "user", content: buildUserContent(promptText, ex) }];
 
   for (const model of candidates) {
     try {
@@ -94,17 +93,12 @@ export async function validateSupportDoc(params: {
   if (!apiKey) return { status: "skipped", reason: "ai_off", label: spec.label };
 
   // Imagen por URL firmada (preferido) → sin tope de base64. Si no, extrae del buffer.
-  let isImage = false;
-  let visionUrl: string | null = null;
-  let textContent: string | null = null;
+  let ex: ExtractedContent;
   if (params.imageUrl && params.imageUrl.trim()) {
-    isImage = true;
-    visionUrl = params.imageUrl.trim();
+    ex = { kind: "image", imageDataUrl: params.imageUrl.trim(), mime: "image/jpeg" };
   } else if (params.bytes) {
-    const extracted = await extractDocContent(params.bytes, params.contentType, params.fileName);
-    if (extracted.kind === "unsupported") return { status: "skipped", reason: extracted.reason, label: spec.label };
-    if (extracted.kind === "image") { isImage = true; visionUrl = extracted.imageDataUrl; }
-    else { textContent = extracted.text; }
+    ex = await extractDocContent(params.bytes, params.contentType, params.fileName);
+    if (ex.kind === "unsupported") return { status: "skipped", reason: ex.reason, label: spec.label };
   } else {
     return { status: "skipped", reason: "no_doc", label: spec.label };
   }
@@ -115,10 +109,9 @@ export async function validateSupportDoc(params: {
     `{"names": ["..."], "documentNumber": "...", "docKindMatches": true|false} donde: ` +
     `"names" son los nombres del TITULAR de la persona; ` +
     `"documentNumber" es el número de identificación/NIT/matrícula si aplica (solo dígitos, o cadena vacía); ` +
-    `"docKindMatches" indica si el documento realmente ES del tipo descrito. No agregues texto adicional.` +
-    (!isImage && textContent ? `\n\nTEXTO DEL DOCUMENTO:\n"""\n${textContent}\n"""` : "");
+    `"docKindMatches" indica si el documento realmente ES del tipo descrito. No agregues texto adicional.`;
 
-  const ai = await callAi(apiKey, isImage, prompt, visionUrl);
+  const ai = await callAi(apiKey, prompt, ex);
   if (!ai) return { status: "skipped", reason: "provider_error", label: spec.label };
 
   if (ai.names.length === 0 && !ai.documentNumber && ai.docKindMatches === null) {
