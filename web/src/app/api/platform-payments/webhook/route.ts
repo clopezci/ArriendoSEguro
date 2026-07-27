@@ -12,6 +12,21 @@ import { logServerError } from "@/lib/observability/observability";
 
 export const runtime = "nodejs";
 
+/**
+ * Verificación en el navegador. El webhook real lo llama la pasarela por POST; un
+ * GET (abrirlo en el navegador) devolvía 405 sin cuerpo → el navegador mostraba
+ * "ERR_INVALID_RESPONSE" y parecía caído. Este GET responde 200 con un mensaje
+ * claro para confirmar que el endpoint está desplegado y alcanzable.
+ */
+export function GET() {
+  return NextResponse.json({
+    ok: true,
+    endpoint: "platform-payments/webhook",
+    accepts: "POST",
+    info: "Este endpoint recibe los eventos de pago (webhook) de la pasarela por POST. Verlo en el navegador solo confirma que está publicado; regístralo en el panel de la pasarela como URL de eventos.",
+  });
+}
+
 export async function POST(request: Request) {
   const firestore = getAdminFirestore();
   if (!firestore) {
