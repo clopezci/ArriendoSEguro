@@ -45,6 +45,9 @@ export async function POST(request: Request) {
     );
   }
 
+  // Normaliza barras repetidas en path (ej. .app///api → .app/api) al registrar.
+  const webhookUrl = parsed.data.webhookUrl.replace(/([^:]\/)\/+/g, "$1");
+
   const creds = generateHubCredentials();
   const ref = firestore.collection(HUB_APPS_COLLECTION).doc();
   const now = new Date().toISOString();
@@ -54,7 +57,7 @@ export async function POST(request: Request) {
     apiKeyPrefix: creds.apiKeyPrefix,
     apiKeyHash: creds.apiKeyHash,
     hmacSecret: creds.hmacSecret,
-    webhookUrl: parsed.data.webhookUrl,
+    webhookUrl,
     active: true,
     createdAt: now,
   };
@@ -97,7 +100,9 @@ export async function PATCH(request: Request) {
   }
   const patch: Record<string, unknown> = { updatedAt: new Date().toISOString() };
   if (typeof parsed.data.active === "boolean") patch.active = parsed.data.active;
-  if (parsed.data.webhookUrl) patch.webhookUrl = parsed.data.webhookUrl;
+  if (parsed.data.webhookUrl) {
+    patch.webhookUrl = parsed.data.webhookUrl.replace(/([^:]\/)\/+/g, "$1");
+  }
   await ref.set(patch, { merge: true });
   await auditPlatformPaymentEvent(firestore, "admin_hub_app_updated", { appId: parsed.data.id });
 

@@ -1060,6 +1060,40 @@ export default function AdminPage() {
     }
   }
 
+  async function updateHubWebhook(id: string, currentUrl: string) {
+    if (!user) return;
+    const next = window.prompt(
+      "URL de webhook (sin barras dobles). Ejemplo correcto:\nhttps://sst-facil-app.vercel.app/api/payments/hub-webhook",
+      currentUrl.replace(/([^:]\/)\/+/g, "$1"),
+    );
+    if (next == null) return;
+    const trimmed = next.trim();
+    if (!trimmed) {
+      setHubErr("Webhook vacío.");
+      return;
+    }
+    setHubErr("");
+    try {
+      const res = await fetch("/api/admin/hub-apps", {
+        method: "PATCH",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ id, webhookUrl: trimmed }),
+      });
+      const json = (await res.json()) as {
+        success?: boolean;
+        app?: HubAppRow;
+        errors?: { message?: string }[];
+      };
+      if (!res.ok || !json.success || !json.app) {
+        setHubErr(json.errors?.[0]?.message ?? "No se pudo actualizar el webhook.");
+        return;
+      }
+      setHubApps((prev) => prev.map((a) => (a.id === id ? (json.app as HubAppRow) : a)));
+    } catch {
+      setHubErr("Error de red al actualizar el webhook.");
+    }
+  }
+
   async function downloadSurveysCsv() {
     if (!user) return;
     const res = await fetch("/api/admin/surveys-export", { headers: { ...(await buildAuthHeaders(user)) } });
@@ -1766,13 +1800,22 @@ export default function AdminPage() {
                       </td>
                       <td className="px-2 py-1">{a.active ? "Activa" : "Inactiva"}</td>
                       <td className="px-2 py-1">
-                        <button
-                          type="button"
-                          onClick={() => void toggleHubApp(a.id, !a.active)}
-                          className={`rounded border px-2 py-0.5 ${a.active ? "border-rose-400 text-rose-700" : "border-emerald-500 text-emerald-700"}`}
-                        >
-                          {a.active ? "Desactivar" : "Activar"}
-                        </button>
+                        <div className="flex flex-wrap gap-1">
+                          <button
+                            type="button"
+                            onClick={() => void updateHubWebhook(a.id, a.webhookUrl)}
+                            className="rounded border border-slate-300 px-2 py-0.5 text-slate-700"
+                          >
+                            Editar webhook
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void toggleHubApp(a.id, !a.active)}
+                            className={`rounded border px-2 py-0.5 ${a.active ? "border-rose-400 text-rose-700" : "border-emerald-500 text-emerald-700"}`}
+                          >
+                            {a.active ? "Desactivar" : "Activar"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
