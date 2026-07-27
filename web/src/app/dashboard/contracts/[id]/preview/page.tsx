@@ -387,6 +387,16 @@ export default function PreviewStepPage() {
     }
   }, [savedVersion]);
 
+  // Si aparece un error mientras el usuario está en «firma» o «pdf», sube al
+  // bloque de faltantes: antes el error salía arriba y el usuario, con el botón
+  // abajo, no lo veía (parecía que "no pasaba nada").
+  useEffect(() => {
+    if (renderErrors.length > 0 && (section === "firma" || section === "pdf")) {
+      const el = document.getElementById("faltantes-alerta");
+      if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+    }
+  }, [renderErrors, section]);
+
   async function requestPreview() {
     if (!activeDraft) return;
     // Releemos el borrador FRESCO de localStorage: tras "Importar datos de
@@ -919,9 +929,11 @@ export default function PreviewStepPage() {
         </div>
       </details>
       )}
-      {/* PRIMERO: completar/importar lo que falta. Sin esto no se puede generar. */}
-      {(section === "documentos" || section === "revisar") && renderErrors.length > 0 && (
-        <div role="alert" className="mb-4 rounded-3xl border-2 border-amber-300 bg-amber-50/70 p-5 text-sm text-amber-950 shadow-[0_6px_20px_rgba(245,165,36,0.12)]">
+      {/* PRIMERO: completar/importar lo que falta. Sin esto no se puede generar.
+          Se muestra también en «firma» y «pdf»: antes esos pasos fallaban en
+          silencio (el botón parpadeaba / "revisa los errores" sin verse ninguno). */}
+      {(section === "documentos" || section === "revisar" || section === "firma" || section === "pdf") && renderErrors.length > 0 && (
+        <div id="faltantes-alerta" role="alert" className="mb-4 rounded-3xl border-2 border-amber-300 bg-amber-50/70 p-5 text-sm text-amber-950 shadow-[0_6px_20px_rgba(245,165,36,0.12)]">
           <p className="flex items-center gap-2 text-base font-black">📋 Completa esto para ver, imprimir y firmar</p>
           <p className="mt-0.5 text-xs text-amber-900/80">
             El contrato aún no se puede generar porque faltan datos. Si invitaste al inquilino o al codeudor, pulsa{" "}
