@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
@@ -101,6 +101,23 @@ export function PartyInvitePanel({
     const t = setInterval(() => void refreshStatus(), 12000);
     return () => clearInterval(t);
   }, [mode, status, refreshStatus]);
+
+  // AUTO-IMPORTA los datos apenas la persona completa. Antes había que pulsar
+  // "Importar" a mano: si el dueño veía "✓ completó" y en vez de importar pulsaba
+  // "Continuar", los datos NO quedaban en el contrato y luego se los volvía a
+  // pedir. Ahora se importan solos (una vez) en cuanto llegan; el botón queda como
+  // respaldo para reimportar. Se rearma si se reinvita a otra persona.
+  const autoImportedRef = useRef(false);
+  useEffect(() => {
+    if (status !== "completed") { autoImportedRef.current = false; return; }
+    if (!contribution || autoImportedRef.current) return;
+    autoImportedRef.current = true;
+    onImport({
+      ...contribution,
+      inviteAttestation: attestation ?? undefined,
+      truthfulnessOathAccepted: Boolean(attestation?.truthfulnessOathAccepted),
+    });
+  }, [status, contribution, attestation, onImport]);
 
   // Crea (o reutiliza) la invitación y devuelve su enlace. El correo con el
   // código de verificación (OTP) siempre se envía desde el servidor. `channel`
@@ -277,7 +294,7 @@ export function PartyInvitePanel({
 
           {status === "completed" && contribution && (
             <div className="rounded-2xl border-2 border-[#12B886]/40 bg-[#12B886]/10 p-3 text-sm text-emerald-800">
-              <p className="font-semibold">La persona completó sus datos ✓</p>
+              <p className="font-semibold">La persona completó sus datos ✓ — ya los importamos a tu contrato.</p>
               {attestation ? (
                 attestation.mode === "third_party" ? (
                   <p className="mt-1 text-xs text-emerald-800/90">
@@ -301,12 +318,12 @@ export function PartyInvitePanel({
                     truthfulnessOathAccepted: Boolean(attestation?.truthfulnessOathAccepted),
                   })
                 }
-                className="mt-2 rounded-xl bg-[#12B886] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105"
+                className="mt-2 rounded-xl border-2 border-[#12B886] bg-white px-4 py-2 text-sm font-semibold text-[#0f9e73] transition hover:bg-emerald-50"
               >
-                Importar sus datos al contrato
+                Volver a importar (opcional)
               </button>
               <p className="mt-1 text-[11px] text-emerald-800/80">
-                Al importar se reemplazan los datos actuales de esta parte con los que envió la persona.
+                Sus datos ya quedaron en el contrato. Usa este botón solo si la persona corrigió algo y quieres traer la última versión.
               </p>
             </div>
           )}

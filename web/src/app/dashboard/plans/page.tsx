@@ -61,8 +61,6 @@ export default function PlansPage() {
   const [returningRef, setReturningRef] = useState<string | null>(null);
   const [returningTxId, setReturningTxId] = useState<string | null>(null);
   const [diag, setDiag] = useState<string>("");
-  const [recRef, setRecRef] = useState("");
-  const [recTx, setRecTx] = useState("");
   const [pricing, setPricing] = useState<ActivePricing | null>(null);
   const [leaseProcessId, setLeaseProcessId] = useState<string | null>(null);
   const [cart, setCart] = useState<CartPreview | null>(null);
@@ -452,32 +450,6 @@ export default function PlansPage() {
     }
   }
 
-  // Reconciliación manual (admin/comercio): pega la referencia de la orden y el id
-  // de la transacción de Wompi (del panel de Wompi) para activar un pago que quedó
-  // sin confirmar. Verifica contra Wompi antes de otorgar el acceso.
-  async function adminReconcile() {
-    if (!user) return;
-    const reference = recRef.trim();
-    const wompiTransactionId = recTx.trim();
-    if (!reference || !wompiTransactionId) {
-      setDiag("Pega la referencia (AS_PLUS_…) y el id de transacción de Wompi.");
-      return;
-    }
-    setDiag("Reconciliando con Wompi…");
-    try {
-      const res = await fetch("/api/platform-payments/reconcile", {
-        method: "POST",
-        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ reference, wompiTransactionId }),
-      });
-      const j = await res.json();
-      setDiag(JSON.stringify(j, null, 2));
-      await loadAccess();
-    } catch {
-      setDiag("No se pudo reconciliar. Revisa la referencia y el id.");
-    }
-  }
-
   async function checkOrderStatus() {
     if (!user || !orderId) return;
     const res = await fetch(`/api/platform-payments/order-status?orderId=${encodeURIComponent(orderId)}`, {
@@ -572,30 +544,9 @@ export default function PlansPage() {
           >
             Diagnóstico de pagos
           </button>
-          {/* Reconciliar manualmente un pago que quedó sin confirmar: pega la
-              referencia (AS_PLUS_…) y el id de la transacción del panel de Wompi. */}
-          <div className="mt-2 flex w-full flex-wrap items-center gap-2">
-            <span className="font-medium text-amber-800">Reconciliar pago Wompi:</span>
-            <input
-              value={recRef}
-              onChange={(e) => setRecRef(e.target.value)}
-              placeholder="Referencia (AS_PLUS_…)"
-              className="min-w-[220px] flex-1 rounded border border-amber-600/50 bg-white px-2 py-1 text-slate-800"
-            />
-            <input
-              value={recTx}
-              onChange={(e) => setRecTx(e.target.value)}
-              placeholder="Id de transacción Wompi"
-              className="min-w-[220px] flex-1 rounded border border-amber-600/50 bg-white px-2 py-1 text-slate-800"
-            />
-            <button
-              type="button"
-              onClick={() => void adminReconcile()}
-              className="rounded border border-emerald-600/60 bg-emerald-50 px-2 py-1 font-semibold text-emerald-700 hover:bg-emerald-100"
-            >
-              Reconciliar y activar
-            </button>
-          </div>
+          <span className="text-[11px] text-amber-700">
+            (Para reconciliar un pago manualmente, ve al panel de Admin → «Reconciliar pago Wompi».)
+          </span>
           {diag && (
             <pre className="mt-2 w-full max-h-72 overflow-auto rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-emerald-100">
               {diag}

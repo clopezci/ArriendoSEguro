@@ -429,6 +429,28 @@ export default function NuevoPage() {
       ? { ...d, tenant: { ...d.tenant, ...party } }
       : { ...d, hasSolidaryCoDebtor: true, solidaryCoDebtor: { ...d.solidaryCoDebtor, ...party } });
     if (updated) void flushDraftToServer(updated);
+    // Reflejamos también en las respuestas del recorrido para que la vista previa
+    // MUESTRE los datos importados y ninguna validación los vuelva a pedir.
+    setARaw((prev) => role === "tenant"
+      ? {
+          ...prev,
+          tenantName: party.fullName || prev.tenantName,
+          tenantDocType: party.documentType || prev.tenantDocType,
+          tenantDocNumber: party.documentNumber || prev.tenantDocNumber,
+          tenantCity: party.city || prev.tenantCity,
+          tenantEmail: party.email || prev.tenantEmail,
+          tenantPhone: party.phone || prev.tenantPhone,
+        }
+      : {
+          ...prev,
+          hasCodebtor: "yes",
+          codebtorName: party.fullName || prev.codebtorName,
+          codebtorDocType: party.documentType || prev.codebtorDocType,
+          codebtorDocNumber: party.documentNumber || prev.codebtorDocNumber,
+          codebtorCity: party.city || prev.codebtorCity,
+          codebtorEmail: party.email || prev.codebtorEmail,
+          codebtorPhone: party.phone || prev.codebtorPhone,
+        });
   }, []);
 
   const next = useCallback(() => {
