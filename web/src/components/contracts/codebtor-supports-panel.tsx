@@ -221,7 +221,7 @@ export function PartySupportsPanel({ contractId, variant = "page", party = "code
 
   async function onDelete(supportId: string) {
     if (!user || !versionId) return;
-    if (!window.confirm("¿Eliminar este soporte del expediente? Esta acción no se puede deshacer.")) return;
+    // Sin window.confirm: iOS en modo app instalada (PWA) lo bloquea. El botón es explícito.
     setBusy(true);
     setMsg("");
     try {
@@ -353,7 +353,7 @@ export function PartySupportsPanel({ contractId, variant = "page", party = "code
                         {done ? "Adjuntar otro" : "Adjuntar"}
                         <input
                           type="file"
-                          accept="application/pdf,image/png,image/jpeg"
+                          accept="image/*,application/pdf"
                           className="sr-only"
                           disabled={busy}
                           onChange={(e) => {

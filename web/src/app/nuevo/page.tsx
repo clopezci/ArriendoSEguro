@@ -119,9 +119,9 @@ const EMPTY: Answers = {
   canon: "", commercialValue: "", noCommercialValue: false,
   reqDocsTenant: [], reqDocsCodebtor: [],
   startDate: "", termMonths: "12", paymentDay: "5",
-  tenantMode: "self", tenantName: "",
+  tenantMode: "invite", tenantName: "",
   tenantDocType: "CC", tenantDocNumber: "", tenantCity: "", tenantEmail: "", tenantPhone: "", tenantAuth: false, tenantIncome: "",
-  hasCodebtor: "", codebtorName: "", codebtorMode: "self",
+  hasCodebtor: "", codebtorName: "", codebtorMode: "invite",
   codebtorDocType: "CC", codebtorDocNumber: "", codebtorCity: "", codebtorEmail: "", codebtorPhone: "", codebtorAuth: false, codebtorIncome: "",
   utilitiesParty: "", adminParty: "", paymentSupportPolicy: "notifications", clauses: [], clauseOther: "", clauseCount: 1,
   docMethod: "", docPhone: "", docEmail: "",
@@ -449,6 +449,13 @@ export default function NuevoPage() {
     if (ni >= QUESTIONS.length) { setMode("review"); return; }
     setI(ni);
   }, [persist, speak, relisten]);
+
+  // Al cambiar de paso (o entrar a revisión), vuelve SIEMPRE al inicio de la
+  // pantalla para que la persona no quede abajo ni se pierda. Funciona en iPhone,
+  // Android y PC.
+  useEffect(() => {
+    try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
+  }, [i, mode]);
 
   // Confirmación final: registra el juramento del inmueble (con su fecha para la
   // evidencia) y guarda en la cuenta AHORA (sin esperar el debounce) antes de cerrar.
@@ -1306,12 +1313,12 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
         <div className="flex flex-col gap-2.5">
           <div>
             <p className="mb-1.5 text-sm font-medium text-slate-600">Canon mensual</p>
-            <InputMic autoFocus inputMode="numeric" placeholder={q.ph} value={a.canon} onChange={(e) => setA({ ...a, canon: e.target.value })} voice={(t) => setA({ ...a, canon: onlyDigits(t) })} />
+            <InputMic autoFocus inputMode="numeric" placeholder={q.ph} value={a.canon ? Number(onlyDigits(a.canon)).toLocaleString("es-CO") : ""} onChange={(e) => setA({ ...a, canon: onlyDigits(e.target.value) })} voice={(t) => setA({ ...a, canon: onlyDigits(t) })} />
           </div>
           {!a.noCommercialValue && (
             <div>
               <p className="mb-1.5 text-sm font-medium text-slate-600">Valor comercial del inmueble</p>
-              <InputMic inputMode="numeric" placeholder="$ 200.000.000" value={a.commercialValue} onChange={(e) => setA({ ...a, commercialValue: e.target.value })} voice={(t) => setA({ ...a, commercialValue: onlyDigits(t) })} />
+              <InputMic inputMode="numeric" placeholder="$ 200.000.000" value={a.commercialValue ? Number(onlyDigits(a.commercialValue)).toLocaleString("es-CO") : ""} onChange={(e) => setA({ ...a, commercialValue: onlyDigits(e.target.value) })} voice={(t) => setA({ ...a, commercialValue: onlyDigits(t) })} />
               {cap > 0 && (
                 <p className={`mt-1.5 text-sm font-medium ${over ? "text-rose-700" : "text-emerald-700"}`}>
                   {over ? "⚠️ " : "✓ "}Tope legal (1%, Ley 820): ${cap.toLocaleString("es-CO")} máx.{over ? " — el canon lo supera." : ""}
@@ -1319,6 +1326,9 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               )}
             </div>
           )}
+          {/* La opción "no conozco el valor" SOLO aplica si NO ingresaste un valor
+              comercial (si ya lo pusiste, se oculta para no confundir). */}
+          {!a.commercialValue && (
           <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-amber-200 bg-amber-50/60 p-4 text-sm text-slate-700">
             <input
               type="checkbox"
@@ -1332,6 +1342,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               no valida el tope en este caso. Queda registrado con evidencia (fecha e IP).
             </span>
           </label>
+          )}
         </div>
       );
     }
@@ -1491,9 +1502,12 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
               <button type="button" onClick={() => setA({ ...a, adminParty: "no_aplica" })} className={chip(a.adminParty === "no_aplica")}>No aplica</button>
             </div>
           </div>
-          <div>
-            <p className="mb-1.5 text-sm font-medium text-slate-600">Notificaciones y comprobantes de pago</p>
-            <p className="mb-2 text-xs text-slate-500">Elige cómo se maneja el pago del canon. Se refleja en el contrato y en lo que aceptan las partes al firmar.</p>
+          <div className="rounded-2xl border-2 border-[#5646E5]/40 bg-[#ECE9FB]/40 p-3.5 ring-1 ring-[#5646E5]/10">
+            <div className="mb-1.5 flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#5646E5] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">★ Importante</span>
+              <p className="text-sm font-bold text-slate-800">Notificaciones y comprobantes de pago</p>
+            </div>
+            <p className="mb-2 text-xs text-slate-600">Elige cómo se maneja el pago del canon. Se refleja en el contrato y en lo que aceptan las partes al firmar.</p>
             <div className="flex flex-col gap-2.5">
               {([
                 { v: "notifications_and_upload", t: "📩📎 Recordatorios + el inquilino sube el soporte", d: "Le recordamos el pago al inquilino y él debe registrar el comprobante en la plataforma. Si no lo hace, se activa un protocolo de avisos (incluido el codeudor). Deja constancia y facilita el seguimiento. Agrega una cláusula al contrato." },
@@ -1751,7 +1765,9 @@ function LawThermometer({ a, draft }: { a: Answers; draft: ContractDraft | null 
         <span style={{ color }}>{done}/{total} · {label}</span>
       </div>
       <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-[#EAE6DF]">
-        <motion.div className="h-full rounded-full" style={{ backgroundColor: color }} animate={{ width: `${pct}%` }} transition={{ duration: 0.5 }} />
+        {/* CSS transition (no framer-motion): en iPhone/iOS la animación de ancho de
+            framer a veces no arrancaba al montar y la barra quedaba invisible. */}
+        <div className="h-full rounded-full transition-[width] duration-500 ease-out" style={{ backgroundColor: color, width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -1762,9 +1778,11 @@ function ProgressBar({ pct }: { pct: number }) {
   const extra = Math.max(0, pct - 50);
   return (
     <div className="mb-6 flex items-center gap-2">
-      <div className="flex h-[11px] flex-1 overflow-hidden rounded-full bg-[#EAE6DF]">
-        <motion.div className="h-full bg-gradient-to-r from-[#5646E5] to-[#8B6BFF]" animate={{ width: `${basic}%` }} transition={{ duration: 0.5 }} />
-        <motion.div className="h-full bg-gradient-to-r from-[#12B886] to-[#43DDA6]" animate={{ width: `${extra}%` }} transition={{ duration: 0.5 }} />
+      {/* CSS transition en vez de framer-motion: en iPhone la barra a veces quedaba
+          invisible porque la animación de ancho no arrancaba al montar. */}
+      <div className="flex h-3 flex-1 overflow-hidden rounded-full bg-[#EAE6DF]">
+        <div className="h-full bg-gradient-to-r from-[#5646E5] to-[#8B6BFF] transition-[width] duration-500 ease-out" style={{ width: `${basic}%` }} />
+        <div className="h-full bg-gradient-to-r from-[#12B886] to-[#43DDA6] transition-[width] duration-500 ease-out" style={{ width: `${extra}%` }} />
       </div>
       <span className="w-11 text-right text-sm font-bold tabular-nums">{pct}%</span>
     </div>

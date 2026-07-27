@@ -133,7 +133,7 @@ export function PropertyDocumentsPanel({
                     {busyType === t ? "Subiendo…" : done ? "Adjuntar otro" : "Adjuntar"}
                     <input
                       type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      accept="image/*,application/pdf"
                       className="sr-only"
                       disabled={busyType === t}
                       onChange={(e) => {

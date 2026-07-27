@@ -47,6 +47,19 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
     sin que pueda darle destinación comercial, industrial, turística, hotelera, subarrendarlo, cederlo o permitir su
     ocupación por terceros no autorizados, salvo autorización previa, expresa y escrita de EL ARRENDADOR.
   </p>
+  <p>
+    <b>Prohibición de uso ilícito.</b> EL ARRENDATARIO se obliga a no destinar el inmueble, ni permitir que se destine,
+    a ninguna actividad ilícita, delictiva o contraria a la ley, el orden público o las buenas costumbres. En particular,
+    queda expresamente prohibido usar el inmueble para: el tráfico, fabricación, almacenamiento o distribución de
+    estupefacientes o sustancias controladas; la trata de personas, la explotación sexual, la explotación de personas o el
+    trabajo forzado; la explotación sexual comercial de niños, niñas y adolescentes o cualquier forma de abuso o
+    pornografía infantil; el lavado de activos, la financiación de actividades ilegales, el contrabando o la tenencia
+    ilegal de armas o explosivos; el ocultamiento de personas contra su voluntad; o cualquier otra conducta tipificada
+    como delito en la legislación colombiana. El incumplimiento de esta prohibición constituye causal de terminación
+    inmediata del contrato por incumplimiento grave, sin perjuicio de las acciones legales, penales y de restitución que
+    correspondan, y de la obligación de EL ARRENDATARIO de indemnizar los perjuicios ocasionados. EL ARRENDADOR podrá
+    poner los hechos en conocimiento de las autoridades competentes.
+  </p>
 
   <h2>CUARTA. CANON DE ARRENDAMIENTO Y OBLIGACIÓN DE PAGO</h2>
   <p>
@@ -129,6 +142,7 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
     <li>Pagar oportunamente el canon de arrendamiento en la forma y fecha pactadas.</li>
     <li>Pagar los servicios públicos, administración u otros gastos que le correspondan según lo pactado.</li>
     <li>Usar el inmueble exclusivamente para vivienda.</li>
+    <li>No destinar el inmueble a actividades ilícitas o delictivas (tráfico de drogas, explotación de personas, explotación o abuso infantil, lavado de activos u otras), conforme a la cláusula de destinación.</li>
     <li>Cuidar el inmueble y responder por daños causados por mal uso, culpa o negligencia.</li>
     <li>No subarrendar, ceder ni cambiar la destinación sin autorización previa, expresa y escrita.</li>
     <li>Restituir el inmueble al finalizar el contrato en condiciones adecuadas.</li>

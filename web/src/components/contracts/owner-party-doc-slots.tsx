@@ -102,7 +102,7 @@ export function OwnerPartyDocSlots({
                   {busy ? "Subiendo…" : "Adjuntar"}
                   <input
                     type="file"
-                    accept="application/pdf,image/jpeg,image/png,image/webp"
+                    accept="image/*,application/pdf"
                     disabled={busy || busyKey !== null}
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f, key); e.target.value = ""; }}
                     className="sr-only"

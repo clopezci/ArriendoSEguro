@@ -70,7 +70,8 @@ export function InviteSupportsUpload({
   }
 
   async function remove(id: string) {
-    if (!window.confirm("¿Quitar este documento? Esta acción no se puede deshacer.")) return;
+    // Sin window.confirm: iOS en modo app instalada (PWA) lo bloquea y el botón
+    // "no hacía nada". El botón "Quitar" es explícito y se puede volver a subir.
     try {
       const res = await fetch("/api/party-invite/support/delete", {
         method: "POST",
@@ -125,7 +126,7 @@ export function InviteSupportsUpload({
                 ) : (
                   <input
                     type="file"
-                    accept="application/pdf,image/jpeg,image/png,image/webp"
+                    accept="image/*,application/pdf"
                     disabled={busy || busyKey !== null}
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f, key); e.target.value = ""; }}
                     className="mt-1.5 block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-[#5646E5] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white disabled:opacity-50"
@@ -144,7 +145,7 @@ export function InviteSupportsUpload({
         <input
           ref={extraRef}
           type="file"
-          accept="application/pdf,image/jpeg,image/png,image/webp"
+          accept="image/*,application/pdf"
           disabled={busyKey !== null}
           onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }}
           className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-[#5646E5] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white disabled:opacity-50"
