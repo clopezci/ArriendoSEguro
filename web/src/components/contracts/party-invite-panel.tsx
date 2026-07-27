@@ -45,7 +45,10 @@ export function PartyInvitePanel({
   // (aún sin slot: no se sondea el estado de otro codeudor); tras crear, el
   // servidor devuelve el slot asignado y ya se sondea ese.
   const [activeSlot, setActiveSlot] = useState<number>(assignNewSlot ? -1 : codebtorSlot);
-  const [mode, setMode] = useState<Mode>("self");
+  // Este panel se muestra cuando el dueño ya eligió "Se lo pido a él/ella", así que
+  // por defecto arranca en modo "invite" (antes salía "Los ingreso yo" preseleccionado
+  // aunque el dueño hubiera elegido invitar, lo cual confundía).
+  const [mode, setMode] = useState<Mode>("invite");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"none" | "active" | "completed">("none");
@@ -56,6 +59,7 @@ export function PartyInvitePanel({
   const [inviteUrl, setInviteUrl] = useState("");
   const [phone, setPhone] = useState("");
   const [currentInviteeEmail, setCurrentInviteeEmail] = useState("");
+  const [reimported, setReimported] = useState(false);
 
   const refreshStatus = useCallback(async () => {
     if (!user) return;
@@ -311,16 +315,18 @@ export function PartyInvitePanel({
               ) : null}
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
                   onImport({
                     ...contribution,
                     inviteAttestation: attestation ?? undefined,
                     truthfulnessOathAccepted: Boolean(attestation?.truthfulnessOathAccepted),
-                  })
-                }
+                  });
+                  setReimported(true);
+                  window.setTimeout(() => setReimported(false), 2500);
+                }}
                 className="mt-2 rounded-xl border-2 border-[#12B886] bg-white px-4 py-2 text-sm font-semibold text-[#0f9e73] transition hover:bg-emerald-50"
               >
-                Volver a importar (opcional)
+                {reimported ? "✓ Datos actualizados" : "Volver a importar (opcional)"}
               </button>
               <p className="mt-1 text-[11px] text-emerald-800/80">
                 Sus datos ya quedaron en el contrato. Usa este botón solo si la persona corrigió algo y quieres traer la última versión.

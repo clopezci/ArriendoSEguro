@@ -156,6 +156,11 @@ export default function PreviewStepPage() {
   const [pdfFeedback, setPdfFeedback] = useState("");
   const [importingParties, setImportingParties] = useState(false);
   const [importMsg, setImportMsg] = useState("");
+  // Se pone en true cuando el auto-import al montar YA intentó traer los datos de
+  // los invitados. La vista previa espera esto para NO validar con datos viejos
+  // (antes había una carrera: la previa corría antes de importar y dejaba clavado
+  // el error "falta nombre/documento del inquilino" aunque sí se hubieran importado).
+  const [autoImportAttempted, setAutoImportAttempted] = useState(false);
   const [startingSignatures, setStartingSignatures] = useState(false);
   const [refreshingSignatures, setRefreshingSignatures] = useState(false);
   const [signatureRoundMessage, setSignatureRoundMessage] = useState<{
@@ -265,13 +270,16 @@ export default function PreviewStepPage() {
   useEffect(() => {
     if (!user || !activeDraft || autoImportRan.current) return;
     autoImportRan.current = true;
-    void importInvitedParties({ silent: true });
+    // Importa PRIMERO lo de los invitados y solo entonces habilita la vista previa,
+    // para que valide con los datos ya importados (no con el borrador viejo).
+    void importInvitedParties({ silent: true }).finally(() => setAutoImportAttempted(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, activeDraft?.id]);
 
   useEffect(() => {
     if (!entitlementsLoaded) return; // evita marca de agua errónea antes de saber si es Plus
     if (!activeDraft) return;
+    if (!autoImportAttempted) return; // espera a que el auto-import termine (evita la carrera)
     if (previewHtml) return;
     if (loadingPreview) return;
     if (renderErrors.length > 0) return;
@@ -280,7 +288,7 @@ export default function PreviewStepPage() {
     // fuera del array de deps para evitar bucle, controlando re-ejecución con
     // las guardas anteriores.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDraft?.id, entitlementsLoaded]);
+  }, [activeDraft?.id, entitlementsLoaded, autoImportAttempted]);
 
   useEffect(() => {
     if (state !== "ready" || !id) return;
@@ -333,8 +341,13 @@ export default function PreviewStepPage() {
       if (imported > 0) {
         const updated = getDraft(id);
         if (updated) await flushDraftToServer(updated).catch(() => {});
-        if (!opts?.silent) setImportMsg(`Importé ${imported} parte(s) que completaron por su enlace. Regenerando la vista previa…`);
-        void requestPreview();
+        // En modo manual regeneramos la previa ya mismo. En modo silencioso (al
+        // montar) NO: la previa la dispara el efecto cuando `autoImportAttempted`
+        // pasa a true, así corre UNA vez y con los datos ya importados.
+        if (!opts?.silent) {
+          setImportMsg(`Importé ${imported} parte(s) que completaron por su enlace. Regenerando la vista previa…`);
+          void requestPreview();
+        }
       } else if (!opts?.silent) {
         setImportMsg("Aún no hay datos completados por invitación para importar. Si invitaste a alguien, espera a que complete su enlace; si no, ingresa los datos en el asistente.");
       }
