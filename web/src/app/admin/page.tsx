@@ -250,6 +250,36 @@ export default function AdminPage() {
   const [hubErr, setHubErr] = useState("");
   const [hubLoading, setHubLoading] = useState(false);
 
+  // Reconciliación manual de un pago Wompi que quedó sin confirmar (sin webhook).
+  const [recRef, setRecRef] = useState("");
+  const [recTx, setRecTx] = useState("");
+  const [recOut, setRecOut] = useState("");
+  const [recBusy, setRecBusy] = useState(false);
+  async function reconcilePayment() {
+    if (!user) return;
+    const reference = recRef.trim();
+    const wompiTransactionId = recTx.trim();
+    if (!reference || !wompiTransactionId) {
+      setRecOut("Pega la referencia (AS_PLUS_…) y el id de transacción de Wompi.");
+      return;
+    }
+    setRecBusy(true);
+    setRecOut("Reconciliando con Wompi…");
+    try {
+      const res = await fetch("/api/platform-payments/reconcile", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ reference, wompiTransactionId }),
+      });
+      const j = await res.json();
+      setRecOut(JSON.stringify(j, null, 2));
+    } catch {
+      setRecOut("No se pudo reconciliar. Revisa la referencia y el id.");
+    } finally {
+      setRecBusy(false);
+    }
+  }
+
   const hintSet = useMemo(() => new Set(publicAdminHintEmails()), []);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -1829,6 +1859,45 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+          </section>
+        )}
+
+        {data && (
+          <section className="mb-6 rounded-xl border border-emerald-400/40 bg-white/95 p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">Reconciliar pago Wompi</h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              Activa manualmente un pago que quedó sin confirmar (cuando el webhook no llegó). Pega la{" "}
+              <strong>referencia</strong> de la orden (<code>AS_PLUS_…</code>) y el <strong>id de la transacción</strong>{" "}
+              del panel de Wompi. Se consulta a Wompi, se valida que esté aprobada con esa referencia y monto, y se
+              otorga el acceso al dueño de la orden. Es idempotente (no duplica).
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <input
+                value={recRef}
+                onChange={(e) => setRecRef(e.target.value)}
+                placeholder="Referencia (AS_PLUS_…)"
+                className="min-w-[240px] flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm text-slate-800"
+              />
+              <input
+                value={recTx}
+                onChange={(e) => setRecTx(e.target.value)}
+                placeholder="Id de transacción Wompi"
+                className="min-w-[240px] flex-1 rounded border border-slate-300 px-2 py-1.5 text-sm text-slate-800"
+              />
+              <button
+                type="button"
+                disabled={recBusy}
+                onClick={() => void reconcilePayment()}
+                className="rounded border border-emerald-600/60 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+              >
+                {recBusy ? "Reconciliando…" : "Reconciliar y activar"}
+              </button>
+            </div>
+            {recOut && (
+              <pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-emerald-100">
+                {recOut}
+              </pre>
+            )}
           </section>
         )}
 
