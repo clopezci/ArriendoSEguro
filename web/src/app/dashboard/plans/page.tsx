@@ -55,7 +55,14 @@ export default function PlansPage() {
   // un botón "Verificar ahora" para que nadie quede en el limbo esperando.
   const [awaitingConfirm, setAwaitingConfirm] = useState(false);
   const [returningContract, setReturningContract] = useState<string | null>(null);
+  // Datos del retorno desde Wompi para reconciliar el pago sin depender del webhook:
+  // `ref` = nuestra referencia (?order=), `txId` = id de transacción que Wompi
+  // agrega a la URL (?id=). Con esos dos consultamos a Wompi directamente.
+  const [returningRef, setReturningRef] = useState<string | null>(null);
+  const [returningTxId, setReturningTxId] = useState<string | null>(null);
   const [diag, setDiag] = useState<string>("");
+  const [recRef, setRecRef] = useState("");
+  const [recTx, setRecTx] = useState("");
   const [pricing, setPricing] = useState<ActivePricing | null>(null);
   const [leaseProcessId, setLeaseProcessId] = useState<string | null>(null);
   const [cart, setCart] = useState<CartPreview | null>(null);
@@ -187,33 +194,59 @@ export default function PlansPage() {
     if (!ref) return;
     // Contrato al que debemos DEVOLVER al usuario cuando el pago quede confirmado.
     const contract = params.get("contract");
+    // Wompi agrega el id de la transacción a la URL de retorno (?id=...). Con él
+    // reconciliamos DIRECTO contra Wompi, sin depender del webhook.
+    const txId = params.get("id") || params.get("transaction");
     setReturningContract(contract);
+    setReturningRef(ref);
+    setReturningTxId(txId);
     setAwaitingConfirm(true);
     let cancelled = false;
     let attempts = 0;
     setMsg("Estamos confirmando tu pago. Esto puede tardar unos segundos…");
+
+    const goToContractIfAny = () => {
+      setAwaitingConfirm(false);
+      if (contract) {
+        setMsg("¡Pago confirmado! Te llevamos de vuelta a tu contrato para continuar…");
+        setTimeout(() => {
+          if (!cancelled) window.location.href = `/dashboard/contracts/${encodeURIComponent(contract)}/preview?section=firma`;
+        }, 1400);
+      } else {
+        setMsg("¡Pago confirmado! Tu Plan Plus ya está activo.");
+      }
+    };
+
     const tick = async () => {
       if (cancelled) return;
       attempts += 1;
+      // 1) Reconciliación autoritativa contra Wompi (no depende del webhook).
+      if (txId) {
+        const rec = await fetch("/api/platform-payments/reconcile", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+          body: JSON.stringify({ reference: ref, wompiTransactionId: txId }),
+        })
+          .then((r) => (r.ok ? (r.json() as Promise<{ plusActive?: boolean }>) : null))
+          .catch(() => null);
+        if (rec?.plusActive) {
+          await loadAccess();
+          goToContractIfAny();
+          return;
+        }
+      }
+      // 2) Respaldo: por si el webhook ya lo confirmó.
       const res = await fetch("/api/access/entitlements/me", {
         headers: { ...(await buildAuthHeaders(user)) },
       }).catch(() => null);
       const data = res && res.ok ? ((await res.json()) as EntitlementsResponse) : null;
       if (data?.success) setEntitlements(data);
       if (data?.plusActive) {
-        setAwaitingConfirm(false);
-        if (contract) {
-          // Vuelve AUTOMÁTICAMENTE al paso donde iba (firma) para continuar.
-          setMsg("¡Pago confirmado! Te llevamos de vuelta a tu contrato para continuar…");
-          setTimeout(() => {
-            if (!cancelled) window.location.href = `/dashboard/contracts/${encodeURIComponent(contract)}/preview?section=firma`;
-          }, 1400);
-        } else {
-          setMsg("¡Pago confirmado! Tu Plan Plus ya está activo.");
-        }
+        goToContractIfAny();
         return;
       }
-      // Sondeamos ~1 min (15 × 4s): margen amplio para que llegue el webhook.
+      // Sondeamos ~1 min (15 × 4s). Con reconciliación esto casi siempre resuelve
+      // en el primer intento; el resto es para pagos PENDING (p. ej. PSE lento).
       if (attempts >= 15) {
         setMsg(
           "Recibimos tu regreso del pago. Si ya pagaste y aún no ves el Plan Plus activo, usa «Verificar ahora».",
@@ -226,7 +259,7 @@ export default function PlansPage() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, loadAccess]);
 
   // Estado de referido del usuario (para aplicar el descuento si está aprobado).
   useEffect(() => {
@@ -361,27 +394,30 @@ export default function PlansPage() {
   }
 
   // "Verificar ahora": fuerza la comprobación del pago sin esperar el sondeo.
-  // Primero mira las entitlements; si no, intenta reconciliar la orden con la
-  // pasarela (order-status) y vuelve a mirar. Así el usuario no queda en limbo.
+  // Reconcilia DIRECTO contra Wompi (con el id de la transacción del retorno) y
+  // luego mira las entitlements. Así el usuario nunca queda en el limbo.
   async function verifyNow() {
     if (!user) return;
     setError("");
     setMsg("Verificando tu pago…");
     try {
-      let ent = await fetch("/api/access/entitlements/me", { headers: { ...(await buildAuthHeaders(user)) } })
+      // Reconciliación autoritativa contra Wompi si tenemos la referencia + id.
+      if (returningRef && returningTxId) {
+        const rec = await fetch("/api/platform-payments/reconcile", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+          body: JSON.stringify({ reference: returningRef, wompiTransactionId: returningTxId }),
+        })
+          .then((r) => (r.ok ? (r.json() as Promise<{ plusActive?: boolean; transactionStatus?: string }>) : null))
+          .catch(() => null);
+        if (rec && !rec.plusActive && rec.transactionStatus && rec.transactionStatus !== "APPROVED") {
+          setMsg(`Tu pago figura como "${rec.transactionStatus}" en la pasarela. Si es un pago PSE puede tardar; vuelve a intentar en un momento.`);
+        }
+      }
+      const ent = await fetch("/api/access/entitlements/me", { headers: { ...(await buildAuthHeaders(user)) } })
         .then((r) => (r.ok ? (r.json() as Promise<EntitlementsResponse>) : null))
         .catch(() => null);
       if (ent?.success) setEntitlements(ent);
-      // Si aún no está activo, intenta reconciliar la orden con la pasarela.
-      if (!ent?.plusActive && orderId) {
-        await fetch(`/api/platform-payments/order-status?orderId=${encodeURIComponent(orderId)}`, {
-          headers: { ...(await buildAuthHeaders(user)) },
-        }).catch(() => null);
-        ent = await fetch("/api/access/entitlements/me", { headers: { ...(await buildAuthHeaders(user)) } })
-          .then((r) => (r.ok ? (r.json() as Promise<EntitlementsResponse>) : null))
-          .catch(() => null);
-        if (ent?.success) setEntitlements(ent);
-      }
       if (ent?.plusActive) {
         setAwaitingConfirm(false);
         if (returningContract) {
@@ -413,6 +449,32 @@ export default function PlansPage() {
       setDiag(JSON.stringify(j, null, 2));
     } catch {
       setDiag("No se pudo cargar el diagnóstico.");
+    }
+  }
+
+  // Reconciliación manual (admin/comercio): pega la referencia de la orden y el id
+  // de la transacción de Wompi (del panel de Wompi) para activar un pago que quedó
+  // sin confirmar. Verifica contra Wompi antes de otorgar el acceso.
+  async function adminReconcile() {
+    if (!user) return;
+    const reference = recRef.trim();
+    const wompiTransactionId = recTx.trim();
+    if (!reference || !wompiTransactionId) {
+      setDiag("Pega la referencia (AS_PLUS_…) y el id de transacción de Wompi.");
+      return;
+    }
+    setDiag("Reconciliando con Wompi…");
+    try {
+      const res = await fetch("/api/platform-payments/reconcile", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ reference, wompiTransactionId }),
+      });
+      const j = await res.json();
+      setDiag(JSON.stringify(j, null, 2));
+      await loadAccess();
+    } catch {
+      setDiag("No se pudo reconciliar. Revisa la referencia y el id.");
     }
   }
 
@@ -510,6 +572,30 @@ export default function PlansPage() {
           >
             Diagnóstico de pagos
           </button>
+          {/* Reconciliar manualmente un pago que quedó sin confirmar: pega la
+              referencia (AS_PLUS_…) y el id de la transacción del panel de Wompi. */}
+          <div className="mt-2 flex w-full flex-wrap items-center gap-2">
+            <span className="font-medium text-amber-800">Reconciliar pago Wompi:</span>
+            <input
+              value={recRef}
+              onChange={(e) => setRecRef(e.target.value)}
+              placeholder="Referencia (AS_PLUS_…)"
+              className="min-w-[220px] flex-1 rounded border border-amber-600/50 bg-white px-2 py-1 text-slate-800"
+            />
+            <input
+              value={recTx}
+              onChange={(e) => setRecTx(e.target.value)}
+              placeholder="Id de transacción Wompi"
+              className="min-w-[220px] flex-1 rounded border border-amber-600/50 bg-white px-2 py-1 text-slate-800"
+            />
+            <button
+              type="button"
+              onClick={() => void adminReconcile()}
+              className="rounded border border-emerald-600/60 bg-emerald-50 px-2 py-1 font-semibold text-emerald-700 hover:bg-emerald-100"
+            >
+              Reconciliar y activar
+            </button>
+          </div>
           {diag && (
             <pre className="mt-2 w-full max-h-72 overflow-auto rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-emerald-100">
               {diag}
