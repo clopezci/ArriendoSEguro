@@ -59,6 +59,11 @@ export default function PlansPage() {
   }, []);
   const [removingClause, setRemovingClause] = useState(false);
   const [loading, setLoading] = useState(false);
+  // Estado del regreso desde la pasarela: mientras confirmamos el pago mostramos
+  // un botón "Verificar ahora" para que nadie quede en el limbo esperando.
+  const [awaitingConfirm, setAwaitingConfirm] = useState(false);
+  const [returningContract, setReturningContract] = useState<string | null>(null);
+  const [diag, setDiag] = useState<string>("");
   const [pricing, setPricing] = useState<ActivePricing | null>(null);
   const [leaseProcessId, setLeaseProcessId] = useState<string | null>(null);
   const [cart, setCart] = useState<CartPreview | null>(null);
@@ -178,9 +183,11 @@ export default function PlansPage() {
     };
   }, [user]);
 
-  // Retorno desde el Web Checkout de Wompi (`?order=<referencia>`). El webhook es
-  // la fuente de verdad y otorga el acceso Plus; aquí solo reflejamos el estado:
+  // Retorno desde el Web Checkout de la pasarela (`?order=<referencia>`). El webhook
+  // es la fuente de verdad y otorga el acceso Plus; aquí reflejamos el estado:
   // sondeamos las entitlements unos segundos por si el webhook llega con retraso.
+  // Si tras el sondeo aún no está, dejamos un botón "Verificar ahora" (más abajo)
+  // para que el usuario nunca quede en el limbo.
   useEffect(() => {
     if (typeof window === "undefined" || !user) return;
     const params = new URLSearchParams(window.location.search);
@@ -188,6 +195,8 @@ export default function PlansPage() {
     if (!ref) return;
     // Contrato al que debemos DEVOLVER al usuario cuando el pago quede confirmado.
     const contract = params.get("contract");
+    setReturningContract(contract);
+    setAwaitingConfirm(true);
     let cancelled = false;
     let attempts = 0;
     setMsg("Estamos confirmando tu pago. Esto puede tardar unos segundos…");
@@ -200,6 +209,7 @@ export default function PlansPage() {
       const data = res && res.ok ? ((await res.json()) as EntitlementsResponse) : null;
       if (data?.success) setEntitlements(data);
       if (data?.plusActive) {
+        setAwaitingConfirm(false);
         if (contract) {
           // Vuelve AUTOMÁTICAMENTE al paso donde iba (firma) para continuar.
           setMsg("¡Pago confirmado! Te llevamos de vuelta a tu contrato para continuar…");
@@ -211,9 +221,10 @@ export default function PlansPage() {
         }
         return;
       }
-      if (attempts >= 6) {
+      // Sondeamos ~1 min (15 × 4s): margen amplio para que llegue el webhook.
+      if (attempts >= 15) {
         setMsg(
-          "Recibimos tu regreso del pago. Si ya pagaste y aún no ves el Plan Plus activo, espera un momento y actualiza esta página.",
+          "Recibimos tu regreso del pago. Si ya pagaste y aún no ves el Plan Plus activo, usa «Verificar ahora».",
         );
         return;
       }
@@ -285,11 +296,15 @@ export default function PlansPage() {
     }
   }
 
-  async function createPlusOrder(provider?: "breb") {
+  async function createPlusOrder(opts?: { viaBreb?: boolean }) {
     if (!user) return;
     setLoading(true);
     setMsg("");
     setError("");
+    // Bre-B es un método DENTRO de la pasarela (Wompi), no una página aparte: el
+    // usuario paga con Bre-B como cualquier otro medio y NO se le muestra ninguna
+    // llave. Solo cambiamos el aviso del modal para que sepa que elija "Bre-B" ahí.
+    setBrebViaWompi(Boolean(opts?.viaBreb));
     try {
       const res = await fetch("/api/platform-payments/create-order", {
         method: "POST",
@@ -297,28 +312,34 @@ export default function PlansPage() {
         body: JSON.stringify({
           planCode: "plus",
           ...(leaseProcessId ? { leaseProcessId } : {}),
-          ...(provider ? { paymentProvider: provider } : {}),
         }),
       });
       const data = (await res.json()) as {
         success?: boolean;
         orderId?: string;
         checkoutUrl?: string;
-        errors?: { message: string }[];
+        providerCode?: string;
+        errors?: { message: string; detail?: string }[];
       };
-      if (!res.ok || !data.success) throw new Error(data.errors?.[0]?.message ?? "No se pudo crear orden.");
+      if (!res.ok || !data.success) {
+        const e0 = data.errors?.[0];
+        throw new Error(e0?.detail ? `${e0.message} (${e0.detail})` : e0?.message ?? "No se pudo crear orden.");
+      }
       setOrderId(data.orderId ?? "");
       const url = data.checkoutUrl ?? "";
       setCheckoutUrl(url);
+      // En producción, "mock" significa que la pasarela no está configurada. En vez
+      // de mandar a un checkout falso (que deja el plan en limbo), avisamos claro.
+      if (data.providerCode === "mock" && process.env.NODE_ENV === "production") {
+        setError(
+          "La pasarela de pago no está configurada en el servidor (modo prueba). No podemos cobrar todavía. Revisa el «Diagnóstico de pagos».",
+        );
+        return;
+      }
       if (url) {
-        if (provider === "breb") {
-          // Bre-B usa nuestra propia página interna de QR/llave (mismo origen).
-          window.location.href = url;
-        } else {
-          // En vez de dejar un enlace suelto abajo, mostramos la confirmación de
-          // redirección al sitio externo de pago; al aceptar, redirige directo.
-          setShowRedirectConfirm(true);
-        }
+        // Tarjeta y Bre-B van a la MISMA pasarela: mostramos la confirmación de
+        // salida al sitio de pago (con el aviso de elegir Bre-B si aplica).
+        setShowRedirectConfirm(true);
       } else {
         setError("No recibimos el enlace de pago. Intenta de nuevo.");
       }
@@ -348,6 +369,62 @@ export default function PlansPage() {
       setError(e instanceof Error ? e.message : "Error en mock approve.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  // "Verificar ahora": fuerza la comprobación del pago sin esperar el sondeo.
+  // Primero mira las entitlements; si no, intenta reconciliar la orden con la
+  // pasarela (order-status) y vuelve a mirar. Así el usuario no queda en limbo.
+  async function verifyNow() {
+    if (!user) return;
+    setError("");
+    setMsg("Verificando tu pago…");
+    try {
+      let ent = await fetch("/api/access/entitlements/me", { headers: { ...(await buildAuthHeaders(user)) } })
+        .then((r) => (r.ok ? (r.json() as Promise<EntitlementsResponse>) : null))
+        .catch(() => null);
+      if (ent?.success) setEntitlements(ent);
+      // Si aún no está activo, intenta reconciliar la orden con la pasarela.
+      if (!ent?.plusActive && orderId) {
+        await fetch(`/api/platform-payments/order-status?orderId=${encodeURIComponent(orderId)}`, {
+          headers: { ...(await buildAuthHeaders(user)) },
+        }).catch(() => null);
+        ent = await fetch("/api/access/entitlements/me", { headers: { ...(await buildAuthHeaders(user)) } })
+          .then((r) => (r.ok ? (r.json() as Promise<EntitlementsResponse>) : null))
+          .catch(() => null);
+        if (ent?.success) setEntitlements(ent);
+      }
+      if (ent?.plusActive) {
+        setAwaitingConfirm(false);
+        if (returningContract) {
+          setMsg("¡Pago confirmado! Te llevamos de vuelta a tu contrato…");
+          setTimeout(() => {
+            window.location.href = `/dashboard/contracts/${encodeURIComponent(returningContract)}/preview?section=firma`;
+          }, 1200);
+        } else {
+          setMsg("¡Pago confirmado! Tu Plan Plus ya está activo.");
+        }
+      } else {
+        setMsg(
+          "Aún no vemos el pago confirmado. Si acabas de pagar, espera unos segundos y vuelve a intentar «Verificar ahora».",
+        );
+      }
+    } catch {
+      setError("No pudimos verificar el pago. Revisa tu conexión e intenta de nuevo.");
+    }
+  }
+
+  async function loadDiagnostics() {
+    if (!user) return;
+    setDiag("Cargando diagnóstico…");
+    try {
+      const res = await fetch("/api/platform-payments/diagnostics", {
+        headers: { ...(await buildAuthHeaders(user)) },
+      });
+      const j = await res.json();
+      setDiag(JSON.stringify(j, null, 2));
+    } catch {
+      setDiag("No se pudo cargar el diagnóstico.");
     }
   }
 
@@ -438,11 +515,32 @@ export default function PlansPage() {
           >
             Activar Plan Plus de prueba
           </button>
+          <button
+            type="button"
+            onClick={() => void loadDiagnostics()}
+            className="rounded border border-amber-600/50 px-2 py-1 hover:bg-amber-50"
+          >
+            Diagnóstico de pagos
+          </button>
+          {diag && (
+            <pre className="mt-2 w-full max-h-72 overflow-auto rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-emerald-100">
+              {diag}
+            </pre>
+          )}
         </div>
       )}
 
       {msg && (
         <p className="rounded border border-emerald-500/40 bg-emerald-900/20 p-2 text-sm text-emerald-700">{msg}</p>
+      )}
+      {awaitingConfirm && !entitlements?.plusActive && (
+        <button
+          type="button"
+          onClick={() => void verifyNow()}
+          className="w-full rounded-xl border-2 border-emerald-500 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 hover:bg-emerald-100"
+        >
+          Verificar ahora si mi pago quedó registrado
+        </button>
       )}
       {error && (
         <p className="rounded border border-rose-600/40 bg-rose-900/20 p-2 text-sm text-rose-700">{error}</p>
@@ -562,12 +660,17 @@ export default function PlansPage() {
           {brebEnabled && (
             <button
               type="button"
-              onClick={() => void createPlusOrder("breb")}
+              onClick={() => void createPlusOrder({ viaBreb: true })}
               disabled={loading}
               className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-emerald-500 px-4 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
             >
-              <span aria-hidden="true">⚡</span> Pagar con Bre-B (QR / llave)
+              <span aria-hidden="true">⚡</span> Pagar con Bre-B
             </button>
+          )}
+          {brebEnabled && (
+            <p className="mt-1.5 text-center text-[11px] text-slate-500">
+              Bre-B es un pago instantáneo desde tu app bancaria. Se abre en la pasarela segura y vuelves aquí solo.
+            </p>
           )}
           {internal && process.env.NODE_ENV !== "production" && orderId && (
             <div className="mt-3 flex flex-wrap gap-2">

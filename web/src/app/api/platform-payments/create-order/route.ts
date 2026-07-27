@@ -101,6 +101,7 @@ export async function POST(request: Request) {
       success: true,
       orderId: orderRef.id,
       checkoutUrl: checkout.checkoutUrl,
+      providerCode: selected.providerCode,
       status: "pending",
       amount: normalized.amount,
       currency: "COP",
@@ -109,9 +110,13 @@ export async function POST(request: Request) {
       clauseCop: amount.clauseCop,
       hasCostedClause: amount.hasCostedClause,
     });
-  } catch {
+  } catch (err) {
+    // Deja rastro en el servidor (lo recoge el módulo de errores + Telegram) para
+    // poder diagnosticar por qué falló el checkout (p. ej. pasarela sin configurar).
+    console.error("[create-order] fallo al crear checkout:", err);
+    const detail = err instanceof Error ? err.message : "error_desconocido";
     return NextResponse.json(
-      { success: false, errors: [{ field: "server", message: "No se pudo crear la orden de pago." }] },
+      { success: false, errors: [{ field: "server", message: "No se pudo crear la orden de pago.", detail }] },
       { status: 500 },
     );
   }
