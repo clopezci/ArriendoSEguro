@@ -47,8 +47,15 @@ function validateParty(prefix: string, party: PersonParty, issues: ValidationIss
   }
   if (isBlank(party.phone)) {
     issues.push({ field: `${prefix}.phone`, message: "Teléfono requerido." });
-  } else if (!/^\d{10}$/.test(String(party.phone).replace(/\D/g, ""))) {
-    issues.push({ field: `${prefix}.phone`, message: "El teléfono debe tener 10 dígitos." });
+  } else {
+    // Aceptamos el prefijo de país +57 (12 dígitos que empiezan por 57): muchas
+    // personas guardan el celular como +57 300…, y antes eso hacía fallar la
+    // validación (exigía exactamente 10 dígitos) bloqueando la generación.
+    const digits = String(party.phone).replace(/\D/g, "");
+    const local = digits.length === 12 && digits.startsWith("57") ? digits.slice(2) : digits;
+    if (!/^\d{10}$/.test(local)) {
+      issues.push({ field: `${prefix}.phone`, message: "El teléfono debe ser un celular colombiano de 10 dígitos (opcionalmente con +57)." });
+    }
   }
   // La dirección de notificación es OPCIONAL (datos mínimos): si se omite, aplica
   // la presunción del art. 12 de la Ley 820 de 2003 que el contrato deja explícita.
