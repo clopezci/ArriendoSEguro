@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CookiePreferencesLink } from "@/components/consent/cookie-preferences-link";
+import { LoticBadge } from "@/components/layout/lotic-badge";
 
 const LEGAL_LINKS = [
   { href: "/acerca-de", label: "Acerca de" },
@@ -35,22 +36,8 @@ export function LegalFooter() {
           <CookiePreferencesLink />
         </nav>
         <p className="mt-5 flex flex-wrap items-center justify-center gap-1.5 text-center text-xs text-slate-500">
-          © {new Date().getFullYear()} ArriendoSeguro · Un producto de{" "}
-          <a
-            href="https://lotic-soluciones.vercel.app/"
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 font-extrabold tracking-tight text-[#5646E5] transition hover:brightness-110 hover:underline"
-            aria-label="Lotic Soluciones (abre en una pestaña nueva)"
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" className="-mt-px">
-              <circle cx="12" cy="7.5" r="2.3" fill="#5646E5" />
-              <circle cx="6.5" cy="15.5" r="2.3" fill="#7C3AED" />
-              <circle cx="17.5" cy="15.5" r="2.3" fill="#A855F7" />
-              <path d="M12 9.6 L7 13.6 M12 9.6 L17 13.6" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-            Lotic
-          </a>
+          © {new Date().getFullYear()} ArriendoSeguro ·{" "}
+          <LoticBadge className="text-xs" />
         </p>
       </div>
     </footer>
