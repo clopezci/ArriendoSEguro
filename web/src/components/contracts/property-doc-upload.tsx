@@ -133,7 +133,9 @@ export function PropertyDocUpload({
   // página). El veredicto se muestra en el momento de subir el documento.
   async function remove(id: string) {
     if (!user) return;
-    if (!confirm("¿Quitar este documento? Esta acción no se puede deshacer.")) return;
+    // Nota: no usamos window.confirm — iOS en modo app instalada (PWA) lo bloquea
+    // y el botón "no hacía nada". El botón "Quitar" ya es explícito y se puede
+    // volver a subir el documento.
     try {
       const res = await fetch("/api/contracts/draft-property-docs/delete", {
         method: "POST",
@@ -184,7 +186,7 @@ export function PropertyDocUpload({
             <input
               ref={inputRef}
               type="file"
-              accept="application/pdf,image/jpeg,image/png,image/webp"
+              accept="image/*,application/pdf"
               disabled={busy || !docType}
               onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }}
               className="sr-only"

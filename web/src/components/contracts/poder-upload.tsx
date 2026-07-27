@@ -94,7 +94,8 @@ export function PoderUpload({ contractDraftId, onUploaded }: { contractDraftId: 
 
   async function remove(id: string) {
     if (!user) return;
-    if (!confirm("¿Quitar el poder? Esta acción no se puede deshacer.")) return;
+    // Sin window.confirm: iOS en modo app instalada (PWA) lo bloquea y el botón
+    // "no hacía nada". El botón "Quitar" es explícito y se puede volver a subir.
     try {
       const res = await fetch("/api/contracts/draft-property-docs/delete", {
         method: "POST",
@@ -126,7 +127,7 @@ export function PoderUpload({ contractDraftId, onUploaded }: { contractDraftId: 
           <p className="mt-0.5 text-xs text-slate-600">Como apoderado, sube el poder que te faculta para arrendar a nombre del propietario. Puedes subirlo ahora o antes de generar el contrato.</p>
           <label className={`mt-2 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 ${busy ? "cursor-not-allowed opacity-50" : ""}`}>
             {busy ? "Subiendo…" : hasDocs ? "Subir otro" : "Adjuntar poder"}
-            <input ref={inputRef} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }} className="sr-only" />
+            <input ref={inputRef} type="file" accept="image/*,application/pdf" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }} className="sr-only" />
           </label>
           <p className="mt-1 text-[11px] text-slate-500">PDF, JPG, PNG o WEBP.</p>
         </>
