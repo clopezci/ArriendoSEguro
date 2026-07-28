@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { useSavedContract } from "@/components/contracts/requires-saved-contract";
 import { StartDefinitiveContract } from "@/components/contracts/start-definitive-contract";
+import { ExpedienteDownloads } from "@/components/contracts/expediente-downloads";
 import { getDraft, type ContractDraft } from "@/features/contracts/wizard-state";
 
 /**
@@ -121,6 +122,9 @@ export default function GestionarPosventaPage() {
 
         {/* Iniciar el contrato definitivo (anti-abuso: bloquea + consume el cupo). */}
         {unlocked && <StartDefinitiveContract contractId={id} />}
+
+        {/* Expediente: descargar contrato y acta en PDF (celular, sin .zip). */}
+        {unlocked && versionId && <ExpedienteDownloads contractId={id} versionId={versionId} />}
 
         {/* Entrada al flujo "Termina tu contrato" (documentos, pagos y alertas). */}
         {unlocked && (
