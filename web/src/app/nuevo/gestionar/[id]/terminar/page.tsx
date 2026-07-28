@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
@@ -86,6 +86,20 @@ export default function TerminarContratoPage() {
   const versionId = sc.currentVersionId ?? "";
 
   const [active, setActive] = useState<StepKey>("documentos");
+  // Recuerda el paso activo entre remontajes (al volver de subir documentos, etc.):
+  // antes se reiniciaba a "documentos" y tocaba avanzar todo otra vez.
+  const activeRestoredRef = useRef(false);
+  useEffect(() => {
+    if (activeRestoredRef.current) return;
+    activeRestoredRef.current = true;
+    try {
+      const s = sessionStorage.getItem(`terminar_active_${id}`);
+      if (s === "documentos" || s === "pago" || s === "alertas") setActive(s);
+    } catch { /* noop */ }
+  }, [id]);
+  useEffect(() => {
+    try { sessionStorage.setItem(`terminar_active_${id}`, active); } catch { /* noop */ }
+  }, [active, id]);
   // Señal de configuración real detectada (ayuda visual, no es el candado).
   const [signal, setSignal] = useState<Record<StepKey, boolean>>({ documentos: false, pago: false, alertas: false });
   // Confirmación del dueño (el candado real): listo / no aplica.

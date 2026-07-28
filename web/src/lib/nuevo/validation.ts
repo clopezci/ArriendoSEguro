@@ -84,11 +84,11 @@ export type Answers = {
   reqDocsTenant: string[]; reqDocsCodebtor: string[];
   // Términos del arriendo
   startDate: string; termMonths: string; paymentDay: string;
-  // Inquilino
-  tenantMode: "self" | "invite"; tenantName: string;
+  // Inquilino ("" = aún no elige quién ingresa los datos)
+  tenantMode: "" | "self" | "invite"; tenantName: string;
   tenantDocType: string; tenantDocNumber: string; tenantCity: string; tenantEmail: string; tenantPhone: string; tenantAuth: boolean; tenantIncome: string;
-  // Codeudor
-  hasCodebtor: "" | "yes" | "no"; codebtorName: string; codebtorMode: "self" | "invite" | "tenant";
+  // Codeudor ("" = aún no elige quién ingresa los datos)
+  hasCodebtor: "" | "yes" | "no"; codebtorName: string; codebtorMode: "" | "self" | "invite" | "tenant";
   codebtorDocType: string; codebtorDocNumber: string; codebtorCity: string; codebtorEmail: string; codebtorPhone: string; codebtorAuth: boolean; codebtorIncome: string;
   // Servicios y cláusulas
   utilitiesParty: "" | "arrendatario" | "arrendador" | "compartido";
@@ -154,8 +154,10 @@ export function validateStep(kind: string, a: Answers): string | null {
       return null;
     }
     case "tenant":
-      // Ahora este paso elige el MODO primero. Si el dueño los ingresa, pedimos
-      // el nombre aquí; por invitación no hace falta (la persona lo pone al llenar).
+      // Ahora este paso elige el MODO primero, SIN preselección (la persona debe
+      // elegir). Si el dueño los ingresa, pedimos el nombre aquí; por invitación no
+      // hace falta (la persona lo pone al llenar).
+      if (a.tenantMode === "") return "Elige quién ingresa los datos del arrendatario.";
       if (a.tenantMode === "invite") return null;
       return nameError(a.tenantName);
     case "tenantfull":
@@ -175,6 +177,7 @@ export function validateStep(kind: string, a: Answers): string | null {
       // "invite": el codeudor completa por su enlace. "tenant": lo gestiona el
       // inquilino desde su propia invitación. En ambos casos el dueño continúa y
       // luego importa. Solo en "self" pedimos nombre + documento + contacto.
+      if (a.hasCodebtor === "yes" && a.codebtorMode === "") return "Elige quién ingresa los datos del codeudor.";
       if (a.codebtorMode === "invite" || a.codebtorMode === "tenant") return null;
       return nameError(a.codebtorName) ?? docError(a.codebtorDocType, a.codebtorDocNumber) ?? cityError(a.codebtorCity) ?? emailError(a.codebtorEmail) ?? phoneError(a.codebtorPhone)
         ?? incomeError(a.canon, a.codebtorIncome, "del codeudor")
