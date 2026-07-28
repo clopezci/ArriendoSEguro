@@ -277,6 +277,13 @@ export interface ContractDraft {
     codebtorVerified?: "yes" | "no";
   };
   lastUpdatedAt: string;
+  /**
+   * Marca de la ÚLTIMA vez que este borrador se subió al servidor con éxito.
+   * Sirve para sincronizar borrados entre equipos: si un borrador YA se había
+   * sincronizado (tiene esta marca) pero ya NO está en el servidor, significa que
+   * se borró en otro dispositivo → se elimina también aquí (no se resucita).
+   */
+  serverSyncedAt?: string;
   auditTrail: AuditEvent[];
 }
 
