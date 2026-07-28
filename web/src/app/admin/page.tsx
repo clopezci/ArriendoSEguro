@@ -1429,6 +1429,9 @@ export default function AdminPage() {
               Acceso validado en el servidor con <code className="text-slate-600">ADMIN_INTERNAL_EMAILS</code>. No
               confíes solo en el navegador.
             </p>
+            <Link href="/admin/expedientes" className="mt-2 inline-flex items-center gap-1 rounded-full bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:brightness-110">
+              📁 Explorador de expedientes →
+            </Link>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
