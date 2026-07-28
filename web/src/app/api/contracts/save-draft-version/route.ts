@@ -8,6 +8,7 @@ import {
 import { validateContractData } from "@/domain/contracts/validateContractData";
 import { generateDocumentHash } from "@/domain/contracts/hash";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
+import { isContractStarted } from "@/lib/contracts/lifecycle";
 
 export const runtime = "nodejs";
 const MAX_JSON_BYTES = 256_000;
@@ -116,6 +117,15 @@ export async function POST(request: Request) {
           ],
         },
         { status: 503 },
+      );
+    }
+
+    // Bloqueo fino: un contrato ya INICIADO (definitivo) no puede regenerar versión
+    // (los datos de fondo quedan en firme). Solo el admin puede desbloquear.
+    if (await isContractStarted(firestore, body.contractDraftId)) {
+      return NextResponse.json<SaveDraftVersionResponse>(
+        { success: false, errors: [{ field: "locked", message: "El contrato ya fue iniciado (definitivo): sus datos de fondo no se pueden modificar." }] },
+        { status: 409 },
       );
     }
 

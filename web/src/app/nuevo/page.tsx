@@ -479,6 +479,23 @@ export default function NuevoPage() {
     try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
   }, [i, mode]);
 
+  // Bloqueo fino: si el contrato YA fue iniciado (definitivo), no se puede editar
+  // desde el asistente; llevamos al usuario a "Administra tu arriendo".
+  useEffect(() => {
+    if (!draftId || !user) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/contracts/lifecycle?contractId=${encodeURIComponent(draftId)}`, {
+          headers: { ...(await buildAuthHeaders(user)) },
+        });
+        const j = (await res.json()) as { started?: boolean };
+        if (!cancelled && j?.started) router.replace(`/nuevo/gestionar/${draftId}`);
+      } catch { /* si falla, no bloqueamos */ }
+    })();
+    return () => { cancelled = true; };
+  }, [draftId, user, router]);
+
   // Confirmación final: registra el juramento del inmueble (con su fecha para la
   // evidencia) y guarda en la cuenta AHORA (sin esperar el debounce) antes de cerrar.
   const confirmReview = useCallback(() => {
