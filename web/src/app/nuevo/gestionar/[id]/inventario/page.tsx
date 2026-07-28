@@ -53,6 +53,22 @@ export default function InventarioBentoPage() {
   const [msg, setMsg] = useState("");
   const [inventoryId, setInventoryId] = useState<string>("");
   const [selected, setSelected] = useState<string[]>([]);
+  // Cantidad de habitaciones y baños (en vez de una lista fija): genera
+  // "Habitación 1..N" y "Baño 1..N" como zonas, sin tope práctico.
+  const [roomCount, setRoomCount] = useState(0);
+  const [bathCount, setBathCount] = useState(0);
+  function syncRoomBathCounts(rooms: number, baths: number) {
+    const r = Math.max(0, Math.min(30, Math.floor(rooms) || 0));
+    const b = Math.max(0, Math.min(30, Math.floor(baths) || 0));
+    setRoomCount(r);
+    setBathCount(b);
+    setSelected((prev) => {
+      const base = prev.filter((z) => !/^Habitación \d+$/.test(z) && !/^Baño \d+$/.test(z));
+      const rr = Array.from({ length: r }, (_, i) => `Habitación ${i + 1}`);
+      const bb = Array.from({ length: b }, (_, i) => `Baño ${i + 1}`);
+      return [...base, ...rr, ...bb];
+    });
+  }
   const [zones, setZones] = useState<ZoneRow[]>([]);
   const [zi, setZi] = useState(0);
   const [data, setData] = useState<Record<string, ZoneData>>({});
@@ -305,9 +321,14 @@ export default function InventarioBentoPage() {
               <MicButton onResult={(t) => setActObservations((v) => (v ? v + " " : "") + t)} label="Dictar observaciones" />
             </div>
 
+            {(!deliveryDate || !receiverName.trim()) && (
+              <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-900">
+                La <b>fecha de entrega</b> y <b>quién recibe</b> son obligatorias: el acta es un documento con fecha y responsable.
+              </p>
+            )}
             <div className="mt-5 flex items-center justify-between gap-2">
               <button onClick={() => setPhase("intro")} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600">← Atrás</button>
-              <button onClick={() => void startInventory()} disabled={busy} className="rounded-2xl bg-[#5646E5] px-7 py-3 text-sm font-bold text-white transition hover:brightness-105 active:scale-95 disabled:opacity-50">
+              <button onClick={() => void startInventory()} disabled={busy || !deliveryDate || !receiverName.trim()} className="rounded-2xl bg-[#5646E5] px-7 py-3 text-sm font-bold text-white transition hover:brightness-105 active:scale-95 disabled:opacity-50">
                 {busy ? "Preparando…" : mode === "guided" ? "Empezar por zonas →" : "Empezar a tomar fotos →"}
               </button>
             </div>
@@ -317,15 +338,31 @@ export default function InventarioBentoPage() {
         {/* 3a) GUIADO: zonas */}
         {phase === "zones" && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
-            <p className="text-sm font-medium text-slate-600">¿Qué zonas tiene el inmueble? Toca las que apliquen.</p>
+            <p className="text-sm font-medium text-slate-600">¿Cuántas habitaciones y baños tiene el inmueble?</p>
+            <div className="mt-3 flex flex-wrap gap-4">
+              <label className="text-sm text-slate-700">🛏️ Habitaciones
+                <input type="number" inputMode="numeric" min={0} max={30} value={roomCount || ""}
+                  onChange={(e) => syncRoomBathCounts(Number(e.target.value), bathCount)}
+                  placeholder="0" className="mt-1 block w-24 rounded-lg border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#5646E5]" />
+              </label>
+              <label className="text-sm text-slate-700">🚿 Baños
+                <input type="number" inputMode="numeric" min={0} max={30} value={bathCount || ""}
+                  onChange={(e) => syncRoomBathCounts(roomCount, Number(e.target.value))}
+                  placeholder="0" className="mt-1 block w-24 rounded-lg border-2 border-slate-200 px-3 py-2 text-sm outline-none focus:border-[#5646E5]" />
+              </label>
+            </div>
+            <p className="mt-5 text-sm font-medium text-slate-600">¿Qué otras zonas tiene? Toca las que apliquen.</p>
             <div className="mt-3 flex flex-wrap gap-2.5">
-              {GUIDED_ZONE_OPTIONS.map((z) => (
+              {GUIDED_ZONE_OPTIONS.filter((z) => !/habitaci|baño/i.test(z)).map((z) => (
                 <button key={z} type="button" onClick={() => toggleZone(z)} className={chip(selected.includes(z))}>{z}</button>
               ))}
             </div>
-            <button onClick={() => void confirmZones()} disabled={busy} className="mt-6 rounded-2xl bg-[#5646E5] px-7 py-4 text-base font-bold text-white transition hover:brightness-105 active:scale-95 disabled:opacity-50">
-              {busy ? "Guardando…" : `Continuar (${selected.length}) →`}
-            </button>
+            <div className="mt-6 flex items-center gap-3">
+              <button onClick={() => setPhase("acta")} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-base font-bold text-slate-600">← Atrás</button>
+              <button onClick={() => void confirmZones()} disabled={busy} className="rounded-2xl bg-[#5646E5] px-7 py-4 text-base font-bold text-white transition hover:brightness-105 active:scale-95 disabled:opacity-50">
+                {busy ? "Guardando…" : `Continuar (${selected.length}) →`}
+              </button>
+            </div>
           </motion.div>
         )}
 
@@ -397,7 +434,7 @@ export default function InventarioBentoPage() {
               <button onClick={() => void saveZoneAndNext()} disabled={busy} className="rounded-2xl bg-[#5646E5] px-7 py-4 text-base font-bold text-white transition hover:brightness-105 active:scale-95 disabled:opacity-50">
                 {busy ? "Guardando…" : zi < zones.length - 1 ? "Guardar y siguiente →" : "Guardar y revisar →"}
               </button>
-              {zi > 0 && <button onClick={() => setZi(zi - 1)} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-base font-bold text-slate-600">← Atrás</button>}
+              <button onClick={() => (zi > 0 ? setZi(zi - 1) : setPhase("zones"))} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-base font-bold text-slate-600">← Atrás</button>
             </div>
           </motion.div>
         )}
@@ -422,9 +459,12 @@ export default function InventarioBentoPage() {
               </div>
             </div>
 
-            <button onClick={() => void finalizeAndGenerate()} disabled={busy} className="w-full rounded-2xl bg-[#12B886] px-6 py-4 text-base font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95 disabled:opacity-50">
-              {busy ? "Finalizando…" : "Finalizar y generar acta de entrega →"}
-            </button>
+            <div className="flex items-center gap-3">
+              <button onClick={() => setPhase("acta")} className="rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-base font-bold text-slate-600">← Atrás</button>
+              <button onClick={() => void finalizeAndGenerate()} disabled={busy} className="flex-1 rounded-2xl bg-[#12B886] px-6 py-4 text-base font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95 disabled:opacity-50">
+                {busy ? "Finalizando…" : "Finalizar y generar acta de entrega →"}
+              </button>
+            </div>
           </motion.div>
         )}
 
