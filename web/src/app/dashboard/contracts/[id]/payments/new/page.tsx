@@ -118,8 +118,8 @@ export default function NewPaymentPage() {
         <Input label="Periodo pagado" value={periodLabel} onChange={setPeriodLabel} placeholder="Mayo 2026" />
         <Input label="Fecha de vencimiento" value={dueDate} onChange={setDueDate} placeholder="YYYY-MM-DD" />
         <Input label="Fecha de pago" value={paidDate} onChange={setPaidDate} placeholder="YYYY-MM-DD (opcional)" />
-        <Input label="Valor esperado" value={amountDue} onChange={setAmountDue} placeholder="1000000" type="number" />
-        <Input label="Valor pagado" value={amountPaid} onChange={setAmountPaid} placeholder="1000000" type="number" />
+        <Input label="Valor esperado" value={amountDue} onChange={setAmountDue} placeholder="1.000.000" money />
+        <Input label="Valor pagado" value={amountPaid} onChange={setAmountPaid} placeholder="1.000.000" money />
         <label className="text-xs text-slate-700">
           Método de pago
           <select className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
@@ -166,21 +166,26 @@ function Input({
   onChange,
   placeholder,
   type = "text",
+  money = false,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   type?: string;
+  /** Campo de dinero: muestra puntos de miles y guarda solo dígitos (sin decimales). */
+  money?: boolean;
 }) {
+  const display = money ? (value ? Number(value.replace(/\D/g, "")).toLocaleString("es-CO") : "") : value;
   return (
     <label className="text-xs text-slate-700">
       {label}
       <input
-        type={type}
+        type={money ? "text" : type}
+        inputMode={money ? "numeric" : undefined}
         className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        value={display}
+        onChange={(e) => onChange(money ? e.target.value.replace(/\D/g, "") : e.target.value)}
         placeholder={placeholder}
       />
     </label>
