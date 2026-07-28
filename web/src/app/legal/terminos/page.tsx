@@ -1,6 +1,7 @@
 import { appConfig } from "@/lib/config";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { TaxLegalNote } from "@/components/legal/tax-legal-note";
 
 export const metadata: Metadata = {
   title: "Términos y condiciones de uso",
@@ -227,6 +228,10 @@ export default function TerminosPage() {
           cobranza o asesoría jurídica). No son planes de {appConfig.name}: los presta y cobra directamente el tercero,
           bajo sus propias condiciones, y tú decides libremente si los tomas según tu necesidad puntual.{" "}
           {appConfig.name} no garantiza ni responde por esos servicios de terceros.
+        </p>
+        <p className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+          <strong>Tratamiento tributario (IVA).</strong>{" "}
+          <TaxLegalNote variant="inline" />
         </p>
       </section>
 
