@@ -233,6 +233,16 @@ export default function TerminosPage() {
           <strong>Tratamiento tributario (IVA).</strong>{" "}
           <TaxLegalNote variant="inline" />
         </p>
+        <p className="mt-3">
+          <strong>Inicio del contrato definitivo y uso del cupo.</strong> Mientras un expediente no se haya
+          <strong> iniciado como definitivo</strong>, puedes editarlo o eliminarlo libremente y el cupo del plan no se
+          consume. Al pulsar <strong>“Iniciar contrato definitivo”</strong>, el expediente queda <strong>guardado, iniciado
+          y bloqueado</strong>: no podrá eliminarse y <strong>consume el cupo pagado</strong>. Desde ese momento solo podrás
+          ajustar elementos que <strong>no alteran el contenido contractual</strong> (recordatorios de pago, datos de
+          contacto para notificaciones, novedades y soportes); los datos de fondo (partes, canon, fechas, cláusulas e
+          inmueble) quedan en firme. Generar un <strong>nuevo contrato</strong> requiere un <strong>nuevo pago</strong>.
+          Cualquier cambio de fondo sobre un contrato ya iniciado deberá ser autorizado y realizado por {appConfig.name}.
+        </p>
       </section>
 
       <section className="space-y-3">

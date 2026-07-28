@@ -39,15 +39,21 @@ export function DeleteContractModal({
     setBusy(true);
     setErr("");
     try {
-      // 1) Servidor (best-effort; el backend valida que sea el dueño).
+      // 1) Servidor. Si el contrato ya está INICIADO (definitivo), el backend
+      // responde 409 y NO se borra ni local ni en servidor.
       if (user) {
         try {
-          await fetch(`/api/contracts/drafts?id=${encodeURIComponent(contractId)}`, {
+          const res = await fetch(`/api/contracts/drafts?id=${encodeURIComponent(contractId)}`, {
             method: "DELETE",
             headers: { ...(await buildAuthHeaders(user)) },
           });
+          if (res.status === 409) {
+            const j = (await res.json().catch(() => null)) as { errors?: { message?: string }[] } | null;
+            setErr(j?.errors?.[0]?.message ?? "Este contrato ya fue iniciado y no se puede borrar.");
+            return; // no borramos localmente
+          }
         } catch {
-          /* seguimos con el borrado local */
+          /* sin red: seguimos con el borrado local (el servidor reconciliará) */
         }
       }
       // 2) Local (localStorage).

@@ -7,6 +7,8 @@ import {
   buildDraftDocument,
   parseIncomingDraft,
 } from "@/domain/contracts/contractDraftSync";
+import { isContractStarted } from "@/lib/contracts/lifecycle";
+import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
 
 export const runtime = "nodejs";
 
@@ -119,6 +121,15 @@ export async function DELETE(request: Request) {
   const ref = firestore.collection(CONTRACT_DRAFTS_COLLECTION).doc(id);
   const snap = await ref.get();
   if (snap.exists && (snap.data() as { ownerUid?: string }).ownerUid === auth.user.uid) {
+    // Anti-abuso: un contrato ya INICIADO (definitivo) no se puede borrar; solo el
+    // admin puede desbloquearlo. Evita "pagar, borrar y rehacer gratis".
+    const started = await isContractStarted(firestore, id);
+    if (started && !isInternalAdminEmail(auth.user.email)) {
+      return NextResponse.json(
+        { success: false, errors: [{ field: "locked", message: "Este contrato ya fue iniciado (definitivo) y no se puede borrar. Escríbenos si necesitas un cambio." }] },
+        { status: 409 },
+      );
+    }
     await ref.delete();
   }
   // Idempotente: si no existe o no es del usuario, respondemos ok sin filtrar info.
