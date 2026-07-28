@@ -1,23 +1,37 @@
+/* eslint-disable @next/next/no-img-element */
 /**
- * Marca "Un producto de LOTIC" reutilizable, con el logotipo LOTIC (la «O» es el
- * emblema circular anillo violeta + punto verde). Se usa igual en TODAS partes
- * para que la marca sea consistente. Enlaza al sitio de Lotic.
+ * Marca "Un producto de LOTIC" reutilizable, con el LOGO OFICIAL de LOTIC
+ * (`/lotic-logo.png`: la L con pulso, la O con la molécula, degradado violeta→
+ * blanco). Se usa igual en TODAS partes para que la marca sea consistente.
+ *
+ * El logo es claro sobre fondo oscuro, así que en fondos CLAROS (como el footer)
+ * se muestra dentro de una PÍLDORA OSCURA para que se vea correcto. En fondos
+ * oscuros se puede usar `tone="onDark"` (sin píldora, con blend).
  *
  * Props:
  * - withPrefix: muestra "Un producto de" antes del logo (por defecto true).
- * - tone: "dark" para fondos claros (texto oscuro) | "light" para fondos oscuros.
+ * - tone: "onLight" (píldora oscura, para footers claros) | "onDark" (directo).
  * - className: clases extra para el contenedor (tamaño de fuente, etc.).
  */
 export function LoticBadge({
   withPrefix = true,
-  tone = "dark",
+  tone = "onLight",
   className = "",
 }: {
   withPrefix?: boolean;
-  tone?: "dark" | "light";
+  tone?: "onLight" | "onDark";
   className?: string;
 }) {
-  const wordColor = tone === "light" ? "text-white" : "text-[#17151F]";
+  const logo = (
+    <img
+      src="/lotic-logo.png"
+      alt="LOTIC"
+      width={1024}
+      height={683}
+      className="h-[1.35em] w-auto"
+      style={tone === "onDark" ? { mixBlendMode: "screen" } : undefined}
+    />
+  );
   return (
     <a
       href="https://lotic-soluciones.vercel.app/"
@@ -27,20 +41,11 @@ export function LoticBadge({
       className={`inline-flex items-center gap-1.5 align-middle transition hover:opacity-90 ${className}`}
     >
       {withPrefix && <span className="opacity-80">Un producto de</span>}
-      <span className={`inline-flex items-center font-black tracking-tight leading-none ${wordColor}`}>
-        L
-        <svg width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" className="mx-[0.5px]">
-          <defs>
-            <linearGradient id="loticO" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-              <stop offset="0" stopColor="#5646E5" />
-              <stop offset="1" stopColor="#A855F7" />
-            </linearGradient>
-          </defs>
-          <circle cx="12" cy="12" r="8.6" fill="none" stroke="url(#loticO)" strokeWidth="4.8" />
-          <circle cx="12" cy="12" r="2.7" fill="#12B886" />
-        </svg>
-        TIC
-      </span>
+      {tone === "onLight" ? (
+        <span className="inline-flex items-center rounded-md bg-[#0a0a11] px-1.5 py-[3px]">{logo}</span>
+      ) : (
+        logo
+      )}
     </a>
   );
 }
