@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { TaxLegalNote } from "@/components/legal/tax-legal-note";
 import { canSeeInternalDashboardTools } from "@/lib/dashboard/internal-tools";
 import { useFreeTier } from "@/lib/useFreeTier";
 import {
@@ -625,6 +626,7 @@ export default function PlansPage() {
             🎁 Tu <strong>segundo contrato puede ser GRATIS</strong> (con la firma incluida) si lo <strong>compartes con 3 personas y al menos 2 de ellas lo usan</strong> (crean su contrato).
           </p>
           <p className="mt-2 text-xs leading-relaxed text-slate-600">{PER_CONTRACT_PAYMENT_NOTICE}</p>
+          <TaxLegalNote variant="inline" className="mt-1 block text-xs font-medium text-slate-500" />
           <ul className="mt-4 space-y-2 text-sm text-slate-700">
             <li>Contrato de arrendamiento</li>
             <li>Opción con o sin codeudor</li>

@@ -12,6 +12,8 @@ import { getResolvedPlanPlusPricing } from "./plan-plus-pricing";
 import { getLegalConfig } from "@/domain/legal/legalConfig";
 import { SPECIAL_CLAUSE_OTHER_ID } from "@/features/contracts/special-clauses";
 import { SPECIAL_CLAUSE_REVIEWS_COLLECTION } from "@/domain/contracts/specialClauseReview";
+import { getTaxConfig } from "@/lib/tax/serverTaxConfig";
+import { computeTaxedPrice } from "@/domain/tax/taxConfig";
 
 export type OrderLineItem = { code: string; label: string; amountCop: number };
 
@@ -20,6 +22,15 @@ export type PlanPlusOrderAmount = {
   listCompareCop: number;
   clauseCop: number;
   hasCostedClause: boolean;
+  /** Subtotal antes de IVA (Plan Plus + cláusulas). */
+  subtotalCop: number;
+  /** IVA aplicado (0 si la empresa no es responsable de IVA). */
+  ivaCop: number;
+  /** Tarifa de IVA aplicada (%). */
+  ivaRate: number;
+  /** ¿Se aplicó IVA a esta orden? */
+  ivaApplies: boolean;
+  /** Total a cobrar (subtotal + IVA). */
   totalCop: number;
   lineItems: OrderLineItem[];
   promoName: string | null;
@@ -190,12 +201,30 @@ export async function computePlanPlusOrderAmount(
   }
 
   const hasCharge = clauseUnits > 0 && clauseCop > 0;
+
+  // IVA: se AGREGA al subtotal solo si la empresa es responsable de IVA. Server-
+  // authoritative: el total que se cobra ya incluye el IVA cuando aplica.
+  const subtotalCop = planPlusCop + clauseCop;
+  const taxCfg = await getTaxConfig(firestore);
+  const taxed = computeTaxedPrice(subtotalCop, taxCfg);
+  if (taxed.ivaApplies && taxed.ivaCop > 0) {
+    lineItems.push({
+      code: "iva",
+      label: `IVA (${taxed.ivaRate}%)`,
+      amountCop: taxed.ivaCop,
+    });
+  }
+
   return {
     planPlusCop,
     listCompareCop: pricing.listCompareCop,
     clauseCop,
     hasCostedClause: hasCharge,
-    totalCop: planPlusCop + clauseCop,
+    subtotalCop,
+    ivaCop: taxed.ivaCop,
+    ivaRate: taxed.ivaRate,
+    ivaApplies: taxed.ivaApplies,
+    totalCop: taxed.totalCop,
     lineItems,
     promoName: pricing.promoName,
     promoMessage: pricing.promoMessage,

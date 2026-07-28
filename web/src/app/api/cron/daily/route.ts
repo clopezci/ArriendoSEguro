@@ -25,6 +25,7 @@ const TASKS = [
   "/api/contracts/custom-alerts/send-due", // alertas personalizadas del dueño
   "/api/observability/error-alert/send-due", // alertas de errores (operación)
   "/api/observability/audit-report/send-due", // auditoría de postura (config/seguridad) por Telegram
+  "/api/tax/iva-threshold-check/send-due", // impuestos: auto-activa IVA al llegar al tope + alerta
   "/api/reputation/retention/purge", // caducidad: borra reputación > 4 años + limpia certificados
 ] as const;
 

@@ -252,6 +252,38 @@ export default function AdminPage() {
   const [hubErr, setHubErr] = useState("");
   const [hubLoading, setHubLoading] = useState(false);
 
+  // Config tributaria (IVA).
+  type TaxCfg = { ivaResponsable: boolean; ivaRate: number; uvtValue: number; uvtYear: number; regime: string; autoActivatedAt?: string; updatedByEmail?: string };
+  const [taxCfg, setTaxCfg] = useState<TaxCfg | null>(null);
+  const [taxThreshold, setTaxThreshold] = useState(0);
+  const [taxMsg, setTaxMsg] = useState("");
+  const [taxBusy, setTaxBusy] = useState(false);
+  const loadTax = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await fetch("/api/admin/tax-config", { headers: { ...(await buildAuthHeaders(user)) } });
+      const j = (await res.json()) as { success?: boolean; config?: TaxCfg; thresholdCop?: number };
+      if (j.success && j.config) { setTaxCfg(j.config); setTaxThreshold(j.thresholdCop ?? 0); }
+    } catch { /* noop */ }
+  }, [user]);
+  useEffect(() => { void loadTax(); }, [loadTax]);
+  async function saveTax(patch: Partial<TaxCfg>) {
+    if (!user) return;
+    setTaxBusy(true);
+    setTaxMsg("");
+    try {
+      const res = await fetch("/api/admin/tax-config", {
+        method: "PUT",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify(patch),
+      });
+      const j = (await res.json()) as { success?: boolean; config?: TaxCfg; thresholdCop?: number; errors?: { message?: string }[] };
+      if (j.success && j.config) { setTaxCfg(j.config); setTaxThreshold(j.thresholdCop ?? 0); setTaxMsg("Guardado ✓"); }
+      else setTaxMsg(j.errors?.[0]?.message ?? "No se pudo guardar.");
+    } catch { setTaxMsg("Error de red."); }
+    finally { setTaxBusy(false); }
+  }
+
   // Reconciliación manual de un pago Wompi que quedó sin confirmar (sin webhook).
   const [recRef, setRecRef] = useState("");
   const [recTx, setRecTx] = useState("");
@@ -1917,6 +1949,76 @@ export default function AdminPage() {
               <pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-emerald-100">
                 {recOut}
               </pre>
+            )}
+          </section>
+        )}
+
+        {data && (
+          <section className="mb-6 rounded-xl border border-violet-400/40 bg-white/95 p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-900">Impuestos (IVA)</h2>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              Hoy, arrancando, lo normal es ser <strong>NO responsable de IVA</strong> (precio final, sin IVA). Cuando tus
+              ingresos del año lleguen al tope de <strong>3.500 UVT</strong>, el sistema <strong>activa solo</strong> el IVA
+              y te avisa por Telegram. Al activarse, los precios pasan a mostrar <strong>valor + IVA {taxCfg?.ivaRate ?? 19}%</strong>.
+              Confírmalo con tu contador. Ver <code>docs/IMPUESTOS-COLOMBIA.md</code>.
+            </p>
+            {taxCfg ? (
+              <div className="mt-3 space-y-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={taxCfg.ivaResponsable}
+                    disabled={taxBusy}
+                    onChange={(e) => void saveTax({ ivaResponsable: e.target.checked })}
+                    className="h-4 w-4 accent-violet-600"
+                  />
+                  <span className="font-medium text-slate-800">Responsable de IVA (cobrar IVA)</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${taxCfg.ivaResponsable ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
+                    {taxCfg.ivaResponsable ? "Cobrando IVA" : "Sin IVA"}
+                  </span>
+                </label>
+                {taxCfg.autoActivatedAt && (
+                  <p className="rounded border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900">
+                    ⚠️ Se activó automáticamente al superar el tope ({new Date(taxCfg.autoActivatedAt).toLocaleDateString("es-CO")}). Confírmalo con tu contador.
+                  </p>
+                )}
+                <div className="flex flex-wrap items-end gap-3 text-xs">
+                  <label className="text-slate-700">
+                    <span className="mb-1 block">Tarifa IVA (%)</span>
+                    <input type="number" defaultValue={taxCfg.ivaRate} min={0} max={100} step={0.1}
+                      onBlur={(e) => { const v = Number(e.target.value); if (v !== taxCfg.ivaRate) void saveTax({ ivaRate: v }); }}
+                      className="w-24 rounded border border-slate-300 px-2 py-1.5" />
+                  </label>
+                  <label className="text-slate-700">
+                    <span className="mb-1 block">UVT vigente (COP)</span>
+                    <input type="number" defaultValue={taxCfg.uvtValue} min={1000}
+                      onBlur={(e) => { const v = Number(e.target.value); if (v !== taxCfg.uvtValue) void saveTax({ uvtValue: v }); }}
+                      className="w-32 rounded border border-slate-300 px-2 py-1.5" />
+                  </label>
+                  <label className="text-slate-700">
+                    <span className="mb-1 block">Año UVT</span>
+                    <input type="number" defaultValue={taxCfg.uvtYear} min={2020} max={2100}
+                      onBlur={(e) => { const v = Number(e.target.value); if (v !== taxCfg.uvtYear) void saveTax({ uvtYear: v }); }}
+                      className="w-24 rounded border border-slate-300 px-2 py-1.5" />
+                  </label>
+                  <label className="text-slate-700">
+                    <span className="mb-1 block">Régimen</span>
+                    <select defaultValue={taxCfg.regime}
+                      onChange={(e) => void saveTax({ regime: e.target.value })}
+                      className="rounded border border-slate-300 px-2 py-1.5">
+                      <option value="no_responsable">No responsable</option>
+                      <option value="responsable">Responsable (ordinario)</option>
+                      <option value="simple">Régimen Simple</option>
+                    </select>
+                  </label>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Tope para volverse responsable: <strong>${taxThreshold.toLocaleString("es-CO")}</strong> (3.500 UVT).
+                  {taxMsg && <span className="ml-2 font-medium text-slate-800">{taxMsg}</span>}
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-slate-400">Cargando…</p>
             )}
           </section>
         )}
