@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { useSavedContract } from "@/components/contracts/requires-saved-contract";
+import { StartDefinitiveContract } from "@/components/contracts/start-definitive-contract";
 import { getDraft, type ContractDraft } from "@/features/contracts/wizard-state";
 
 /**
@@ -117,6 +118,9 @@ export default function GestionarPosventaPage() {
         <p className="mt-3 text-lg text-slate-500">
           {title}{tenant ? ` · Inquilino: ${tenant}` : ""}. Elige <b>una cosa a la vez</b>.
         </p>
+
+        {/* Iniciar el contrato definitivo (anti-abuso: bloquea + consume el cupo). */}
+        {unlocked && <StartDefinitiveContract contractId={id} />}
 
         {/* Entrada al flujo "Termina tu contrato" (documentos, pagos y alertas). */}
         {unlocked && (
