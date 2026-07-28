@@ -141,6 +141,8 @@ export default function AdminPage() {
   const [obsThresholdInput, setObsThresholdInput] = useState("");
   const [tgMsg, setTgMsg] = useState("");
   const [tgBusy, setTgBusy] = useState(false);
+  const [auditBusy, setAuditBusy] = useState(false);
+  const [auditReport, setAuditReport] = useState("");
   const [incidents, setIncidents] = useState<
     { id: string; title: string; body: string; severity: string; status: string; createdAt: string }[]
   >([]);
@@ -683,6 +685,24 @@ export default function AdminPage() {
       setTgMsg("Error de red.");
     } finally {
       setTgBusy(false);
+    }
+  }
+
+  async function runAudit() {
+    if (!user) return;
+    setAuditBusy(true);
+    setAuditReport("");
+    try {
+      const res = await fetch("/api/admin/run-audit", {
+        method: "POST",
+        headers: { ...(await buildAuthHeaders(user)) },
+      });
+      const json = (await res.json()) as { success?: boolean; report?: string; error?: string };
+      setAuditReport(json.success ? (json.report ?? "(sin reporte)") : `No se pudo: ${json.error ?? "error"}`);
+    } catch {
+      setAuditReport("Error de red al correr la auditoría.");
+    } finally {
+      setAuditBusy(false);
     }
   }
 
@@ -2212,11 +2232,24 @@ export default function AdminPage() {
             >
               {tgBusy ? "…" : "Probar Telegram"}
             </button>
+            <button
+              type="button"
+              disabled={auditBusy}
+              onClick={() => void runAudit()}
+              className="rounded border border-emerald-600 bg-emerald-600 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+            >
+              {auditBusy ? "…" : "Correr auditoría de postura"}
+            </button>
             <span className="text-[11px] text-slate-600">
-              Alertas de error también salen por Telegram (canal instantáneo, sin plantillas).
+              Alertas de error también salen por Telegram; la auditoría de postura (config/seguridad) corre a diario y también aquí a demanda.
             </span>
             {tgMsg && <span className="text-[11px] font-medium text-slate-800">{tgMsg}</span>}
           </div>
+          {auditReport && (
+            <pre className="mt-2 max-h-72 w-full overflow-auto whitespace-pre-wrap rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-emerald-100">
+              {auditReport}
+            </pre>
+          )}
 
           <div className="mt-4">
             <p className="text-xs font-medium text-slate-700">Publicar incidente</p>
