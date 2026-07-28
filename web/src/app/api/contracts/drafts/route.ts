@@ -84,6 +84,13 @@ export async function PUT(request: Request) {
   }
 
   const doc = buildDraftDocument(auth.user.uid, parsed.draft);
+
+  // Contrato iniciado (definitivo): el borrador queda CONGELADO. No-op silencioso
+  // (no error) para no romper el autoguardado del cliente; sus datos no cambian.
+  if (await isContractStarted(firestore, doc.draftId)) {
+    return NextResponse.json({ success: true, draftId: doc.draftId, locked: true });
+  }
+
   await firestore
     .collection(CONTRACT_DRAFTS_COLLECTION)
     .doc(doc.draftId)
