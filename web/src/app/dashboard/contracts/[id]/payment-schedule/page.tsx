@@ -51,7 +51,12 @@ export default function PaymentSchedulePage() {
     if (!versionId) return;
     const list = await fetch(`/api/payments/schedule/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json());
     if (list?.success) {
-      setSchedule((list.scheduledPayments ?? []) as ScheduledPayment[]);
+      // Orden por fecha de vencimiento (más cercana primero).
+      setSchedule(
+        ((list.scheduledPayments ?? []) as ScheduledPayment[])
+          .slice()
+          .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()),
+      );
       if (list.reminderSettings) {
         setSettings({
           enabled: Boolean(list.reminderSettings.enabled),
