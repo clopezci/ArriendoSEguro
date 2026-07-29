@@ -599,8 +599,12 @@ export default function NuevoPage() {
     // Google, pero si ese fallaba el timing quedabas en "home". Ahora ACTIVE_KEY
     // te devuelve a tu paso sí o sí; el resume de Google solo reclama el borrador
     // a tu cuenta (userId) y el consentimiento, sin controlar la navegación.
-    const id = new URLSearchParams(window.location.search).get("id");
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("id");
     if (id) { restoreDraft(id); return; }
+    // Si venimos de "Ya tengo cuenta" (login), mostramos el MENÚ (Crear / Gestionar),
+    // NO auto-continuamos el borrador activo. Antes se saltaba directo a crear.
+    if (params.get("menu") === "1") return;
     const active = window.localStorage.getItem(ACTIVE_KEY);
     if (active) restoreDraft(active);
   }, [restoreDraft, serverSynced]);

@@ -91,7 +91,7 @@ export default function Home() {
               Crear mi contrato →
             </Link>
             <Link
-              href="/ingresar?redirect=/nuevo"
+              href="/ingresar?redirect=%2Fnuevo%3Fmenu%3D1"
               className="inline-flex min-h-[52px] items-center justify-center rounded-2xl border-2 border-slate-200 bg-white/80 px-6 text-base font-bold text-slate-700 transition hover:border-[#5646E5]"
             >
               Ya tengo cuenta
