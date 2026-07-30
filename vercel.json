@@ -5,6 +5,7 @@
   "outputDirectory": "web/.next",
   "framework": "nextjs",
   "crons": [
-    { "path": "/api/cron/daily", "schedule": "0 13 * * *" }
+    { "path": "/api/cron/daily", "schedule": "0 13 * * *" },
+    { "path": "/api/observability/audit-report/send-due", "schedule": "0 */6 * * *" }
   ]
 }
