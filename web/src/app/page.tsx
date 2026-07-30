@@ -96,6 +96,12 @@ export default function Home() {
             >
               Ya tengo cuenta
             </Link>
+            <Link
+              href="/funcionalidades"
+              className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border-2 border-[#5646E5] bg-[#ECE9FB]/50 px-6 text-base font-bold text-[#5646E5] transition hover:bg-[#ECE9FB]"
+            >
+              🔊 Ver todo lo que puedes hacer
+            </Link>
           </div>
 
           {/* Recorrido fácil (los 5 pasos, como un camino, no un trámite) */}
