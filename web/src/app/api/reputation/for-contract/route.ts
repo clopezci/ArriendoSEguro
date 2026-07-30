@@ -12,7 +12,13 @@ export const runtime = "nodejs";
 const REVIEWS_COLLECTION = "reputation_reviews";
 const RATEABLE_STATUSES = new Set(["signed", "closed", "finished", "completed"]);
 
-type ReplyView = { reason: string; text: string; byRole: string; createdAt: string } | null;
+type ReplyView = {
+  reason: string;
+  text: string;
+  byRole: string;
+  createdAt: string;
+  attachmentUrl: string | null;
+} | null;
 
 type ReviewView = {
   direction: string;
@@ -50,6 +56,7 @@ async function readReview(
           text: String(rawReply.text ?? ""),
           byRole: String(rawReply.byRole ?? ""),
           createdAt: String(rawReply.createdAt ?? ""),
+          attachmentUrl: rawReply.attachmentUrl ? String(rawReply.attachmentUrl) : null,
         }
       : null,
   };
