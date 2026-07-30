@@ -21,6 +21,7 @@ import { useVoice } from "@/lib/nuevo/useVoice";
 import { MicButton } from "@/components/nuevo/mic-button";
 import { ExpressRegister } from "@/components/nuevo/express-register";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
+import { TenantRoleLink } from "@/components/nuevo/tenant-role-link";
 import { CodebtorViaTenantPanel } from "@/components/contracts/codebtor-via-tenant-panel";
 import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-owner-list";
 import { AdditionalCodebtorsManager } from "@/components/contracts/additional-codebtors-manager";
@@ -979,6 +980,7 @@ export default function NuevoPage() {
               <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <BentoCard theme={themes[0]} title="Crear un contrato" sub="Te guío una pregunta a la vez. Sin formularios eternos." cta="Empezar" onClick={start} icon={<path d="M8 3h6l4 4v14H6V5M14 3v4h4M9 13h6M9 17h4" />} />
                 <BentoCard theme={themes[1]} title="Gestionar mis contratos" sub="Firmas, pagos, inventario y alertas de los que ya creaste." cta="Ver mis contratos" onClick={() => router.push("/nuevo/contratos")} icon={<path d="M3 7h6l2 2h10v11H3zM3 7V5h5l2 2" />} />
+                <TenantRoleLink />
                 <div className="col-span-full flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/70 p-3 text-sm text-slate-500 backdrop-blur">
                   🔒 <b className="text-[#17151F]">Tranquilo:</b> puedes pausar y seguir después; tus datos quedan guardados.
                 </div>
