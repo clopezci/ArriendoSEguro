@@ -1,0 +1,163 @@
+"use client";
+
+import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
+
+/** Lista COMPLETA de lo que hace ArriendoSeguro, por secciones. Se muestra y se
+ * puede ESCUCHAR (lectura por voz). Pensado para todo público, incluidos usuarios
+ * mayores. Mantener actualizada al agregar funciones. */
+const SECTIONS: { title: string; items: string[] }[] = [
+  {
+    title: "Crear tu contrato",
+    items: [
+      "Crear un contrato de arrendamiento de vivienda urbana con validez legal (Ley 820 de 2003), paso a paso, una pregunta a la vez.",
+      "Pre-llenar el contrato con inteligencia artificial: cuéntale tu caso (incluso por voz) y llena los datos por ti.",
+      "Validación automática de los datos: nombre y apellido, documento colombiano, correo y teléfono.",
+      "Elegir tipo de inmueble y cantidad de habitaciones y baños.",
+      "Calcular el tope legal del canon (1% del valor comercial) y avisarte si se pasa.",
+      "Garantía de servicios públicos según la Ley 820 (artículo 15).",
+      "Elegir quién ingresa los datos del inquilino y del codeudor: los ingresas tú o le envías un enlace a la persona.",
+      "Invitar al inquilino o codeudor por correo o WhatsApp; ellos completan sus datos, suben documentos, aceptan el juramento y la autorización de datos con validación por código.",
+      "Agregar cláusulas especiales, incluida una cláusula personalizada revisada por un abogado, y cláusula que prohíbe el uso ilícito del inmueble.",
+      "Actuar como dueño o como apoderado (con poder y declaración de facultad).",
+    ],
+  },
+  {
+    title: "Validación y documentos",
+    items: [
+      "Validación de documentos con inteligencia artificial (servicios públicos, soporte de propiedad, cédula) con alerta si no coinciden.",
+      "Subir el documento que soporta la propiedad del inmueble, con juramento de facultad y responsabilidad.",
+      "Subir soportes de ingresos del inquilino y del codeudor (carta laboral, colillas, extractos).",
+      "Definir qué documentos exiges a cada parte, como casillas nombradas.",
+    ],
+  },
+  {
+    title: "Firma y generación",
+    items: [
+      "Firma electrónica simple con validez y evidencia (Ley 527 de 1999).",
+      "Opción de notaría digital del Estado (Agencia Nacional Digital).",
+      "Vista previa del contrato, generación y descarga del contrato en PDF.",
+      "Iniciar el contrato definitivo: lo deja en firme y bloqueado.",
+    ],
+  },
+  {
+    title: "Entrega e inventario",
+    items: [
+      "Inventario guiado del inmueble por zonas, con fotos y notas por voz.",
+      "Acta de entrega con fecha, quién recibe y observaciones (obligatoria).",
+      "Descargar el acta y el contrato en PDF desde el celular.",
+      "Envío automático del acta por correo a las partes para su aceptación.",
+    ],
+  },
+  {
+    title: "Durante el arriendo",
+    items: [
+      "Calendario de pagos ordenado por vencimiento.",
+      "Recordatorios de pago por correo y SMS, y registro de pagos con soporte.",
+      "Enlace o QR para que el inquilino suba el comprobante de pago.",
+      "Reportar daños y reparaciones: el inquilino reporta, el dueño acepta o rechaza; si hay disputa, un abogado aliado.",
+      "Bitácora de novedades: convivencia, acuerdos e incumplimientos.",
+      "Alertas de responsabilidad para dueño e inquilino, guardadas en el expediente.",
+      "Vista 'como inquilino' para quienes también arriendan: ver sus contratos y reportar daños.",
+    ],
+  },
+  {
+    title: "Cierre y reputación",
+    items: [
+      "Renovar el contrato (otrosí de prórroga y reajuste por IPC).",
+      "Calificar la experiencia y construir reputación, con derecho de réplica.",
+      "Certificado de confianza y paquete de evidencia del expediente.",
+    ],
+  },
+  {
+    title: "Herramientas y ayuda",
+    items: [
+      "Consulta legal con inteligencia artificial que responde citando la norma.",
+      "Calculadoras: IPC, tope del canon, intereses de mora y preaviso.",
+      "Plantillas gratis (preaviso, paz y salvo, acta, autorización de datos).",
+      "Blog con guías de arriendo y las leyes citadas.",
+      "Pagos en línea con Wompi.",
+    ],
+  },
+];
+
+export default function FuncionalidadesPage() {
+  const [speaking, setSpeaking] = useState(false);
+  const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const fullText = useMemo(
+    () =>
+      "Esto es todo lo que puedes hacer en ArriendoSeguro. " +
+      SECTIONS.map((s) => `${s.title}. ${s.items.join(" ")}`).join(" "),
+    [],
+  );
+
+  const canSpeak = typeof window !== "undefined" && "speechSynthesis" in window;
+
+  function toggleSpeak() {
+    if (!canSpeak) return;
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+    const u = new SpeechSynthesisUtterance(fullText);
+    u.lang = "es-CO";
+    u.rate = 0.98;
+    u.onend = () => setSpeaking(false);
+    u.onerror = () => setSpeaking(false);
+    utterRef.current = u;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+    setSpeaking(true);
+  }
+
+  return (
+    <div className="relative min-h-screen bg-[#F5F3EF] text-[#17151F]">
+      <div className="mx-auto max-w-3xl px-6 py-10">
+        <div className="mb-6 flex items-center justify-between">
+          <Link href="/" className="text-sm font-semibold text-[#5646E5] hover:underline">← Inicio</Link>
+          <Link href="/nuevo" className="rounded-full bg-[#FF6B4A] px-4 py-2 text-sm font-bold text-white">Crear mi contrato →</Link>
+        </div>
+
+        <h1 className="text-balance text-4xl font-extrabold tracking-tight sm:text-5xl">Todo lo que puedes hacer</h1>
+        <p className="mt-3 text-lg text-slate-500">ArriendoSeguro te acompaña de principio a fin: crear, firmar, entregar, cobrar y administrar tu arriendo — simple y seguro.</p>
+
+        {canSpeak && (
+          <button
+            type="button"
+            onClick={toggleSpeak}
+            className={`mt-5 inline-flex items-center gap-2 rounded-2xl px-6 py-4 text-base font-bold text-white shadow-lg transition active:scale-95 ${speaking ? "bg-rose-500 shadow-rose-500/30" : "bg-[#5646E5] shadow-violet-500/30"}`}
+          >
+            {speaking ? "⏹️ Detener" : "🔊 Escuchar todo"}
+          </button>
+        )}
+
+        <div className="mt-8 space-y-6">
+          {SECTIONS.map((s) => (
+            <section key={s.title} className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm">
+              <h2 className="text-xl font-extrabold text-[#5646E5]">{s.title}</h2>
+              <ul className="mt-3 space-y-2">
+                {s.items.map((it, i) => (
+                  <li key={i} className="flex items-start gap-2.5 text-[15px] leading-relaxed text-slate-700">
+                    <span className="mt-1 flex-none text-[#12B886]">✓</span>
+                    <span>{it}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link href="/nuevo" className="rounded-2xl bg-[#FF6B4A] px-7 py-4 text-base font-bold text-white shadow-lg shadow-orange-500/30">Empezar ahora →</Link>
+          {canSpeak && (
+            <button type="button" onClick={toggleSpeak} className="rounded-2xl border-2 border-[#5646E5] px-7 py-4 text-base font-bold text-[#5646E5]">
+              {speaking ? "⏹️ Detener" : "🔊 Escuchar"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
