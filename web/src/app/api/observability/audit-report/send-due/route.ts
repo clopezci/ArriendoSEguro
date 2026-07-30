@@ -16,3 +16,11 @@ export async function POST(request: Request) {
   const { audit, telegramSent } = await sendAuditReport();
   return NextResponse.json({ success: true, telegramSent, summary: audit.summary });
 }
+
+/** Vercel Cron llama por GET. Cron dedicado (cada 6 h en Pro) para el reporte. */
+export async function GET(request: Request) {
+  const gate = requireCronAuth(request);
+  if (!gate.ok) return gate.response;
+  const { audit, telegramSent } = await sendAuditReport();
+  return NextResponse.json({ success: true, telegramSent, summary: audit.summary });
+}
