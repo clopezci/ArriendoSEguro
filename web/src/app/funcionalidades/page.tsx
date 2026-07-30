@@ -37,6 +37,7 @@ const SECTIONS: { title: string; items: string[] }[] = [
     items: [
       "Firma electrónica simple con validez y evidencia (Ley 527 de 1999).",
       "Opción de notaría digital del Estado (Agencia Nacional Digital).",
+      "Captura de evidencia de TODAS las aceptaciones y juramentos durante el contrato —autorización de datos, juramentos de las partes, aceptación del acta de entrega, réplicas y más—, con fecha y hora (GMT-5), quién aceptó y desde dónde, guardada en el expediente.",
       "Vista previa del contrato, generación y descarga del contrato en PDF.",
       "Iniciar el contrato definitivo: lo deja en firme y bloqueado.",
     ],
@@ -88,6 +89,7 @@ const SECTIONS: { title: string; items: string[] }[] = [
       "Jurídica: asesoría y acompañamiento legal en disputas.",
       "Cobranza: gestión profesional cuando hay mora.",
       "Estudio de crédito: verificación a fondo del inquilino o codeudor.",
+      "Asistencia al hogar: plomería, electricidad, cerrajería y emergencias domésticas.",
     ],
   },
 ];
