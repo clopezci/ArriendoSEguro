@@ -29,6 +29,7 @@ const SECTIONS: { title: string; items: string[] }[] = [
       "Subir el documento que soporta la propiedad del inmueble, con juramento de facultad y responsabilidad.",
       "Subir soportes de ingresos del inquilino y del codeudor (carta laboral, colillas, extractos).",
       "Definir qué documentos exiges a cada parte, como casillas nombradas.",
+      "Consultar, con enlaces directos y autorización de la persona, el historial crediticio en DataCrédito (personal) y las deudas con el Estado, para evaluar mejor al inquilino o codeudor.",
     ],
   },
   {
@@ -53,9 +54,9 @@ const SECTIONS: { title: string; items: string[] }[] = [
     title: "Durante el arriendo",
     items: [
       "Calendario de pagos ordenado por vencimiento.",
-      "Recordatorios de pago por correo y SMS, y registro de pagos con soporte.",
+      "Recordatorios de pago por correo y WhatsApp, y registro de pagos con soporte.",
       "Enlace o QR para que el inquilino suba el comprobante de pago.",
-      "Reportar daños y reparaciones: el inquilino reporta, el dueño acepta o rechaza; si hay disputa, un abogado aliado.",
+      "Reportar daños y reparaciones: el inquilino reporta y el dueño acepta o rechaza. Si hay una disputa, puedes acceder por un enlace a abogados aliados independientes, que te dicen cuánto podría costar antes de que decidas.",
       "Bitácora de novedades: convivencia, acuerdos e incumplimientos.",
       "Alertas de responsabilidad para dueño e inquilino, guardadas en el expediente.",
       "Vista 'como inquilino' para quienes también arriendan: ver sus contratos y reportar daños.",
@@ -77,6 +78,16 @@ const SECTIONS: { title: string; items: string[] }[] = [
       "Plantillas gratis (preaviso, paz y salvo, acta, autorización de datos).",
       "Blog con guías de arriendo y las leyes citadas.",
       "Pagos en línea con Wompi.",
+    ],
+  },
+  {
+    title: "Próximamente: aliados independientes",
+    items: [
+      "Estamos sumando aliados independientes para cubrir todas tus necesidades si decides tomarlos, por un costo adicional y siempre a tu elección.",
+      "Aseguradora: respaldo del arriendo y del inmueble.",
+      "Jurídica: asesoría y acompañamiento legal en disputas.",
+      "Cobranza: gestión profesional cuando hay mora.",
+      "Estudio de crédito: verificación a fondo del inquilino o codeudor.",
     ],
   },
 ];
