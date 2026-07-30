@@ -1,13 +1,59 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue, type Firestore } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import { requireContractParticipant } from "@/lib/auth/serverAuth";
+import { requireAuthenticatedUser, getUserRoleInContract } from "@/lib/auth/serverAuth";
 import { auditEvent } from "@/features/contracts/audit-server";
 
 export const runtime = "nodejs";
 
 type Err = { success: false; errors: { field: string; message: string }[] };
+
+/**
+ * Autoriza a quien confirma el cierre: el DUEÑO del contrato. "Dueño" =
+ * propietario del borrador (`contract_drafts.ownerUid`) O quien resuelve como
+ * `landlord` por email en el contrato guardado. Antes solo se aceptaba el match
+ * por email de `landlord`, y en el flujo /nuevo el correo de la cuenta no siempre
+ * coincide con `contractPayload.landlord.email` → 403 y el checklist "revertía".
+ */
+async function requireContractOwner(
+  request: Request,
+  firestore: Firestore,
+  contractId: string,
+): Promise<
+  | { ok: true; user: { uid: string; email: string } }
+  | { ok: false; response: NextResponse }
+> {
+  const auth = await requireAuthenticatedUser(request);
+  if (!auth.ok) return auth;
+
+  const [cSnap, draftSnap, role] = await Promise.all([
+    firestore.collection("contracts").doc(contractId).get(),
+    firestore.collection("contract_drafts").doc(contractId).get(),
+    getUserRoleInContract(firestore, auth.user.uid, auth.user.email, contractId),
+  ]);
+  if (!cSnap.exists) {
+    return {
+      ok: false,
+      response: NextResponse.json<Err>(
+        { success: false, errors: [{ field: "contractId", message: "Contrato no encontrado." }] },
+        { status: 404 },
+      ),
+    };
+  }
+  const ownerUid = (draftSnap.data() as { ownerUid?: string } | undefined)?.ownerUid;
+  const isOwner = Boolean(ownerUid) && ownerUid === auth.user.uid;
+  if (!isOwner && role !== "landlord") {
+    return {
+      ok: false,
+      response: NextResponse.json<Err>(
+        { success: false, errors: [{ field: "role", message: "Solo el dueño puede confirmar el cierre." }] },
+        { status: 403 },
+      ),
+    };
+  }
+  return { ok: true, user: { uid: auth.user.uid, email: auth.user.email } };
+}
 
 /**
  * Checklist de cierre de "Termina tu contrato". El DUEÑO es el responsable de
@@ -40,8 +86,8 @@ export async function GET(request: Request) {
   if (!contractId) {
     return NextResponse.json<Err>({ success: false, errors: [{ field: "contractId", message: "Falta contractId." }] }, { status: 422 });
   }
-  const participant = await requireContractParticipant(request, firestore, contractId, { kind: "current" });
-  if (!participant.ok) return participant.response;
+  const owner = await requireContractOwner(request, firestore, contractId);
+  if (!owner.ok) return owner.response;
 
   const snap = await firestore.collection("contracts").doc(contractId).get();
   return NextResponse.json({ success: true, checklist: readChecklist(snap.data()) });
@@ -61,12 +107,8 @@ export async function POST(request: Request) {
     return NextResponse.json<Err>({ success: false, errors: [{ field: "body", message: "Datos inválidos." }] }, { status: 422 });
   }
   const { contractId, step, value } = parsed.data;
-  const participant = await requireContractParticipant(request, firestore, contractId, { kind: "current" });
-  if (!participant.ok) return participant.response;
-  // Solo el dueño confirma el cierre del contrato.
-  if (participant.role !== "landlord") {
-    return NextResponse.json<Err>({ success: false, errors: [{ field: "role", message: "Solo el dueño puede confirmar el cierre." }] }, { status: 403 });
-  }
+  const owner = await requireContractOwner(request, firestore, contractId);
+  if (!owner.ok) return owner.response;
 
   const ref = firestore.collection("contracts").doc(contractId);
   await ref.set(

@@ -23,10 +23,18 @@ export async function GET(request: Request) {
     if (!contract?.currentVersionId) return NextResponse.json({ success: true, contract: safeContract, version: null });
     const versionSnap = await firestore.collection("contract_versions").doc(contract.currentVersionId).get();
     const v = versionSnap.data() as
-      | { contractId?: string; status?: string; hasSolidaryCoDebtor?: boolean; contractPayload?: { lease?: unknown } }
+      | {
+          contractId?: string;
+          status?: string;
+          hasSolidaryCoDebtor?: boolean;
+          contractPayload?: { lease?: unknown };
+          pdfGeneratedAt?: string;
+        }
       | undefined;
     // Solo el bloque `lease` (canon, fechas, día de pago) + el booleano
-    // `hasSolidaryCoDebtor` (no es PII); nunca partes/inmueble/HTML.
+    // `hasSolidaryCoDebtor` (no es PII); nunca partes/inmueble/HTML. Incluimos
+    // `pdfGeneratedAt` (solo la marca de tiempo, NO la URL del PDF) para que la
+    // UI pueda rehidratar el paso "PDF" como completado tras recargar.
     const safeVersion = versionSnap.exists
       ? {
           id: versionSnap.id,
@@ -34,6 +42,7 @@ export async function GET(request: Request) {
           status: v?.status ?? null,
           hasSolidaryCoDebtor: Boolean(v?.hasSolidaryCoDebtor),
           contractPayload: { lease: v?.contractPayload?.lease ?? null },
+          pdfGeneratedAt: v?.pdfGeneratedAt ?? null,
         }
       : null;
     return NextResponse.json({ success: true, contract: safeContract, version: safeVersion });

@@ -12,10 +12,13 @@ import { auditEvent } from "@/features/contracts/audit-server";
 import type { SignaturePartyType } from "@/domain/signatures/types";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
 import {
-  getAnyValidPlusEntitlementForUser,
-  getAnyValidDemoEntitlementForUser,
+  getActivePlusEntitlementForUser,
+  getActiveDemoEntitlementForUser,
 } from "@/domain/platform-payments/entitlements";
 import { getResolvedFreeTier } from "@/domain/platform-payments/free-tier";
+import { getContractLifecycle } from "@/lib/contracts/lifecycle";
+import { CONTRACT_LIFECYCLE_COLLECTION } from "@/domain/contracts/contractLifecycle";
+import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
 
 export const runtime = "nodejs";
 
@@ -124,27 +127,82 @@ export async function POST(request: Request) {
     });
     if (!participant.ok) return participant.response;
 
-    // Gate de pago: con el tier gratis activo, la firma electrónica es Plus
-    // (o demo). Un contrato gratis se genera, pero firmar requiere Plus.
+    // Gate de pago POR CONTRATO: con el tier gratis activo, firmar consume un
+    // cupo Plus del DUEÑO del contrato, UNA sola vez por contrato (idempotente
+    // vía `contract_lifecycle`). Antes solo se comprobaba "¿el usuario tiene
+    // algún Plus?" y un Plus ya consumido seguía contando, así que tras pagar
+    // 1 contrato se podían firmar contratos ilimitados gratis. El cupo lo aporta
+    // el creador del borrador, no quien inicia la ronda (que puede ser inquilino).
     if ((await getResolvedFreeTier(firestore)).enabled) {
-      const [plus, demo] = await Promise.all([
-        getAnyValidPlusEntitlementForUser(firestore, participant.user.uid),
-        getAnyValidDemoEntitlementForUser(firestore, participant.user.uid),
-      ]);
-      if (!plus && !demo) {
-        return NextResponse.json<StartSignatureResponse>(
-          {
-            success: false,
-            errors: [
+      const life = await getContractLifecycle(firestore, contractId);
+      const alreadyPaidForThisContract =
+        life.entitlementConsumed === true || life.started === true || Boolean(life.unlockedByAdminAt);
+      if (!alreadyPaidForThisContract) {
+        const draftSnap = await firestore.collection("contract_drafts").doc(contractId).get();
+        const ownerUid =
+          (draftSnap.data() as { ownerUid?: string } | undefined)?.ownerUid ?? participant.user.uid;
+        const lifecycleRef = firestore.collection(CONTRACT_LIFECYCLE_COLLECTION).doc(contractId);
+        const nowISO = new Date().toISOString();
+
+        const demo = await getActiveDemoEntitlementForUser(firestore, ownerUid);
+        if (demo) {
+          // Tester/demo: permite firmar y marca el contrato como consumido para
+          // no volver a preguntar (sin bloquearlo como definitivo).
+          await lifecycleRef.set(
+            {
+              contractId,
+              entitlementConsumed: true,
+              entitlementVia: "demo",
+              updatedAt: nowISO,
+              updatedAtServer: FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+        } else {
+          const entitlement = await getActivePlusEntitlementForUser(firestore, ownerUid);
+          if (!entitlement) {
+            return NextResponse.json<StartSignatureResponse>(
               {
-                field: "plus_required",
-                message:
-                  "La firma electrónica con validez y evidencia (Ley 527) es parte de Plan Plus. Actívalo para firmar tu contrato y guardar los soportes.",
+                success: false,
+                errors: [
+                  {
+                    field: "plus_required",
+                    message:
+                      "Para firmar este contrato necesitas un cupo de Plan Plus. Cada contrato usa un cupo; el dueño debe activarlo en «Planes» antes de firmar.",
+                  },
+                ],
               },
-            ],
-          },
-          { status: 402 },
-        );
+              { status: 402 },
+            );
+          }
+          const nextUsed = entitlement.contractsUsed + 1;
+          const nextStatus = nextUsed >= entitlement.maxContractsAllowed ? "used" : "active";
+          await firestore.collection("access_entitlements").doc(entitlement.id).set(
+            { contractsUsed: nextUsed, status: nextStatus, updatedAt: nowISO, updatedAtServer: FieldValue.serverTimestamp() },
+            { merge: true },
+          );
+          // Firmar deja el contrato en firme (consumido y bloqueado), como
+          // "Iniciar contrato definitivo": cierra el abuso de pagar-borrar-rehacer.
+          await lifecycleRef.set(
+            {
+              contractId,
+              started: true,
+              startedAt: nowISO,
+              startedByUid: ownerUid,
+              entitlementConsumed: true,
+              entitlementVia: "signature_start",
+              updatedAt: nowISO,
+              updatedAtServer: FieldValue.serverTimestamp(),
+            },
+            { merge: true },
+          );
+          await auditPlatformPaymentEvent(firestore, "access_entitlement_used", {
+            entitlementId: entitlement.id,
+            userId: ownerUid,
+            contractsUsed: nextUsed,
+            via: "signature_start",
+          });
+        }
       }
     }
 
