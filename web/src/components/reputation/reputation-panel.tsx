@@ -8,12 +8,25 @@ import { StarRating } from "@/components/reputation/star-rating";
 import {
   REPLICA_REASONS,
   REPLICA_TEXT_MAX,
+  REPUTATION_CRITERIA,
   REPUTATION_DIRECTION_LABELS,
   type ReputationCriterion,
   type ReputationDirection,
 } from "@/domain/reputation/criteria";
 
-type ReplyView = { reason: string; text: string; byRole: string; createdAt: string } | null;
+type ReplyView = {
+  reason: string;
+  text: string;
+  byRole: string;
+  createdAt: string;
+  attachmentUrl?: string | null;
+} | null;
+
+/** Etiqueta en español de una variable a partir de su clave y la dirección. */
+function criterionLabel(direction: string, key: string): string {
+  const list = REPUTATION_CRITERIA[direction as ReputationDirection] ?? [];
+  return list.find((c) => c.key === key)?.label ?? key;
+}
 
 type ReviewView = {
   direction: string;
@@ -61,6 +74,7 @@ export function ReputationPanel({ contractId }: { contractId: string }) {
   const [msg, setMsg] = useState("");
   const [replyReason, setReplyReason] = useState<(typeof REPLICA_REASONS)[number] | "">("");
   const [replyText, setReplyText] = useState("");
+  const [replyFile, setReplyFile] = useState<File | null>(null);
   const [replyBusy, setReplyBusy] = useState(false);
   const [replyMsg, setReplyMsg] = useState("");
 
@@ -134,13 +148,22 @@ export function ReputationPanel({ contractId }: { contractId: string }) {
       setReplyMsg("Elige un motivo para tu réplica.");
       return;
     }
+    if (replyFile && replyFile.size > 5 * 1024 * 1024) {
+      setReplyMsg("El documento supera 5 MB.");
+      return;
+    }
     setReplyBusy(true);
     setReplyMsg("");
     try {
+      const fd = new FormData();
+      fd.set("contractId", contractId);
+      fd.set("reason", replyReason);
+      if (replyText.trim()) fd.set("text", replyText.trim());
+      if (replyFile) fd.set("file", replyFile);
       const res = await fetch("/api/reputation/reply", {
         method: "POST",
-        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ contractId, reason: replyReason, text: replyText.trim() || undefined }),
+        headers: { ...(await buildAuthHeaders(user)) },
+        body: fd,
       });
       const json = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!res.ok || !json.success) {
@@ -148,6 +171,7 @@ export function ReputationPanel({ contractId }: { contractId: string }) {
         return;
       }
       setReplyMsg("Réplica guardada. Quedará junto a la calificación.");
+      setReplyFile(null);
       await load();
     } catch {
       setReplyMsg("Error de red al guardar la réplica.");
@@ -270,7 +294,7 @@ export function ReputationPanel({ contractId }: { contractId: string }) {
             <ul className="mt-2 space-y-1 text-xs text-slate-700">
               {Object.entries(info.counterpartReview.ratings).map(([k, v]) => (
                 <li key={k} className="flex items-center gap-2">
-                  <span className="min-w-40 capitalize">{k}</span>
+                  <span className="min-w-40">{criterionLabel(info.counterpartReview!.direction, k)}</span>
                   <StarRating name={`r-${k}`} value={v} readOnly />
                 </li>
               ))}
@@ -306,6 +330,19 @@ export function ReputationPanel({ contractId }: { contractId: string }) {
                 onChange={(e) => setReplyText(e.target.value)}
                 disabled={replyBusy}
               />
+              <label className="mt-2 block text-[11px] font-medium text-slate-700">
+                Documento de soporte (opcional · PDF, JPG o PNG · máx. 5 MB)
+                <input
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png"
+                  className="mt-1 block w-full text-[11px] text-slate-600 file:mr-2 file:rounded file:border-0 file:bg-violet-100 file:px-2 file:py-1 file:text-violet-700"
+                  onChange={(e) => setReplyFile(e.target.files?.[0] ?? null)}
+                  disabled={replyBusy}
+                />
+              </label>
+              {replyFile && (
+                <p className="mt-1 text-[11px] text-slate-600">Adjuntará: {replyFile.name}</p>
+              )}
               <button
                 type="button"
                 onClick={() => void submitReply()}
@@ -317,6 +354,19 @@ export function ReputationPanel({ contractId }: { contractId: string }) {
               {info.counterpartReview.reply && (
                 <p className="mt-2 text-[11px] text-emerald-700">
                   Réplica registrada ({info.counterpartReview.reply.reason}).
+                  {info.counterpartReview.reply.attachmentUrl && (
+                    <>
+                      {" "}
+                      <a
+                        href={info.counterpartReview.reply.attachmentUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline"
+                      >
+                        Ver documento adjunto
+                      </a>
+                    </>
+                  )}
                 </p>
               )}
               {replyMsg && <p className="mt-1 text-[11px] text-slate-700">{replyMsg}</p>}
@@ -336,6 +386,18 @@ export function ReputationPanel({ contractId }: { contractId: string }) {
           </p>
           {info.myReview.reply.text && (
             <p className="mt-1 whitespace-pre-line text-sm text-slate-800">{info.myReview.reply.text}</p>
+          )}
+          {info.myReview.reply.attachmentUrl && (
+            <p className="mt-1 text-xs">
+              <a
+                href={info.myReview.reply.attachmentUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-violet-700 underline"
+              >
+                Ver documento de soporte
+              </a>
+            </p>
           )}
         </section>
       )}
