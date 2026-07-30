@@ -105,6 +105,7 @@ export default function TerminarContratoPage() {
   // Confirmación del dueño (el candado real): listo / no aplica.
   const [ack, setAck] = useState<Record<StepKey, boolean>>({ documentos: false, pago: false, alertas: false });
   const [savingAck, setSavingAck] = useState<StepKey | null>(null);
+  const [ackErr, setAckErr] = useState("");
 
   const refresh = useCallback(async () => {
     if (!saved) return;
@@ -149,6 +150,7 @@ export default function TerminarContratoPage() {
     if (!user) return;
     setAck((s) => ({ ...s, [step]: value })); // optimista
     setSavingAck(step);
+    setAckErr("");
     try {
       const res = await fetch("/api/contracts/termination-checklist", {
         method: "POST",
@@ -157,9 +159,13 @@ export default function TerminarContratoPage() {
       });
       const j = await res.json();
       if (j?.success && j.checklist) setAck({ documentos: !!j.checklist.documentos, pago: !!j.checklist.pago, alertas: !!j.checklist.alertas });
-      else setAck((s) => ({ ...s, [step]: !value })); // revertir si falló
+      else {
+        setAck((s) => ({ ...s, [step]: !value })); // revertir si falló
+        setAckErr(j?.errors?.[0]?.message ?? "No se pudo guardar la confirmación. Intenta de nuevo.");
+      }
     } catch {
       setAck((s) => ({ ...s, [step]: !value }));
+      setAckErr("No pudimos conectar con el servidor. Revisa tu conexión e intenta de nuevo.");
     } finally {
       setSavingAck(null);
     }
@@ -266,6 +272,9 @@ export default function TerminarContratoPage() {
                   {savingAck === active && <span className="ml-1 text-xs text-slate-400">guardando…</span>}
                 </span>
               </label>
+              {ackErr && (
+                <p className="mt-2 rounded-xl border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700" role="alert">{ackErr}</p>
+              )}
             </motion.section>
 
             {/* Navegación */}

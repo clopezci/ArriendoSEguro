@@ -171,15 +171,18 @@ export function PartyDataFields({
 
       <label className="text-sm sm:col-span-2">
         <span className="mb-1 block text-slate-700">Ingreso mensual aproximado</span>
+        {/* Visible: se muestra con separadores de miles (4.000.000). El valor
+            que se ENVÍA va en el input oculto de abajo, siempre solo dígitos,
+            para no romper a quienes leen `supportMonthlyIncome` del FormData. */}
         <input
-          name="supportMonthlyIncome"
           inputMode="numeric"
           required
-          value={income}
+          value={income ? Number(income).toLocaleString("es-CO") : ""}
           onChange={(e) => setIncome(e.target.value.replace(/[^\d]/g, ""))}
           className="w-full rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-slate-900"
-          placeholder="Ej. 3000000"
+          placeholder="Ej. 3.000.000"
         />
+        <input type="hidden" name="supportMonthlyIncome" value={income} />
         <IncomeSuggestion rentReference={rentReference} income={incomeNum} who={who} />
       </label>
 

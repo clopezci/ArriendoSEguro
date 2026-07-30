@@ -152,6 +152,10 @@ export default function PreviewStepPage() {
     versionNumber: number;
     documentHash: string;
   } | null>(null);
+  // Marca de tiempo del PDF ya generado en el SERVIDOR para esta versión (se
+  // hidrata al recargar). El paso "PDF" se marca completado con `pdfInfo` (de
+  // esta sesión) O con esto (de sesiones anteriores).
+  const [pdfReadyServerAt, setPdfReadyServerAt] = useState<string | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [pdfFeedback, setPdfFeedback] = useState("");
   const [importingParties, setImportingParties] = useState(false);
@@ -775,7 +779,7 @@ export default function PreviewStepPage() {
         const data = (await res.json()) as {
           success?: boolean;
           contract?: { currentVersionId?: string | null; status?: string | null } | null;
-          version?: { id?: string; contractId?: string | null } | null;
+          version?: { id?: string; contractId?: string | null; pdfGeneratedAt?: string | null } | null;
         };
         if (cancelled || !res.ok || !data.success) return;
         const versionId = data.version?.id ?? data.contract?.currentVersionId ?? null;
@@ -787,6 +791,10 @@ export default function PreviewStepPage() {
             documentHash: "",
           });
           if (data.contract?.status) setContractStatus(data.contract.status);
+          // Rehidrata el paso "PDF": si el servidor ya tiene un PDF generado para
+          // esta versión, marcamos la marca de tiempo (la URL se re-obtiene al
+          // descargar). Sin esto, tras recargar el paso PDF salía sin completar.
+          if (data.version?.pdfGeneratedAt) setPdfReadyServerAt(data.version.pdfGeneratedAt);
         }
       } catch {
         /* silencioso: si no hay versión aún, el flujo normal sigue igual */
@@ -861,12 +869,16 @@ export default function PreviewStepPage() {
   const sectionOrder: Section[] = ["revisar", "documentos", "guardar", "firma", "pdf", "posventa"];
   const goNext = () => setSection(sectionOrder[Math.min(sectionOrder.indexOf(section) + 1, sectionOrder.length - 1)]);
   const goPrev = () => setSection(sectionOrder[Math.max(sectionOrder.indexOf(section) - 1, 0)]);
+  const pdfReady = Boolean(pdfInfo) || Boolean(pdfReadyServerAt);
   const sectionDone = (k: Section): boolean =>
     k === "revisar" ? Boolean(previewHtml)
     : k === "documentos" ? (propertyDocCount !== null && propertyDocCount > 0 && (!proxyDraft || (poderDocCount !== null && poderDocCount > 0)))
     : k === "guardar" ? Boolean(savedVersion)
     : k === "firma" ? hasAllSigned
-    : k === "pdf" ? Boolean(pdfInfo)
+    : k === "pdf" ? pdfReady
+    // "Terminar": el contrato quedó firmado por todas las partes (queda listo para
+    // «Termina tu contrato»/posventa). Antes estaba fijo en false y nunca se marcaba.
+    : k === "posventa" ? hasAllSigned
     : false;
   // Firma/PDF/Posventa requieren haber guardado; Revisar/Documentos/Guardar libres.
   const canGoSection = (k: Section): boolean => (k === "firma" || k === "pdf" || k === "posventa" ? Boolean(savedVersion) : true);
