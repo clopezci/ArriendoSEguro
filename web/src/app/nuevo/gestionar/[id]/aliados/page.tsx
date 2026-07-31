@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { PartnersDirectory } from "@/components/partners/partners-directory";
+import { PartnerCategoriesShowcase } from "@/components/partners/partner-categories-showcase";
 
 /**
  * Aliados y servicios de terceros en estilo bento. Reusa el directorio funcional
@@ -32,6 +33,17 @@ export default function AliadosBentoPage() {
 
         <div className="mt-6">
           <PartnersDirectory />
+        </div>
+
+        {/* Categorías "Me interesa": siempre visibles (aunque aún no haya aliados
+            configurados), para que el usuario vea qué servicios vienen y deje
+            su interés. */}
+        <div className="mt-8">
+          <h2 className="text-lg font-extrabold tracking-tight">Próximamente, más aliados para cada necesidad</h2>
+          <p className="mt-1 text-sm text-slate-500">Marca «Me interesa» y te avisamos cuando esté disponible; sin costo ni compromiso.</p>
+          <div className="mt-4">
+            <PartnerCategoriesShowcase />
+          </div>
         </div>
       </div>
     </div>

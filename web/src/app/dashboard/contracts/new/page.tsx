@@ -54,21 +54,12 @@ export default function NewContractPage() {
         return;
       }
 
-      // `canCreateRealContract` solo es true si queda crédito por
-      // consumir en algún entitlement Plus. Si el usuario ya gastó su
-      // crédito y vuelve aquí, lo mandamos a la pantalla de acceso
-      // bloqueado con motivo claro, en lugar de intentar consumir y
-      // fallar a mitad del flujo.
+      // `canCreateRealContract` solo es true si queda crédito Plus disponible.
+      // NO consumimos el cupo aquí: el cobro por contrato se hace UNA sola vez
+      // al FIRMAR (`signatures/start`), igual que en el flujo /nuevo. Antes este
+      // flujo consumía al crear y, con el cobro en la firma, se cobraba dos
+      // veces. Aquí solo verificamos que tenga cupo para dejarlo crear.
       if (accessData.canCreateRealContract) {
-        const consume = await fetch("/api/access/contracts/consume-plus", {
-          method: "POST",
-          headers,
-        });
-        const consumeData = (await consume.json()) as { success?: boolean };
-        if (!consume.ok || !consumeData.success) {
-          router.replace("/dashboard/contracts/access-blocked");
-          return;
-        }
         const realDraft = createContractDraft({
           userId: user.uid,
           accessStatus: "paid",

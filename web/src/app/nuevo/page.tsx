@@ -204,6 +204,13 @@ function answersFromDraft(d: ContractDraft): Answers {
     startDate: d.lease?.startDate || "",
     termMonths: d.lease?.termMonths ? String(d.lease.termMonths) : EMPTY.termMonths,
     paymentDay: d.lease?.paymentDueDay ? String(d.lease.paymentDueDay) : EMPTY.paymentDay,
+    // `tenantMode`/`codebtorMode` (quién ingresa los datos) NO se persisten en el
+    // borrador. Sin reconstruirlos, al recargar SIN snapshot (p. ej. iOS purga la
+    // pestaña al volver de firmar) el flujo cae a `firstIncompleteIndex` y salta
+    // a "¿quién ingresa los datos?" aunque ya estén completos. Si la parte ya
+    // tiene datos, marcamos "invite" (válido en ambos pasos: los datos ya están
+    // en el borrador) para que el recorrido NO retroceda.
+    tenantMode: (d.tenant?.documentNumber || d.tenant?.email || d.tenant?.fullName) ? "invite" : "",
     tenantName: d.tenant?.fullName || "",
     tenantDocType: d.tenant?.documentType || EMPTY.tenantDocType,
     tenantDocNumber: d.tenant?.documentNumber || "",
@@ -211,6 +218,7 @@ function answersFromDraft(d: ContractDraft): Answers {
     tenantEmail: d.tenant?.email || "",
     tenantPhone: d.tenant?.phone || "",
     hasCodebtor: d.hasSolidaryCoDebtor ? "yes" : "no",
+    codebtorMode: d.hasSolidaryCoDebtor && (d.solidaryCoDebtor?.documentNumber || d.solidaryCoDebtor?.email || d.solidaryCoDebtor?.fullName) ? "invite" : "",
     codebtorName: d.solidaryCoDebtor?.fullName || "",
     codebtorDocType: d.solidaryCoDebtor?.documentType || EMPTY.codebtorDocType,
     codebtorDocNumber: d.solidaryCoDebtor?.documentNumber || "",
@@ -618,6 +626,26 @@ export default function NuevoPage() {
     saveResume(draftId, a, mode === "review" ? QUESTIONS.length : i);
     try { window.localStorage.setItem(ACTIVE_KEY, draftId); } catch { /* noop */ }
   }, [mode, a, i, draftId]);
+
+  // iOS purga la pestaña al cambiar de app (p. ej. al ir a firmar) y al volver la
+  // recarga: si el último paso no quedó guardado, el recorrido "retrocedía". Aquí
+  // forzamos un guardado del snapshot en cuanto la app se oculta o se pausa.
+  useEffect(() => {
+    const flush = () => {
+      const id = draftIdRef.current;
+      const m = modeRef.current;
+      if (!id || (m !== "flow" && m !== "review")) return;
+      saveResume(id, aRef.current, m === "review" ? QUESTIONS.length : iRef.current);
+      try { window.localStorage.setItem(ACTIVE_KEY, id); } catch { /* noop */ }
+    };
+    const onVis = () => { if (document.visibilityState === "hidden") flush(); };
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("visibilitychange", onVis);
+    };
+  }, []);
 
   const back = useCallback(() => {
     setError(null);
@@ -1184,6 +1212,14 @@ export default function NuevoPage() {
                 </button>
                 <button onClick={() => router.push("/nuevo/contratos")} className="rounded-2xl border border-slate-300 px-5 py-4 text-base font-semibold text-slate-600">Mis contratos</button>
               </div>
+              {draftId && (
+                <p className="mt-4 text-sm text-slate-500">
+                  ¿Quieres proteger tu arriendo?{" "}
+                  <button onClick={() => router.push(`/nuevo/gestionar/${draftId}/aliados`)} className="font-semibold text-[#5646E5] underline">
+                    Ver aliados y servicios (seguro, cobranza, jurídica, hogar…)
+                  </button>
+                </p>
+              )}
               <JourneyScene pct={100} stepIndex={QUESTIONS.length} />
             </motion.section>
           )}
@@ -1195,10 +1231,22 @@ export default function NuevoPage() {
 
 const inputCls = "w-full rounded-2xl border-2 border-slate-200 bg-white px-[18px] py-4 text-lg outline-none transition focus:border-[#5646E5] focus:ring-4 focus:ring-[#ECE9FB]";
 
-function InputMic({ voice, className, ...props }: { voice: (t: string) => void } & InputHTMLAttributes<HTMLInputElement>) {
+function InputMic({ voice, className, autoFocus, ...props }: { voice: (t: string) => void } & InputHTMLAttributes<HTMLInputElement>) {
+  const ref = useRef<HTMLInputElement>(null);
+  // En vez del `autoFocus` nativo (que en iOS DESPLAZA la pantalla hacia el input
+  // y abre el teclado de golpe al iniciar cada paso), enfocamos manualmente con
+  // `preventScroll` y SOLO en punteros finos (escritorio). En móvil/táctil no
+  // auto-enfocamos: evita el "salto hacia abajo" y que el teclado tape el paso.
+  useEffect(() => {
+    if (!autoFocus || !ref.current) return;
+    let coarse = false;
+    try { coarse = window.matchMedia("(pointer: coarse)").matches; } catch { coarse = false; }
+    if (coarse) return;
+    try { ref.current.focus({ preventScroll: true }); } catch { ref.current.focus(); }
+  }, [autoFocus]);
   return (
     <div className="flex gap-2">
-      <input className={`${inputCls} min-w-0 flex-1 ${className ?? ""}`} {...props} />
+      <input ref={ref} className={`${inputCls} min-w-0 flex-1 ${className ?? ""}`} {...props} />
       <MicButton onResult={voice} />
     </div>
   );

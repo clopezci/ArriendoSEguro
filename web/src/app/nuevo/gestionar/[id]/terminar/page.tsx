@@ -296,6 +296,13 @@ export default function TerminarContratoPage() {
                   <p className="text-lg font-bold text-[#0B6E4E]">¡Todo confirmado! 🎉</p>
                   <p className="mt-1 text-sm text-slate-600">Tu contrato quedó terminado. Ya puedes administrarlo día a día.</p>
                   <button onClick={() => router.push(`/nuevo/gestionar/${id}`)} className="mt-4 rounded-2xl bg-[#12B886] px-7 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">Administra tu arriendo →</button>
+                  <p className="mt-3 text-xs text-slate-500">
+                    ¿Necesitas respaldo?{" "}
+                    <button onClick={() => router.push(`/nuevo/gestionar/${id}/aliados`)} className="font-semibold text-[#5646E5] underline">
+                      Ver aliados y servicios
+                    </button>{" "}
+                    (seguro, cobranza, jurídica, asistencia al hogar…).
+                  </p>
                 </>
               ) : (
                 <>
