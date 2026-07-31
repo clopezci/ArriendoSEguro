@@ -15,7 +15,6 @@ import {
   getActivePlusEntitlementForUser,
   getActiveDemoEntitlementForUser,
 } from "@/domain/platform-payments/entitlements";
-import { getResolvedFreeTier } from "@/domain/platform-payments/free-tier";
 import { getContractLifecycle } from "@/lib/contracts/lifecycle";
 import { CONTRACT_LIFECYCLE_COLLECTION } from "@/domain/contracts/contractLifecycle";
 import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
@@ -127,13 +126,17 @@ export async function POST(request: Request) {
     });
     if (!participant.ok) return participant.response;
 
-    // Gate de pago POR CONTRATO: con el tier gratis activo, firmar consume un
-    // cupo Plus del DUEÑO del contrato, UNA sola vez por contrato (idempotente
-    // vía `contract_lifecycle`). Antes solo se comprobaba "¿el usuario tiene
-    // algún Plus?" y un Plus ya consumido seguía contando, así que tras pagar
-    // 1 contrato se podían firmar contratos ilimitados gratis. El cupo lo aporta
-    // el creador del borrador, no quien inicia la ronda (que puede ser inquilino).
-    if ((await getResolvedFreeTier(firestore)).enabled) {
+    // Gate de pago POR CONTRATO. TODOS los contratos son de pago (el modelo
+    // "generar gratis" es contexto viejo): firmar SIEMPRE consume un cupo Plus
+    // del DUEÑO del contrato, UNA sola vez por contrato (idempotente vía
+    // `contract_lifecycle`), sin depender del flag de free-tier. Antes (a) solo
+    // se cobraba con el free-tier ENCENDIDO —así que apagarlo dejaba firmar
+    // gratis— y (b) solo se comprobaba "¿tiene algún Plus?", y un Plus ya
+    // consumido seguía contando, permitiendo firmar contratos ilimitados tras
+    // pagar 1. El cupo lo aporta el creador del borrador, no quien inicia la
+    // ronda (que puede ser el inquilino). Demo/tester y contrato-gratis-por-
+    // referidos siguen funcionando (ambos otorgan un entitlement válido).
+    {
       const life = await getContractLifecycle(firestore, contractId);
       const alreadyPaidForThisContract =
         life.entitlementConsumed === true || life.started === true || Boolean(life.unlockedByAdminAt);
