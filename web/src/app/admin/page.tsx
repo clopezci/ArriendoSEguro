@@ -143,6 +143,8 @@ export default function AdminPage() {
   const [tgBusy, setTgBusy] = useState(false);
   const [auditBusy, setAuditBusy] = useState(false);
   const [auditReport, setAuditReport] = useState("");
+  const [selftestBusy, setSelftestBusy] = useState(false);
+  const [selftestReport, setSelftestReport] = useState("");
   const [incidents, setIncidents] = useState<
     { id: string; title: string; body: string; severity: string; status: string; createdAt: string }[]
   >([]);
@@ -752,6 +754,23 @@ export default function AdminPage() {
       setAuditReport("Error de red al correr la auditoría.");
     } finally {
       setAuditBusy(false);
+    }
+  }
+
+  async function runSelfTest() {
+    if (!user) return;
+    setSelftestBusy(true);
+    setSelftestReport("");
+    try {
+      const res = await fetch("/api/admin/observability-selftest", {
+        headers: { ...(await buildAuthHeaders(user)) },
+      });
+      const json = await res.json();
+      setSelftestReport(JSON.stringify(json, null, 2));
+    } catch {
+      setSelftestReport("Error de red al correr el diagnóstico.");
+    } finally {
+      setSelftestBusy(false);
     }
   }
 
@@ -2375,6 +2394,14 @@ export default function AdminPage() {
             >
               {auditBusy ? "…" : "Correr auditoría de postura"}
             </button>
+            <button
+              type="button"
+              disabled={selftestBusy}
+              onClick={() => void runSelfTest()}
+              className="rounded border border-amber-600 bg-amber-600 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+            >
+              {selftestBusy ? "…" : "🔬 Diagnóstico (errores silenciosos)"}
+            </button>
             <span className="text-[11px] text-slate-600">
               Alertas de error también salen por Telegram; la auditoría de postura (config/seguridad) corre a diario y también aquí a demanda.
             </span>
@@ -2383,6 +2410,11 @@ export default function AdminPage() {
           {auditReport && (
             <pre className="mt-2 max-h-72 w-full overflow-auto whitespace-pre-wrap rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-emerald-100">
               {auditReport}
+            </pre>
+          )}
+          {selftestReport && (
+            <pre className="mt-2 max-h-96 w-full overflow-auto whitespace-pre-wrap rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-amber-100">
+              {selftestReport}
             </pre>
           )}
 

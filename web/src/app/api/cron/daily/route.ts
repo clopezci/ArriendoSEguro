@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireCronAuth } from "@/lib/security/cron";
 import { appConfig } from "@/lib/config";
 import { logServerError } from "@/lib/observability/observability";
+import { recordObservabilityRun } from "@/lib/observability/runlog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,5 +59,15 @@ export async function GET(request: Request) {
     }),
   );
 
-  return NextResponse.json({ success: true, ranAt: new Date().toISOString(), ran });
+  // Heartbeat del cron diario: deja rastro de que SÍ disparó y con qué resultado
+  // por tarea. Si esta bitácora no crece, el cron no se está ejecutando (Vercel).
+  const ranAt = new Date().toISOString();
+  await recordObservabilityRun({
+    at: ranAt,
+    source: "cron_daily",
+    notes: `tareas:${ran.length}`,
+    extra: { ran },
+  });
+
+  return NextResponse.json({ success: true, ranAt, ran });
 }
