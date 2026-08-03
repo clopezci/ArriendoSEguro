@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
-import { auditToText, sendAuditReport } from "@/lib/observability/audit";
+import { auditToText, errorSummaryToText, sendAuditReport } from "@/lib/observability/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,11 +16,12 @@ export async function POST(request: Request) {
   if (!isInternalAdminEmail(auth.user.email)) {
     return NextResponse.json({ success: false, error: "forbidden" }, { status: 403 });
   }
-  const { audit, telegramSent } = await sendAuditReport();
+  const { audit, errors, telegramSent } = await sendAuditReport();
   return NextResponse.json({
     success: true,
     telegramSent,
     summary: audit.summary,
-    report: auditToText(audit),
+    errors,
+    report: [auditToText(audit), "", errorSummaryToText(errors)].join("\n"),
   });
 }

@@ -3,6 +3,8 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getAdminInternalEmailSet } from "@/lib/admin/internal-admin";
 import { isWompiConfigured } from "@/domain/platform-payments/provider-factory";
 import { isTelegramConfigured, sendTelegram } from "@/services/telegram/sendTelegram";
+import { ERROR_EVENTS_COLLECTION } from "@/lib/observability/observability";
+import { formatAppDateTime } from "@/lib/datetime/appTime";
 import { appConfig } from "@/lib/config";
 
 /**
@@ -89,10 +91,97 @@ export function auditToText(a: AuditResult): string {
   ].join("\n");
 }
 
-/** Corre la auditoría y manda el reporte por Telegram. Nunca lanza. */
-export async function sendAuditReport(): Promise<{ audit: AuditResult; telegramSent: number }> {
+/**
+ * Resumen de ERRORES capturados (el "Sentry interno": colección `error_events`,
+ * agrupados por huella con su contador). Es lo que hace del reporte una foto real
+ * de salud, no solo de configuración. Best-effort: si no hay Firestore, null.
+ */
+export type ErrorSummary = {
+  distinct: number;
+  unresolved: number;
+  occurrences: number;
+  new24h: number;
+  active24h: number;
+  capped: boolean;
+  top: { message: string; count: number; lastSeenAt: string; resolved: boolean; kind: string }[];
+};
+
+export async function summarizeErrors(): Promise<ErrorSummary | null> {
+  const firestore = getAdminFirestore();
+  if (!firestore) return null;
+  try {
+    const LIMIT = 300;
+    const snap = await firestore
+      .collection(ERROR_EVENTS_COLLECTION)
+      .orderBy("lastSeenAt", "desc")
+      .limit(LIMIT)
+      .get();
+    const now = Date.now();
+    const DAY = 24 * 60 * 60 * 1000;
+    const rows = snap.docs.map((d) => d.data() as Record<string, unknown>);
+    let unresolved = 0;
+    let occurrences = 0;
+    let new24h = 0;
+    let active24h = 0;
+    for (const r of rows) {
+      const c = Number(r.count) || 0;
+      occurrences += c;
+      if (!r.resolved) unresolved += 1;
+      const fs = Date.parse(String(r.firstSeenAt ?? ""));
+      if (Number.isFinite(fs) && now - fs <= DAY) new24h += 1;
+      const ls = Date.parse(String(r.lastSeenAt ?? ""));
+      if (Number.isFinite(ls) && now - ls <= DAY) active24h += 1;
+    }
+    const top = [...rows]
+      .sort((a, b) => (Number(b.count) || 0) - (Number(a.count) || 0))
+      .slice(0, 5)
+      .map((r) => ({
+        message: String(r.message ?? "(sin mensaje)").slice(0, 140),
+        count: Number(r.count) || 0,
+        lastSeenAt: String(r.lastSeenAt ?? ""),
+        resolved: Boolean(r.resolved),
+        kind: String(r.kind ?? "error"),
+      }));
+    return { distinct: rows.length, unresolved, occurrences, new24h, active24h, capped: rows.length === LIMIT, top };
+  } catch {
+    return null;
+  }
+}
+
+export function errorSummaryToText(e: ErrorSummary | null): string {
+  if (!e) return "🔎 *Errores:* sin acceso a la base (Firestore no configurado).";
+  if (e.distinct === 0) return "🔎 *Errores:* 0 registrados. Todo limpio. 🎉";
+  const head = e.unresolved > 0 ? "🔎 *Errores (Sentry interno)*" : "🔎 *Errores (Sentry interno)* — todos resueltos";
+  const lines = [
+    head,
+    `Distintos: ${e.distinct}${e.capped ? "+" : ""} · sin resolver: ${e.unresolved} · nuevos 24h: ${e.new24h} · activos 24h: ${e.active24h} · ocurrencias: ${e.occurrences}`,
+  ];
+  if (e.top.length > 0) {
+    lines.push("Top por frecuencia:");
+    for (const t of e.top) {
+      const when = t.lastSeenAt ? formatAppDateTime(t.lastSeenAt) : "—";
+      const mark = t.resolved ? "✓" : "•";
+      lines.push(`${mark} [${t.kind}] ${t.message} ×${t.count} (últ. ${when})`);
+    }
+  }
+  return lines.join("\n");
+}
+
+/**
+ * Corre la auditoría de POSTURA + el resumen de ERRORES y manda el reporte
+ * completo por Telegram. Nunca lanza. El reporte lleva fecha (hora Colombia) para
+ * que se vea cuándo se generó y confirmar que el cron sigue vivo.
+ */
+export async function sendAuditReport(): Promise<{ audit: AuditResult; errors: ErrorSummary | null; telegramSent: number }> {
   const audit = runPostureAudit();
-  const text = auditToText(audit);
+  const errors = await summarizeErrors();
+  const text = [
+    auditToText(audit),
+    "",
+    errorSummaryToText(errors),
+    "",
+    `🕒 ${formatAppDateTime(audit.at)}`,
+  ].join("\n");
   const tg = await sendTelegram(text).catch(() => ({ status: "failed" as const, sent: 0 }));
-  return { audit, telegramSent: tg.status === "sent" ? tg.sent : 0 };
+  return { audit, errors, telegramSent: tg.status === "sent" ? tg.sent : 0 };
 }
