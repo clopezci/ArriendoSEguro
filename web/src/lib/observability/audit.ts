@@ -4,6 +4,7 @@ import { getAdminInternalEmailSet } from "@/lib/admin/internal-admin";
 import { isWompiConfigured } from "@/domain/platform-payments/provider-factory";
 import { isTelegramConfigured, sendTelegram, type SendTelegramOutput } from "@/services/telegram/sendTelegram";
 import { ERROR_EVENTS_COLLECTION } from "@/lib/observability/observability";
+import { recordObservabilityRun } from "@/lib/observability/runlog";
 import { formatAppDateTime } from "@/lib/datetime/appTime";
 import { appConfig } from "@/lib/config";
 
@@ -215,7 +216,7 @@ export function activityToText(a: ActivitySummary | null): string {
  * reporte completo por Telegram. Nunca lanza. Lleva fecha (hora Colombia) para
  * que se vea cuándo se generó y confirmar que el cron sigue vivo.
  */
-export async function sendAuditReport(): Promise<{
+export async function sendAuditReport(source = "manual_admin"): Promise<{
   audit: AuditResult;
   errors: ErrorSummary | null;
   activity: ActivitySummary | null;
@@ -240,5 +241,14 @@ export async function sendAuditReport(): Promise<{
       errorMessage: err instanceof Error ? err.message : "Error inesperado al enviar a Telegram",
     }),
   );
+  // Heartbeat: deja rastro de ESTA corrida (cron o manual) para diagnóstico.
+  await recordObservabilityRun({
+    at: audit.at,
+    source,
+    telegramStatus: tg.status,
+    telegramSent: tg.status === "sent" ? tg.sent : 0,
+    telegramError: tg.errorMessage ?? null,
+    notes: `warnings:${audit.summary.warning} errores:${errors ? errors.distinct : "sin-acceso-db"}`,
+  });
   return { audit, errors, activity, telegram: tg, telegramSent: tg.status === "sent" ? tg.sent : 0 };
 }
