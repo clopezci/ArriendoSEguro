@@ -80,10 +80,13 @@ export function HomeDashboardPanel() {
   const cta = !canCreate
     ? null
     : !id
-      ? { href: "/dashboard/contracts/new", label: "Crear mi contrato" }
+      ? { href: "/nuevo", label: "Crear mi contrato" }
       : completo
         ? { href: `/dashboard/contracts/${id}/preview`, label: "Ver mi contrato" }
-        : { href: `/dashboard/contracts/${id}/contract-type`, label: "Continuar mi contrato" };
+        // Retomar en el asistente /nuevo con el id del borrador: reanuda en el
+        // PASO EXACTO donde quedó la persona (snapshot de resume), en vez de
+        // mandarla al front viejo por pasos (contract-type = paso 1).
+        : { href: `/nuevo?id=${id}`, label: "Continuar mi contrato" };
 
   // Clic en un paso: el paso 1 lleva a comenzar (o pregunta si ya hay contrato);
   // los pasos 2–5 exigen tener contrato (si no, avisan cuál paso falta antes).

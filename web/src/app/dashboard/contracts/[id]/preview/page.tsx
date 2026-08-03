@@ -130,6 +130,10 @@ export default function PreviewStepPage() {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [savingVersion, setSavingVersion] = useState(false);
   const [renderErrors, setRenderErrors] = useState<string[]>([]);
+  // Bloqueo por PAGO (Plan Plus) al firmar. Es distinto de "faltan datos": tiene
+  // su propia tarjeta con CTA a Planes y NO debe disparar la caja de "importar
+  // datos de invitados" (los datos pueden estar completos; lo que falta es el cupo).
+  const [plusRequiredMsg, setPlusRequiredMsg] = useState("");
   const [previewHtml, setPreviewHtml] = useState("");
   /** HTML limpio (sin marca de agua) que se guarda como versión legal. */
   const [cleanHtmlForSave, setCleanHtmlForSave] = useState("");
@@ -620,6 +624,7 @@ export default function PreviewStepPage() {
     }
     setStartingSignatures(true);
     setRenderErrors([]);
+    setPlusRequiredMsg("");
     setSignatureRoundMessage(null);
     try {
       const res = await fetch("/api/signatures/start", {
@@ -634,12 +639,13 @@ export default function PreviewStepPage() {
         | { success: true; signatures: typeof signatureRows }
         | { success: false; errors: { field: string; message: string }[] };
       if (!res.ok || !data.success) {
-        // Gate de pago: la firma es Plus. Mostramos un CTA claro.
+        // Gate de PAGO: la firma consume un cupo de Plan Plus. Es un bloqueo
+        // distinto de "faltan datos": tarjeta propia con CTA a Planes, sin la
+        // caja de "importar datos de invitados".
         if (res.status === 402) {
           const msg = !data.success ? data.errors[0]?.message : "";
-          setRenderErrors([
-            `${msg ?? "La firma es parte de Plan Plus."} Actívalo en «Planes» (menú del panel) para firmar tu contrato.`,
-          ]);
+          setPlusRequiredMsg(msg || "Para firmar este contrato necesitas un cupo de Plan Plus.");
+          setRenderErrors([]);
           return;
         }
         const list = !data.success ? formatBackendIssues(data.errors) : [];
@@ -957,7 +963,16 @@ export default function PreviewStepPage() {
       {/* PRIMERO: completar/importar lo que falta. Sin esto no se puede generar.
           Se muestra también en «firma» y «pdf»: antes esos pasos fallaban en
           silencio (el botón parpadeaba / "revisa los errores" sin verse ninguno). */}
-      {(section === "documentos" || section === "revisar" || section === "firma" || section === "pdf") && renderErrors.length > 0 && (
+      {/* Bloqueo por PAGO (Plan Plus): tarjeta propia, separada de "faltan datos". */}
+      {plusRequiredMsg && (
+        <div role="alert" className="mb-4 rounded-3xl border-2 border-[#5646E5]/40 bg-[#ECE9FB]/60 p-5 text-sm text-[#2c2470] shadow-[0_6px_20px_rgba(86,70,229,0.12)]">
+          <p className="flex items-center gap-2 text-base font-black">🔒 Necesitas Plan Plus para firmar</p>
+          <p className="mt-1 text-[13px] text-[#3b3480]">{plusRequiredMsg}</p>
+          <p className="mt-1 text-xs text-[#3b3480]/80">Cada contrato usa un cupo. Actívalo y vuelve aquí para iniciar la firma.</p>
+          <Link href="/dashboard/plans" className="mt-3 inline-flex rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105">Activar Plan Plus →</Link>
+        </div>
+      )}
+      {(section === "documentos" || section === "revisar" || section === "firma" || section === "pdf") && renderErrors.length > 0 && !plusRequiredMsg && (
         <div id="faltantes-alerta" role="alert" className="mb-4 rounded-3xl border-2 border-amber-300 bg-amber-50/70 p-5 text-sm text-amber-950 shadow-[0_6px_20px_rgba(245,165,36,0.12)]">
           <p className="flex items-center gap-2 text-base font-black">📋 Completa esto para ver, imprimir y firmar</p>
           <p className="mt-0.5 text-xs text-amber-900/80">

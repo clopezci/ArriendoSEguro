@@ -168,20 +168,70 @@ export function errorSummaryToText(e: ErrorSummary | null): string {
 }
 
 /**
- * Corre la auditoría de POSTURA + el resumen de ERRORES y manda el reporte
- * completo por Telegram. Nunca lanza. El reporte lleva fecha (hora Colombia) para
+ * Foto de ACTIVIDAD del negocio (totales + últimas 24 h). Usa agregaciones
+ * `count()` (baratas) y es best-effort: si una consulta falla, ese dato va null.
+ */
+export type ActivitySummary = {
+  contracts: number | null;
+  contracts24h: number | null;
+  signed: number | null;
+  payments: number | null;
+  reviews: number | null;
+};
+
+export async function summarizeActivity(): Promise<ActivitySummary | null> {
+  const firestore = getAdminFirestore();
+  if (!firestore) return null;
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const safeCount = async (q: FirebaseFirestore.Query): Promise<number | null> => {
+    try {
+      const s = await q.count().get();
+      return s.data().count;
+    } catch {
+      return null;
+    }
+  };
+  const [contracts, contracts24h, signed, payments, reviews] = await Promise.all([
+    safeCount(firestore.collection("contracts")),
+    safeCount(firestore.collection("contracts").where("createdAt", ">=", dayAgo)),
+    safeCount(firestore.collection("signatures").where("signatureStatus", "==", "signed")),
+    safeCount(firestore.collection("platform_payments").where("status", "==", "APPROVED")),
+    safeCount(firestore.collection("reputation_reviews")),
+  ]);
+  return { contracts, contracts24h, signed, payments, reviews };
+}
+
+export function activityToText(a: ActivitySummary | null): string {
+  if (!a) return "📊 *Actividad:* sin acceso a la base.";
+  const n = (v: number | null) => (v === null ? "—" : String(v));
+  return [
+    "📊 *Actividad*",
+    `Contratos: ${n(a.contracts)} (nuevos 24h: ${n(a.contracts24h)}) · firmas completadas: ${n(a.signed)} · pagos aprobados: ${n(a.payments)} · calificaciones: ${n(a.reviews)}`,
+  ].join("\n");
+}
+
+/**
+ * Corre la auditoría de POSTURA + ACTIVIDAD + resumen de ERRORES y manda el
+ * reporte completo por Telegram. Nunca lanza. Lleva fecha (hora Colombia) para
  * que se vea cuándo se generó y confirmar que el cron sigue vivo.
  */
-export async function sendAuditReport(): Promise<{ audit: AuditResult; errors: ErrorSummary | null; telegramSent: number }> {
+export async function sendAuditReport(): Promise<{
+  audit: AuditResult;
+  errors: ErrorSummary | null;
+  activity: ActivitySummary | null;
+  telegramSent: number;
+}> {
   const audit = runPostureAudit();
-  const errors = await summarizeErrors();
+  const [errors, activity] = await Promise.all([summarizeErrors(), summarizeActivity()]);
   const text = [
     auditToText(audit),
+    "",
+    activityToText(activity),
     "",
     errorSummaryToText(errors),
     "",
     `🕒 ${formatAppDateTime(audit.at)}`,
   ].join("\n");
   const tg = await sendTelegram(text).catch(() => ({ status: "failed" as const, sent: 0 }));
-  return { audit, errors, telegramSent: tg.status === "sent" ? tg.sent : 0 };
+  return { audit, errors, activity, telegramSent: tg.status === "sent" ? tg.sent : 0 };
 }
