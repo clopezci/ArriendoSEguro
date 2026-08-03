@@ -16,12 +16,23 @@ export async function POST(request: Request) {
   if (!isInternalAdminEmail(auth.user.email)) {
     return NextResponse.json({ success: false, error: "forbidden" }, { status: 403 });
   }
-  const { audit, errors, telegramSent } = await sendAuditReport();
+  const { audit, errors, telegram, telegramSent } = await sendAuditReport();
+
+  // Línea de diagnóstico CLARA para el panel: dice si Telegram envió, si no está
+  // configurado (mock) o por qué falló. Así se ve en un clic qué pasa con el envío.
+  const tgLine =
+    telegram.status === "sent"
+      ? `✅ Telegram: enviado a ${telegram.sent} chat(s).`
+      : telegram.status === "mock"
+        ? "⚠️ Telegram: NO configurado en el servidor (faltan TELEGRAM_BOT_TOKEN y/o TELEGRAM_CHAT_ID en Vercel). Por eso no llegan mensajes."
+        : `🛑 Telegram: falló el envío. ${telegram.errorMessage ?? "sin detalle"}`;
+
   return NextResponse.json({
     success: true,
     telegramSent,
+    telegram,
     summary: audit.summary,
     errors,
-    report: [auditToText(audit), "", errorSummaryToText(errors)].join("\n"),
+    report: [tgLine, "", auditToText(audit), "", errorSummaryToText(errors)].join("\n"),
   });
 }

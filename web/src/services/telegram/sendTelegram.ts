@@ -41,9 +41,9 @@ export async function sendTelegram(text: string): Promise<SendTelegramOutput> {
     return { status: "mock", sent: 0 };
   }
 
-  let sent = 0;
-  let lastError: string | undefined;
-  for (const chatId of ids) {
+  const body = text.slice(0, 4000);
+  // Un intento de envío a un chat con el parse_mode dado (o sin ninguno).
+  const postOnce = async (chatId: string, parseMode?: "Markdown"): Promise<{ ok: boolean; error?: string }> => {
     try {
       const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
@@ -51,19 +51,28 @@ export async function sendTelegram(text: string): Promise<SendTelegramOutput> {
         cache: "no-store",
         body: JSON.stringify({
           chat_id: chatId,
-          text: text.slice(0, 4000),
-          parse_mode: "Markdown",
+          text: body,
+          ...(parseMode ? { parse_mode: parseMode } : {}),
           disable_web_page_preview: true,
         }),
       });
-      if (res.ok) {
-        sent += 1;
-      } else {
-        lastError = `Telegram ${res.status}: ${(await res.text().catch(() => "")).slice(0, 160)}`;
-      }
+      if (res.ok) return { ok: true };
+      return { ok: false, error: `Telegram ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}` };
     } catch (err) {
-      lastError = err instanceof Error ? err.message : "Error de red Telegram";
+      return { ok: false, error: err instanceof Error ? err.message : "Error de red Telegram" };
     }
+  };
+
+  let sent = 0;
+  let lastError: string | undefined;
+  for (const chatId of ids) {
+    // 1) Intento con Markdown (bonito). Si Telegram lo rechaza (típicamente 400
+    //    por caracteres especiales en mensajes de error/URLs), 2) reintento en
+    //    TEXTO PLANO para que el reporte SIEMPRE llegue aunque el formato falle.
+    let r = await postOnce(chatId, "Markdown");
+    if (!r.ok) r = await postOnce(chatId);
+    if (r.ok) sent += 1;
+    else lastError = r.error;
   }
 
   if (sent > 0) return { status: "sent", sent };

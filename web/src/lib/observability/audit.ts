@@ -2,7 +2,7 @@ import "server-only";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getAdminInternalEmailSet } from "@/lib/admin/internal-admin";
 import { isWompiConfigured } from "@/domain/platform-payments/provider-factory";
-import { isTelegramConfigured, sendTelegram } from "@/services/telegram/sendTelegram";
+import { isTelegramConfigured, sendTelegram, type SendTelegramOutput } from "@/services/telegram/sendTelegram";
 import { ERROR_EVENTS_COLLECTION } from "@/lib/observability/observability";
 import { formatAppDateTime } from "@/lib/datetime/appTime";
 import { appConfig } from "@/lib/config";
@@ -219,6 +219,7 @@ export async function sendAuditReport(): Promise<{
   audit: AuditResult;
   errors: ErrorSummary | null;
   activity: ActivitySummary | null;
+  telegram: SendTelegramOutput;
   telegramSent: number;
 }> {
   const audit = runPostureAudit();
@@ -232,6 +233,12 @@ export async function sendAuditReport(): Promise<{
     "",
     `🕒 ${formatAppDateTime(audit.at)}`,
   ].join("\n");
-  const tg = await sendTelegram(text).catch(() => ({ status: "failed" as const, sent: 0 }));
-  return { audit, errors, activity, telegramSent: tg.status === "sent" ? tg.sent : 0 };
+  const tg = await sendTelegram(text).catch(
+    (err): SendTelegramOutput => ({
+      status: "failed",
+      sent: 0,
+      errorMessage: err instanceof Error ? err.message : "Error inesperado al enviar a Telegram",
+    }),
+  );
+  return { audit, errors, activity, telegram: tg, telegramSent: tg.status === "sent" ? tg.sent : 0 };
 }
