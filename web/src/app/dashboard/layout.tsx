@@ -1,6 +1,6 @@
 import { RequireAuth } from "@/components/auth/require-auth";
 import { BrandLockup } from "@/components/brand/brand-lockup";
-import { DashboardNav } from "@/components/dashboard/dashboard-nav";
+import { AccountMenu } from "@/components/nuevo/account-menu";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -25,7 +25,12 @@ export default function DashboardLayout({
             <Link href="/nuevo" className="text-lg font-semibold tracking-tight text-[#5646E5]">
               <BrandLockup />
             </Link>
-            <DashboardNav />
+            {/* Menú de cuenta del recorrido nuevo (bento). Antes aquí iba el nav
+                viejo por pasos (DashboardNav: Inicio/Mis arriendos/Recursos…),
+                que exponía el front antiguo en TODAS las páginas compartidas
+                (vista previa, posventa, cuenta, planes). Se retiró: el único
+                recorrido es el bento. */}
+            <AccountMenu />
           </div>
         </header>
 

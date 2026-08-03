@@ -41,7 +41,7 @@ export const HOUSE_ADS: HouseAd[] = [
     title: "Con o sin codeudor solidario",
     body: "Arma tu contrato de arrendamiento con las cláusulas al día y, si lo necesitas, agrega un codeudor.",
     ctaLabel: "Crear contrato",
-    href: "/dashboard/contracts/new",
+    href: "/nuevo",
   },
   {
     id: "inventario",

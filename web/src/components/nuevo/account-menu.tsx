@@ -91,8 +91,8 @@ export function AccountMenu() {
               <p className="truncate px-3 py-2 text-[11px] text-slate-400" title={email}>
                 {email}
               </p>
-              <Link href="/dashboard" role="menuitem" onClick={() => setOpen(false)} className={itemCls}>
-                Inicio (panel)
+              <Link href="/nuevo" role="menuitem" onClick={() => setOpen(false)} className={itemCls}>
+                Inicio
               </Link>
               <Link href="/nuevo/contratos" role="menuitem" onClick={() => setOpen(false)} className={itemCls}>
                 Mis contratos
