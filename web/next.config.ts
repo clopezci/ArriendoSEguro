@@ -69,6 +69,38 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  /**
+   * El recorrido oficial es el bento `/nuevo` (una pregunta a la vez). El front
+   * viejo por pasos (`/dashboard` home + creador por pasos) ya NO se ofrece: por
+   * si alguien entra por URL directa o por un enlace guardado, lo redirigimos al
+   * flujo nuevo. NO redirigimos las páginas que el flujo nuevo reutiliza
+   * (preview, posventa, account, plans): esas viven bajo /dashboard pero son
+   * parte del recorrido nuevo.
+   */
+  async redirects() {
+    const builder = [
+      "contract-type",
+      "landlord",
+      "tenant",
+      "codebtor",
+      "property",
+      "terms",
+      "utilities",
+      "special-clauses",
+      "review",
+    ];
+    return [
+      { source: "/dashboard", destination: "/nuevo", permanent: false },
+      { source: "/dashboard/contracts/new", destination: "/nuevo", permanent: false },
+      { source: "/dashboard/contracts", destination: "/nuevo/contratos", permanent: false },
+      { source: "/dashboard/leases", destination: "/nuevo/contratos", permanent: false },
+      ...builder.map((step) => ({
+        source: `/dashboard/contracts/:id/${step}`,
+        destination: "/nuevo?id=:id",
+        permanent: false,
+      })),
+    ];
+  },
 };
 
 export default nextConfig;

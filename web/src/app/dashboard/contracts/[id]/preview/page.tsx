@@ -891,7 +891,9 @@ export default function PreviewStepPage() {
 
   return (
     <WizardShell title="Revisa y finaliza tu contrato" currentStep={10} contractId={id} hideGuide>
-      {/* Navegación: volver a editar (bento) o ver/editar en la vista clásica completa. */}
+      {/* Navegación: volver a editar en el recorrido bento (/nuevo) o ver la lista.
+          El «Editar en bloque» (front viejo por pasos) se retiró: el único
+          recorrido es el bento, una pregunta a la vez. */}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <Link href={`/nuevo?id=${id}`} className="inline-flex items-center gap-1.5 rounded-2xl border-2 border-[#5646E5]/30 bg-white px-4 py-2 text-sm font-bold text-[#5646E5] transition hover:bg-[#ECE9FB]">
           ← Volver a editar
@@ -899,15 +901,6 @@ export default function PreviewStepPage() {
         <Link href={`/nuevo/contratos`} className="inline-flex items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-[#5646E5]">
           Mis contratos
         </Link>
-        <details className="group relative">
-          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 rounded-2xl border-2 border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-500 transition hover:border-[#5646E5]">
-            Editar en bloque ▾
-          </summary>
-          <div className="absolute z-20 mt-1 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
-            <p className="px-2 py-1 text-[11px] text-slate-400">Vista completa, campo por campo. Puedes volver aquí con «Revisión y vista previa» arriba.</p>
-            <Link href={`/dashboard/contracts/${id}/contract-type`} className="block rounded-lg px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100">Abrir edición en bloque →</Link>
-          </div>
-        </details>
       </div>
 
       {/* Sub-flujo bento: una sección a la vez (Revisar → Documentos → Guardar → Firma → PDF → Posventa). */}
