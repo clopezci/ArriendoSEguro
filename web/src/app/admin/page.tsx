@@ -145,6 +145,8 @@ export default function AdminPage() {
   const [auditReport, setAuditReport] = useState("");
   const [selftestBusy, setSelftestBusy] = useState(false);
   const [selftestReport, setSelftestReport] = useState("");
+  const [cleanupBusy, setCleanupBusy] = useState(false);
+  const [cleanupReport, setCleanupReport] = useState("");
   const [incidents, setIncidents] = useState<
     { id: string; title: string; body: string; severity: string; status: string; createdAt: string }[]
   >([]);
@@ -771,6 +773,24 @@ export default function AdminPage() {
       setSelftestReport("Error de red al correr el diagnóstico.");
     } finally {
       setSelftestBusy(false);
+    }
+  }
+
+  async function runErrorsCleanup() {
+    if (!user) return;
+    setCleanupBusy(true);
+    setCleanupReport("");
+    try {
+      const res = await fetch("/api/admin/errors-cleanup", {
+        method: "POST",
+        headers: { ...(await buildAuthHeaders(user)) },
+      });
+      const json = await res.json();
+      setCleanupReport(JSON.stringify(json, null, 2));
+    } catch {
+      setCleanupReport("Error de red al limpiar los errores de ruido.");
+    } finally {
+      setCleanupBusy(false);
     }
   }
 
@@ -2402,6 +2422,14 @@ export default function AdminPage() {
             >
               {selftestBusy ? "…" : "🔬 Diagnóstico (errores silenciosos)"}
             </button>
+            <button
+              type="button"
+              disabled={cleanupBusy}
+              onClick={() => void runErrorsCleanup()}
+              className="rounded border border-slate-500 bg-slate-600 px-3 py-1.5 text-[11px] font-semibold text-white disabled:opacity-50"
+            >
+              {cleanupBusy ? "…" : "🧹 Limpiar errores de ruido"}
+            </button>
             <span className="text-[11px] text-slate-600">
               Alertas de error también salen por Telegram; la auditoría de postura (config/seguridad) corre a diario y también aquí a demanda.
             </span>
@@ -2415,6 +2443,11 @@ export default function AdminPage() {
           {selftestReport && (
             <pre className="mt-2 max-h-96 w-full overflow-auto whitespace-pre-wrap rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-amber-100">
               {selftestReport}
+            </pre>
+          )}
+          {cleanupReport && (
+            <pre className="mt-2 max-h-96 w-full overflow-auto whitespace-pre-wrap rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-slate-100">
+              {cleanupReport}
             </pre>
           )}
 
