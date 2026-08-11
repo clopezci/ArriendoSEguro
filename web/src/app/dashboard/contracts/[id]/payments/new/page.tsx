@@ -147,7 +147,7 @@ export default function NewPaymentPage() {
         </label>
       </div>
       <p className="mt-2 rounded border border-slate-300 bg-white/95 p-3 text-xs text-slate-700">
-        Para marcar este pago como realizado debes adjuntar un soporte válido. Arriendo Seguro no recauda dinero ni verifica automáticamente con bancos; el soporte ayuda a dejar evidencia documental del pago. Tu rol (arrendador (dueño), arrendatario (inquilino) o codeudor) lo determina el sistema según tu usuario y el contrato.
+        Para marcar este pago como realizado debes adjuntar un soporte válido. ArriendoSeguro no recauda dinero ni verifica automáticamente con bancos; el soporte ayuda a dejar evidencia documental del pago. Tu rol (arrendador (dueño), arrendatario (inquilino) o codeudor) lo determina el sistema según tu usuario y el contrato.
       </p>
       <label className="mt-3 block text-xs text-slate-700">
         Observaciones

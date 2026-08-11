@@ -84,7 +84,7 @@ export function renderResidentialLeaseContractV2026_2(
   const templated = withConditionalBlocksV2026_2(CONTRACT_TEMPLATE_V2026_2, input);
   const vars = buildContractVariablesV2026_2(input);
   const body = injectVariables(templated, vars);
-  const title = `Contrato ${input.contractVersion} - Arriendo Seguro`;
+  const title = `Contrato ${input.contractVersion} - ArriendoSeguro`;
   const html = wrapContractHtmlV2026_2(body, title);
 
   return withDocumentHash({

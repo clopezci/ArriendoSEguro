@@ -15,7 +15,8 @@ export default function TerminosPage() {
         <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Información legal</p>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Términos y condiciones de uso</h1>
         <p className="text-xs text-slate-500">
-          Última actualización: 11 de agosto de 2026. Vigencia: Colombia. Responsable/operador: LOTIC.
+          Última actualización: 11 de agosto de 2026. Vigencia: Colombia. Responsable/operador: LOTIC (persona natural
+          comerciante, NIT 71.217.228, Medellín).
         </p>
         <Link href="/" className="inline-block text-xs text-violet-700 hover:underline">
           Volver al inicio

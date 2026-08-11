@@ -113,7 +113,7 @@ export default async function EntiendeloFacilPage() {
             Arrendar directo no tiene que ser informal
           </h1>
           <p className="mt-3 max-w-3xl text-slate-700">
-            Si ya encontraste arrendador o arrendatario, Arriendo Seguro te guía paso a paso para
+            Si ya encontraste arrendador o arrendatario, ArriendoSeguro te guía paso a paso para
             formalizar el arriendo con contrato, firma electrónica, inventario y soportes.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
@@ -171,9 +171,9 @@ export default async function EntiendeloFacilPage() {
         </section>
 
         <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
-          <h2 className="text-2xl font-semibold">Arriendo Seguro es una tercera opción</h2>
+          <h2 className="text-2xl font-semibold">ArriendoSeguro es una tercera opción</h2>
           <p className="mt-3 text-slate-700">
-            Arriendo Seguro está pensado para personas que ya se encontraron y quieren formalizar
+            ArriendoSeguro está pensado para personas que ya se encontraron y quieren formalizar
             el arriendo de forma sencilla, económica y ordenada. No reemplaza una inmobiliaria,
             pero ayuda a documentar mejor el acuerdo para reducir riesgos por informalidad.
           </p>
@@ -183,7 +183,7 @@ export default async function EntiendeloFacilPage() {
         </section>
 
         <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
-          <h2 className="text-2xl font-semibold">Qué puedes hacer con Arriendo Seguro</h2>
+          <h2 className="text-2xl font-semibold">Qué puedes hacer con ArriendoSeguro</h2>
           <ul className="mt-4 grid gap-2 sm:grid-cols-2">
             {whatYouCanDo.map((item) => (
               <li key={item} className="rounded-lg border border-slate-300 bg-white/95 px-3 py-2 text-sm">
@@ -223,7 +223,7 @@ export default async function EntiendeloFacilPage() {
           )}
           <p className="mt-3 text-slate-700">
             Una gestión inmobiliaria completa puede tener costos asociados a un porcentaje del
-            canon mensual, dependiendo de la ciudad, empresa y servicios incluidos. Arriendo Seguro
+            canon mensual, dependiendo de la ciudad, empresa y servicios incluidos. ArriendoSeguro
             busca ofrecer una alternativa digital de pago único para personas que ya se encontraron
             y necesitan formalizar el arriendo.
           </p>
@@ -236,7 +236,7 @@ export default async function EntiendeloFacilPage() {
                 <tr className="bg-slate-200/80 text-left">
                   <th className="border border-slate-300 px-3 py-2">Canon mensual</th>
                   <th className="border border-slate-300 px-3 py-2">Costo agencia 8%-10% mensual</th>
-                  <th className="border border-slate-300 px-3 py-2">Arriendo Seguro</th>
+                  <th className="border border-slate-300 px-3 py-2">ArriendoSeguro</th>
                 </tr>
               </thead>
               <tbody>
@@ -262,7 +262,7 @@ export default async function EntiendeloFacilPage() {
           <p className="mt-2 text-xs text-slate-600">
             Valores ilustrativos. Las tarifas de agencias, inmobiliarias, pólizas, estudios y
             servicios adicionales pueden variar según ciudad, empresa y condiciones comerciales.
-            Arriendo Seguro no reemplaza una inmobiliaria ni una asesoría legal personalizada; es
+            ArriendoSeguro no reemplaza una inmobiliaria ni una asesoría legal personalizada; es
             una herramienta digital para formalizar y documentar arriendos ya acordados entre
             particulares.
           </p>
@@ -271,7 +271,7 @@ export default async function EntiendeloFacilPage() {
         <AdSlot placement="content" />
 
         <section id="conocer-mas" className="space-y-5 rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
-          <h2 className="text-2xl font-semibold">Conocer más: visión completa de Arriendo Seguro</h2>
+          <h2 className="text-2xl font-semibold">Conocer más: visión completa de ArriendoSeguro</h2>
           <p className="max-w-4xl text-slate-700">
             Queremos democratizar el acceso a garantías y cumplimiento legal para protegerte de manera
             fácil y de bajo costo. Empezamos por lo esencial y seguimos creciendo contigo, sin perder
@@ -307,9 +307,9 @@ export default async function EntiendeloFacilPage() {
         </section>
 
         <section className="rounded-2xl border border-violet-500 bg-violet-100/20 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.2)]">
-          <h2 className="text-2xl font-semibold">Qué no hace Arriendo Seguro</h2>
+          <h2 className="text-2xl font-semibold">Qué no hace ArriendoSeguro</h2>
           <p className="mt-3 text-violet-800">
-            Para ser claros, Arriendo Seguro no es una inmobiliaria tradicional, no administra tu
+            Para ser claros, ArriendoSeguro no es una inmobiliaria tradicional, no administra tu
             inmueble, no recauda el canon, no garantiza el pago, no reemplaza un abogado, no
             publica listas negras, no permite comentarios ofensivos y no hace búsqueda pública por
             cédula. <br /><br />
@@ -333,7 +333,7 @@ export default async function EntiendeloFacilPage() {
         <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
           <h2 className="text-2xl font-semibold">Evaluar la experiencia sin crear listas negras</h2>
           <p className="mt-3 text-slate-700">
-            La evaluación de Arriendo Seguro será privada, estructurada y basada en formularios
+            La evaluación de ArriendoSeguro será privada, estructurada y basada en formularios
             cerrados. No será una lista negra pública, no permitirá comentarios ofensivos y no será
             consultable libremente por cédula. Su objetivo es ayudar a construir mejores referencias
             arrendaticias respetando la privacidad y el tratamiento adecuado de datos.

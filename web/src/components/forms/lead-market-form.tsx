@@ -275,7 +275,7 @@ export function LeadMarketForm({
       setStatus("done");
       const baseDone =
         data.message ??
-        "¡Encuesta enviada con éxito! Gracias por ayudarnos a validar Arriendo Seguro. Tus respuestas nos permitirán construir una herramienta más útil para arrendar directamente con mayor claridad y tranquilidad.";
+        "¡Encuesta enviada con éxito! Gracias por ayudarnos a validar ArriendoSeguro. Tus respuestas nos permitirán construir una herramienta más útil para arrendar directamente con mayor claridad y tranquilidad.";
       setMessage(
         typeof data.emailNotice === "string" && data.emailNotice.trim() !== ""
           ? `${baseDone}\n\n${data.emailNotice.trim()}`
@@ -298,7 +298,7 @@ export function LeadMarketForm({
         Validación de interés
       </h3>
       <p className="text-sm text-slate-600 dark:text-slate-700">
-        Estamos validando Arriendo Seguro, una plataforma para formalizar arriendos ya acordados
+        Estamos validando ArriendoSeguro, una plataforma para formalizar arriendos ya acordados
         entre personas particulares. Tus respuestas nos ayudarán a construir una solución útil,
         clara y de bajo costo.
       </p>

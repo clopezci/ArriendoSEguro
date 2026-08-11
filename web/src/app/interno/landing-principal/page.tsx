@@ -58,7 +58,7 @@ export default async function LandingPrincipalInterna() {
             Formaliza tu arriendo sin inmobiliaria y sin hacerlo informal
           </h1>
           <p className="max-w-3xl text-base leading-relaxed text-slate-700 sm:text-lg">
-            Si ya encontraste arrendador o arrendatario, Arriendo Seguro te guía para crear
+            Si ya encontraste arrendador o arrendatario, ArriendoSeguro te guía para crear
             contrato, firmar, inventariar el inmueble y dejar soportes del acuerdo.
           </p>
           <p className="text-sm font-semibold text-violet-700 sm:text-base">
@@ -164,7 +164,7 @@ export default async function LandingPrincipalInterna() {
               </p>
             </article>
             <article className="rounded-2xl border border-violet-500 bg-white/95 p-5 shadow-[0_10px_26px_rgba(139,92,246,0.25)]">
-              <h3 className="text-lg font-semibold text-violet-700">Arriendo Seguro</h3>
+              <h3 className="text-lg font-semibold text-violet-700">ArriendoSeguro</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-800">
                 Una guía digital de bajo costo para formalizar el acuerdo que ya hiciste, con
                 contrato, firma, inventario y trazabilidad.
@@ -178,7 +178,7 @@ export default async function LandingPrincipalInterna() {
             Ayúdanos a construir la primera versión
           </h2>
           <p className="mt-2 max-w-4xl text-slate-700">
-            Estamos validando Arriendo Seguro con propietarios y arrendatarios reales. Tu opinión
+            Estamos validando ArriendoSeguro con propietarios y arrendatarios reales. Tu opinión
             nos ayuda a ajustar el producto, el precio y las funciones más importantes.
           </p>
           <p className="mt-2 text-sm font-medium text-violet-700">
@@ -268,9 +268,9 @@ export default async function LandingPrincipalInterna() {
         </section>
 
         <section className="rounded-2xl border border-slate-300 bg-white/95 p-5 shadow-[0_10px_24px_rgba(139,92,246,0.18)] sm:p-6">
-          <h2 className="text-xl font-semibold sm:text-2xl">Lo que Arriendo Seguro no hace</h2>
+          <h2 className="text-xl font-semibold sm:text-2xl">Lo que ArriendoSeguro no hace</h2>
           <p className="mt-2 max-w-5xl text-slate-700">
-            Para ser claros: Arriendo Seguro no es una inmobiliaria, no recauda cánones, no
+            Para ser claros: ArriendoSeguro no es una inmobiliaria, no recauda cánones, no
             garantiza pagos, no reemplaza asesoría legal y no publica listas negras. Es una
             herramienta digital para formalizar y documentar arriendos ya acordados.
           </p>

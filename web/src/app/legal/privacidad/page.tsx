@@ -28,8 +28,10 @@ export default function PrivacidadPage() {
         <h2 className="text-lg font-semibold text-slate-900">1. Responsable del tratamiento</h2>
         <p>
           El responsable del tratamiento de los datos personales tratados a través de la plataforma {appConfig.name} es{" "}
-          <strong>LOTIC</strong>, operador de la plataforma, con domicilio en Medellín (Colombia). El canal de atención y
-          de ejercicio de derechos de habeas data es{" "}
+          <strong>LOTIC</strong>, marca tecnológica que agrupa los productos de software de su titular (entre ellos
+          {" "}{appConfig.name}), operada en Colombia por una persona natural comerciante identificada con{" "}
+          <strong>NIT 71.217.228</strong> (dígito de verificación por asignar), con domicilio en Medellín. El canal de
+          atención y de ejercicio de derechos de habeas data es{" "}
           <a href="mailto:contacto@arriendoseguro.app" className="text-violet-700 hover:underline">
             contacto@arriendoseguro.app
           </a>
