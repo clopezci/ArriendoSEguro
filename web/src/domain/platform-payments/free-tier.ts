@@ -29,9 +29,14 @@ export type ResolvedFreeTier = {
   message: string;
 };
 
-/** Valor por defecto de `enabled` desde la variable de entorno (compatibilidad). */
+/**
+ * Valor por defecto de `enabled` desde la variable de entorno (compatibilidad).
+ * Modelo vigente (introducción): el tier gratis está APAGADO por defecto; crear
+ * el contrato cuesta el precio de introducción e incluye todo. Solo se enciende
+ * si `NEXT_PUBLIC_FREE_TIER_ENABLED=true` (o desde el panel de admin).
+ */
 export function envDefaultFreeTierEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_FREE_TIER_ENABLED !== "false";
+  return process.env.NEXT_PUBLIC_FREE_TIER_ENABLED === "true";
 }
 
 const storedSchema = z.object({

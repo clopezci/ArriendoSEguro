@@ -213,8 +213,9 @@ export default function TerminosPage() {
             lanzamiento, de carácter temporal</strong>, y puede actualizarse con preaviso razonable.
           </li>
           <li>
-            <strong>Contrato gratis por referidos:</strong> si invitas a <strong>3 personas que usen la app</strong>
-            (generen su propio contrato), obtienes un <strong>contrato gratis</strong> con la firma incluida. Es un
+            <strong>Contrato gratis por referidos:</strong> si invitas a <strong>3 personas</strong> y{" "}
+            <strong>al menos 2 de ellas usan la app</strong> (generan su propio contrato), obtienes un{" "}
+            <strong>contrato gratis</strong> con la firma incluida. Es un
             beneficio <strong>promocional y temporal</strong>: {appConfig.name} podrá, en cualquier momento y en la
             medida permitida por la ley, modificarlo, condicionarlo, limitar su alcance o darlo por terminado de manera
             prospectiva y con aviso razonable. <strong>No genera derechos adquiridos</strong> sobre su permanencia,

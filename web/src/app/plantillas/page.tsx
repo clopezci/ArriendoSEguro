@@ -53,7 +53,7 @@ export default function PlantillasIndexPage() {
         <p className="text-sm text-slate-600">
           ¿Prefieres todo formalizado en un solo flujo?{" "}
           <Link href="/nuevo" className="text-violet-700 underline">
-            Crea tu contrato gratis
+            Crea tu contrato
           </Link>
           .
         </p>

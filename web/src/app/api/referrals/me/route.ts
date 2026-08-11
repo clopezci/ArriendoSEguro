@@ -11,9 +11,7 @@ import {
   REFERRAL_CONFIG_COLLECTION,
   REFERRAL_CONFIG_DOC_ID,
   QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK,
-  SIGNATURE_UNLOCK_MICRO_FEE_COP,
   resolveReferralConfig,
-  signatureUnlockedByReferrals,
   type ReferralStatus,
 } from "@/domain/referrals/referrals";
 
@@ -94,7 +92,7 @@ export async function GET(request: Request) {
   }
   // Ordena: primero los que ya usaron la app.
   referrals.sort((a, b) => Number(b.qualified) - Number(a.qualified));
-  // Cada 3 referidos que usan la app = 1 contrato gratis (con firma incluida).
+  // Cada 2 referidos que usan la app (de 3 invitados) = 1 contrato gratis (firma incluida).
   const freeContractsEarned = Math.floor(qualifiedCount / QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK);
   const toNextFree = QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK - (qualifiedCount % QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK);
 
@@ -125,12 +123,6 @@ export async function GET(request: Request) {
       qualified: qualifiedCount,
       earned: freeContractsEarned,
       toNext: freeContractsEarned > 0 && qualifiedCount % QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK === 0 ? QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK : toNextFree,
-    },
-    signatureUnlock: {
-      required: QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK,
-      qualified: qualifiedCount,
-      unlocked: signatureUnlockedByReferrals(qualifiedCount),
-      microFeeCop: SIGNATURE_UNLOCK_MICRO_FEE_COP,
     },
     myReferralStatus,
     program: { enabled: config.enabled, discountPercent: config.discountPercent },

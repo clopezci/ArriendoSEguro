@@ -441,7 +441,7 @@ function StepExtras() {
         <li>Soporte para anexos y soportes del codeudor.</li>
       </ul>
       <p className="rounded-lg border border-emerald-300 bg-emerald-50 p-2 text-xs text-emerald-800">
-        Recuerda: generar el contrato es gratis; estas funciones se activan con Plan Plus.
+        Recuerda: esto es solo una demostración; el contrato con todo incluido tiene un precio de introducción.
       </p>
       <p className="text-xs text-slate-500">
         Los detalles pueden variar; esta lista resume el alcance orientativo del producto.

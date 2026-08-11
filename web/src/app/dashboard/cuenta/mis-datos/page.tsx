@@ -64,6 +64,39 @@ export default function MisDatosPage() {
   const [data, setData] = useState<ExportResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  // Rectificación (derecho de actualización): nombre y teléfono de contacto.
+  const [rname, setRname] = useState("");
+  const [rphone, setRphone] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState("");
+  const [saveErr, setSaveErr] = useState("");
+
+  async function rectify() {
+    if (!user) return;
+    setSaving(true);
+    setSaveMsg("");
+    setSaveErr("");
+    try {
+      const res = await fetch("/api/cuenta/mis-datos", {
+        method: "PUT",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ displayName: rname.trim(), phone: rphone.trim() }),
+      });
+      const json = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      if (!res.ok || !json.success) {
+        setSaveErr(json.errors?.[0]?.message ?? "No se pudo actualizar. Intenta de nuevo.");
+        return;
+      }
+      setSaveMsg("Listo. Tus datos quedaron actualizados. Puedes generar el reporte para verlos.");
+      setRname("");
+      setRphone("");
+      if (data) void generate();
+    } catch {
+      setSaveErr("Error de red al actualizar. Intenta de nuevo.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   useEffect(() => {
     if (!loading && !user) {
@@ -103,16 +136,58 @@ export default function MisDatosPage() {
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-6 text-slate-900">
       <header className="space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Habeas Data · Derecho de acceso</p>
-        <h1 className="text-2xl font-bold">Solicitar mis datos</h1>
+        <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Habeas Data · Mis datos personales</p>
+        <h1 className="text-2xl font-bold">Mis datos personales</h1>
         <p className="text-sm text-slate-600">
-          Genera y descarga, al instante, una copia de los datos personales que la plataforma tiene sobre ti (Ley 1581
-          de 2012, art. 8). No necesitas escribir correos ni esperar: el reporte se arma automáticamente con tu sesión.
+          Ejerce tus derechos de habeas data (Ley 1581 de 2012) directamente, sin escribir correos ni esperar: aquí
+          puedes <strong>consultar y descargar</strong> tus datos, <strong>rectificarlos</strong> y{" "}
+          <strong>eliminar tu cuenta</strong>.
         </p>
         <Link href="/dashboard/account" className="inline-block text-sm text-violet-700 underline">
           Volver a mi cuenta
         </Link>
       </header>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900">Rectificar mis datos</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Actualiza tu <strong>nombre visible</strong> y tu <strong>teléfono de contacto</strong> al instante. Los datos
+          de un contrato específico se corrigen dentro del contrato mientras es un borrador; los contratos ya firmados se
+          conservan por ley.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-700">Nombre</span>
+            <input
+              type="text"
+              value={rname}
+              onChange={(e) => setRname(e.target.value)}
+              placeholder="Tu nombre completo"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-violet-500"
+            />
+          </label>
+          <label className="text-sm">
+            <span className="mb-1 block text-slate-700">Teléfono de contacto</span>
+            <input
+              type="tel"
+              value={rphone}
+              onChange={(e) => setRphone(e.target.value)}
+              placeholder="Ej. +57 300 000 0000"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-violet-500"
+            />
+          </label>
+        </div>
+        <button
+          type="button"
+          onClick={() => void rectify()}
+          disabled={saving || (!rname.trim() && !rphone.trim())}
+          className="mt-3 rounded-lg bg-violet-700 px-4 py-2 text-sm font-medium text-white hover:bg-violet-800 disabled:opacity-50"
+        >
+          {saving ? "Guardando…" : "Guardar cambios"}
+        </button>
+        {saveMsg && <p className="mt-2 text-sm text-emerald-700">{saveMsg}</p>}
+        {saveErr && <p className="mt-2 text-sm text-rose-700" role="alert">{saveErr}</p>}
+      </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
@@ -192,15 +267,19 @@ export default function MisDatosPage() {
 
       <section className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 text-xs text-slate-500">
         <p>
-          Este reporte cubre el <strong>derecho de acceso</strong>. Para rectificar, actualizar, suprimir o revocar el
-          consentimiento, usa las opciones de tu cuenta o los canales del{" "}
-          <Link href="/legal/aviso-privacidad" className="text-violet-700 underline">
-            aviso de privacidad
-          </Link>
-          . Para eliminar tu cuenta, ve a{" "}
+          Aquí ejerces tus derechos de habeas data de forma automática: <strong>acceso y descarga</strong> (arriba),{" "}
+          <strong>rectificación</strong> (nombre y teléfono) y <strong>supresión</strong>. Para darte de baja, ve a{" "}
           <Link href="/dashboard/cuenta/eliminar" className="text-violet-700 underline">
             Eliminar mi cuenta
           </Link>
+          . Para revocar consentimientos o cualquier otra solicitud, consulta el{" "}
+          <Link href="/legal/aviso-privacidad" className="text-violet-700 underline">
+            aviso de privacidad
+          </Link>{" "}
+          o escribe a{" "}
+          <a href="mailto:contacto@arriendoseguro.app" className="text-violet-700 underline">
+            contacto@arriendoseguro.app
+          </a>
           .
         </p>
       </section>

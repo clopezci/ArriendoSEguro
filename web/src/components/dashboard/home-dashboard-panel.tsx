@@ -155,9 +155,10 @@ export function HomeDashboardPanel() {
             )}
             {!plusActive && !demoActive && (
               <p className="mt-3 text-xs text-slate-600">
-                El contrato tiene un <strong>precio de introducción de $49.900</strong> con la <strong>firma, el
-                inventario y la posventa incluidos</strong>. Tu segundo contrato puede ser gratis si invitas a 3 que usen
-                la app. <Link href="/dashboard/plans" className="text-violet-700 underline">Ver plan</Link>.
+                El contrato tiene un <strong>precio de introducción de $49.900</strong> (precio real $89.900) con la{" "}
+                <strong>firma, el inventario y la posventa incluidos</strong>. Tu segundo contrato puede ser gratis si
+                invitas a 3 personas y al menos 2 usan la app.{" "}
+                <Link href="/dashboard/plans" className="text-violet-700 underline">Ver plan</Link>.
               </p>
             )}
           </>

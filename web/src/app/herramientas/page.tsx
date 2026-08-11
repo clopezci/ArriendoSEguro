@@ -104,7 +104,7 @@ const GROUPS: ToolGroup[] = [
     tools: [
       {
         href: "/crear-cuenta",
-        title: "Crear contrato gratis",
+        title: "Crear contrato",
         desc: "Genera tu contrato de arriendo guiado, sin mensualidades.",
       },
       {
@@ -124,7 +124,7 @@ export default function HerramientasPage() {
       <main className="mx-auto max-w-5xl space-y-8 px-4 py-10 sm:px-6">
         <header className="rounded-2xl border border-slate-300 bg-white/95 p-6 shadow-[0_14px_34px_rgba(139,92,246,0.22)]">
           <span className="inline-flex items-center rounded-full bg-emerald-600 px-2.5 py-0.5 text-[11px] font-semibold text-white">
-            100 % GRATIS
+            HERRAMIENTAS GRATIS
           </span>
           <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Herramientas gratuitas</h1>
           <p className="mt-3 max-w-2xl text-slate-700">
@@ -167,7 +167,7 @@ export default function HerramientasPage() {
         <p className="text-sm text-slate-600">
           ¿Listo para formalizar?{" "}
           <Link href="/nuevo" className="text-violet-700 underline">
-            Crea tu contrato gratis
+            Crea tu contrato
           </Link>{" "}
           o{" "}
           <Link href="/ingresar" className="text-violet-700 underline">

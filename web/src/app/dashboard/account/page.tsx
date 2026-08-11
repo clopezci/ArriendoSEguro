@@ -157,16 +157,16 @@ export default function AccountPage() {
           <li>Conocer las políticas de tratamiento y los canales habilitados.</li>
         </ul>
         <div className="mt-4 rounded-lg border border-violet-200 bg-violet-50/60 p-3">
-          <p className="text-sm font-medium text-slate-900">Solicita tus datos al instante</p>
+          <p className="text-sm font-medium text-slate-900">Ejerce tus derechos al instante</p>
           <p className="mt-1 text-sm text-slate-600">
-            Ejerce tu <strong>derecho de acceso</strong> sin correos ni esperas: generamos y te entregamos una copia de
-            tus datos en tabla, lista para descargar.
+            Sin correos ni esperas: en <strong>Mis datos</strong> puedes <strong>consultar y descargar</strong> tu
+            información, <strong>rectificar</strong> tu nombre y teléfono, y <strong>eliminar tu cuenta</strong>.
           </p>
           <Link
             href="/dashboard/cuenta/mis-datos"
             className="mt-3 inline-block rounded-lg bg-violet-700 px-4 py-2 text-sm font-medium text-white hover:bg-violet-800"
           >
-            Solicitar / descargar mis datos
+            Ir a Mis datos (Habeas Data)
           </Link>
         </div>
         <p className="mt-3 text-sm text-slate-700">

@@ -68,7 +68,7 @@ export default function CalculadorasIndexPage() {
 
         <p className="text-sm text-slate-600">
           ¿Listo para formalizar? <Link href="/entiendelo-facil" className="text-violet-700 underline">Entiéndelo fácil</Link>{" "}
-          o <Link href="/nuevo" className="text-violet-700 underline">crea tu contrato gratis</Link>.
+          o <Link href="/nuevo" className="text-violet-700 underline">crea tu contrato</Link>.
         </p>
       </main>
     </div>

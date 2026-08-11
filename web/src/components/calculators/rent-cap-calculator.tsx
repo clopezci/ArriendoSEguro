@@ -75,7 +75,7 @@ export function RentCapCalculator() {
       <div className="rounded-xl border border-violet-300 bg-gradient-to-br from-violet-50 to-white p-4">
         <p className="text-sm font-medium text-slate-800">Fija un canon dentro de la ley</p>
         <p className="mt-1 text-sm text-slate-600">
-          ArriendoSeguro valida el canon automáticamente al crear tu contrato. Generarlo es gratis.
+          ArriendoSeguro valida el canon automáticamente al crear tu contrato.
         </p>
         <Link
           href="/nuevo"

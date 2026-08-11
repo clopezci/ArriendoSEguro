@@ -35,7 +35,11 @@ export const QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK = 2;
 /** Número sugerido de personas a invitar (solo para la mensajería). */
 export const SUGGESTED_SHARE_COUNT = 3;
 
-/** Micropago alternativo (COP) para desbloquear la firma certificada. */
+/**
+ * @deprecated Ya no se ofrece un micropago para "desbloquear la firma": la firma
+ * electrónica va incluida en el precio de introducción del contrato. Se conserva
+ * solo por compatibilidad de tests; no se muestra al usuario.
+ */
 export const SIGNATURE_UNLOCK_MICRO_FEE_COP = 10_000;
 
 /** Un referido "califica" cuando el referido usó la app de verdad (generó un contrato). */
@@ -43,7 +47,7 @@ export function countQualifiedReferrals(referrals: { qualified?: boolean }[]): n
   return referrals.filter((r) => r.qualified === true).length;
 }
 
-/** ¿El usuario desbloqueó la firma certificada por referidos calificados? */
+/** ¿El usuario ganó el "segundo contrato gratis" por referidos calificados (al menos 2)? */
 export function signatureUnlockedByReferrals(qualifiedCount: number): boolean {
   return qualifiedCount >= QUALIFIED_REFERRALS_FOR_SIGNATURE_UNLOCK;
 }

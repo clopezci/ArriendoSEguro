@@ -15,7 +15,6 @@ type ReferralMe = {
   qualifiedCount?: number;
   referrals?: Array<{ email: string; qualified: boolean; status: "pending" | "approved" | "rejected" }>;
   freeContract?: { required: number; qualified: number; earned: number; toNext: number };
-  signatureUnlock?: { required: number; qualified: number; unlocked: boolean; microFeeCop: number };
   myReferralStatus?: "pending" | "approved" | "rejected" | null;
   program?: { enabled: boolean; discountPercent: number };
 };
@@ -71,7 +70,7 @@ export function ReferralPanel({ dismissible = false }: { dismissible?: boolean }
 
   const link = data.link ?? "";
   const pct = data.program?.discountPercent ?? 0;
-  const req = data.freeContract?.required ?? 3;
+  const req = data.freeContract?.required ?? 2;
   const qualified = data.freeContract?.qualified ?? 0;
   const earned = data.freeContract?.earned ?? 0;
   const progressToNext = qualified % req; // 0..req-1 dentro del tramo actual
