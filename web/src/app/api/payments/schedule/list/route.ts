@@ -44,6 +44,7 @@ export async function GET(request: Request) {
       .get();
     return NextResponse.json({
       success: true,
+      myRole: gate.role,
       scheduledPayments: refreshed.docs.map((d) => d.data()),
       reminderSettings: settingsSnap.exists ? settingsSnap.data() : null,
     });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import { requireContractParticipant } from "@/lib/auth/serverAuth";
+import { requireContractParticipant, loadCurrentContractContext } from "@/lib/auth/serverAuth";
+import { buildOwnerTemplates } from "@/domain/maintenance/requestTemplates";
 
 export const runtime = "nodejs";
 
@@ -34,6 +35,7 @@ export async function GET(request: Request) {
     const x = d.data() as Record<string, unknown>;
     return {
       id: String(x.id ?? d.id),
+      type: String(x.type ?? "damage"),
       title: String(x.title ?? ""),
       description: String(x.description ?? ""),
       category: String(x.category ?? "other"),
@@ -41,6 +43,7 @@ export async function GET(request: Request) {
       rejectionCount: Number(x.rejectionCount ?? 0),
       reportedByRole: String(x.reportedByRole ?? ""),
       reportedByEmail: String(x.reportedByEmail ?? ""),
+      reportedByUid: String(x.reportedByUid ?? ""),
       hasPhoto: Boolean(x.photoPath),
       responses: Array.isArray(x.responses) ? x.responses : [],
       createdAt: String(x.createdAt ?? ""),
@@ -49,5 +52,9 @@ export async function GET(request: Request) {
     };
   });
 
-  return NextResponse.json({ success: true, myRole: participant.role, requests });
+  // Plantillas del dueño (cobro/entrega) pre-cargadas con los datos del contrato.
+  const ctx = await loadCurrentContractContext(firestore, contractId).catch(() => null);
+  const templates = buildOwnerTemplates(ctx?.contractPayload);
+
+  return NextResponse.json({ success: true, myRole: participant.role, requests, templates });
 }
