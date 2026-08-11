@@ -22,8 +22,36 @@ type VersionParties = {
   landlord?: Party;
   solidaryCoDebtor?: Party;
   solidaryCoDebtors?: Party[];
+  property?: { address?: string };
   paymentSupportPolicy?: "none" | "notifications" | "notifications_and_upload";
 };
+
+/**
+ * REQUERIMIENTO FORMAL DE PAGO (día 6): más contundente pero ESTRICTAMENTE LEGAL.
+ * No amenaza con embargo directo (en Colombia lo decreta un juez); enuncia las
+ * consecuencias LÍCITas de la mora (Ley 820/2003): terminación y restitución,
+ * proceso ejecutivo —que puede conllevar embargo decretado por un juez—,
+ * intereses de mora, vinculación del codeudor y reporte a centrales de riesgo
+ * con la autorización ya suscrita. Devuelve el correo (constancia) y el WhatsApp
+ * corto (aviso con enlace). Revisar con abogado antes de producción.
+ */
+function buildFormalDemand(opts: {
+  tenantName: string; address: string; amount: string; daysLate: number; perP: string; payUrl: string; concUrl: string;
+}): { subject: string; html: string; text: string; wa: string } {
+  const { tenantName, address, amount, daysLate, perP, payUrl, concUrl } = opts;
+  const subject = `REQUERIMIENTO FORMAL DE PAGO — canon en mora${perP}`;
+  const html =
+    `<p><strong>REQUERIMIENTO FORMAL DE PAGO</strong></p>` +
+    `<p>Señor(a) ${tenantName}, a la fecha registra una mora de <strong>${daysLate} días</strong> en el pago del canon de arrendamiento del inmueble ubicado en <strong>${address}</strong>, por valor de <strong>${amount}</strong> más los intereses de mora que apliquen${perP}.</p>` +
+    `<p>Le solicitamos realizar el pago en un plazo máximo de <strong>48 horas</strong>. De no hacerlo, el arrendador podrá iniciar las acciones legales previstas en el contrato y en la <strong>Ley 820 de 2003</strong>, entre ellas: la terminación del contrato y el <strong>proceso de restitución del inmueble</strong>; el <strong>proceso ejecutivo</strong> para el cobro de la deuda, que puede conllevar el <strong>embargo de bienes decretado por un juez</strong>; el cobro de intereses de mora; la <strong>vinculación del codeudor solidario</strong>; y el <strong>reporte a las centrales de riesgo</strong> conforme a la autorización de tratamiento de datos suscrita.</p>` +
+    `<p>Evite llegar a esa instancia. <a href="${payUrl}">Pague y suba su comprobante aquí</a>.</p>` +
+    `<p>Si está en un acuerdo de conciliación con el arrendador, regístrelo aquí: <a href="${concUrl}">estoy en conciliación</a>.</p>`;
+  const text =
+    `REQUERIMIENTO FORMAL DE PAGO. ${tenantName}, registra ${daysLate} días de mora en el canon del inmueble en ${address} por ${amount} más intereses${perP}. Pague en máximo 48 horas; de lo contrario el arrendador podrá iniciar acciones legales (Ley 820/2003): terminación y restitución del inmueble, proceso ejecutivo —que puede conllevar embargo de bienes decretado por un juez—, intereses, vinculación del codeudor y reporte a centrales de riesgo. Pague aquí: ${payUrl} · ¿En conciliación? ${concUrl}`;
+  const wa =
+    `tienes un REQUERIMIENTO FORMAL DE PAGO por la mora de tu arriendo${perP} (${amount}). Revísalo y paga aquí: ${payUrl} · ¿Estás en conciliación con el arrendador? Regístralo: ${concUrl}`;
+  return { subject, html, text, wa };
+}
 
 async function loadVersionParties(firestore: Firestore, contractVersionId: string, cache: Map<string, VersionParties>): Promise<VersionParties> {
   const hit = cache.get(contractVersionId);
@@ -223,7 +251,7 @@ export async function POST(request: Request) {
   //    aceptada por el dueño, o se registra el cobro personal.
   const overdueSnap = await firestore
     .collection("scheduled_payments")
-    .where("dueDate", ">=", isoDay(-20))
+    .where("dueDate", ">=", isoDay(-60))
     .where("dueDate", "<=", isoDay(-1))
     .limit(2000)
     .get()
@@ -233,6 +261,7 @@ export async function POST(request: Request) {
       id?: string; contractId?: string; contractVersionId?: string; periodLabel?: string; dueDate?: string; status?: string; expectedAmount?: number;
       escLateWarnedAt?: string; escLastCodebtorDay?: number; escConciliationStatus?: string;
       escConciliationTenantToken?: string; escFinalOwnerNoticeAt?: string; escPersonalCollectionToken?: string; escPersonalCollectionAt?: string;
+      escCycleStart?: string;
     };
     if (!row.contractId || !row.contractVersionId || !row.dueDate) continue;
     if (row.status === "reported_paid" || row.status === "cancelled") continue;
@@ -241,15 +270,33 @@ export async function POST(request: Request) {
     const parties = await loadVersionParties(firestore, row.contractVersionId, versionCache);
     if (parties.paymentSupportPolicy !== "notifications_and_upload") continue;
 
+    // `daysLate` = mora REAL (desde el vencimiento) → se usa en los textos.
+    // `cycleDay` = día del CICLO de cobro (desde el vencimiento, o desde
+    // `escCycleStart` si el dueño re-habilitó los mensajes) → elige el paso.
     const daysLate = Math.floor((now.getTime() - new Date(row.dueDate).getTime()) / (1000 * 60 * 60 * 24));
-    if (daysLate < 1) continue;
+    const cycleDay = row.escCycleStart
+      ? Math.floor((now.getTime() - new Date(row.escCycleStart).getTime()) / (1000 * 60 * 60 * 24))
+      : daysLate;
+    if (cycleDay < 1) continue;
     const tenantEmail = (parties.tenant?.email ?? "").trim();
     const tenantPhone = (parties.tenant?.phone ?? "").trim();
     const landlordEmail = (parties.landlord?.email ?? "").trim();
+    const landlordPhone = (parties.landlord?.phone ?? "").trim();
     const cods = codebtorContacts(parties);
     const spId = row.id ?? d.id;
     const per = row.periodLabel ? ` · ${row.periodLabel}` : "";
     const perP = row.periodLabel ? ` (${row.periodLabel})` : "";
+    const address = (parties.property?.address ?? "").trim() || "el inmueble";
+    const tenantName = (parties.tenant?.fullName ?? "").trim() || "Señor(a) arrendatario(a)";
+    const amount = `$${(Number(row.expectedAmount) || 0).toLocaleString("es-CO")}`;
+    // Copia SIEMPRE al dueño (correo + WhatsApp) en cada escalón, para que tenga
+    // visibilidad y soporte de todo el proceso de cobro.
+    const copyOwner = async (subject: string, html: string, text: string, wa: string) => {
+      if (landlordEmail) {
+        await sendEmail({ to: landlordEmail, subject, html, text, templateCode: "paymentEscalationEmail", relatedEntityType: "payment", relatedEntityId: spId });
+      }
+      await phoneReminder(landlordPhone, wa, spId);
+    };
     // Enlace fresco para pagar/subir el comprobante (el mensaje al celular lo lleva).
     const escLink = async () =>
       `${base}/pago/${await createUploadToken(firestore, {
@@ -262,64 +309,83 @@ export async function POST(request: Request) {
         landlordName: (parties.landlord?.fullName ?? "El arrendador").trim() || "El arrendador",
       })}`;
 
-    // Día 1: aviso al inquilino con link de conciliación.
+    // Día 1: aviso al inquilino (correo + WhatsApp) con enlace de conciliación,
+    // + COPIA informativa al dueño (correo + WhatsApp). El codeudor NO se incluye
+    // aún (entra al día 4).
     if (!row.escLateWarnedAt && tenantEmail) {
       const cToken = randomBytes(24).toString("hex");
       const concUrl = `${base}/api/payments/conciliation/request?token=${cToken}`;
+      const payUrl = await escLink();
       await sendEmail({
         to: tenantEmail,
         subject: `Pago pendiente${per}`,
-        html: `<p>No hemos recibido el comprobante de tu pago del canon${perP}. Súbelo pronto en la plataforma.</p><p><strong>Importante:</strong> si mañana no lo registras, empezaremos a enviar recordatorios también a tu codeudor.</p><p>Si estás en un acuerdo de conciliación con el arrendador, regístralo aquí: <a href="${concUrl}">estoy en conciliación</a>.</p>`,
-        text: `No recibimos tu comprobante de pago${perP}. Si mañana no lo registras, avisaremos también a tu codeudor. ¿En conciliación con el arrendador? ${concUrl}`,
+        html: `<p>No hemos recibido el comprobante de tu pago del canon${perP} (${amount}). <a href="${payUrl}">Págalo y sube tu comprobante aquí</a>.</p><p>Si estás en un acuerdo de conciliación con el arrendador, regístralo aquí: <a href="${concUrl}">estoy en conciliación</a>.</p>`,
+        text: `No recibimos tu comprobante de pago${perP} (${amount}). Paga y sube tu comprobante: ${payUrl}. ¿En conciliación con el arrendador? ${concUrl}`,
         templateCode: "paymentEscalationEmail",
         relatedEntityType: "payment",
         relatedEntityId: spId,
       });
-      // Mismo aviso al celular del inquilino (WhatsApp/SMS) CON el enlace.
-      await phoneReminder(tenantPhone, `no recibimos tu comprobante de pago del arriendo${perP}. Ingresa para pagar y subir tu comprobante: ${await escLink()}. Si no lo registras, avisaremos también a tu codeudor.`, spId);
+      await phoneReminder(tenantPhone, `no recibimos tu comprobante de pago del arriendo${perP} (${amount}). Ingresa para pagar y subir tu comprobante: ${payUrl}. ¿Estás en conciliación? Regístralo: ${concUrl}`, spId);
+      await copyOwner(
+        `Aviso: arriendo en mora${per}`,
+        `<p>El pago del canon${perP} (${amount}) sigue <strong>sin comprobante registrado</strong> (${daysLate} día(s) de mora). Estamos notificando al inquilino. Es una copia informativa; te mantenemos al tanto.</p>`,
+        `Aviso: el pago del canon${perP} (${amount}) sigue sin comprobante (${daysLate} día(s) de mora). Notificando al inquilino; te mantenemos al tanto.`,
+        `arriendo en mora${perP} (${amount}), ${daysLate} día(s). Estamos notificando al inquilino; te mantenemos al tanto.`,
+      );
       await d.ref.set({ escLateWarnedAt: now.toISOString(), escConciliationTenantToken: cToken, escConciliationStatus: row.escConciliationStatus ?? "none" }, { merge: true });
       escalations += 1;
       continue;
     }
 
-    // Días 2–6: recordatorio a inquilino + codeudor(es), una vez por día, por
-    // correo Y al celular (WhatsApp/SMS), hasta que suba el pago.
-    if (daysLate >= 2 && daysLate <= 6 && (row.escLastCodebtorDay ?? 0) < daysLate) {
-      const emails = [tenantEmail, ...cods.map((c) => c.email)].filter(Boolean);
-      const phones = [tenantPhone, ...cods.map((c) => c.phone)].filter(Boolean);
-      for (const to of emails) {
-        await sendEmail({
-          to,
-          subject: `Recordatorio: pago del canon pendiente${per}`,
-          html: `<p>Sigue pendiente el comprobante del pago del canon${perP} (${daysLate} días de mora). Por favor regístralo en la plataforma para dejar la constancia.</p>`,
-          text: `Sigue pendiente el comprobante del pago del canon${perP} (${daysLate} días de mora).`,
-          templateCode: "paymentEscalationEmail",
-          relatedEntityType: "payment",
-          relatedEntityId: spId,
-        });
+    // Días 2–6: recordatorio diario (una vez por día), por correo Y WhatsApp.
+    // El CODEUDOR se incluye SOLO a partir del día 4. El día 6 es el
+    // REQUERIMIENTO FORMAL DE PAGO (comunicado firme y legal). Copia SIEMPRE al
+    // dueño (correo + WhatsApp). El inquilino puede responder con "estoy en
+    // conciliación" desde el enlace en cada mensaje.
+    if (cycleDay >= 2 && cycleDay <= 6 && (row.escLastCodebtorDay ?? 0) < cycleDay) {
+      const includeCodebtor = cycleDay >= 4;
+      const emails = [tenantEmail, ...(includeCodebtor ? cods.map((c) => c.email) : [])].filter(Boolean);
+      const phones = [tenantPhone, ...(includeCodebtor ? cods.map((c) => c.phone) : [])].filter(Boolean);
+      const payUrl = await escLink();
+      const concUrl = row.escConciliationTenantToken ? `${base}/api/payments/conciliation/request?token=${row.escConciliationTenantToken}` : "";
+      const conCodTxt = includeCodebtor && cods.length > 0 ? " y al codeudor" : "";
+
+      if (cycleDay >= 6) {
+        // Día 6 — REQUERIMIENTO FORMAL DE PAGO (firme, legal).
+        const dem = buildFormalDemand({ tenantName, address, amount, daysLate, perP, payUrl, concUrl });
+        for (const to of emails) {
+          await sendEmail({ to, subject: dem.subject, html: dem.html, text: dem.text, templateCode: "paymentEscalationEmail", relatedEntityType: "payment", relatedEntityId: spId });
+        }
+        for (const ph of phones) await phoneReminder(ph, dem.wa, spId);
+        await copyOwner(
+          `Requerimiento formal enviado — arriendo en mora${per} (día 6)`,
+          `<p>Enviamos al inquilino${conCodTxt} un <strong>Requerimiento Formal de Pago</strong> por la mora del canon${perP} (${amount}, ${daysLate} días). Si mañana no hay pago, te avisaremos para registrar el retraso y el cobro personal.</p>`,
+          `Enviamos el Requerimiento Formal de Pago al inquilino${conCodTxt} por la mora del canon${perP} (${amount}, ${daysLate} días). Si mañana no hay pago, te avisamos para el cobro personal.`,
+          `enviamos el REQUERIMIENTO FORMAL de pago por la mora del arriendo${perP} (${amount}, ${daysLate} días). Si mañana no paga, te avisamos para el cobro personal.`,
+        );
+      } else {
+        // Días 2–5 — recordatorio normal.
+        const html = `<p>Sigue pendiente el comprobante del pago del canon${perP} (${amount}, ${daysLate} días de mora). <a href="${payUrl}">Págalo y sube tu comprobante aquí</a>.</p>${concUrl ? `<p>¿En conciliación con el arrendador? <a href="${concUrl}">regístralo aquí</a>.</p>` : ""}`;
+        const text = `Sigue pendiente el pago del canon${perP} (${amount}, ${daysLate} días de mora). Paga aquí: ${payUrl}${concUrl ? ` · ¿En conciliación? ${concUrl}` : ""}`;
+        for (const to of emails) {
+          await sendEmail({ to, subject: `Recordatorio: pago del canon pendiente${per}`, html, text, templateCode: "paymentEscalationEmail", relatedEntityType: "payment", relatedEntityId: spId });
+        }
+        const wa = `sigue pendiente el pago del arriendo${perP} (${amount}, ${daysLate} días de mora). Ingresa para pagar y subir tu comprobante: ${payUrl}${concUrl ? ` · ¿En conciliación? ${concUrl}` : ""}`;
+        for (const ph of phones) await phoneReminder(ph, wa, spId);
+        await copyOwner(
+          `Aviso: arriendo en mora${per} (${daysLate} días)`,
+          `<p>El pago del canon${perP} (${amount}) sigue <strong>sin comprobante</strong> (${daysLate} días de mora). Seguimos recordándole al inquilino${conCodTxt}. Copia informativa; a los 6 días enviamos un requerimiento formal y al 7.º te avisamos para el cobro personal.</p>`,
+          `El pago del canon${perP} (${amount}) sigue sin comprobante (${daysLate} días). Seguimos recordándole al inquilino${conCodTxt}. Copia informativa.`,
+          `arriendo en mora${perP} (${amount}), ${daysLate} días. Seguimos recordándole al inquilino${conCodTxt}.`,
+        );
       }
-      const msg = `sigue pendiente el comprobante del pago del arriendo${perP} (${daysLate} días de mora). Ingresa para pagar y subir tu comprobante: ${await escLink()}`;
-      for (const ph of phones) await phoneReminder(ph, msg, spId);
-      // Copia informativa al dueño: que sepa que el proceso está en curso.
-      if (landlordEmail) {
-        const conCod = cods.length > 0 ? " y su(s) codeudor(es)" : "";
-        await sendEmail({
-          to: landlordEmail,
-          subject: `Aviso: arriendo en mora${per} (${daysLate} días)`,
-          html: `<p>Te informamos que el pago del canon${perP} sigue <strong>sin comprobante registrado</strong> (${daysLate} días de mora).</p><p>Estamos enviando recordatorios al inquilino${conCod} para que registre el pago. Si a los 7 días de mora aún no hay comprobante, te avisaremos para que decidas registrar el <em>retraso y cobro personal</em>.</p><p>Esta es una copia informativa; no necesitas hacer nada por ahora.</p>`,
-          text: `Aviso: el pago del canon${perP} sigue sin comprobante (${daysLate} días de mora). Seguimos recordándole al inquilino${conCod}. A los 7 días te avisaremos para registrar retraso y cobro personal. Copia informativa; no necesitas hacer nada por ahora.`,
-          templateCode: "paymentEscalationEmail",
-          relatedEntityType: "payment",
-          relatedEntityId: spId,
-        });
-      }
-      await d.ref.set({ escLastCodebtorDay: daysLate }, { merge: true });
+      await d.ref.set({ escLastCodebtorDay: cycleDay }, { merge: true });
       escalations += 1;
       continue;
     }
 
     // Día 7+: aviso al dueño para registrar retraso y cobro personal.
-    if (daysLate >= 7 && !row.escFinalOwnerNoticeAt && landlordEmail) {
+    if (cycleDay >= 7 && !row.escFinalOwnerNoticeAt && landlordEmail) {
       const pToken = randomBytes(24).toString("hex");
       const pcUrl = `${base}/api/payments/personal-collection?token=${pToken}`;
       await sendEmail({
