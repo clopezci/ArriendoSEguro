@@ -7,6 +7,7 @@ import { auditEvent } from "@/features/contracts/audit-server";
 import { supportsCollection, type CodebtorSupportDoc } from "@/domain/codebtor-supports/firestore-supports";
 import { SUPPORT_PARTY_VALUES } from "@/domain/codebtor-supports/support-schema";
 import { shouldBlockForPlus, plusRequiredResponse } from "@/lib/auth/contractPlusGate";
+import { requestTypeDef, RESPONSE_ACTION_LABELS, MAINTENANCE_CATEGORY_LABELS, type MaintenanceCategory } from "@/domain/maintenance/maintenance";
 
 export const runtime = "nodejs";
 
@@ -264,6 +265,49 @@ export async function GET(request: Request) {
       tryAdd("04-evidencias-aceptaciones.txt", lines.join("\n"), "04-evidencias-aceptaciones.txt (juramentos, aceptaciones y consentimientos con IP/fecha/dispositivo)");
     } catch {
       manifest.push("- (omitido) Evidencias de aceptaciones: no se pudieron leer.");
+    }
+
+    // Solicitudes y reportes (daños, solicitudes, cobros, entregas, quejas…) con
+    // toda su trazabilidad: quién la creó, cuándo, y cada respuesta de la otra parte.
+    try {
+      const mSnap = await firestore
+        .collection("contracts")
+        .doc(contractId)
+        .collection("maintenance")
+        .orderBy("createdAt", "asc")
+        .get();
+      if (mSnap.size > 0) {
+        const lines: string[] = [];
+        lines.push("SOLICITUDES Y REPORTES");
+        lines.push(`Contrato: ${contractId}`);
+        lines.push(`Generado: ${new Date().toISOString()}`);
+        lines.push(`Total: ${mSnap.size}`);
+        const roleName = (r: string) => (r?.startsWith("landlord") ? "Dueño" : r?.startsWith("tenant") ? "Inquilino" : r?.startsWith("solidaryCoDebtor") ? "Codeudor" : r || "—");
+        mSnap.docs
+          .map((d) => d.data() as Record<string, unknown>)
+          .forEach((m, i) => {
+            const def = requestTypeDef(String(m.type ?? "damage"));
+            const kind = def?.label ?? String(m.type ?? "Solicitud");
+            lines.push("");
+            lines.push(`${i + 1}. [${kind}] ${String(m.title ?? "")}`);
+            lines.push(`   Estado: ${m.status ?? "—"}`);
+            lines.push(`   Creada por: ${roleName(String(m.reportedByRole ?? ""))} (${m.reportedByEmail ?? "—"}) · ${m.createdAt ?? "—"}`);
+            if (def?.useCategory) lines.push(`   Categoría: ${MAINTENANCE_CATEGORY_LABELS[(m.category as MaintenanceCategory)] ?? m.category ?? "—"}`);
+            lines.push(`   Descripción: ${String(m.description ?? "").trim() || "—"}`);
+            if (m.photoPath) lines.push(`   Foto adjunta: sí (${m.photoPath})`);
+            const responses = Array.isArray(m.responses) ? (m.responses as Record<string, unknown>[]) : [];
+            if (responses.length > 0) {
+              lines.push(`   Respuestas de la otra parte:`);
+              responses.forEach((r) => {
+                const label = RESPONSE_ACTION_LABELS[(r.action as keyof typeof RESPONSE_ACTION_LABELS)] ?? String(r.action ?? "—");
+                lines.push(`     · ${r.at ?? "—"} — ${label}${r.byRole ? ` (${roleName(String(r.byRole))})` : ""}${r.reason ? `: ${r.reason}` : ""}`);
+              });
+            }
+          });
+        tryAdd("05-solicitudes-reportes.txt", lines.join("\n"), "05-solicitudes-reportes.txt (solicitudes y reportes de ambas partes con su trazabilidad y respuestas)");
+      }
+    } catch {
+      manifest.push("- (omitido) Solicitudes y reportes: no se pudieron leer.");
     }
 
     manifest.push("");

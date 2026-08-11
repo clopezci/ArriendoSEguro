@@ -31,7 +31,7 @@ type Payment = {
     | "cancelled";
   notes?: string;
 };
-type ScheduledPayment = { id: string; periodLabel: string; dueDate: string; status: string };
+type ScheduledPayment = { id: string; periodLabel: string; dueDate: string; status: string; escConciliationStatus?: string; escRemindersReenabledAt?: string };
 
 export default function PaymentsPage() {
   const id = String(useParams<{ id: string }>().id);
@@ -45,6 +45,8 @@ export default function PaymentsPage() {
   const [tenantLink, setTenantLink] = useState("");
   const [tenantLinkQr, setTenantLinkQr] = useState("");
   const [scheduledPayments, setScheduledPayments] = useState<ScheduledPayment[]>([]);
+  const [myRole, setMyRole] = useState("");
+  const [reenabling, setReenabling] = useState("");
 
   useEffect(() => {
     const run = async () => {
@@ -58,10 +60,33 @@ export default function PaymentsPage() {
       const list = await fetch(`/api/payments/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`, { headers: { ...authH } }).then((r) => r.json());
       if (list?.success) setPayments(list.payments ?? []);
       const sch = await fetch(`/api/payments/schedule/list?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`, { headers: { ...authH } }).then((r) => r.json());
-      if (sch?.success) setScheduledPayments(sch.scheduledPayments ?? []);
+      if (sch?.success) { setScheduledPayments(sch.scheduledPayments ?? []); setMyRole(sch.myRole ?? ""); }
     };
     void run();
   }, [id, user]);
+
+  async function reenableCollection(spId: string) {
+    if (!user) return;
+    if (!window.confirm("¿Reactivar los mensajes de cobro de este mes? Se reiniciará el proceso de recordatorios (día 1 → requerimiento formal → aviso al dueño) bajo las condiciones ya definidas.")) return;
+    setReenabling(spId);
+    try {
+      const res = await fetch("/api/payments/reminders/reenable", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ contractId: id, scheduledPaymentId: spId }),
+      });
+      const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      if (j?.success) {
+        setScheduledPayments((prev) => prev.map((p) => (p.id === spId ? { ...p, escConciliationStatus: "none", escRemindersReenabledAt: new Date().toISOString() } : p)));
+      } else {
+        alert(j?.errors?.[0]?.message ?? "No se pudo reactivar el cobro.");
+      }
+    } catch {
+      alert("Error de red al reactivar el cobro.");
+    } finally {
+      setReenabling("");
+    }
+  }
 
   const summary = useMemo(() => {
     const today = Date.now();
@@ -209,6 +234,36 @@ export default function PaymentsPage() {
 
       {/* Sugerencia contextual: aliado de cobranza si hay mora alta (≥10 días). */}
       <CollectionAllyCard scheduledPayments={scheduledPayments} userEmail={user?.email ?? ""} />
+
+      {/* Cobros pausados por conciliación: solo el dueño puede reactivarlos (por mes). */}
+      {myRole === "landlord" && scheduledPayments.some((p) => p.escConciliationStatus === "accepted") && (
+        <section className="mt-4 rounded-2xl border border-sky-300 bg-sky-50/70 p-4">
+          <p className="text-sm font-bold text-sky-900">Cobros pausados por conciliación</p>
+          <p className="mt-0.5 text-xs text-sky-800">
+            Aceptaste una conciliación y pausamos los mensajes de cobro de estos meses. Si el inquilino no cumplió, puedes
+            <b> reactivar el cobro</b> de ese mes: se reinicia el proceso (recordatorios → requerimiento formal → aviso al dueño).
+          </p>
+          <div className="mt-3 flex flex-col gap-2">
+            {scheduledPayments
+              .filter((p) => p.escConciliationStatus === "accepted")
+              .map((p) => (
+                <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-200 bg-white p-3">
+                  <span className="text-sm text-slate-800">
+                    <b>{p.periodLabel}</b> · vence {p.dueDate} · <span className="text-sky-700">pausado por conciliación</span>
+                  </span>
+                  <button
+                    type="button"
+                    disabled={reenabling === p.id}
+                    onClick={() => void reenableCollection(p.id)}
+                    className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white transition hover:brightness-105 disabled:opacity-50"
+                  >
+                    {reenabling === p.id ? "Reactivando…" : "Re-habilitar cobro de este mes"}
+                  </button>
+                </div>
+              ))}
+          </div>
+        </section>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <Link href={`/dashboard/contracts/${id}/payment-schedule`} className="rounded bg-[#5646E5] px-3 py-2 text-sm font-semibold text-white">

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
-import { validateMaintenanceInput, MAINTENANCE_CATEGORY_LABELS } from "@/domain/maintenance/maintenance";
+import { validateMaintenanceInput, MAINTENANCE_CATEGORY_LABELS, requestTypeDef, canCreateType } from "@/domain/maintenance/maintenance";
 import { resolveNovedadRecipientEmails } from "@/domain/contracts/novedades/recipients";
 import { persistExpedienteAttachment } from "@/domain/contracts/persistExpedienteAttachment";
 import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
@@ -35,8 +35,9 @@ export async function POST(request: Request) {
     const contractId = String(form.get("contractId") ?? "").trim();
     const title = String(form.get("title") ?? "");
     const description = String(form.get("description") ?? "");
-    const category = String(form.get("category") ?? "");
-    const file = form.get("file");
+    const type = String(form.get("type") ?? "damage");
+    // Foto: aceptamos "file" (mantenimiento) o "photo" (vista de inquilino).
+    const file = form.get("file") ?? form.get("photo");
 
     if (!contractId) {
       return NextResponse.json<Resp>(
@@ -44,6 +45,13 @@ export async function POST(request: Request) {
         { status: 422 },
       );
     }
+
+    const def = requestTypeDef(type);
+    if (!def) {
+      return NextResponse.json<Resp>({ success: false, errors: [{ field: "type", message: "Tipo de solicitud inválido." }] }, { status: 422 });
+    }
+    // Solo los tipos de daño/reparación usan categoría; el resto va como "other".
+    const category = def.useCategory ? String(form.get("category") ?? "") : "other";
 
     const check = validateMaintenanceInput({ title, description, category });
     if (!check.ok) {
@@ -70,6 +78,15 @@ export async function POST(request: Request) {
       contractVersionId: currentVersionId,
     });
     if (!participant.ok) return participant.response;
+
+    // El tipo debe corresponder al rol: el inquilino reporta daño/solicitud/
+    // necesidad; el dueño hace reparación/cobro/entrega/queja/otra.
+    if (!canCreateType(type, participant.role)) {
+      return NextResponse.json<Resp>(
+        { success: false, errors: [{ field: "type", message: "Ese tipo de solicitud no corresponde a tu rol en este contrato." }] },
+        { status: 403 },
+      );
+    }
 
     const vSnap = await firestore.collection("contract_versions").doc(currentVersionId).get();
     const vData = vSnap.data() as { contractPayload?: ResidentialLeaseContractInput; hasSolidaryCoDebtor?: boolean } | undefined;
@@ -112,6 +129,7 @@ export async function POST(request: Request) {
       id: requestId,
       contractId,
       contractVersionId: currentVersionId,
+      type,
       reportedByUid: participant.user.uid,
       reportedByEmail: participant.user.email,
       reportedByRole: participant.role,
@@ -128,21 +146,22 @@ export async function POST(request: Request) {
       resolvedAt: null,
     });
 
-    // Avisar a las otras partes (sobre todo al dueño) por correo y SMS.
+    // Avisar a las otras partes (sobre todo a la contraparte) por correo y WhatsApp.
     const recipients = resolveNovedadRecipientEmails(payload, hasCodebtor, participant.user.email);
-    const catLabel = MAINTENANCE_CATEGORY_LABELS[check.values.category];
+    const kindLabel = def.label; // p. ej. "Daño", "Solicitud de cobro", "Queja"…
+    const catLine = def.useCategory ? `<li><strong>Categoría:</strong> ${MAINTENANCE_CATEGORY_LABELS[check.values.category]}</li>` : "";
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
     const link = appUrl ? `${appUrl}/dashboard/contracts/${contractId}/mantenimiento` : "";
     for (const to of recipients) {
       await sendEmail({
         to,
-        subject: `Nueva solicitud de reparación: ${check.values.title}`,
+        subject: `Nueva ${kindLabel.toLowerCase()}: ${check.values.title}`,
         html:
-          `<p>Se registró una <strong>solicitud de reparación</strong> en tu arriendo.</p>` +
-          `<ul><li><strong>Asunto:</strong> ${check.values.title}</li><li><strong>Categoría:</strong> ${catLabel}</li></ul>` +
+          `<p>Se registró una <strong>${kindLabel.toLowerCase()}</strong> en tu arriendo.</p>` +
+          `<ul><li><strong>Asunto:</strong> ${check.values.title}</li>${catLine}</ul>` +
           `<p>${check.values.description}</p>` +
-          (link ? `<p><a href="${link}">Ver y responder (aceptar o rechazar)</a></p>` : ""),
-        text: `Nueva solicitud de reparación (${catLabel}): ${check.values.title}. ${check.values.description}${link ? ` — Responde aquí: ${link}` : ""}`,
+          (link ? `<p><a href="${link}">Ver y responder</a></p>` : ""),
+        text: `Nueva ${kindLabel.toLowerCase()}: ${check.values.title}. ${check.values.description}${link ? ` — Responde aquí: ${link}` : ""}`,
         templateCode: "maintenanceReportedEmail",
         relatedEntityType: "contract",
         relatedEntityId: contractId,
@@ -160,7 +179,7 @@ export async function POST(request: Request) {
       seen.add(p.phone!);
       await sendPhoneNotice({
         to: p.phone!,
-        message: `Nueva solicitud de reparación (${catLabel}) en tu arriendo. Revísala y responde en la plataforma.`,
+        message: `Nueva ${kindLabel.toLowerCase()} en tu arriendo: ${check.values.title}. Revísala y responde en la plataforma.`,
         templateCode: "maintenanceWa",
         relatedEntityType: "contract",
         relatedEntityId: contractId,
