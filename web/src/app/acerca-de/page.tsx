@@ -5,7 +5,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Acerca de",
   description:
-    "Qué es ArriendoSeguro, por qué existe y quién está detrás: una marca colombiana en fase de validación para formalizar arriendos entre personas con contrato, firma e inventario.",
+    "Qué es ArriendoSeguro, por qué existe y quién está detrás: una plataforma colombiana operada por LOTIC para formalizar arriendos entre personas con contrato, firma e inventario.",
   alternates: { canonical: "/acerca-de" },
 };
 
@@ -34,7 +34,7 @@ export default function AcercaDePage() {
       <TopBackNav />
       <main className="mx-auto max-w-4xl space-y-8 px-4 py-10 sm:px-6">
         <header className="rounded-2xl border border-slate-300 bg-white/95 p-6 shadow-[0_14px_34px_rgba(139,92,246,0.22)]">
-          <p className="text-sm font-medium text-violet-700">Marca en validación · Colombia</p>
+          <p className="text-sm font-medium text-violet-700">Un producto de LOTIC · Colombia</p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
             Acerca de ArriendoSeguro
           </h1>
@@ -58,14 +58,16 @@ export default function AcercaDePage() {
         </section>
 
         <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
-          <h2 className="text-2xl font-semibold">En qué fase estamos</h2>
+          <h2 className="text-2xl font-semibold">Quién está detrás</h2>
           <p className="mt-3 text-slate-700">
-            Hoy ArriendoSeguro es un proyecto de emprendimiento en{" "}
-            <strong>fase de validación de mercado</strong>, operado por una persona natural en
-            Colombia. Estamos construyendo el producto de forma incremental y escuchando a quienes
-            arriendan para priorizar lo que de verdad aporta. A medida que avancemos formalizaremos
-            también la figura comercial; mientras tanto, mantenemos canales de contacto y políticas
-            claras para que sepas siempre con quién estás tratando.
+            ArriendoSeguro es un producto de <strong>LOTIC</strong>, con domicilio en Medellín
+            (Colombia). Construimos el producto de forma incremental y escuchando a quienes arriendan
+            para priorizar lo que de verdad aporta. Mantenemos canales de contacto y políticas claras
+            para que sepas siempre con quién estás tratando: puedes escribirnos a{" "}
+            <a href="mailto:contacto@arriendoseguro.app" className="font-medium text-violet-700 underline">
+              contacto@arriendoseguro.app
+            </a>
+            .
           </p>
         </section>
 

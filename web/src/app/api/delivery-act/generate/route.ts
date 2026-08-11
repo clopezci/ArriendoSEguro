@@ -180,7 +180,7 @@ export async function POST(request: Request) {
       `<p>${summary}</p>` +
       linkLine +
       `<p>Conserva este documento: es tu mejor prueba del estado del inmueble al inicio del arriendo.</p>` +
-      `<p style="color:#64748b;font-size:12px;">Enviado por ArriendoSeguro. No responde a este correo.</p>`;
+      `<p style="color:#64748b;font-size:12px;">Enviado por ArriendoSeguro. Este es un correo automático; no es necesario responderlo.</p>`;
     let emailDelivery: "ok" | "partial" | "failed" | "none" = "none";
     if (recipients.length > 0) {
       const results = await Promise.all(
