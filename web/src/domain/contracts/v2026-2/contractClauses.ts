@@ -12,7 +12,7 @@
 export const CONTRACT_TEMPLATE_V2026_2 = `
 <article>
   <h1>CONTRATO DE ARRENDAMIENTO DE VIVIENDA URBANA</h1>
-  <p class="meta">Versión [VERSION_CONTRATO] · Plataforma Arriendo Seguro</p>
+  <p class="meta">Versión [VERSION_CONTRATO] · Plataforma ArriendoSeguro</p>
 
   <p>Entre los suscritos a saber:</p>
   <p>[COMPARECENCIA_ARRENDADOR]</p>
@@ -27,7 +27,7 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
   <h2>PRIMERA. TIPO DE CONTRATO</h2>
   <p>
     Las partes declaran que el presente contrato es de arrendamiento de [TIPO_CONTRATO_LEGIBLE]. La plataforma
-    Arriendo Seguro habilitará progresivamente otras modalidades; mientras tanto, este documento se rige por la
+    ArriendoSeguro habilitará progresivamente otras modalidades; mientras tanto, este documento se rige por la
     regulación aplicable a vivienda urbana.
   </p>
 
@@ -72,11 +72,11 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
     no supera el límite legal aplicable para vivienda urbana.
   </p>
   <p>
-    EL ARRENDADOR deberá entregar o permitir constancia del pago recibido. Cuando las partes usen Arriendo Seguro,
+    EL ARRENDADOR deberá entregar o permitir constancia del pago recibido. Cuando las partes usen ArriendoSeguro,
     podrán registrar los pagos realizados dentro de la plataforma como soporte documental.
   </p>
   <p>
-    Las partes reconocen que Arriendo Seguro no recauda dinero, no administra recursos, no actúa como intermediario
+    Las partes reconocen que ArriendoSeguro no recauda dinero, no administra recursos, no actúa como intermediario
     financiero y no garantiza el pago del canon.
   </p>
 
@@ -97,7 +97,7 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
     de conformidad con los límites establecidos por la normatividad colombiana aplicable.
   </p>
   <p>
-    El incremento no podrá superar el porcentaje legalmente permitido para el periodo correspondiente. Arriendo Seguro
+    El incremento no podrá superar el porcentaje legalmente permitido para el periodo correspondiente. ArriendoSeguro
     podrá servir como herramienta de cálculo y registro del reajuste, sin que ello sustituya la responsabilidad de las
     partes de verificar la normatividad vigente.
   </p>
@@ -160,7 +160,7 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
   <h2>DÉCIMA SEGUNDA. LIQUIDACIÓN DE SUMAS ADEUDADAS</h2>
   <p>
     En caso de mora o incumplimiento, las sumas adeudadas por EL ARRENDATARIO podrán liquidarse con base en el canon
-    pactado, los pagos registrados en la plataforma Arriendo Seguro, los soportes documentales aportados por las
+    pactado, los pagos registrados en la plataforma ArriendoSeguro, los soportes documentales aportados por las
     partes y las fechas de vencimiento de cada obligación.
   </p>
   <p>
@@ -197,7 +197,7 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
     Decreto 2364 de 2012. Reconocen que, por el principio de equivalencia funcional, dicha firma tiene plena validez y
     fuerza probatoria y surte los mismos efectos jurídicos que la firma manuscrita cuando permite identificar al
     firmante e indicar que aprueba el contenido del mensaje de datos. Para asegurar identidad, integridad y trazabilidad
-    de cada firma, la plataforma Arriendo Seguro implementará, sin costo para las partes en la fase inicial, los
+    de cada firma, la plataforma ArriendoSeguro implementará, sin costo para las partes en la fase inicial, los
     siguientes mecanismos:
   </p>
   <ol>
@@ -216,7 +216,7 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
 
   <h2>DÉCIMA SÉPTIMA. TRATAMIENTO DE DATOS PERSONALES</h2>
   <p>
-    Las partes autorizan el tratamiento de sus datos personales por parte de Arriendo Seguro para las finalidades
+    Las partes autorizan el tratamiento de sus datos personales por parte de ArriendoSeguro para las finalidades
     relacionadas con la creación, gestión, firma, trazabilidad, conservación documental y soporte del contrato,
     conforme a la Ley 1581 de 2012, sus decretos reglamentarios y el aviso de privacidad publicado en la plataforma.
   </p>
@@ -236,7 +236,7 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
   </p>
   <p>
     Las partes reconocen que dicha evaluación constituye tratamiento de datos personales y autorizan su recolección,
-    almacenamiento y uso por la plataforma Arriendo Seguro conforme a la Ley 1581 de 2012 y al aviso de privacidad, con
+    almacenamiento y uso por la plataforma ArriendoSeguro conforme a la Ley 1581 de 2012 y al aviso de privacidad, con
     las siguientes garantías: (i) no constituye lista negra pública ni consulta libre por cédula; (ii) solo se mostrará
     de forma agregada y a quien acredite una relación arrendaticia legítima con autorización del titular, cuando la
     política de la plataforma lo permita; y (iii) cada titular podrá conocer, actualizar y rectificar la información y
@@ -253,7 +253,7 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
   <p>[NOTIFICACION_CODEUDOR_CONDICIONAL]</p>
   <p>
     Las partes aceptan recibir comunicaciones, requerimientos y notificaciones derivadas del contrato a través de los
-    correos electrónicos registrados y de la plataforma Arriendo Seguro, sin perjuicio de los demás canales legales
+    correos electrónicos registrados y de la plataforma ArriendoSeguro, sin perjuicio de los demás canales legales
     que correspondan.
   </p>
 
@@ -277,9 +277,9 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
     <li>Documento autenticado en notaría, cuando las partes así lo decidan.</li>
   </ol>
 
-  <h2>VIGÉSIMA PRIMERA. USO DE LA PLATAFORMA ARRIENDO SEGURO</h2>
+  <h2>VIGÉSIMA PRIMERA. USO DE LA PLATAFORMA ARRIENDOSEGURO</h2>
   <p>
-    Arriendo Seguro actúa como herramienta tecnológica de apoyo documental. No actúa como inmobiliaria, aseguradora,
+    ArriendoSeguro actúa como herramienta tecnológica de apoyo documental. No actúa como inmobiliaria, aseguradora,
     entidad financiera, abogado ni garante del cumplimiento. Las partes son las responsables del cumplimiento de las
     obligaciones contractuales y legales aquí descritas.
   </p>
@@ -337,12 +337,12 @@ export const CLAUSULA_CODEUDOR_V2026_2 = `
   </li>
   <li>
     <strong>Notificación:</strong> EL CODEUDOR SOLIDARIO acepta ser notificado en su dirección y correo electrónico
-    aquí registrados, así como a través de la plataforma Arriendo Seguro, para cualquier incumplimiento o
+    aquí registrados, así como a través de la plataforma ArriendoSeguro, para cualquier incumplimiento o
     requerimiento relacionado con el contrato.
   </li>
   <li>
     <strong>Autorización de datos personales:</strong> EL CODEUDOR SOLIDARIO autoriza expresamente el tratamiento de
-    sus datos personales por parte de la plataforma Arriendo Seguro, conforme a la Ley 1581 de 2012 y al aviso de
+    sus datos personales por parte de la plataforma ArriendoSeguro, conforme a la Ley 1581 de 2012 y al aviso de
     privacidad, para gestionar las finalidades relacionadas con su rol dentro del contrato.
   </li>
   <li>
@@ -402,14 +402,14 @@ export const CLAUSULA_NOTARIZACION_V2026_2 = `
 <h2>VIGÉSIMA CUARTA. AUTENTICACIÓN NOTARIAL</h2>
 <p>
   Las partes manifiestan su voluntad de autenticar el presente contrato ante notaría pública. Para ello, descargarán
-  el documento desde la plataforma Arriendo Seguro, lo imprimirán, surtirán el trámite de autenticación y cargarán de
+  el documento desde la plataforma ArriendoSeguro, lo imprimirán, surtirán el trámite de autenticación y cargarán de
   nuevo el documento autenticado en el expediente correspondiente.
 </p>
 <p>
   La autenticación notarial no sustituye los efectos de la firma electrónica de la cláusula DÉCIMA SEXTA, sino que la
   refuerza para los efectos previstos por la ley. Adicionalmente, las partes cuentan con la opción de surtir la firma y
   autenticación digital de manera totalmente electrónica y gratuita a través de la Agencia Nacional Digital del Estado
-  colombiano (Decreto 620 de 2020), conforme a las indicaciones disponibles en la plataforma Arriendo Seguro.
+  colombiano (Decreto 620 de 2020), conforme a las indicaciones disponibles en la plataforma ArriendoSeguro.
 </p>
 `;
 

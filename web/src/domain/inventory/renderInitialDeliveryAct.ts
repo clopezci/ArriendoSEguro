@@ -26,7 +26,7 @@ export function renderInitialDeliveryAct(input: {
     <article>
       <h1>ACTA DE ENTREGA INICIAL DEL INMUEBLE</h1>
       <p>En la fecha ${input.deliveryDate}, EL ARRENDADOR (${input.landlordName}) hace entrega material del inmueble ubicado en ${input.propertyAddress} a EL ARRENDATARIO (${input.tenantName}), quien declara recibirlo para el uso de vivienda conforme al contrato de arrendamiento suscrito entre las partes.</p>
-      <p>Las partes dejan constancia de que el estado del inmueble fue documentado mediante inventario inicial guiado en la plataforma Arriendo Seguro, incluyendo zonas seleccionadas, fotografías, observaciones, estado de elementos, medidores, llaves y demás información registrada.</p>
+      <p>Las partes dejan constancia de que el estado del inmueble fue documentado mediante inventario inicial guiado en la plataforma ArriendoSeguro, incluyendo zonas seleccionadas, fotografías, observaciones, estado de elementos, medidores, llaves y demás información registrada.</p>
       <p>El inventario inicial generado hace parte integral de la presente acta como anexo del contrato.</p>
       <h2>Resumen del inventario</h2>
       <p>${input.inventorySummary ?? "Sin resumen disponible."}</p>
@@ -38,7 +38,7 @@ export function renderInitialDeliveryAct(input: {
       <h2>Observaciones generales</h2>
       <p>${input.observations || "Sin observaciones."}</p>
       <p>La presente acta no sustituye el contrato de arrendamiento. Su finalidad es dejar soporte documental de la entrega inicial del inmueble.</p>
-      <p>Para constancia, las partes aceptan el contenido de esta acta mediante la plataforma Arriendo Seguro.</p>
+      <p>Para constancia, las partes aceptan el contenido de esta acta mediante la plataforma ArriendoSeguro.</p>
       <p>Contrato: ${input.contractId} / Versión: ${input.contractVersionId}</p>
     </article>
   `;

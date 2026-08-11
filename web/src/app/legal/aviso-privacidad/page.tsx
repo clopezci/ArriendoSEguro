@@ -35,9 +35,11 @@ export default function AvisoPrivacidadPage() {
         <h2 className="text-base font-semibold text-slate-900">1. Responsable del tratamiento</h2>
         <p>
           El responsable del tratamiento de datos personales a través de la plataforma es{" "}
-          <strong>{privacy.controllerLabel}</strong>, operador de la plataforma <strong>ArriendoSeguro</strong>, con
-          domicilio en Medellín (Colombia), en adelante &quot;nosotros&quot; o &quot;la plataforma&quot;, según
-          corresponda al contexto. Canal de atención y de ejercicio de derechos de habeas data:{" "}
+          <strong>{privacy.controllerLabel}</strong>, marca tecnológica que agrupa los productos de software de su
+          titular —entre ellos <strong>ArriendoSeguro</strong>—, operada en Colombia por una persona natural comerciante
+          identificada con <strong>NIT 71.217.228</strong> (dígito de verificación por asignar), con domicilio en
+          Medellín, en adelante &quot;nosotros&quot; o &quot;la plataforma&quot;, según corresponda al contexto. Canal de
+          atención y de ejercicio de derechos de habeas data:{" "}
           <a href="mailto:contacto@arriendoseguro.app" className="font-medium text-violet-700 underline">
             contacto@arriendoseguro.app
           </a>

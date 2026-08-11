@@ -60,7 +60,7 @@ export function buildContractVariables(input: ResidentialLeaseContractInput): Co
       "ante terceros y autoridades deberán contrastar la información (incluida la matrícula inmobiliaria, si aplica) " +
       "con los registros oficiales. Como referencia general pueden consultar el sitio del " +
       '<a href="https://www.igac.gov.co/" target="_blank" rel="noopener noreferrer">Instituto Geográfico Agustín Codazzi (IGAC)</a> ' +
-      "y las ventanillas catastrales o de registro competentes para el municipio; Arriendo Seguro no sustituye esas consultas.",
+      "y las ventanillas catastrales o de registro competentes para el municipio; ArriendoSeguro no sustituye esas consultas.",
     CIUDAD_INMUEBLE: escapeHtml(input.property.city),
     DEPARTAMENTO_INMUEBLE: escapeHtml(input.property.department),
     MATRICULA_INMOBILIARIA: escapeHtml(input.property.registryNumber || "según documento de propiedad adjunto"),

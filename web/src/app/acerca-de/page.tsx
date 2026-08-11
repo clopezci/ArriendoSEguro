@@ -60,10 +60,12 @@ export default function AcercaDePage() {
         <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
           <h2 className="text-2xl font-semibold">Quién está detrás</h2>
           <p className="mt-3 text-slate-700">
-            ArriendoSeguro es un producto de <strong>LOTIC</strong>, con domicilio en Medellín
-            (Colombia). Construimos el producto de forma incremental y escuchando a quienes arriendan
-            para priorizar lo que de verdad aporta. Mantenemos canales de contacto y políticas claras
-            para que sepas siempre con quién estás tratando: puedes escribirnos a{" "}
+            ArriendoSeguro es un producto de <strong>LOTIC</strong>, la marca tecnológica que agrupa
+            nuestros productos de software. Hoy LOTIC opera como <strong>persona natural comerciante</strong>{" "}
+            en Colombia (NIT 71.217.228), con domicilio en Medellín, y crecerá hacia una figura societaria
+            a medida que avancemos. Construimos el producto de forma incremental y escuchando a quienes
+            arriendan. Mantenemos canales de contacto y políticas claras para que sepas siempre con quién
+            estás tratando: puedes escribirnos a{" "}
             <a href="mailto:contacto@arriendoseguro.app" className="font-medium text-violet-700 underline">
               contacto@arriendoseguro.app
             </a>

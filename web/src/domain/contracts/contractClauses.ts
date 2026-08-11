@@ -93,7 +93,7 @@ export const CONTRACT_TEMPLATE = `
     de conformidad con los límites establecidos por la normatividad colombiana aplicable.
   </p>
   <p>
-    El incremento no podrá superar el porcentaje legalmente permitido para el periodo correspondiente. Arriendo Seguro
+    El incremento no podrá superar el porcentaje legalmente permitido para el periodo correspondiente. ArriendoSeguro
     podrá servir como herramienta de cálculo y registro del reajuste, sin que ello sustituya la responsabilidad de las
     partes de verificar la normatividad vigente.
   </p>
@@ -103,11 +103,11 @@ export const CONTRACT_TEMPLATE = `
     EL ARRENDATARIO deberá pagar el canon en la forma y fecha pactadas.
   </p>
   <p>
-    EL ARRENDADOR deberá entregar o permitir constancia del pago recibido. Cuando las partes usen Arriendo Seguro,
+    EL ARRENDADOR deberá entregar o permitir constancia del pago recibido. Cuando las partes usen ArriendoSeguro,
     podrán registrar los pagos realizados dentro de la plataforma como soporte documental.
   </p>
   <p>
-    Las partes reconocen que Arriendo Seguro no recauda dinero, no administra recursos, no actúa como intermediario
+    Las partes reconocen que ArriendoSeguro no recauda dinero, no administra recursos, no actúa como intermediario
     financiero y no garantiza el pago del canon.
   </p>
 
@@ -192,7 +192,7 @@ export const CONTRACT_TEMPLATE = `
 
   <h2>DÉCIMA TERCERA. TRATAMIENTO DE DATOS PERSONALES</h2>
   <p>
-    Las partes autorizan el tratamiento de sus datos personales por parte de la plataforma Arriendo Seguro para las
+    Las partes autorizan el tratamiento de sus datos personales por parte de la plataforma ArriendoSeguro para las
     finalidades relacionadas con creación, gestión, firma, trazabilidad, conservación documental y soporte del
     contrato.
   </p>
@@ -259,9 +259,9 @@ export const CONTRACT_TEMPLATE = `
     evaluación estructurada.
   </p>
 
-  <h2>VIGÉSIMA. USO DE LA PLATAFORMA ARRIENDO SEGURO</h2>
+  <h2>VIGÉSIMA. USO DE LA PLATAFORMA ARRIENDOSEGURO</h2>
   <p>
-    Arriendo Seguro actúa como herramienta tecnológica de apoyo documental. No actúa como inmobiliaria, aseguradora,
+    ArriendoSeguro actúa como herramienta tecnológica de apoyo documental. No actúa como inmobiliaria, aseguradora,
     entidad financiera, abogado ni garante del cumplimiento.
   </p>
 

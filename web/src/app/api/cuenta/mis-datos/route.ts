@@ -293,7 +293,7 @@ export async function PUT(request: Request) {
       },
       { merge: true },
     );
-    auditEvent("account_data_rectified", { uid, fields: [displayName ? "displayName" : null, phone ? "phone" : null].filter(Boolean) });
+    auditEvent("account_data_rectified", { uid, fields: [displayName ? "displayName" : "", phone ? "phone" : ""].filter(Boolean).join(",") });
     return NextResponse.json({ success: true });
   } catch (err) {
     if (process.env.NODE_ENV !== "production") console.error("cuenta/mis-datos PUT", err);
