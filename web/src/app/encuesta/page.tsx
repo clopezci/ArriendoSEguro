@@ -7,9 +7,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Encuesta de validación | ArriendoSeguro",
+  title: "Encuesta | ArriendoSeguro",
   description:
-    "Responde la encuesta corta de ArriendoSeguro y ayúdanos a priorizar la fase inicial del producto para arriendos entre particulares en Colombia.",
+    "Responde la encuesta corta de ArriendoSeguro y ayúdanos a priorizar las mejoras del producto para arriendos entre particulares en Colombia.",
   // Formulario de captación (no es contenido): no indexar, seguir enlaces.
   robots: { index: false, follow: true },
 };

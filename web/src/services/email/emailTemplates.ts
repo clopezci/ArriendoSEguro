@@ -400,11 +400,11 @@ export function plusAccessConfirmedEmail(input: { userEmail: string; source: "pa
 export function surveyThankYouEmail(): CompiledEmailTemplate {
   const base = appBaseUrl();
   const subject = "Gracias por responder la encuesta";
-  const text = `Gracias por responder la encuesta de ArriendoSeguro.\nTus respuestas nos ayudan a priorizar esta fase inicial del producto.\n\nConoce más: ${base}/entiendelo-facil`;
+  const text = `Gracias por responder la encuesta de ArriendoSeguro.\nTus respuestas nos ayudan a priorizar las mejoras del producto.\n\nConoce más: ${base}/entiendelo-facil`;
   const html = baseHtml(
     "Gracias por tu respuesta",
     `<p>Gracias por responder la encuesta de ArriendoSeguro.</p>
-     <p>Tus respuestas nos ayudan a priorizar esta fase inicial del producto.</p>
+     <p>Tus respuestas nos ayudan a priorizar las mejoras del producto.</p>
      <p><a href="${base}/entiendelo-facil" style="color:#6d28d9;">Conocer más</a></p>`,
   );
   return { subject, html, text };

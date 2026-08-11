@@ -18,10 +18,11 @@ export type PrivacyPolicyMeta = {
 export const PRIVACY_POLICY_REGISTRY: Record<PrivacyPolicyVersionId, PrivacyPolicyMeta> = {
   "AVISO-PRIV-2026.2": {
     id: "AVISO-PRIV-2026.2",
-    // Revisado 2026-06-03: se añadió la sección de cookies/Consent Mode y el
-    // encargado Upstash (rate-limit). Cambio aclaratorio, no exige reaceptación.
-    publishedAt: "2026-06-03",
-    controllerLabel: "ArriendoSeguro",
+    // Revisado 2026-08-11: se identifica a LOTIC como responsable/operador de la
+    // plataforma ArriendoSeguro. Cambio aclaratorio de identificación del
+    // responsable, no exige reaceptación.
+    publishedAt: "2026-08-11",
+    controllerLabel: "LOTIC",
   },
 };
 

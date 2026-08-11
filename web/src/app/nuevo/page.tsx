@@ -1616,7 +1616,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
             </div>
             {a.paymentSupportPolicy === "notifications_and_upload" && (
               <p className="mt-2 rounded-xl border border-amber-300 bg-amber-50 p-2.5 text-[11px] text-amber-900">
-                Se agregará al contrato una cláusula: el inquilino se obliga a registrar el comprobante de cada pago, y si no lo hace se activa el protocolo de recordatorios (incluido el codeudor). <b>Borrador sujeto a revisión legal.</b>
+                Se agregará al contrato una cláusula: el inquilino se obliga a registrar el comprobante de cada pago, y si no lo hace se activa el protocolo de recordatorios (incluido el codeudor).
               </p>
             )}
           </div>

@@ -27,10 +27,13 @@ export default function PrivacidadPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-900">1. Responsable del tratamiento</h2>
         <p>
-          El responsable del tratamiento de los datos personales tratados a través de la plataforma {appConfig.name} es
-          quien se identifique como titular del servicio en los avisos de registro y en la sección de contacto (en
-          esta fase inicial puede figurar la razón social o nombre del operador y NIT cuando estén disponibles públicamente). Los
-          datos de contacto para ejercer derechos se indican al final de esta política.
+          El responsable del tratamiento de los datos personales tratados a través de la plataforma {appConfig.name} es{" "}
+          <strong>LOTIC</strong>, operador de la plataforma, con domicilio en Medellín (Colombia). El canal de atención y
+          de ejercicio de derechos de habeas data es{" "}
+          <a href="mailto:contacto@arriendoseguro.app" className="text-violet-700 hover:underline">
+            contacto@arriendoseguro.app
+          </a>
+          , sin perjuicio de los demás canales publicados en la aplicación.
         </p>
       </section>
 
@@ -111,7 +114,7 @@ export default function PrivacidadPage() {
           <Link href="/legal/evaluacion" className="text-violet-700 hover:underline">
             Política de evaluación estructurada
           </Link>
-          : no publicamos listas negras ni permitimos búsqueda pública por cédula en esta fase inicial.
+          : no publicamos listas negras ni permitimos búsqueda pública por cédula.
         </p>
       </section>
 
@@ -130,9 +133,12 @@ export default function PrivacidadPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-900">10. Canales de consulta y reclamo</h2>
         <p>
-          Solicitudes de ejercicio de derechos y reclamos: use el correo o formulario publicado en la aplicación como
-          canal principal. Podrá solicitar información sobre el tratamiento y, si aplica, corrección o supresión cuando
-          no exista deber de conservación legal.
+          Solicitudes de ejercicio de derechos y reclamos: escriba a{" "}
+          <a href="mailto:contacto@arriendoseguro.app" className="text-violet-700 hover:underline">
+            contacto@arriendoseguro.app
+          </a>{" "}
+          o use el formulario publicado en la aplicación. Podrá solicitar información sobre el tratamiento y, si aplica,
+          corrección o supresión cuando no exista deber de conservación legal.
         </p>
       </section>
 
@@ -175,8 +181,11 @@ export default function PrivacidadPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-900">14. Contacto</h2>
         <p>
-          Para ejercicio de derechos y preguntas sobre privacidad: utilice los canales oficiales publicados en la
-          aplicación. Consulte también el{" "}
+          Para ejercicio de derechos y preguntas sobre privacidad, escriba a{" "}
+          <a href="mailto:contacto@arriendoseguro.app" className="text-violet-700 hover:underline">
+            contacto@arriendoseguro.app
+          </a>{" "}
+          o utilice los canales oficiales publicados en la aplicación. Consulte también el{" "}
           <Link href="/legal/aviso-privacidad" className="text-violet-700 hover:underline">
             Aviso de privacidad
           </Link>{" "}

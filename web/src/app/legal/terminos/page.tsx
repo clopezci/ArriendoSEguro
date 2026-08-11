@@ -15,7 +15,7 @@ export default function TerminosPage() {
         <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Información legal</p>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Términos y condiciones de uso</h1>
         <p className="text-xs text-slate-500">
-          Última actualización orientativa para esta fase inicial del servicio. Vigencia: Colombia.
+          Última actualización: 11 de agosto de 2026. Vigencia: Colombia. Responsable/operador: LOTIC.
         </p>
         <Link href="/" className="inline-block text-xs text-violet-700 hover:underline">
           Volver al inicio
@@ -300,7 +300,11 @@ export default function TerminosPage() {
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-900">20. Contacto</h2>
         <p>
-          Consultas sobre estos términos: use los canales de contacto publicados en el sitio o en la aplicación. Para
+          Consultas sobre estos términos: escriba a{" "}
+          <a href="mailto:contacto@arriendoseguro.app" className="text-violet-700 hover:underline">
+            contacto@arriendoseguro.app
+          </a>{" "}
+          o use los canales de contacto publicados en el sitio o en la aplicación. Para
           ejercer derechos sobre datos personales, consulte la{" "}
           <Link href="/legal/privacidad" className="text-violet-700 hover:underline">
             Política de tratamiento de datos personales
