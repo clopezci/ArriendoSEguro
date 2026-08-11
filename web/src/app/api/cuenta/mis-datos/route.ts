@@ -73,16 +73,18 @@ export async function GET(request: Request) {
   try {
     const sections: ExportSection[] = [];
 
-    // 1) Identidad de la cuenta (desde Firebase Auth).
+    // 1) Identidad de la cuenta (desde Firebase Auth + perfil de contacto).
     sections.push(
       await safe(async () => {
         const rec = await adminAuth.getUser(uid);
+        const prof = await firestore.collection("user_profiles").doc(uid).get();
+        const profData = (prof.exists ? prof.data() : {}) as Record<string, unknown>;
         const rows: Record<string, Cell>[] = [
           { campo: "Identificador de cuenta (UID)", valor: rec.uid },
           { campo: "Correo", valor: rec.email ?? email },
           { campo: "Correo verificado", valor: rec.emailVerified ? "Sí" : "No" },
-          { campo: "Nombre", valor: rec.displayName ?? "" },
-          { campo: "Teléfono", valor: rec.phoneNumber ?? "" },
+          { campo: "Nombre", valor: (profData.displayName as string) || rec.displayName || "" },
+          { campo: "Teléfono de contacto", valor: (profData.phone as string) || rec.phoneNumber || "" },
           { campo: "Proveedores de acceso", valor: rec.providerData.map((p) => p.providerId).join(", ") },
           { campo: "Fecha de creación", valor: rec.metadata.creationTime ?? "" },
           { campo: "Último acceso", valor: rec.metadata.lastSignInTime ?? "" },
@@ -230,6 +232,73 @@ export async function GET(request: Request) {
     if (process.env.NODE_ENV !== "production") console.error("cuenta/mis-datos", err);
     return NextResponse.json(
       { success: false, errors: [{ field: "server", message: "No se pudo generar el reporte de datos. Intenta de nuevo." }] },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * Derecho de rectificación/actualización (Habeas Data, Ley 1581 de 2012, art. 8):
+ * el titular corrige de forma automática, sin pedirlo a nadie, los datos de
+ * contacto de su cuenta (nombre visible y teléfono). El nombre se actualiza en
+ * Firebase Auth y ambos se guardan en `user_profiles/{uid}`. Los datos de un
+ * contrato concreto se corrigen dentro del contrato mientras es borrador; los
+ * contratos firmados se conservan por ley.
+ */
+export async function PUT(request: Request) {
+  const auth = await requireAuthenticatedUser(request);
+  if (!auth.ok) return auth.response;
+
+  const adminAuth = getAdminAuth();
+  const firestore = getAdminFirestore();
+  if (!adminAuth || !firestore) {
+    return NextResponse.json(
+      { success: false, errors: [{ field: "server", message: "Servicio de administración no disponible." }] },
+      { status: 503 },
+    );
+  }
+
+  const body = (await request.json().catch(() => null)) as { displayName?: unknown; phone?: unknown } | null;
+  if (!body) {
+    return NextResponse.json({ success: false, errors: [{ field: "body", message: "Datos inválidos." }] }, { status: 422 });
+  }
+
+  const displayName = typeof body.displayName === "string" ? body.displayName.trim().slice(0, 120) : "";
+  // Teléfono: solo dígitos, +, espacios y guiones; longitud razonable.
+  const phoneRaw = typeof body.phone === "string" ? body.phone.trim().slice(0, 30) : "";
+  const phone = phoneRaw && !/^[+\d][\d\s-]{5,}$/.test(phoneRaw) ? null : phoneRaw;
+  if (phone === null) {
+    return NextResponse.json(
+      { success: false, errors: [{ field: "phone", message: "Teléfono inválido. Usa solo números (opcionalmente con +)." }] },
+      { status: 422 },
+    );
+  }
+  if (!displayName && !phone) {
+    return NextResponse.json(
+      { success: false, errors: [{ field: "form", message: "Indica al menos un dato para actualizar." }] },
+      { status: 422 },
+    );
+  }
+
+  const uid = auth.user.uid;
+  try {
+    if (displayName) {
+      await adminAuth.updateUser(uid, { displayName });
+    }
+    await firestore.collection("user_profiles").doc(uid).set(
+      {
+        ...(displayName ? { displayName } : {}),
+        ...(phone ? { phone } : {}),
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
+    auditEvent("account_data_rectified", { uid, fields: [displayName ? "displayName" : null, phone ? "phone" : null].filter(Boolean) });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    if (process.env.NODE_ENV !== "production") console.error("cuenta/mis-datos PUT", err);
+    return NextResponse.json(
+      { success: false, errors: [{ field: "server", message: "No se pudo actualizar tus datos. Intenta de nuevo." }] },
       { status: 500 },
     );
   }

@@ -93,8 +93,8 @@ export function ContractOnboarding() {
           <h2 className="text-base font-bold text-slate-900">Te guiamos en 5 pasos</h2>
           <p className="mt-1 text-sm leading-relaxed text-slate-700">
             <strong>1)</strong> Arma tu expediente · <strong>2)</strong> Condiciones · <strong>3)</strong> Revisión ·
-            <strong> 4)</strong> Firma · <strong>5)</strong> Acta e inventario. Crear el contrato es <strong>gratis</strong>;
-            la firma, el inventario y la posventa se activan con Plan Plus.
+            <strong> 4)</strong> Firma · <strong>5)</strong> Acta e inventario. Crear el contrato tiene un <strong>precio de introducción</strong>
+            e incluye la firma, el inventario, el acta y la posventa.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button

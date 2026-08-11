@@ -62,7 +62,7 @@ export function UtilityGuaranteeCalculator() {
       <div className="rounded-xl border border-violet-300 bg-gradient-to-br from-violet-50 to-white p-4">
         <p className="text-sm font-medium text-slate-800">Déjala bien documentada</p>
         <p className="mt-1 text-sm text-slate-600">
-          Al crear tu contrato en ArriendoSeguro puedes pactar esta garantía con su constancia. Generarlo es gratis.
+          Al crear tu contrato en ArriendoSeguro puedes pactar esta garantía con su constancia.
         </p>
         <Link
           href="/nuevo"

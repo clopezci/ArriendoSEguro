@@ -181,16 +181,17 @@ export default function ContractTypeStepPage() {
         <ContractOnboarding />
       </div>
 
-      <div className="mb-4 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900">
+      <div className="mb-4 rounded-xl border border-violet-300 bg-violet-50 p-4 text-sm text-violet-900">
         <p className="flex items-center gap-2 font-semibold">
-          <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] text-white">GRATIS</span>
-          Tu contrato es gratis
+          <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[11px] text-white">PRECIO DE INTRODUCCIÓN</span>
+          Un pago único por todo el contrato
         </p>
         <ul className="mt-2 space-y-1 text-[13px] leading-relaxed">
-          <li>✓ Generas y descargas <strong>un contrato completo gratis</strong> (sin firma digital).</li>
+          <li>✓ Tu contrato tiene un <strong>precio de introducción de $49.900</strong> (precio real $89.900), un solo pago, no mensual.</li>
+          <li>✓ Incluye <strong>todo</strong>: firma electrónica con validez (Ley 527), inventario, acta de entrega, registro de pagos, posventa y el paquete de pruebas descargable.</li>
           <li>
-            ✓ La <strong>firma digital también puede ser gratis</strong>: si invitas a <strong>3 personas</strong> que
-            usen ArriendoSeguro, la desbloqueas sin costo. También puedes activarla al instante por un valor mínimo.
+            ✓ Tu <strong>segundo contrato puede ser gratis</strong>: si invitas a <strong>3 personas</strong> y al menos
+            <strong> 2 de ellas usan la app</strong> (crean su contrato), el tuyo queda sin costo con la firma incluida.
           </li>
         </ul>
       </div>

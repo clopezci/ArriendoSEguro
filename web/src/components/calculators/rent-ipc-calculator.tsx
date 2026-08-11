@@ -74,7 +74,7 @@ export function RentIpcCalculator({
       <div className="rounded-xl border border-violet-300 bg-gradient-to-br from-violet-50 to-white p-4">
         <p className="text-sm font-medium text-slate-800">¿Vas a renovar o reajustar tu arriendo?</p>
         <p className="mt-1 text-sm text-slate-600">
-          Genera tu contrato con el canon y el reajuste bien documentados, gratis en ArriendoSeguro.
+          Genera tu contrato con el canon y el reajuste bien documentados en ArriendoSeguro.
         </p>
         <Link
           href="/nuevo"

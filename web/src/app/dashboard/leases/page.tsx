@@ -260,7 +260,7 @@ export default function MisArriendosPage() {
             <p className="mt-2 text-sm text-slate-500">
               {freeTier.enabled
                 ? "Crea tu primer contrato gratis desde aquí. La firma electrónica, el inventario y los soportes se activan con Plan Plus."
-                : "Cuando actives Plus o demo, puedes crear el primero desde el panel principal o desde aquí."}
+                : "Crea tu primer contrato desde aquí. El precio de introducción ($49.900) incluye la firma electrónica, el inventario y todo el respaldo."}
             </p>
           </div>
         ) : (
