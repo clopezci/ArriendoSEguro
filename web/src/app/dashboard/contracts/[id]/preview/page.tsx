@@ -117,6 +117,12 @@ function signatureStatusLabel(status: string): { text: string; className: string
   return { text: status || "—", className: "text-slate-600" };
 }
 
+// Marca de agua diagonal repetida para la VISTA PREVIA en pantalla cuando el
+// contrato no está pagado. Es solo una capa CSS (no altera el documento): el PDF
+// que se descarga tras pagar sale limpio.
+const PREVIEW_WATERMARK_BG =
+  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='330' height='210'><text x='16' y='140' transform='rotate(-27 165 105)' fill='%235646E5' fill-opacity='0.16' font-size='23' font-weight='bold' font-family='Arial, sans-serif'>ArriendoSeguro.app</text></svg>\")";
+
 export default function PreviewStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
@@ -1074,7 +1080,19 @@ export default function PreviewStepPage() {
             onCut={(e) => { if (!(plusActive || demoActive)) e.preventDefault(); }}
             onContextMenu={(e) => { if (!(plusActive || demoActive)) e.preventDefault(); }}
           >
-            <div ref={contractRef} dangerouslySetInnerHTML={{ __html: previewHtml }} />
+            <div className="relative">
+              <div ref={contractRef} dangerouslySetInnerHTML={{ __html: previewHtml }} />
+              {/* Marca de agua SOLO en pantalla y solo si NO está pagado. Es una
+                  capa visual; no toca el HTML guardado ni el PDF descargado (que
+                  exige pago y sale limpio). */}
+              {!(plusActive || demoActive) && (
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0"
+                  style={{ backgroundImage: PREVIEW_WATERMARK_BG, backgroundRepeat: "repeat" }}
+                />
+              )}
+            </div>
           </div>
           {!(plusActive || demoActive) && (
             <>
