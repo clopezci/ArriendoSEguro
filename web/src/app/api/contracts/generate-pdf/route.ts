@@ -14,6 +14,7 @@ import { formatAppDateTime } from "@/lib/datetime/appTime";
 import { logServerError } from "@/lib/observability/observability";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
 import { userHasPlusOrDemo } from "@/lib/auth/contractPlusGate";
+import { getContractLifecycle } from "@/lib/contracts/lifecycle";
 import { getResolvedFreeTier } from "@/domain/platform-payments/free-tier";
 import { applyFreeTierWatermark, type FreeTierCtaOptions } from "@/domain/contracts/freeTierWatermark";
 import { getPlanPlusPricingForPublicPages } from "@/domain/platform-payments/plan-plus-pricing";
@@ -120,6 +121,39 @@ export async function POST(request: Request) {
       contractVersionId,
     });
     if (!participant.ok) return participant.response;
+
+    // Gate de pago POR CONTRATO (cierra el hueco de llevarse el contrato gratis):
+    // VER el contrato en pantalla es libre, pero DESCARGAR/IMPRIMIR el PDF exige
+    // que el contrato esté pagado, con el MISMO criterio que la firma
+    // (`signatures/start`). No consume cupo (eso ocurre al firmar); solo verifica
+    // que el DUEÑO ya activó el contrato o tiene un cupo Plus/demo válido. Así,
+    // una vez pagado, cualquier parte (dueño, inquilino, codeudor) puede descargar.
+    {
+      const life = await getContractLifecycle(firestore, contractId);
+      const alreadyPaid =
+        life.entitlementConsumed === true || life.started === true || Boolean(life.unlockedByAdminAt);
+      if (!alreadyPaid) {
+        const draftSnap = await firestore.collection("contract_drafts").doc(contractId).get();
+        const ownerUid =
+          (draftSnap.data() as { ownerUid?: string } | undefined)?.ownerUid ?? participant.user.uid;
+        const ownerHasEntitlement = await userHasPlusOrDemo(firestore, ownerUid);
+        if (!ownerHasEntitlement) {
+          return NextResponse.json<GenerateContractPdfResponse>(
+            {
+              success: false,
+              errors: [
+                {
+                  field: "plus_required",
+                  message:
+                    "Para descargar o imprimir el contrato debes activarlo (precio de introducción $49.900, incluye la firma). El dueño lo activa en «Planes»; ver el contrato en pantalla es gratis.",
+                },
+              ],
+            },
+            { status: 402 },
+          );
+        }
+      }
+    }
 
     // La versión guardada es limpia. Si el usuario NO es Plus (tier gratis),
     // el PDF de descarga sale con marca de agua + CTA. Plus/demo lo descargan limpio.

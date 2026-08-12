@@ -1065,9 +1065,23 @@ export default function PreviewStepPage() {
               descendientes con `position:fixed` (p. ej. marca de agua o CSS propio del
               contrato inyectado): así el HTML del contrato NUNCA escapa del recuadro ni
               se monta sobre el menú/encabezado. `overflow-auto` mantiene el scroll interno. */}
-          <div className="relative z-0 max-h-[70vh] overflow-auto rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-slate-900 [transform:translateZ(0)]">
+          {!(plusActive || demoActive) && (
+            <style>{`@media print { .contract-locked { display: none !important; } .contract-print-msg { display: block !important; } } .contract-print-msg { display: none; }`}</style>
+          )}
+          <div
+            className={`relative z-0 max-h-[70vh] overflow-auto rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4 text-slate-900 [transform:translateZ(0)]${!(plusActive || demoActive) ? " contract-locked select-none" : ""}`}
+            onCopy={(e) => { if (!(plusActive || demoActive)) e.preventDefault(); }}
+            onCut={(e) => { if (!(plusActive || demoActive)) e.preventDefault(); }}
+            onContextMenu={(e) => { if (!(plusActive || demoActive)) e.preventDefault(); }}
+          >
             <div ref={contractRef} dangerouslySetInnerHTML={{ __html: previewHtml }} />
           </div>
+          {!(plusActive || demoActive) && (
+            <>
+              <p className="contract-print-msg">Para imprimir o descargar el contrato debes activarlo (precio de introducción $49.900). Actívalo en arriendoseguro.app › Planes.</p>
+              <p className="mt-1 text-center text-[11px] text-slate-400">Vista de lectura. La copia, descarga e impresión se habilitan al activar el contrato ($49.900).</p>
+            </>
+          )}
         </>
       )}
       {section === "revisar" && versionInfo && (
@@ -1309,33 +1323,52 @@ export default function PreviewStepPage() {
         </div>
         )}
 
-        {/* Paso 3 · PDF (disponible para todos; gratis sale con marca de agua) */}
+        {/* Paso 3 · PDF — descargar/imprimir requiere contrato activado (pagado). */}
         {section === "pdf" && (
         <div className="mt-2 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-3">
           <p className="text-sm font-semibold text-slate-900">Paso 3 · Descarga el PDF</p>
-          <p className="mt-0.5 text-xs text-slate-600">
-            Genera el PDF de tu contrato. Si aún no lo guardaste, lo hacemos por ti automáticamente.
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => void generatePdf()}
-              disabled={generatingPdf || savingVersion || !previewHtml}
-              className="rounded-xl border-2 border-[#5646E5] px-4 py-2 text-sm font-bold text-[#5646E5] transition hover:bg-[#ECE9FB] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {generatingPdf ? "Generando PDF…" : savingVersion ? "Guardando…" : "Generar PDF"}
-            </button>
-            {pdfInfo && (
+          {(plusActive || demoActive) ? (
+            <>
+              <p className="mt-0.5 text-xs text-slate-600">
+                Genera el PDF de tu contrato. Si aún no lo guardaste, lo hacemos por ti automáticamente.
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => void generatePdf()}
+                  disabled={generatingPdf || savingVersion || !previewHtml}
+                  className="rounded-xl border-2 border-[#5646E5] px-4 py-2 text-sm font-bold text-[#5646E5] transition hover:bg-[#ECE9FB] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {generatingPdf ? "Generando PDF…" : savingVersion ? "Guardando…" : "Generar PDF"}
+                </button>
+                {pdfInfo && (
+                  <a
+                    href={pdfInfo.pdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl border-2 border-[#12B886] px-4 py-2 text-sm font-bold text-[#0B6E4E] transition hover:bg-[#12B886]/10"
+                  >
+                    Descargar PDF
+                  </a>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="mt-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-900">
+              <p className="text-sm font-bold">🔒 Descarga e impresión bloqueadas</p>
+              <p className="mt-1 text-xs leading-relaxed">
+                Puedes revisar el contrato completo en pantalla. Para <strong>descargarlo o imprimirlo</strong> debes
+                activarlo: precio de introducción <strong>$49.900</strong> (precio real $89.900), un solo pago que
+                incluye la firma electrónica, el inventario, la posventa y el paquete de pruebas.
+              </p>
               <a
-                href={pdfInfo.pdfUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-xl border-2 border-[#12B886] px-4 py-2 text-sm font-bold text-[#0B6E4E] transition hover:bg-[#12B886]/10"
+                href={`/dashboard/plans?contract=${encodeURIComponent(id)}`}
+                className="mt-2 inline-block rounded-lg bg-[#5646E5] px-4 py-2 text-xs font-bold text-white transition hover:brightness-110"
               >
-                Descargar PDF
+                Activar contrato para descargar →
               </a>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         )}
 
