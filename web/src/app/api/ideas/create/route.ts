@@ -4,10 +4,8 @@ import { FieldValue } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { auditEvent } from "@/features/contracts/audit-server";
-import { USER_REPORTS_COLLECTION, maskPii } from "@/lib/observability/observability";
-import { REPORT_CATEGORIES } from "@/lib/reports/report-categories";
 import { sendEmail } from "@/services/email/sendEmail";
-import { userReportEmail } from "@/services/email/emailTemplates";
+import { productIdeaEmail } from "@/services/email/emailTemplates";
 import { sendTelegram } from "@/services/telegram/sendTelegram";
 import {
   RATE_LIMIT_RULES,
@@ -19,12 +17,12 @@ import {
 export const runtime = "nodejs";
 
 const MAX_JSON_BYTES = 16_000;
+const PRODUCT_IDEAS_COLLECTION = "product_ideas";
 
 const schema = z.object({
-  category: z.enum(REPORT_CATEGORIES),
-  message: z.string().trim().min(10, "Cuéntanos un poco más (mínimo 10 caracteres).").max(5000),
-  email: z.string().trim().toLowerCase().email().max(160).optional().or(z.literal("")),
-  pageUrl: z.string().trim().max(600).optional(),
+  name: z.string().trim().min(2, "Dinos tu nombre.").max(120),
+  contact: z.string().trim().max(160).optional().or(z.literal("")),
+  idea: z.string().trim().min(10, "Cuéntanos un poco más (mínimo 10 caracteres).").max(4000),
 });
 
 function jsonError(message: string, status: number) {
@@ -32,9 +30,8 @@ function jsonError(message: string, status: number) {
 }
 
 /**
- * Reporte de usuario (bug, error, queja, sugerencia). La autenticación es
- * opcional: si llega un token válido, asociamos uid/correo; si no, usamos el
- * correo opcional del formulario. Se guarda en `user_reports` para el panel.
+ * "Déjanos tu idea/necesidad" (#6): captura ideas de mejora de los usuarios.
+ * Guarda en `product_ideas` y avisa por correo + Telegram. Auth opcional.
  */
 export async function POST(request: Request) {
   try {
@@ -57,90 +54,70 @@ export async function POST(request: Request) {
 
     const parsed = schema.safeParse(parsedBody);
     if (!parsed.success) {
-      return NextResponse.json(
-        { ok: false, error: "Validación", issues: parsed.error.flatten() },
-        { status: 422 },
-      );
+      return NextResponse.json({ ok: false, error: "Validación", issues: parsed.error.flatten() }, { status: 422 });
     }
     const data = parsed.data;
 
     const firestore = getAdminFirestore();
     if (!firestore) {
       return NextResponse.json(
-        { ok: false, error: "No se pudo registrar el reporte (servidor no configurado)." },
+        { ok: false, error: "No se pudo registrar tu idea (servidor no configurado)." },
         { status: 503 },
       );
     }
 
-    // Identidad opcional desde el token (no obligatoria).
     const authed = await getAuthenticatedUser(request).catch(() => null);
-    const reporterEmail =
-      authed?.email ?? (data.email && data.email.trim() !== "" ? data.email.trim().toLowerCase() : null);
+    const contact = (data.contact && data.contact.trim() !== "" ? data.contact.trim() : authed?.email) ?? null;
+    const idea = data.idea.trim().slice(0, 4000);
 
-    const ref = firestore.collection(USER_REPORTS_COLLECTION).doc();
+    const ref = firestore.collection(PRODUCT_IDEAS_COLLECTION).doc();
     await ref.set({
       id: ref.id,
-      category: data.category,
-      message: data.message.trim().slice(0, 5000),
-      reporterEmail,
-      reporterUid: authed?.uid ?? null,
+      name: data.name.trim().slice(0, 120),
+      contact,
+      idea,
+      authorUid: authed?.uid ?? null,
       isAuthenticated: Boolean(authed),
       status: "new",
-      pageUrl: data.pageUrl ? maskPii(data.pageUrl, 600) : null,
       userAgent: request.headers.get("user-agent")?.slice(0, 300) ?? null,
       sourceIpMasked: ip === "anon" ? null : ip.replace(/\.\d+$/, ".x"),
       createdAt: new Date().toISOString(),
       createdAtServer: FieldValue.serverTimestamp(),
     });
 
-    auditEvent("user_report_submitted", {
-      reportId: ref.id,
-      category: data.category,
-      authenticated: Boolean(authed),
-    });
+    auditEvent("product_idea_submitted", { ideaId: ref.id, authenticated: Boolean(authed) });
 
-    // Aviso INMEDIATO al equipo: correo + Telegram (best-effort; no bloquea la
-    // respuesta ni falla el reporte si un canal no está configurado).
     const inbox =
       process.env.REPORTS_INBOX_EMAIL?.trim() ||
       process.env.CONTACT_INBOX_EMAIL?.trim() ||
       "contacto@arriendoseguro.app";
-    const msg = data.message.trim().slice(0, 5000);
     try {
-      const tpl = userReportEmail({
-        category: data.category,
-        message: msg,
-        reporterEmail,
-        pageUrl: data.pageUrl ?? null,
-        userAgent: request.headers.get("user-agent")?.slice(0, 300) ?? null,
-      });
+      const tpl = productIdeaEmail({ name: data.name.trim(), contact, idea });
       await sendEmail({
         to: inbox,
         subject: tpl.subject,
         html: tpl.html,
         text: tpl.text,
-        templateCode: "userReportEmail",
-        relatedEntityType: "report",
+        templateCode: "productIdeaEmail",
+        relatedEntityType: "idea",
         relatedEntityId: ref.id,
       });
     } catch {
-      /* el reporte ya quedó guardado; el correo es complementario */
+      /* la idea ya quedó guardada */
     }
     try {
-      await sendTelegram(
-        `🐞 *Reporte de usuario* — ${data.category}\nDe: ${reporterEmail ?? "(anónimo)"}\nPágina: ${data.pageUrl ?? "—"}\n\n${msg.slice(0, 1500)}`,
-      );
+      await sendTelegram(`💡 *Nueva idea* — ${data.name.trim()}\nContacto: ${contact ?? "—"}\n\n${idea.slice(0, 1500)}`);
     } catch {
-      /* Telegram es complementario */
+      /* Telegram complementario */
     }
 
     return NextResponse.json({
       ok: true,
-      message: "¡Gracias! Recibimos tu reporte y lo revisaremos.",
+      message: "¡Gracias! Recibimos tu idea. Si nos sirve para muchos, la construimos sin costo.",
     });
   } catch (err) {
-    if (process.env.NODE_ENV !== "production") console.error("[/api/reports/create]", err);
-    return jsonError("No se pudo enviar el reporte. Inténtalo de nuevo en unos minutos.", 500);
+    if (process.env.NODE_ENV !== "production") console.error("[/api/ideas/create]", err);
+    return jsonError("No se pudo enviar tu idea. Inténtalo de nuevo en unos minutos.", 500);
   }
 }
 
