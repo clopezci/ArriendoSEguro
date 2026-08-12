@@ -1,6 +1,7 @@
 "use client";
 
 import { useDraftGuard } from "@/components/contracts/draft-tools";
+import { ContractSatisfactionSurvey } from "@/components/survey/contract-satisfaction-survey";
 import { ExpedienteNotesCard } from "@/components/contracts/expediente-notes-card";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { appendAudit, getDraft, setNotarizationSelection, toContractInput, updateDraft } from "@/features/contracts/wizard-state";
@@ -1396,6 +1397,7 @@ export default function PreviewStepPage() {
             <p className="mt-0.5 text-xs text-slate-700">¡Contrato firmado! Ahora completa lo que falta (documentos, condiciones de pago y alertas), paso a paso. Después podrás administrar tu arriendo (acta, inventario y más).</p>
           </div>
         )}
+        {section === "posventa" && hasAllSigned && <ContractSatisfactionSurvey contractId={id} />}
       </section>
       )}
       {saveMessage && <p className="mt-3 text-sm text-emerald-700">{saveMessage}</p>}

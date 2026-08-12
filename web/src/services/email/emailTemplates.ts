@@ -30,6 +30,8 @@ export type EmailTemplateCode =
   | "contractRenewalDocEmail"
   | "partnerInterestEmail"
   | "customAlertEmail"
+  | "userReportEmail"
+  | "productIdeaEmail"
   | "paymentEscalationEmail";
 
 export type CompiledEmailTemplate = {
@@ -111,15 +113,58 @@ export function inviteCounterpartyEmail(input: {
   contractLabel: string;
   invitationUrl: string;
 }): CompiledEmailTemplate {
-  const subject = "Invitación para continuar tu expediente de arriendo";
+  const subject = "Invitación para completar los datos de tu contrato de arriendo";
+  const stepLine =
+    "Este paso es solo para COMPLETAR los datos del contrato. Todavía NO estás firmando: cuando el contrato esté listo, recibirás una invitación aparte para firmarlo electrónicamente. Así que este no es el paso final.";
   const verifyLine =
     "Importante: revisa que tus datos personales sean correctos. Al firmar deberás confirmarlos bajo gravedad de juramento.";
-  const text = `${input.inviterName} te invitó a continuar el expediente "${input.contractLabel}" en ArriendoSeguro.\n\n${verifyLine}\n\nIngresa aquí: ${input.invitationUrl}`;
+  const text = `${input.inviterName} te invitó a completar tus datos del expediente "${input.contractLabel}" en ArriendoSeguro.\n\n${stepLine}\n\n${verifyLine}\n\nIngresa aquí: ${input.invitationUrl}`;
   const html = baseHtml(
-    "Invitación de contraparte",
-    `<p>${input.inviterName} te invitó a continuar el expediente <strong>${input.contractLabel}</strong> en ArriendoSeguro.</p>
+    "Invitación para completar tus datos",
+    `<p>${input.inviterName} te invitó a <strong>completar tus datos</strong> del expediente <strong>${input.contractLabel}</strong> en ArriendoSeguro.</p>
+     <p style="background:#f5f3ff;border-left:3px solid #6d28d9;padding:8px 10px;">${stepLine}</p>
      <p>${verifyLine}</p>
-     <p><a href="${input.invitationUrl}" style="color:#6d28d9;">Abrir invitación</a></p>`,
+     <p><a href="${input.invitationUrl}" style="color:#6d28d9;">Abrir invitación y completar mis datos</a></p>`,
+  );
+  return { subject, html, text };
+}
+
+/** Aviso interno de un reporte de bug/problema enviado por un usuario (#7). */
+export function userReportEmail(input: {
+  category: string;
+  message: string;
+  reporterEmail?: string | null;
+  pageUrl?: string | null;
+  userAgent?: string | null;
+}): CompiledEmailTemplate {
+  const subject = `Reporte de usuario: ${input.category}`;
+  const who = input.reporterEmail || "(sin correo)";
+  const text =
+    `Nuevo reporte de usuario.\nCategoría: ${input.category}\nDe: ${who}\nPágina: ${input.pageUrl ?? "—"}\n\n${input.message}`;
+  const html = baseHtml(
+    "Nuevo reporte de usuario",
+    `<p><strong>Categoría:</strong> ${escapeHtml(input.category)}</p>
+     <p><strong>De:</strong> ${escapeHtml(who)}</p>
+     <p><strong>Página:</strong> ${escapeHtml(input.pageUrl ?? "—")}</p>
+     <p><strong>Mensaje:</strong><br/>${escapeHtml(input.message).replace(/\n/g, "<br/>")}</p>
+     <p style="color:#94a3b8;font-size:12px;">${escapeHtml(input.userAgent ?? "")}</p>`,
+  );
+  return { subject, html, text };
+}
+
+/** Aviso interno de una idea/necesidad enviada por un usuario (#6). */
+export function productIdeaEmail(input: {
+  name: string;
+  contact?: string | null;
+  idea: string;
+}): CompiledEmailTemplate {
+  const subject = `Nueva idea de producto — ${input.name}`;
+  const text = `Nueva idea/necesidad.\nDe: ${input.name}\nContacto: ${input.contact ?? "—"}\n\n${input.idea}`;
+  const html = baseHtml(
+    "Nueva idea / necesidad",
+    `<p><strong>De:</strong> ${escapeHtml(input.name)}</p>
+     <p><strong>Contacto:</strong> ${escapeHtml(input.contact ?? "—")}</p>
+     <p><strong>Idea / necesidad:</strong><br/>${escapeHtml(input.idea).replace(/\n/g, "<br/>")}</p>`,
   );
   return { subject, html, text };
 }

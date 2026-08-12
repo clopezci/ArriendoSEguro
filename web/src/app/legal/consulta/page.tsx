@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { MicButton } from "@/components/nuevo/mic-button";
 
 type Source = { law: string; ref: string; title: string; url: string };
 
@@ -67,7 +68,13 @@ export default function ConsultaLegalPage() {
           className="w-full resize-y rounded-xl border border-slate-300 p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
         />
         <div className="mt-2 flex items-center justify-between gap-2">
-          <span className="text-[11px] text-slate-400">{question.length}/600</span>
+          <div className="flex items-center gap-2">
+            <MicButton
+              label="Dictar tu pregunta"
+              onResult={(t) => setQuestion((prev) => (prev ? `${prev} ${t}` : t).slice(0, 600))}
+            />
+            <span className="text-[11px] text-slate-400">{question.length}/600</span>
+          </div>
           <button
             type="submit"
             disabled={busy}

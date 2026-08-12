@@ -103,6 +103,12 @@ export function AccountMenu() {
               <Link href="/dashboard/cuenta/mis-datos" role="menuitem" onClick={() => setOpen(false)} className={itemCls}>
                 Mis datos (Habeas Data)
               </Link>
+              <Link href="/reportar" role="menuitem" onClick={() => setOpen(false)} className={itemCls}>
+                Reportar un problema
+              </Link>
+              <Link href="/idea" role="menuitem" onClick={() => setOpen(false)} className={itemCls}>
+                Déjanos tu idea
+              </Link>
               <div className="my-1 h-px bg-slate-100" aria-hidden="true" />
               <button
                 type="button"
