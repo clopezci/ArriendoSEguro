@@ -220,7 +220,7 @@ function useReadAloud(): ReadAloudCtx | null {
   return useContext(Ctx);
 }
 
-const RATES = [0.75, 1, 1.25, 1.5] as const;
+const RATES = [0.75, 1, 1.5, 2] as const;
 
 /** Barra flotante única de control (aparece solo mientras hay lectura activa). */
 function ReadAloudControls() {
