@@ -47,9 +47,9 @@ export const CONTRACT_TEMPLATE = `
 
   <h2>SEGUNDA. DESTINACIÓN</h2>
   <p>
-    EL ARRENDATARIO se obliga a destinar el inmueble exclusivamente para vivienda propia y/o de su grupo autorizado,
-    sin que pueda darle destinación comercial, industrial, turística, hotelera, subarrendarlo, cederlo o permitir su
-    ocupación por terceros no autorizados, salvo autorización previa, expresa y escrita de EL ARRENDADOR.
+    EL ARRENDATARIO se obliga a destinar el inmueble exclusivamente para vivienda suya y/o de su grupo familiar
+    autorizado, sin que pueda darle destinación comercial, industrial, turística, hotelera, subarrendarlo, cederlo o
+    permitir su ocupación por terceros no autorizados, salvo autorización previa, expresa y escrita de EL ARRENDADOR.
   </p>
   <p>
     <b>Prohibición de uso ilícito.</b> EL ARRENDATARIO se obliga a no destinar el inmueble, ni permitir que se destine,
@@ -83,19 +83,30 @@ export const CONTRACT_TEMPLATE = `
     partir del día <span class="dato">[FECHA_INICIO]</span> y hasta el día <span class="dato">[FECHA_FIN]</span>.
   </p>
   <p>
-    Si las partes desean renovar el contrato, podrán hacerlo conforme a la ley y dejando constancia escrita o
-    electrónica de las condiciones aplicables.
+    <b>Prórroga automática (artículo 6 de la Ley 820 de 2003).</b> El presente contrato se entenderá prorrogado en
+    iguales condiciones y por el mismo término inicialmente pactado, siempre que cada una de las partes haya cumplido
+    las obligaciones a su cargo y que EL ARRENDATARIO se avenga a los reajustes del canon autorizados por la ley. En
+    consecuencia, si al vencimiento del término ninguna de las partes manifiesta lo contrario, el contrato continuará
+    prorrogado sin necesidad de suscribir un documento nuevo. La parte que no desee la prórroga deberá dar aviso a la
+    otra por escrito, con una antelación no menor a tres (3) meses al vencimiento, e invocando alguna de las causales
+    legales cuando la ley lo exija.
   </p>
 
   <h2>QUINTA. REAJUSTE DEL CANON</h2>
   <p>
-    El canon de arrendamiento solo podrá reajustarse cada doce meses de ejecución del contrato bajo un mismo precio,
-    de conformidad con los límites establecidos por la normatividad colombiana aplicable.
+    El canon de arrendamiento solo podrá reajustarse cada doce (12) meses de ejecución del contrato bajo un mismo
+    precio.
   </p>
   <p>
-    El incremento no podrá superar el porcentaje legalmente permitido para el periodo correspondiente. ArriendoSeguro
-    podrá servir como herramienta de cálculo y registro del reajuste, sin que ello sustituya la responsabilidad de las
-    partes de verificar la normatividad vigente.
+    <b>Límite legal del reajuste (artículo 20 de la Ley 820 de 2003).</b> Conforme al artículo 20 de la Ley 820 de
+    2003: «Cada doce (12) meses de ejecución del contrato bajo un mismo precio, el arrendador podrá incrementar el
+    canon hasta en una proporción que no sea superior al ciento por ciento (100%) del incremento que haya tenido el
+    índice de precios al consumidor en el año calendario inmediatamente anterior a aquél en que deba efectuarse el
+    reajuste del canon».
+  </p>
+  <p>
+    El incremento no podrá superar ese límite. ArriendoSeguro podrá servir como herramienta de cálculo y registro del
+    reajuste, sin que ello sustituya la responsabilidad de las partes de verificar la normatividad vigente.
   </p>
 
   <h2>SEXTA. FORMA DE PAGO Y SOPORTES</h2>
@@ -197,19 +208,21 @@ export const CONTRACT_TEMPLATE = `
     contrato.
   </p>
 
-  <h2>DÉCIMA CUARTA. EVALUACIÓN ESTRUCTURADA DE LA EXPERIENCIA ARRENDATICIA Y REPUTACIÓN</h2>
+  <h2>DÉCIMA CUARTA. AUTORIZACIÓN VOLUNTARIA DE EVALUACIÓN ESTRUCTURADA Y REPUTACIÓN</h2>
   <p>
-    EL ARRENDADOR, EL ARRENDATARIO y, cuando aplique, EL CODEUDOR SOLIDARIO <strong>aceptan y autorizan de forma
-    expresa, libre, previa e informada</strong> que, durante la ejecución del contrato y a su terminación, cada parte
-    podrá calificar a la otra mediante una evaluación estructurada de la experiencia arrendaticia, a través de
-    formularios cerrados (calificación por estrellas, sin texto libre difamatorio). La calificación es
-    <strong> recíproca</strong>: cada parte consiente ser evaluada por la otra en las mismas condiciones.
+    EL ARRENDADOR, EL ARRENDATARIO y, cuando aplique, EL CODEUDOR SOLIDARIO <strong>autorizan de forma expresa, libre,
+    previa e informada</strong> que, durante la ejecución del contrato y a su terminación, cada parte pueda calificar a
+    la otra mediante una evaluación estructurada de la experiencia (formularios cerrados de calificación por estrellas,
+    sin texto libre difamatorio), de manera recíproca.
   </p>
   <p>
-    Dicha evaluación constituye tratamiento de datos personales y se autoriza conforme a la Ley 1581 de 2012 y al aviso
-    de privacidad: no constituye lista negra pública ni consulta libre por cédula, solo se mostrará agregada y con
-    autorización del titular, y cada titular podrá conocer, actualizar y rectificar la información y ejercer sus
-    derechos de habeas data.
+    Se deja constancia de que esta evaluación es una <strong>facultad voluntaria y no una obligación contractual</strong>:
+    ninguna de las partes está obligada a calificar, y el hecho de calificar o no calificar <strong>no constituye
+    incumplimiento</strong> del presente contrato ni causal de terminación. Constituye tratamiento de datos personales
+    autorizado conforme a la Ley 1581 de 2012 y al aviso de privacidad (no es lista negra pública ni consulta libre por
+    cédula; solo se muestra agregada y con autorización del titular, quien puede conocer, actualizar, rectificar y
+    ejercer sus derechos de habeas data). Su desarrollo detallado hace parte de los anexos de autorización de
+    tratamiento de datos de este contrato.
   </p>
 
   <h2>DÉCIMA QUINTA. NOTIFICACIONES</h2>
@@ -238,13 +251,39 @@ export const CONTRACT_TEMPLATE = `
   </p>
 
   <h2>DÉCIMA SÉPTIMA. TERMINACIÓN</h2>
+  <p>El presente contrato podrá darse por terminado por las siguientes causas:</p>
+  <p><b>a) Por vencimiento del plazo o por mutuo acuerdo:</b></p>
   <ol>
-    <li>Vencimiento del plazo pactado.</li>
-    <li>Mutuo acuerdo.</li>
-    <li>Incumplimiento de obligaciones legales o contractuales.</li>
-    <li>Causales previstas en normatividad colombiana aplicable.</li>
-    <li>Demás causales reconocidas por la ley.</li>
+    <li>Por el vencimiento del plazo pactado o de sus prórrogas, dando el aviso previsto en la cláusula CUARTA.</li>
+    <li>Por mutuo acuerdo escrito entre las partes.</li>
   </ol>
+  <p>
+    <b>b) Por incumplimiento imputable a EL ARRENDATARIO (artículo 22 de la Ley 820 de 2003):</b> EL ARRENDADOR podrá
+    dar por terminado unilateralmente el contrato, entre otras, por las siguientes causales:
+  </p>
+  <ol>
+    <li>El no pago del canon dentro del término estipulado.</li>
+    <li>El no pago de los servicios públicos, cuando ello dé lugar a la desconexión o pérdida del servicio, o el no pago de las expensas comunes cuando su pago estuviere a cargo de EL ARRENDATARIO.</li>
+    <li>El subarriendo total o parcial del inmueble, la cesión del contrato o del goce del inmueble, o el cambio de destinación, sin autorización expresa y escrita de EL ARRENDADOR.</li>
+    <li>La incursión reiterada en procederes que afecten la tranquilidad ciudadana de los vecinos, o la destinación del inmueble para actos delictivos o que impliquen contravención.</li>
+    <li>La realización de mejoras, cambios o ampliaciones del inmueble sin autorización de EL ARRENDADOR, o la destrucción total o parcial del inmueble o del área arrendada.</li>
+    <li>La violación de las normas del reglamento de propiedad horizontal, cuando aplique.</li>
+  </ol>
+  <p>
+    <b>c) Por incumplimiento imputable a EL ARRENDADOR (artículo 24 de la Ley 820 de 2003):</b> EL ARRENDATARIO podrá
+    dar por terminado unilateralmente el contrato, entre otras, por las siguientes causales:
+  </p>
+  <ol>
+    <li>La suspensión de la prestación de los servicios públicos al inmueble por acción premeditada de EL ARRENDADOR, o por no pagar los que estuvieren a su cargo.</li>
+    <li>La incursión reiterada de EL ARRENDADOR en procederes que afecten gravemente el disfrute cabal del inmueble por EL ARRENDATARIO.</li>
+    <li>El desconocimiento por parte de EL ARRENDADOR de los derechos que la ley o el contrato reconocen a EL ARRENDATARIO.</li>
+  </ol>
+  <p>
+    <b>d) Terminación unilateral con preaviso e indemnización (artículos 22 y 24 de la Ley 820 de 2003):</b> cualquiera
+    de las partes podrá darla por terminada unilateralmente a la fecha de vencimiento o de sus prórrogas, dando aviso
+    escrito a la otra con no menos de tres (3) meses de antelación y, cuando la ley lo exija, pagando la indemnización
+    equivalente prevista en la ley.
+  </p>
 
   <h2>DÉCIMA OCTAVA. RESTITUCIÓN DEL INMUEBLE</h2>
   <p>

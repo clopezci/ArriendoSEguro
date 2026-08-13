@@ -45,7 +45,8 @@ export function buildContractVariables(input: ResidentialLeaseContractInput): Co
       `${escapeHtml(input.landlord.documentType)} No. <strong>${escapeHtml(input.landlord.documentNumber)}</strong>, domiciliado(a) ` +
       `en ${escapeHtml(input.landlord.city)}, con correo electrónico ${escapeHtml(input.landlord.email)}, teléfono ` +
       `${escapeHtml(input.landlord.phone)} y como dirección para notificaciones ${notifLandlord}, ` +
-      `quien para efectos del presente contrato se denominará EL ARRENDADOR;`,
+      `quien declara actuar en su calidad de propietario del inmueble —o de poseedor o apoderado con facultad para ` +
+      `arrendarlo, según los documentos que se anexen— y para efectos del presente contrato se denominará EL ARRENDADOR;`,
     COMPARECENCIA_ARRENDATARIO:
       `<strong>${escapeHtml(input.tenant.fullName)}</strong>, mayor de edad, identificado(a) con ` +
       `${escapeHtml(input.tenant.documentType)} No. <strong>${escapeHtml(input.tenant.documentNumber)}</strong>, domiciliado(a) ` +
