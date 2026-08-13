@@ -8,6 +8,7 @@ import {
 import { requiredParties, SIGNATURE_TOKEN_HOURS } from "@/domain/signatures/signatureRules";
 import { generateSignatureToken } from "@/domain/signatures/generateSignatureToken";
 import { sendSignatureEmail } from "@/features/signatures/sendSignatureEmail";
+import { sendPhoneNotice } from "@/services/notify/phoneChannel";
 import { auditEvent } from "@/features/contracts/audit-server";
 import type { SignaturePartyType } from "@/domain/signatures/types";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
@@ -59,7 +60,7 @@ async function inviteUrlForParty(
 
 export const runtime = "nodejs";
 
-type PartyPerson = { fullName: string; email: string; documentType: string; documentNumber: string };
+type PartyPerson = { fullName: string; email: string; documentType: string; documentNumber: string; phone?: string };
 type ContractVersionDoc = {
   contractId: string;
   contractPayload?: {
@@ -388,6 +389,15 @@ export async function POST(request: Request) {
         contractId,
         partyType: party,
         mode: emailResult.mode,
+      });
+      // Refuerzo por WhatsApp del aviso "ya puedes firmar" (complemento del correo;
+      // solo sale si el canal de WhatsApp está encendido). Best-effort. Sin SMS.
+      await sendPhoneNotice({
+        to: person.phone,
+        message: `Ya puedes firmar tu contrato de arriendo en ArriendoSeguro. Fírmalo aquí: ${emailUrl}`,
+        templateCode: "signatureWa",
+        relatedEntityType: "contract",
+        relatedEntityId: contractId,
       });
 
       signatures.push({
