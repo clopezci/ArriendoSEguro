@@ -34,3 +34,12 @@ export const featureFlags = {
  * Se puede ENCENDER con `NEXT_PUBLIC_FREE_TIER_ENABLED=true` (o desde admin).
  */
 export const freeTierEnabled = process.env.NEXT_PUBLIC_FREE_TIER_ENABLED === "true";
+
+/**
+ * Rediseño #3 "un solo enlace": la invitación a la contraparte lleva de completar
+ * datos a firmar en el mismo flujo (menos envíos, menos confusión). APAGADO por
+ * defecto: mientras esté off, el flujo actual (llenar y firmar por separado) sigue
+ * intacto como respaldo. Se enciende con `NEXT_PUBLIC_UNIFIED_INVITE_FLOW=true`
+ * tras pasar el checklist de pruebas en demo.
+ */
+export const unifiedInviteFlowEnabled = process.env.NEXT_PUBLIC_UNIFIED_INVITE_FLOW === "true";
