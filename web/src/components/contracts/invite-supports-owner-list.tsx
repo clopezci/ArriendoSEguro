@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { verdictBadge, type SupportVerdict as Verdict } from "@/domain/documents/verdictBadge";
@@ -52,6 +52,19 @@ export function InviteSupportsOwnerList({ contractDraftId, role, title, codebtor
     const t = setInterval(() => void refresh(), 15000);
     return () => clearInterval(t);
   }, [refresh]);
+
+  // Auto-verifica cada documento con IA UNA sola vez al aparecer (para que la
+  // validación se ejecute sola y no dependa de que el dueño pulse "Verificar").
+  const autoTried = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const r of rows) {
+      if (!autoTried.current.has(r.id) && !verdicts[r.id]) {
+        autoTried.current.add(r.id);
+        void verify(r.id);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows]);
 
   async function download(id: string) {
     if (!user) return;

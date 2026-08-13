@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { MicButton } from "@/components/nuevo/mic-button";
+import { TopBackNav } from "@/components/nav/top-back-nav";
 
 type Source = { law: string; ref: string; title: string; url: string };
 
@@ -46,6 +47,8 @@ export default function ConsultaLegalPage() {
   }
 
   return (
+    <>
+    <TopBackNav />
     <main className="mx-auto max-w-2xl px-4 py-10 text-slate-900">
       <p className="text-xs font-semibold uppercase tracking-wide text-violet-600">Asistente legal · orientativo</p>
       <h1 className="mt-1 text-2xl font-black text-slate-900 sm:text-3xl">Pregúntale a la IA sobre tu arriendo</h1>
@@ -131,5 +134,6 @@ export default function ConsultaLegalPage() {
         <Link href="/nuevo" className="font-semibold text-violet-700 hover:underline">Créalo en ArriendoSeguro →</Link>
       </p>
     </main>
+    </>
   );
 }
