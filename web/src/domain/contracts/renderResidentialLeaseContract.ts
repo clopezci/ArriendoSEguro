@@ -81,8 +81,10 @@ function buildSpecialClausesBlock(
   <p><strong>Otra cláusula acordada entre las partes.</strong></p>
   ${freeTextToParagraphs(otherText)}
   <p style="font-size:11px;color:#475569;">
-    La presente cláusula adicional refleja un acuerdo voluntario entre las partes y su validez se encuentra sujeta a la
-    normatividad colombiana aplicable. En caso de contradicción con la ley imperativa, primarán las normas legales.
+    La presente cláusula adicional refleja un acuerdo voluntario entre las partes. Las estipulaciones que las partes
+    adicionen no podrán ser contrarias a la Constitución Política ni a la ley; de serlo, se tendrán por no escritas o
+    serán nulas, sin que ello afecte la validez de las demás cláusulas del contrato. En caso de contradicción con la
+    ley imperativa, primarán las normas legales.
   </p>`
     : "";
 
