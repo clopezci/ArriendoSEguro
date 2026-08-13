@@ -7,6 +7,7 @@ import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { sanitizePartyFromForm } from "@/features/contracts/party-sanitize";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { InviteSupportsUpload } from "@/components/contracts/invite-supports-upload";
+import { unifiedInviteFlowEnabled } from "@/lib/config";
 import type { PartyDraft } from "@/features/contracts/draft-types";
 
 type Info = {
@@ -360,6 +361,9 @@ export default function InvitacionPage() {
             <p className="mt-1">Quien te invitó podrá verlos e incluirlos. Ahora puedes subir tus documentos (opcional) y, al terminar, pulsar «Finalizar».</p>
           </div>
 
+          {/* Rediseño #3 (flag): firmar desde este mismo enlace cuando el contrato esté activo. */}
+          {unifiedInviteFlowEnabled && <InviteSignSection token={token} />}
+
           {/* Subir documentos (soportes) desde el mismo enlace. */}
           <InviteSupportsUpload token={token} roleLabel={info?.role === "solidaryCoDebtor" ? "como codeudor" : "como arrendatario"} requiredDocs={info?.requiredDocs ?? []} />
 
@@ -388,12 +392,92 @@ export default function InvitacionPage() {
             </p>
             <p className="mt-2 text-xs text-emerald-800/70">Si necesitas subir otro documento, vuelve a abrir este mismo enlace.</p>
           </div>
+          {unifiedInviteFlowEnabled && <InviteSignSection token={token} />}
           <button type="button" onClick={() => setFinished(false)} className="text-sm font-semibold text-[#5646E5] underline">← Volver a subir documentos</button>
         </div>
       )}
       </main>
     </div>
   );
+}
+
+/**
+ * Rediseño #3 "un solo enlace": tras completar sus datos, la persona puede firmar
+ * desde este mismo enlace en cuanto el dueño active el contrato. Consulta el estado
+ * y, si ya se puede firmar, la lleva a la pantalla de firma (motor de firma intacto).
+ */
+function InviteSignSection({ token }: { token: string }) {
+  const [state, setState] = useState<"checking" | "ready" | "waiting" | "signed" | "error">("checking");
+  const [signUrl, setSignUrl] = useState("");
+
+  const check = useCallback(async () => {
+    setState("checking");
+    try {
+      const res = await fetch("/api/party-invite/sign-session", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const j = (await res.json()) as { ok?: boolean; ready?: boolean; signed?: boolean; signUrl?: string };
+      if (!res.ok || !j.ok) {
+        setState("error");
+        return;
+      }
+      if (j.signed) return setState("signed");
+      if (j.ready && j.signUrl) {
+        setSignUrl(j.signUrl);
+        return setState("ready");
+      }
+      setState("waiting");
+    } catch {
+      setState("error");
+    }
+  }, [token]);
+
+  useEffect(() => {
+    void check();
+  }, [check]);
+
+  if (state === "signed") {
+    return (
+      <div className="rounded-2xl border-2 border-[#12B886]/50 bg-[#12B886]/10 p-4 text-sm text-emerald-800">
+        <p className="font-bold">Ya firmaste este contrato ✓</p>
+      </div>
+    );
+  }
+
+  if (state === "ready") {
+    return (
+      <div className="rounded-2xl border-2 border-[#5646E5] bg-[#ECE9FB] p-4">
+        <p className="text-sm font-bold text-[#3A2FB0]">¡El contrato ya está listo para firmar!</p>
+        <p className="mt-1 text-xs text-slate-600">Firma en línea, con validez legal (Ley 527 de 1999). Es rápido y seguro.</p>
+        <a
+          href={signUrl}
+          className="mt-3 inline-block rounded-2xl bg-[#5646E5] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/30 transition hover:brightness-105 active:scale-95"
+        >
+          Firmar contrato ahora →
+        </a>
+      </div>
+    );
+  }
+
+  if (state === "waiting") {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm text-slate-600">
+        <p className="font-semibold text-slate-800">Aún no puedes firmar</p>
+        <p className="mt-1 text-xs">
+          Cuando <strong>quien te invitó</strong> active el contrato, podrás <strong>firmarlo aquí mismo</strong>. Te
+          avisaremos y bastará con volver a abrir este enlace.
+        </p>
+        <button type="button" onClick={() => void check()} className="mt-2 text-xs font-semibold text-[#5646E5] underline">
+          Volver a comprobar
+        </button>
+      </div>
+    );
+  }
+
+  // checking / error: silencioso (no estorba el resto del flujo)
+  return null;
 }
 
 /**
