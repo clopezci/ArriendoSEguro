@@ -338,13 +338,15 @@ export function PartySupportsPanel({ contractId, variant = "page", party = "code
                   return (
                     <li
                       key={t}
-                      className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 ${done ? "border-emerald-300 bg-emerald-50/40" : "border-slate-200 bg-white"}`}
+                      className={`flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 ${done ? "border-sky-200 bg-sky-50/40" : "border-slate-200 bg-white"}`}
                     >
                       <span className="flex items-center gap-2 text-sm font-medium text-slate-800">
                         <span aria-hidden="true">📄</span>
                         {SUPPORT_LABELS[t]}
                         {done ? (
-                          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">✓ {n} cargado(s)</span>
+                          // "Cargado" NO significa "validado": es solo que se subió el archivo.
+                          // El verde queda reservado para la verificación con IA (más abajo).
+                          <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold text-sky-700">📎 {n} cargado(s) · sin verificar</span>
                         ) : (
                           <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Pendiente</span>
                         )}

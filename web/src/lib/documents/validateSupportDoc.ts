@@ -13,7 +13,7 @@ import { nameMatches, documentNumberMatches, type MatchVerdict } from "@/domain/
  * veredicto para pintar alerta ROJA de revisión.
  */
 export type SupportValidation = {
-  status: "match" | "mismatch" | "wrong_type" | "unreadable" | "skipped" | "unsupported";
+  status: "match" | "mismatch" | "wrong_type" | "unreadable" | "unclear" | "skipped" | "unsupported";
   reason?: string;
   label?: string;
   names?: string[];
@@ -125,19 +125,29 @@ export async function validateSupportDoc(params: {
   }
 
   // 2) Nombre y número contra lo tecleado.
-  const nameStatus: MatchVerdict = spec.comparesName && params.expectedName
-    ? (ai.names.length > 0 ? nameMatches(params.expectedName, ai.names) : "unclear")
+  // SEGURIDAD: si el tipo de documento COMPARA nombre pero no hay nombre esperado
+  // con qué comparar (payload incompleto o slot mal mapeado), NO damos "match"
+  // (verde) por defecto: devolvemos "unclear" para forzar validación manual. Antes
+  // esto pintaba verde y dejaba pasar documentos con nombre ajeno.
+  const nameStatus: MatchVerdict = spec.comparesName
+    ? params.expectedName
+      ? ai.names.length > 0
+        ? nameMatches(params.expectedName, ai.names)
+        : "unclear"
+      : "unclear"
     : "match";
-  const docNumberStatus: MatchVerdict = spec.comparesDocNumber && params.expectedDocNumber
-    ? documentNumberMatches(params.expectedDocNumber, ai.documentNumber)
+  const docNumberStatus: MatchVerdict = spec.comparesDocNumber
+    ? params.expectedDocNumber
+      ? documentNumberMatches(params.expectedDocNumber, ai.documentNumber)
+      : "unclear"
     : "match";
 
-  const status =
+  const status: SupportValidation["status"] =
     nameStatus === "mismatch" || docNumberStatus === "mismatch"
       ? "mismatch"
       : nameStatus === "match"
         ? "match"
-        : "unreadable";
+        : "unclear";
 
   return {
     status,
