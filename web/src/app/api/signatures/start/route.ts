@@ -18,6 +18,44 @@ import {
 import { getContractLifecycle } from "@/lib/contracts/lifecycle";
 import { CONTRACT_LIFECYCLE_COLLECTION } from "@/domain/contracts/contractLifecycle";
 import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
+import { unifiedInviteFlowEnabled } from "@/lib/config";
+import { PARTY_INVITES_COLLECTION, isInviteOpenForUpload, normalizeEmail, type PartyInviteDoc } from "@/domain/party-invite/partyInvite";
+
+/**
+ * Rediseño #3 (flag): busca el token de la INVITACIÓN de datos de una parte, para
+ * que el correo de firma apunte al MISMO enlace que ya usó (menos confusión). Solo
+ * afecta la URL del correo; el registro de firma no cambia. Devuelve null si no hay
+ * invitación (p. ej. el dueño escribió los datos) → se usa el enlace /firma normal.
+ */
+async function inviteUrlForParty(
+  firestore: FirebaseFirestore.Firestore,
+  contractId: string,
+  party: SignaturePartyType,
+  email: string,
+): Promise<string | null> {
+  const role = party === "tenant" ? "tenant" : party.startsWith("solidaryCoDebtor") ? "solidaryCoDebtor" : null;
+  if (!role) return null;
+  const slot = party === "solidaryCoDebtor" ? 0 : party.startsWith("solidaryCoDebtor_") ? Number(party.split("_")[1]) - 1 : 0;
+  try {
+    const snap = await firestore
+      .collection(PARTY_INVITES_COLLECTION)
+      .where("contractDraftId", "==", contractId)
+      .where("role", "==", role)
+      .get();
+    const now = Date.now();
+    const match = snap.docs
+      .map((d) => d.data() as PartyInviteDoc)
+      .find(
+        (inv) =>
+          isInviteOpenForUpload(inv, now) &&
+          normalizeEmail(inv.inviteeEmail) === normalizeEmail(email) &&
+          (role === "tenant" || (inv.codebtorSlot ?? 0) === slot),
+      );
+    return match ? `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/invitacion/${match.token}` : null;
+  } catch {
+    return null;
+  }
+}
 
 export const runtime = "nodejs";
 
@@ -330,11 +368,17 @@ export async function POST(request: Request) {
       );
 
       auditEvent("signature_request_created", { contractId, contractVersionId, partyType: party });
+      // Rediseño #3 (flag): la contraparte vuelve al MISMO enlace de invitación que
+      // ya usó para completar datos; ahí firma. Si no hay invitación, va a /firma.
+      const emailUrl =
+        unifiedInviteFlowEnabled && party !== "landlord"
+          ? (await inviteUrlForParty(firestore, contractId, party, person.email)) ?? signingUrl
+          : signingUrl;
       const emailResult = await sendSignatureEmail({
         to: person.email,
         signerName: person.fullName,
         partyType: party,
-        signingUrl,
+        signingUrl: emailUrl,
         tokenExpiresAt,
         contractId,
         useInviteTemplate: party !== "landlord",
