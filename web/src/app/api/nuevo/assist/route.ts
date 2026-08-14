@@ -1,15 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { chatWithFallback, hasAnyAiProvider } from "@/lib/ai/providerChain";
 
 export const runtime = "nodejs";
 
 /**
- * Asistente IA (opcional) del flujo nuevo. Provider-agnóstico: usa cualquier API
- * compatible con OpenAI (Groq gratis, HuggingFace router, OpenAI, Together…) vía
- * variables de entorno:
- *   - AI_API_KEY   (obligatoria para activarlo; sin ella, `available:false`)
- *   - AI_BASE_URL  (por defecto Groq: https://api.groq.com/openai/v1)
- *   - AI_MODEL     (por defecto llama-3.1-8b-instant)
+ * Asistente IA (opcional) del flujo nuevo. Usa la CADENA de proveedores con
+ * respaldo/escalamiento (`chatWithFallback`): Groq (gratis) → Gemini (gratis) →
+ * OpenAI (pago). Ver `web/src/lib/ai/providerChain.ts` para las variables.
  * Dos modos:
  *   - "extract": de texto libre saca los datos del contrato (JSON) para
  *     pre-llenar. El usuario SIEMPRE revisa y la validación por paso sigue viva.
@@ -84,8 +82,7 @@ export async function POST(request: Request) {
   // ANTES de registrarse. Por eso NO exige sesión: no lee ni escribe datos del
   // usuario; solo envía a la IA el texto que la propia persona escribe. (El
   // tamaño del texto está acotado por el schema para limitar el costo.)
-  const apiKey = process.env.AI_API_KEY?.trim();
-  if (!apiKey) {
+  if (!hasAnyAiProvider()) {
     // No configurado: el cliente muestra una nota, sin romper el flujo.
     return NextResponse.json({ success: true, available: false });
   }
@@ -95,67 +92,55 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "invalid_input" }, { status: 422 });
   }
 
-  const baseUrl = (process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/$/, "");
   const isExtract = parsed.data.mode === "extract";
-  // Intenta el modelo configurado y, si falla por modelo, cae a alternativos
-  // estables de Groq. Maximiza que "siempre funcione" sin cambiar de proveedor.
-  // Para EXTRAER, priorizamos el modelo grande (mejor adherencia al JSON pedido).
-  const candidates = [
-    ...new Set(
-      ((isExtract
-        ? ["llama-3.3-70b-versatile", process.env.AI_MODEL?.trim(), "llama-3.1-8b-instant"]
-        : [process.env.AI_MODEL?.trim(), "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
-      ).filter(Boolean)) as string[],
-    ),
-  ];
 
-  let lastDetail = "sin respuesta del proveedor";
-  for (const model of candidates) {
-    try {
-      const res = await fetch(`${baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
-        cache: "no-store",
-        body: JSON.stringify({
-          model,
-          temperature: isExtract ? 0 : 0.4,
-          max_tokens: isExtract ? 1024 : 220,
-          // Modo JSON: obliga al modelo a devolver un objeto JSON válido (evita
-          // prosa/truncados que antes rompían el parseo y dejaban todo vacío).
-          ...(isExtract ? { response_format: { type: "json_object" } } : {}),
-          messages: [
-            { role: "system", content: isExtract ? EXTRACT_SYSTEM : ASK_SYSTEM },
-            {
-              role: "user",
-              content:
-                !isExtract && parsed.data.context
-                  ? `PASO ACTUAL: ${parsed.data.context}\n\nPregunta del usuario: ${parsed.data.text}`
-                  : parsed.data.text,
-            },
-          ],
-        }),
-      });
-      if (!res.ok) {
-        const body = await res.text().catch(() => "");
-        lastDetail = `HTTP ${res.status} (${model}): ${body.slice(0, 180)}`;
-        if (res.status === 401 || res.status === 403) break; // key inválida: no reintentar
-        continue;
-      }
-      const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-      const content = json.choices?.[0]?.message?.content ?? "";
-      if (isExtract) {
+  // Criterio de aceptación por modo: si un proveedor no lo cumple, la cadena
+  // ESCALA al siguiente (Groq → Gemini → OpenAI) buscando el mejor resultado.
+  //  - extract: el JSON debe parsear y traer AL MENOS un dato no vacío.
+  //  - ask: respuesta no vacía (el default de la cadena ya lo garantiza).
+  const accept = isExtract
+    ? (content: string) => {
         try {
-          const data = JSON.parse(extractJsonBlock(content)) as Record<string, unknown>;
-          return NextResponse.json({ success: true, available: true, data });
+          const obj = JSON.parse(extractJsonBlock(content)) as Record<string, unknown>;
+          return (
+            obj != null &&
+            typeof obj === "object" &&
+            Object.values(obj).some((v) => typeof v === "string" && v.trim() !== "")
+          );
         } catch {
-          lastDetail = `respuesta no-JSON (${model})`;
-          continue;
+          return false;
         }
       }
-      return NextResponse.json({ success: true, available: true, answer: content.trim() });
-    } catch (e) {
-      lastDetail = `red (${model}): ${e instanceof Error ? e.message : "error"}`;
-    }
+    : undefined;
+
+  const result = await chatWithFallback({
+    jsonMode: isExtract,
+    temperature: isExtract ? 0 : 0.4,
+    maxTokens: isExtract ? 1024 : 220,
+    accept,
+    messages: [
+      { role: "system", content: isExtract ? EXTRACT_SYSTEM : ASK_SYSTEM },
+      {
+        role: "user",
+        content:
+          !isExtract && parsed.data.context
+            ? `PASO ACTUAL: ${parsed.data.context}\n\nPregunta del usuario: ${parsed.data.text}`
+            : parsed.data.text,
+      },
+    ],
+  });
+
+  if (!result.ok) {
+    return NextResponse.json(
+      { success: false, available: true, error: "provider_error", detail: result.detail },
+      { status: 502 },
+    );
   }
-  return NextResponse.json({ success: false, available: true, error: "provider_error", detail: lastDetail }, { status: 502 });
+
+  if (isExtract) {
+    // `accept` ya garantizó que parsea; re-parseamos para responder el objeto.
+    const data = JSON.parse(extractJsonBlock(result.content)) as Record<string, unknown>;
+    return NextResponse.json({ success: true, available: true, data, provider: result.providerId });
+  }
+  return NextResponse.json({ success: true, available: true, answer: result.content.trim(), provider: result.providerId });
 }

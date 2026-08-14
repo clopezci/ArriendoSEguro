@@ -6,7 +6,7 @@ import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { DRAFT_PROPERTY_DOCS_COLLECTION } from "@/domain/contracts/draftPropertyDocs";
 import { addressMatches } from "@/domain/documents/documentMatch";
 import { extractDocContent } from "@/lib/documents/extractDocContent";
-import { getVisionProvider } from "@/lib/documents/visionProvider";
+import { chatWithFallback, hasAnyAiProvider } from "@/lib/ai/providerChain";
 import { buildUserContent, needsVision } from "@/lib/documents/visionMessage";
 
 export const runtime = "nodejs";
@@ -80,8 +80,7 @@ export async function POST(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
 
-  const apiKey = process.env.AI_API_KEY?.trim();
-  if (!apiKey) return NextResponse.json({ success: true, available: false, status: "skipped", reason: "ai_off" });
+  if (!hasAnyAiProvider()) return NextResponse.json({ success: true, available: false, status: "skipped", reason: "ai_off" });
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ success: false, error: "invalid_input" }, { status: 422 });
@@ -137,80 +136,65 @@ export async function POST(request: Request) {
   }
 
   const useVision = needsVision(extracted);
-  const vision = getVisionProvider();
-  const textBase = (process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/$/, "");
-  const textModels = [...new Set(([process.env.AI_MODEL?.trim(), "llama-3.3-70b-versatile", "llama-3.1-8b-instant"].filter(Boolean)) as string[])];
-  const baseUrl = useVision ? vision.baseUrl : textBase;
-  const callKey = useVision ? vision.apiKey : apiKey;
-  const candidates = useVision ? vision.models : textModels;
-  const messages = [{ role: "user", content: buildUserContent(VISION_PROMPT, extracted) }];
-
-  let providerDetail = "";
-  for (const model of candidates) {
+  // Parser del veredicto de la IA (nombres + dirección + tipo). null si no es usable.
+  const parse = (content: string): { names: string[]; address: string; isPropertyDoc: boolean | null } | null => {
     try {
-      const res = await fetch(`${baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${callKey}` },
-        cache: "no-store",
-        body: JSON.stringify({ model, temperature: 0, max_tokens: 300, messages }),
-      });
-      if (!res.ok) {
-        providerDetail = `${res.status} ${model}: ${(await res.text().catch(() => "")).slice(0, 300)}`;
-        if (process.env.NODE_ENV !== "production") console.error("property-doc verify provider", providerDetail);
-        if (res.status === 401 || res.status === 403) break; // key inválida
-        continue; // prueba el siguiente modelo
-      }
-      const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-      const content = json.choices?.[0]?.message?.content ?? "";
-      let names: string[] = [];
-      let address = "";
-      let isPropertyDoc: boolean | null = null;
-      try {
-        const obj = JSON.parse(extractJsonBlock(content)) as { isPropertyDoc?: unknown; names?: unknown; address?: unknown };
-        if (Array.isArray(obj.names)) names = obj.names.filter((x): x is string => typeof x === "string").slice(0, 10);
-        if (typeof obj.address === "string") address = obj.address;
-        if (typeof obj.isPropertyDoc === "boolean") isPropertyDoc = obj.isPropertyDoc;
-      } catch {
-        continue;
-      }
-      // El documento claramente NO es un soporte de propiedad → alerta fuerte.
-      if (isPropertyDoc === false) {
-        return NextResponse.json({
-          success: true, available: true, status: "wrong_type",
-          names, address, expectedName, expectedAddress: expectedAddress || undefined,
-        });
-      }
-      if (names.length === 0 && !address) {
-        return NextResponse.json({ success: true, available: true, status: "unreadable" });
-      }
-      // Veredicto por campo (nombre y, si se pasó, dirección). Rojo si CUALQUIERA
-      // no coincide. Nunca bloquea: la declaración jurada es la protección real.
-      const nameStatus = names.length > 0 ? (nameMatches(expectedName, names) ? "match" : "mismatch") : "unclear";
-      const addressStatus = expectedAddress ? addressMatches(expectedAddress, address) : "match";
-      const status =
-        nameStatus === "mismatch" || addressStatus === "mismatch"
-          ? "mismatch"
-          : nameStatus === "match"
-            ? "match"
-            : "unreadable";
-      return NextResponse.json({
-        success: true,
-        available: true,
-        status,
-        names,
-        address,
-        nameStatus,
-        addressStatus,
-        expectedName,
-        expectedAddress: expectedAddress || undefined,
-      });
-    } catch (err) {
-      providerDetail = err instanceof Error ? err.message : "network";
-      /* red: intenta el siguiente modelo */
+      const obj = JSON.parse(extractJsonBlock(content)) as { isPropertyDoc?: unknown; names?: unknown; address?: unknown };
+      const names = Array.isArray(obj.names) ? obj.names.filter((x): x is string => typeof x === "string").slice(0, 10) : [];
+      const address = typeof obj.address === "string" ? obj.address : "";
+      const isPropertyDoc = typeof obj.isPropertyDoc === "boolean" ? obj.isPropertyDoc : null;
+      if (names.length === 0 && address === "" && isPropertyDoc === null) return null; // sin señal → escala
+      return { names, address, isPropertyDoc };
+    } catch {
+      return null;
     }
-  }
+  };
 
-  // Ningún modelo respondió: no bloqueamos, lo cubre el juramento. Incluimos el
-  // detalle del proveedor (útil para diagnosticar modelo caído / imagen inválida).
-  return NextResponse.json({ success: true, available: true, status: "skipped", reason: "provider_error", providerDetail });
+  // Cadena con respaldo/escalamiento: Groq (gratis) → Gemini (gratis) → OpenAI (pago).
+  const result = await chatWithFallback({
+    vision: useVision,
+    temperature: 0,
+    maxTokens: 300,
+    accept: (content) => parse(content) !== null,
+    messages: [{ role: "user", content: buildUserContent(VISION_PROMPT, extracted) }],
+  });
+  if (!result.ok) {
+    // Ningún proveedor respondió: no bloqueamos, lo cubre el juramento.
+    return NextResponse.json({ success: true, available: true, status: "skipped", reason: "provider_error", providerDetail: result.detail });
+  }
+  const parsed2 = parse(result.content);
+  if (!parsed2) return NextResponse.json({ success: true, available: true, status: "unreadable" });
+  const { names, address, isPropertyDoc } = parsed2;
+
+  // El documento claramente NO es un soporte de propiedad → alerta fuerte.
+  if (isPropertyDoc === false) {
+    return NextResponse.json({
+      success: true, available: true, status: "wrong_type",
+      names, address, expectedName, expectedAddress: expectedAddress || undefined,
+    });
+  }
+  if (names.length === 0 && !address) {
+    return NextResponse.json({ success: true, available: true, status: "unreadable" });
+  }
+  // Veredicto por campo (nombre y, si se pasó, dirección). Rojo si CUALQUIERA
+  // no coincide. Nunca bloquea: la declaración jurada es la protección real.
+  const nameStatus = names.length > 0 ? (nameMatches(expectedName, names) ? "match" : "mismatch") : "unclear";
+  const addressStatus = expectedAddress ? addressMatches(expectedAddress, address) : "match";
+  const status =
+    nameStatus === "mismatch" || addressStatus === "mismatch"
+      ? "mismatch"
+      : nameStatus === "match"
+        ? "match"
+        : "unreadable";
+  return NextResponse.json({
+    success: true,
+    available: true,
+    status,
+    names,
+    address,
+    nameStatus,
+    addressStatus,
+    expectedName,
+    expectedAddress: expectedAddress || undefined,
+  });
 }

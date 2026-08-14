@@ -5,7 +5,7 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { DRAFT_PROPERTY_DOCS_COLLECTION } from "@/domain/contracts/draftPropertyDocs";
 import { extractDocContent } from "@/lib/documents/extractDocContent";
-import { getVisionProvider } from "@/lib/documents/visionProvider";
+import { chatWithFallback, hasAnyAiProvider } from "@/lib/ai/providerChain";
 import { buildUserContent } from "@/lib/documents/visionMessage";
 
 export const runtime = "nodejs";
@@ -40,8 +40,7 @@ export async function POST(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
 
-  const vision = getVisionProvider();
-  if (!vision.apiKey) return NextResponse.json({ success: true, available: false, status: "skipped", reason: "ai_off" });
+  if (!hasAnyAiProvider()) return NextResponse.json({ success: true, available: false, status: "skipped", reason: "ai_off" });
 
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ success: false, error: "invalid_input" }, { status: 422 });
@@ -79,37 +78,27 @@ export async function POST(request: Request) {
   if (extracted.kind === "unsupported") {
     return NextResponse.json({ success: true, available: true, status: "skipped", reason: extracted.reason });
   }
-  const messages = [{ role: "user", content: buildUserContent(POWER_PROMPT, extracted) }];
-
-  let providerDetail = "";
-  for (const model of vision.models) {
+  const parsePoder = (content: string): boolean | null | undefined => {
     try {
-      const res = await fetch(`${vision.baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${vision.apiKey}` },
-        cache: "no-store",
-        body: JSON.stringify({ model, temperature: 0, max_tokens: 60, messages }),
-      });
-      if (!res.ok) {
-        providerDetail = `${res.status} ${model}: ${(await res.text().catch(() => "")).slice(0, 240)}`;
-        if (res.status === 401 || res.status === 403) break;
-        continue;
-      }
-      const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-      const content = json.choices?.[0]?.message?.content ?? "";
-      let isPoder: boolean | null = null;
-      try {
-        const obj = JSON.parse(extractJsonBlock(content)) as { isPoder?: unknown };
-        if (typeof obj.isPoder === "boolean") isPoder = obj.isPoder;
-      } catch {
-        continue;
-      }
-      if (isPoder === false) return NextResponse.json({ success: true, available: true, status: "wrong_type" });
-      if (isPoder === true) return NextResponse.json({ success: true, available: true, status: "match" });
-      return NextResponse.json({ success: true, available: true, status: "unreadable" });
-    } catch (err) {
-      providerDetail = err instanceof Error ? err.message : "network";
+      const obj = JSON.parse(extractJsonBlock(content)) as { isPoder?: unknown };
+      return typeof obj.isPoder === "boolean" ? obj.isPoder : null;
+    } catch {
+      return undefined; // no parseó → escala
     }
-  }
-  return NextResponse.json({ success: true, available: true, status: "skipped", reason: "provider_error", providerDetail });
+  };
+
+  // Cadena con respaldo/escalamiento: Groq (gratis) → Gemini (gratis) → OpenAI (pago).
+  const result = await chatWithFallback({
+    vision: true,
+    temperature: 0,
+    maxTokens: 60,
+    accept: (content) => parsePoder(content) !== undefined,
+    messages: [{ role: "user", content: buildUserContent(POWER_PROMPT, extracted) }],
+  });
+  if (!result.ok) return NextResponse.json({ success: true, available: true, status: "skipped", reason: "provider_error", providerDetail: result.detail });
+
+  const isPoder = parsePoder(result.content);
+  if (isPoder === false) return NextResponse.json({ success: true, available: true, status: "wrong_type" });
+  if (isPoder === true) return NextResponse.json({ success: true, available: true, status: "match" });
+  return NextResponse.json({ success: true, available: true, status: "unreadable" });
 }

@@ -1069,6 +1069,40 @@ export default function NuevoPage() {
               <ProgressBar pct={pct} />
               <span className="inline-flex items-center gap-2 rounded-full bg-[#5646E5] px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white">{q.block}</span>
 
+              {/* Pre-llenado con IA disponible TAMBIÉN dentro del recorrido. Al
+                  reanudar un borrador se entra directo aquí (se salta la pantalla
+                  de inicio), así que el "dictar todo" debe estar a la mano también
+                  acá. Inicia un contrato NUEVO con lo dictado (no mezcla con el
+                  borrador actual). */}
+              <div className="mt-4">
+                {!aiOpen ? (
+                  <button type="button" onClick={() => setAiOpen(true)} className="w-full rounded-2xl border-2 border-dashed border-violet-300 py-2.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-50">
+                    ✨ Pre-llenar con IA — dicta o escribe todo tu caso de una vez
+                  </button>
+                ) : (
+                  <div className="rounded-2xl border border-violet-200 bg-white/85 p-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-slate-800">Cuéntame tu caso; lleno el formulario</p>
+                      <MicButton label="Dictar tu caso" onResult={(t) => setAiText((prev) => (prev ? `${prev} ${t}` : t))} />
+                    </div>
+                    <p className="mt-1 flex items-start gap-1.5 rounded-xl bg-amber-50 px-3 py-2 text-[12px] text-amber-800">
+                      <span aria-hidden="true">ℹ️</span>
+                      <span>Esto inicia un contrato <b>nuevo</b> con los datos que dictes (no se mezcla con el borrador actual). Si lo <b>dictas por voz</b>, hazlo por partes y toca “Analizar” al final.</span>
+                    </p>
+                    <textarea value={aiText} onChange={(e) => setAiText(e.target.value)} rows={5}
+                      placeholder={"Ej.: Soy Juan Pérez, cédula 79000000, celular 3001112233, correo juan@correo.com, de Bogotá.\nArriendo mi apartamento en la Calle 1 # 2-3, Bogotá, por $1.500.000 al mes, desde el 1 de agosto por 12 meses, pago el día 5.\nEl arrendatario es María López, cédula 52000000, correo maria@correo.com."}
+                      className="mt-2 w-full rounded-xl border-2 border-slate-200 p-3 text-sm outline-none transition focus:border-violet-500" />
+                    {aiNote && <p className="mt-1 text-xs text-rose-600">{aiNote}</p>}
+                    <div className="mt-2 flex items-center gap-2">
+                      <button type="button" onClick={() => void prefillFromAI()} disabled={aiBusy} className="rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-bold text-white transition hover:brightness-105 disabled:opacity-50">
+                        {aiBusy ? "Analizando…" : "Analizar y llenar"}
+                      </button>
+                      <button type="button" onClick={() => setAiOpen(false)} className="px-3 py-2.5 text-sm text-slate-500">Cerrar</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="relative mt-4 min-h-[240px]">
                 {/* Sin mode="wait" ni animación de salida: al cambiar de pregunta
                     el paso nuevo entra de inmediato (la salida no puede colgar el
