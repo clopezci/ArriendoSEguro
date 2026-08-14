@@ -51,9 +51,9 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/icons/icon.svg", type: "image/svg+xml" },
-      { url: "/images/arriendoseguro-social-profile.png", sizes: "512x512", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/images/arriendoseguro-social-profile.png", sizes: "512x512" }],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
   },
   // Verificación de propiedad de Google AdSense (uno de los 3 métodos).
   other: { "google-adsense-account": "ca-pub-7622431410037127" },
