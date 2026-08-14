@@ -1,6 +1,6 @@
 import "server-only";
 import { extractDocContent, type ExtractedContent } from "@/lib/documents/extractDocContent";
-import { getVisionProvider } from "@/lib/documents/visionProvider";
+import { chatWithFallback, hasAnyAiProvider } from "@/lib/ai/providerChain";
 import { buildUserContent, needsVision } from "@/lib/documents/visionMessage";
 import { getDocValidationSpec } from "@/domain/documents/docValidationSpec";
 import { nameMatches, documentNumberMatches, type MatchVerdict } from "@/domain/documents/documentMatch";
@@ -31,48 +31,45 @@ function extractJsonBlock(s: string): string {
   return start >= 0 && end > start ? raw.slice(start, end + 1) : raw;
 }
 
+/** Parsea la respuesta de la IA al shape esperado (o null si no es usable). */
+function parseAiVerdict(
+  content: string,
+): { names: string[]; documentNumber: string; docKindMatches: boolean | null } | null {
+  try {
+    const obj = JSON.parse(extractJsonBlock(content)) as {
+      names?: unknown;
+      documentNumber?: unknown;
+      docKindMatches?: unknown;
+    };
+    const names = Array.isArray(obj.names) ? obj.names.filter((x): x is string => typeof x === "string").slice(0, 10) : [];
+    const documentNumber = typeof obj.documentNumber === "string" ? obj.documentNumber : "";
+    const docKindMatches = typeof obj.docKindMatches === "boolean" ? obj.docKindMatches : null;
+    // "Usable" = trae AL MENOS una señal (nombre, número o tipo). Si viene todo
+    // vacío/nulo, se considera insuficiente para que la cadena ESCALE de proveedor.
+    if (names.length === 0 && documentNumber === "" && docKindMatches === null) return null;
+    return { names, documentNumber, docKindMatches };
+  } catch {
+    return null;
+  }
+}
+
 async function callAi(
-  apiKey: string,
   promptText: string,
   ex: ExtractedContent,
 ): Promise<{ names: string[]; documentNumber: string; docKindMatches: boolean | null } | null> {
   const useVision = needsVision(ex);
-  const vision = useVision ? getVisionProvider() : null;
-  const baseUrl = vision ? vision.baseUrl : (process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/$/, "");
-  const callKey = vision ? vision.apiKey : apiKey;
-  const candidates = vision
-    ? vision.models
-    : ([...new Set(([process.env.AI_MODEL?.trim(), "llama-3.3-70b-versatile", "llama-3.1-8b-instant"].filter(Boolean)) as string[])]);
-  const messages = [{ role: "user", content: buildUserContent(promptText, ex) }];
-
-  for (const model of candidates) {
-    try {
-      const res = await fetch(`${baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${callKey}` },
-        cache: "no-store",
-        body: JSON.stringify({ model, temperature: 0, max_tokens: 300, messages }),
-      });
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 403) return null;
-        continue;
-      }
-      const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-      const content = json.choices?.[0]?.message?.content ?? "";
-      const obj = JSON.parse(extractJsonBlock(content)) as {
-        names?: unknown;
-        documentNumber?: unknown;
-        docKindMatches?: unknown;
-      };
-      const names = Array.isArray(obj.names) ? obj.names.filter((x): x is string => typeof x === "string").slice(0, 10) : [];
-      const documentNumber = typeof obj.documentNumber === "string" ? obj.documentNumber : "";
-      const docKindMatches = typeof obj.docKindMatches === "boolean" ? obj.docKindMatches : null;
-      return { names, documentNumber, docKindMatches };
-    } catch {
-      /* prueba el siguiente modelo */
-    }
-  }
-  return null;
+  // Cadena con respaldo/escalamiento: Groq (gratis) → Gemini (gratis) → OpenAI (pago).
+  // `accept` escala si el resultado no es usable, priorizando el MEJOR resultado
+  // (clave en visión: Groq lee mal y así cae a Gemini/OpenAI automáticamente).
+  const result = await chatWithFallback({
+    vision: useVision,
+    temperature: 0,
+    maxTokens: 300,
+    accept: (content) => parseAiVerdict(content) !== null,
+    messages: [{ role: "user", content: buildUserContent(promptText, ex) }],
+  });
+  if (!result.ok) return null;
+  return parseAiVerdict(result.content);
 }
 
 export async function validateSupportDoc(params: {
@@ -89,8 +86,7 @@ export async function validateSupportDoc(params: {
   const spec = getDocValidationSpec(params.docKey);
   if (!spec) return { status: "skipped", reason: "no_spec" };
 
-  const apiKey = process.env.AI_API_KEY?.trim();
-  if (!apiKey) return { status: "skipped", reason: "ai_off", label: spec.label };
+  if (!hasAnyAiProvider()) return { status: "skipped", reason: "ai_off", label: spec.label };
 
   // Imagen por URL firmada (preferido) → sin tope de base64. Si no, extrae del buffer.
   let ex: ExtractedContent;
@@ -111,7 +107,7 @@ export async function validateSupportDoc(params: {
     `"documentNumber" es el número de identificación/NIT/matrícula si aplica (solo dígitos, o cadena vacía); ` +
     `"docKindMatches" indica si el documento realmente ES del tipo descrito. No agregues texto adicional.`;
 
-  const ai = await callAi(apiKey, prompt, ex);
+  const ai = await callAi(prompt, ex);
   if (!ai) return { status: "skipped", reason: "provider_error", label: spec.label };
 
   if (ai.names.length === 0 && !ai.documentNumber && ai.docKindMatches === null) {

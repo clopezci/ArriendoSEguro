@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { retrieveLegalContext, type LegalEntry } from "@/domain/legal/legalKnowledgeBase";
 import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequest } from "@/lib/security/rate-limit";
+import { chatWithFallback, hasAnyAiProvider } from "@/lib/ai/providerChain";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,8 +51,7 @@ export async function POST(request: Request) {
     .map((e, i) => `[${i + 1}] ${e.law}, ${e.ref} — ${e.title}\n${e.summary}\nFuente: ${e.url}`)
     .join("\n\n");
 
-  const apiKey = process.env.AI_API_KEY?.trim();
-  if (!apiKey) {
+  if (!hasAnyAiProvider()) {
     // Sin IA: devolvemos los resúmenes de las normas relevantes (siguen siendo útiles y verificables).
     return NextResponse.json({
       success: true,
@@ -74,32 +74,13 @@ export async function POST(request: Request) {
     `PREGUNTA DEL USUARIO:\n${question}\n\n` +
     "Responde citando los artículos pertinentes del contexto. Si el contexto no alcanza, dilo.";
 
-  const baseUrl = (process.env.AI_BASE_URL?.trim() || "https://api.groq.com/openai/v1").replace(/\/$/, "");
-  const models = [...new Set([process.env.AI_MODEL?.trim(), "llama-3.3-70b-versatile", "llama-3.1-8b-instant"].filter(Boolean) as string[])];
-
-  for (const model of models) {
-    try {
-      const res = await fetch(`${baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${apiKey}` },
-        cache: "no-store",
-        body: JSON.stringify({
-          model, temperature: 0.2, max_tokens: 700,
-          messages: [{ role: "system", content: system }, { role: "user", content: prompt }],
-        }),
-      });
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 403) break;
-        continue;
-      }
-      const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-      const answer = (json.choices?.[0]?.message?.content ?? "").trim();
-      if (answer) {
-        return NextResponse.json({ success: true, answer, sources: sources(entries), disclaimer: DISCLAIMER });
-      }
-    } catch {
-      /* siguiente modelo */
-    }
+  const result = await chatWithFallback({
+    temperature: 0.2,
+    maxTokens: 700,
+    messages: [{ role: "system", content: system }, { role: "user", content: prompt }],
+  });
+  if (result.ok && result.content.trim()) {
+    return NextResponse.json({ success: true, answer: result.content.trim(), sources: sources(entries), disclaimer: DISCLAIMER });
   }
 
   // La IA no respondió: devolvemos los resúmenes de la base (verificables).
