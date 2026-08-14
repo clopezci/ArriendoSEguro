@@ -79,7 +79,7 @@ export async function POST(request: Request) {
           status: existingDoc?.data().status ?? "scheduled",
           paymentLogId: existingDoc?.data().paymentLogId ?? null,
           reminderEnabled: parsed.data.reminderSettings?.enabled ?? true,
-          reminderDaysBefore: parsed.data.reminderSettings?.defaultDaysBefore ?? 3,
+          reminderDaysBefore: parsed.data.reminderSettings?.defaultDaysBefore ?? 1,
           reminderEmailTo:
             parsed.data.reminderSettings?.tenantEmail ??
             version?.contractPayload?.tenant?.email ??
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
         leaseProcessId: parsed.data.leaseProcessId,
         contractId: parsed.data.contractId,
         enabled: parsed.data.reminderSettings?.enabled ?? true,
-        defaultDaysBefore: parsed.data.reminderSettings?.defaultDaysBefore ?? 3,
+        defaultDaysBefore: parsed.data.reminderSettings?.defaultDaysBefore ?? 1,
         tenantEmail: parsed.data.reminderSettings?.tenantEmail ?? version?.contractPayload?.tenant?.email ?? "",
         landlordCopyEnabled: parsed.data.reminderSettings?.landlordCopyEnabled ?? false,
         landlordEmail: parsed.data.reminderSettings?.landlordEmail ?? version?.contractPayload?.landlord?.email ?? "",
