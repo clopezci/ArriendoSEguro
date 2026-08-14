@@ -142,8 +142,9 @@ export async function POST(request: Request) {
     if (row.reminderEnabled === false) continue; // el dueño desactivó los recordatorios
     const due = new Date(row.dueDate);
     const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    // Hito "antes" con los días de aviso configurados (por defecto 3) + el día del vencimiento.
-    const daysBefore = Math.min(30, Math.max(1, Number(row.reminderDaysBefore) || 3));
+    // Hito "antes" con los días de aviso configurados (por defecto 1 = el día
+    // anterior al vencimiento) + el día del vencimiento.
+    const daysBefore = Math.min(30, Math.max(1, Number(row.reminderDaysBefore) || 1));
     const milestone = diffDays === daysBefore ? "before" : diffDays === 0 ? "due" : null;
     if (!milestone) continue;
     if (milestone === "before" && row.tenantReminder3SentAt) continue;
@@ -172,7 +173,7 @@ export async function POST(request: Request) {
       amountText: `$${(Number(row.expectedAmount) || 0).toLocaleString("es-CO")}`,
       howToPay: describePaymentMethodForTenant(settings),
       payUrl: `${base}/pago/${token}`,
-      whenLabel: milestone === "before" ? `Faltan ${daysBefore} días` : "Hoy vence",
+      whenLabel: milestone === "before" ? (daysBefore === 1 ? "Vence mañana" : `Faltan ${daysBefore} días`) : "Hoy vence",
     });
     const r = await sendEmail({
       to: tenantEmail,
@@ -194,7 +195,7 @@ export async function POST(request: Request) {
       const amount = `$${(Number(row.expectedAmount) || 0).toLocaleString("es-CO")}`;
       const payUrl = `${base}/pago/${token}`;
       const msg = milestone === "before"
-        ? `faltan ${daysBefore} días para el pago de tu arriendo (${amount}). Ingresa para pagar y subir tu comprobante: ${payUrl}`
+        ? `${daysBefore === 1 ? "mañana vence" : `faltan ${daysBefore} días para`} el pago de tu arriendo (${amount}). Ingresa para pagar y subir tu comprobante: ${payUrl}`
         : `hoy vence tu arriendo (${amount}). Ingresa para pagar y subir tu comprobante: ${payUrl}`;
       await phoneReminder(parties.tenant?.phone, msg, row.id ?? d.id);
     }

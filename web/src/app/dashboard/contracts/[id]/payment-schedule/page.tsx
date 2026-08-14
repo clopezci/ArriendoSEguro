@@ -29,7 +29,7 @@ export default function PaymentSchedulePage() {
   const [leaseData, setLeaseData] = useState({ monthlyRent: 0, termMonths: 0, startDate: "", paymentDueDay: 1 });
   const [settings, setSettings] = useState({
     enabled: true,
-    defaultDaysBefore: 3,
+    defaultDaysBefore: 1,
     tenantEmail: "",
     landlordCopyEnabled: false,
     landlordEmail: "",
@@ -60,7 +60,7 @@ export default function PaymentSchedulePage() {
       if (list.reminderSettings) {
         setSettings({
           enabled: Boolean(list.reminderSettings.enabled),
-          defaultDaysBefore: Number(list.reminderSettings.defaultDaysBefore ?? 3),
+          defaultDaysBefore: Number(list.reminderSettings.defaultDaysBefore ?? 1),
           tenantEmail: String(list.reminderSettings.tenantEmail ?? ""),
           landlordCopyEnabled: Boolean(list.reminderSettings.landlordCopyEnabled),
           landlordEmail: String(list.reminderSettings.landlordEmail ?? ""),

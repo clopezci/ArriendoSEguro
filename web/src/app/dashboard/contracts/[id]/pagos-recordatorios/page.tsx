@@ -19,7 +19,7 @@ export default function PagosRecordatoriosPage() {
   const [qrStoragePath, setQrStoragePath] = useState("");
   const [qrPreview, setQrPreview] = useState("");
   const [consent, setConsent] = useState(false);
-  const [daysBefore, setDaysBefore] = useState(3);
+  const [daysBefore, setDaysBefore] = useState(1);
   const [payDay, setPayDay] = useState<number | null>(null);
   const [versionId, setVersionId] = useState("");
   const [busy, setBusy] = useState(false);
