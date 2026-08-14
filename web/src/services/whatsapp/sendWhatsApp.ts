@@ -97,6 +97,45 @@ async function saveLog(input: { to: string; templateCode: string; provider: Send
   });
 }
 
+/**
+ * Envía un mensaje de **TEXTO libre** (no plantilla). Válido dentro de la ventana
+ * de 24 h de "servicio al cliente" de Meta, p. ej. la RESPUESTA AUTOMÁTICA a quien
+ * nos escribe (el webhook lo usa). Fuera de esa ventana Meta lo rechaza, pero como
+ * solo se usa para contestar a un mensaje entrante, la ventana siempre está abierta.
+ */
+export async function sendWhatsAppText(to: string, body: string): Promise<SendWhatsAppOutput> {
+  const num = toMetaNumber(to);
+  if (!num) return { status: "skipped", provider: "none", errorMessage: "Número ausente o inválido." };
+
+  if (resolveProvider() !== "meta") {
+    await saveLog({ to: num, templateCode: "autoReplyText", provider: "mock", status: "mock" });
+    return { status: "mock", provider: "mock" };
+  }
+  const token = process.env.WHATSAPP_CLOUD_TOKEN!.trim();
+  const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID!.trim();
+  try {
+    const res = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: num,
+        type: "text",
+        text: { body: String(body).slice(0, 1000), preview_url: false },
+      }),
+    });
+    const ok = res.ok;
+    const errorMessage = ok ? undefined : `Meta ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`;
+    await saveLog({ to: num, templateCode: "autoReplyText", provider: "meta", status: ok ? "sent" : "failed", errorMessage });
+    return ok ? { status: "sent", provider: "meta" } : { status: "failed", provider: "meta", errorMessage };
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : "Error de red WhatsApp";
+    await saveLog({ to: num, templateCode: "autoReplyText", provider: "meta", status: "failed", errorMessage });
+    return { status: "failed", provider: "meta", errorMessage };
+  }
+}
+
 export async function sendWhatsApp(input: SendWhatsAppInput): Promise<SendWhatsAppOutput> {
   const to = toMetaNumber(input.to);
   if (!to) return { status: "skipped", provider: "none", errorMessage: "Número de celular ausente o inválido." };
