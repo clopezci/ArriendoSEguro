@@ -16,7 +16,13 @@ export const runtime = "nodejs";
  *   - "ask": explica en lenguaje simple una duda del arriendo/cláusula.
  * NUNCA se usa para lógica legal crítica; solo asiste.
  */
-const schema = z.object({ mode: z.enum(["extract", "ask"]), text: z.string().min(1).max(2000) });
+const schema = z.object({
+  mode: z.enum(["extract", "ask"]),
+  text: z.string().min(1).max(2000),
+  // Contexto del PASO actual del asistente (para que "ask" sepa dónde está el
+  // usuario y pueda responder "qué hacer aquí"). Lo envía el cliente.
+  context: z.string().max(600).optional(),
+});
 
 const EXTRACT_SYSTEM =
   "Eres un asistente que extrae datos para un contrato de arrendamiento de vivienda en Colombia. " +
@@ -59,7 +65,10 @@ const ASK_SYSTEM =
   "paso o botón de la app, explica QUÉ hacer dentro de ArriendoSeguro. Si preguntan por una cláusula o término legal, " +
   "explícalo simple y aterrízalo al arriendo. Si la pregunta NO tiene relación con arrendar o con la app, responde " +
   "amablemente que solo puedes ayudar con el arriendo y ArriendoSeguro. No des asesoría legal definitiva; sugiere validar " +
-  "con un abogado cuando el caso sea delicado.";
+  "con un abogado cuando el caso sea delicado. " +
+  "IMPORTANTE: cuando el mensaje del usuario incluya una línea 'PASO ACTUAL:', ese es el paso exacto de la app en el que " +
+  "está la persona en este momento; úsalo para responder concretamente QUÉ debe hacer o escribir en ESE paso. NUNCA digas " +
+  "que no sabes en qué paso está: siempre tienes el paso actual en el contexto.";
 
 /** Extrae el bloque JSON de la respuesta (quita ```fences``` y texto alrededor). */
 function extractJsonBlock(s: string): string {
@@ -116,7 +125,13 @@ export async function POST(request: Request) {
           ...(isExtract ? { response_format: { type: "json_object" } } : {}),
           messages: [
             { role: "system", content: isExtract ? EXTRACT_SYSTEM : ASK_SYSTEM },
-            { role: "user", content: parsed.data.text },
+            {
+              role: "user",
+              content:
+                !isExtract && parsed.data.context
+                  ? `PASO ACTUAL: ${parsed.data.context}\n\nPregunta del usuario: ${parsed.data.text}`
+                  : parsed.data.text,
+            },
           ],
         }),
       });

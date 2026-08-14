@@ -815,11 +815,11 @@ export default function NuevoPage() {
     return () => { cancelled = true; };
   }, []);
 
-  async function callAssist(mode: "extract" | "ask", text: string) {
+  async function callAssist(mode: "extract" | "ask", text: string, context?: string) {
     const res = await fetch("/api/nuevo/assist", {
       method: "POST",
       headers: { "content-type": "application/json", ...(user ? await buildAuthHeaders(user) : {}) },
-      body: JSON.stringify({ mode, text }),
+      body: JSON.stringify({ mode, text, ...(context ? { context } : {}) }),
     });
     return (await res.json()) as { success?: boolean; available?: boolean; data?: Record<string, unknown>; answer?: string; error?: string; detail?: string };
   }
@@ -907,7 +907,13 @@ export default function NuevoPage() {
     if (!t) return;
     setAskBusy(true); setAskAns(null);
     try {
-      const j = await callAssist("ask", t);
+      // Contexto del PASO actual, para que la IA sepa exactamente dónde está el
+      // usuario y responda "qué hacer aquí" (antes decía que no sabía el paso).
+      const cq = QUESTIONS[i];
+      const ctx = cq
+        ? `El usuario está en el bloque "${cq.block}". La app le está pidiendo ahora: "${cq.prompt}". Ayuda mostrada: "${cq.hint}".`
+        : "El usuario está en la pantalla de inicio de ArriendoSeguro (aún no empezó a llenar el contrato).";
+      const j = await callAssist("ask", t, ctx);
       if (j.available === false) { setAskAns("El asistente IA aún no está configurado (falta la API key)."); return; }
       const ans = j.answer || "No tengo una respuesta ahora.";
       setAskAns(ans);
