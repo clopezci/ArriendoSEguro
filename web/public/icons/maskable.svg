@@ -1,15 +1,26 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ArriendoSeguro">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
   <defs>
-    <linearGradient id="gm" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#7c3aed"/>
       <stop offset="1" stop-color="#6d28d9"/>
     </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe08a"/>
+      <stop offset="1" stop-color="#d99b1c"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="22" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-  <!-- Fondo a sangre completa (maskable): el contenido vive dentro del 80% central -->
-  <rect width="512" height="512" fill="url(#gm)"/>
-  <!-- Escudo dentro de la zona segura -->
-  <path d="M256 150l92 32v76c0 61-39 103-92 124-53-21-92-63-92-124v-76z"
-        fill="#ffffff" fill-opacity="0.16" stroke="#ffffff" stroke-width="11" stroke-linejoin="round"/>
-  <!-- Casa -->
-  <path d="M256 208l62 52v6h-19v62h-32v-42h-22v42h-32v-62h-19v-6z" fill="#ffffff"/>
+  <rect width="1024" height="1024" fill="#0b0d16"/>
+  <g filter="url(#glow)">
+    <rect x="242" y="392" width="540" height="504" rx="120" fill="url(#g)"/>
+    <path d="M196 424 L512 150 L828 424" fill="none" stroke="#ffffff" stroke-width="48" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="512" y="662" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="800" font-size="224" letter-spacing="8" fill="#ffffff">AS</text>
+  <path d="M490 756 L490 732 A22 22 0 0 1 534 732 L534 756" fill="none" stroke="#e6b53c" stroke-width="14" stroke-linecap="round"/>
+  <rect x="471" y="750" width="82" height="70" rx="17" fill="url(#gold)" stroke="#b9810f" stroke-width="4"/>
+  <circle cx="512" cy="778" r="9" fill="#5b3d05"/>
+  <path d="M507 783 h10 l-2 20 h-6 z" fill="#5b3d05"/>
 </svg>
