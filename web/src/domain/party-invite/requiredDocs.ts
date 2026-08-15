@@ -31,7 +31,7 @@ export const REQUIRED_DOC_CATALOG: RequiredDocDef[] = [
   { key: "rut", label: "RUT", roles: ["tenant", "codebtor"] },
   { key: "camara_comercio", label: "Cámara de comercio (independientes)", roles: ["tenant", "codebtor"] },
   { key: "declaracion_renta", label: "Declaración de renta", roles: ["tenant", "codebtor"] },
-  { key: "certificado_libertad", label: "Certificado de tradición (propiedad raíz)", roles: ["codebtor"] },
+  { key: "certificado_libertad", label: "Certificado de tradición y libertad (propiedad)", roles: ["tenant", "codebtor"] },
   { key: "referencia_comercial", label: "Referencia comercial o personal", roles: ["tenant", "codebtor"] },
   { key: "declaracion_renta_codeudor", label: "Declaración de renta del codeudor", roles: ["codebtor"] },
   { key: "otro_1", label: "Otro documento 1", roles: ["tenant", "codebtor"] },
