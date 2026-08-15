@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { BentoShell } from "@/components/layout/bento-shell";
 import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
@@ -237,7 +238,7 @@ export default function MantenimientoPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl p-4 sm:p-6">
+    <BentoShell>
       <WizardShell title="Solicitudes y reportes" currentStep={13} contractId={id} variant="extra" phase="posventa" lean>
         <p className="mb-4 text-sm text-slate-700">
           Según tu rol en este contrato, puedes crear reportes o solicitudes. La otra parte recibe la notificación y
@@ -513,6 +514,6 @@ export default function MantenimientoPage() {
           onClose={() => setLawyerFor(null)}
         />
       )}
-    </div>
+    </BentoShell>
   );
 }
