@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { BentoShell } from "@/components/layout/bento-shell";
 import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { useAuth } from "@/contexts/auth-context";
@@ -186,7 +187,8 @@ export default function PaymentsPage() {
   }
 
   return (
-    <WizardShell title="Registro de pagos" currentStep={11} contractId={id} variant="extra" phase="posventa" lean>
+    <BentoShell>
+      <WizardShell title="Registro de pagos" currentStep={11} contractId={id} variant="extra" phase="posventa" lean>
       <RequiresSavedContract id={id}>
       {/* Cómo funciona (para que no se pierda) */}
       <div className="rounded-lg border border-violet-200 bg-violet-50/50 p-3 text-xs leading-relaxed text-slate-700">
@@ -197,7 +199,7 @@ export default function PaymentsPage() {
             recordatorios»). Se crean los vencimientos de todo el plazo.
           </li>
           <li>
-            El inquilino recibe <strong>recordatorios automáticos</strong> 3 días antes y el día del vencimiento, con un
+            El inquilino recibe <strong>recordatorios automáticos</strong> el día anterior y el día del vencimiento, con un
             enlace para subir su soporte.
           </li>
           <li>
@@ -359,6 +361,7 @@ export default function PaymentsPage() {
       <PaymentsExportCard contractId={id} contractVersionId={contractVersionId} payments={payments} />
       </RequiresSavedContract>
     </WizardShell>
+    </BentoShell>
   );
 }
 
@@ -375,7 +378,7 @@ function humanStatus(status: Payment["paymentStatus"]): string {
 
 function Card({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded border border-slate-300 bg-white/95 p-3">
+    <div className="rounded-2xl border-2 border-slate-200 bg-white/90 p-3">
       <p className="text-[11px] text-slate-600">{label}</p>
       <p className="text-sm font-medium text-slate-900">{value}</p>
     </div>

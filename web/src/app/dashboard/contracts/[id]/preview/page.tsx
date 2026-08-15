@@ -4,6 +4,7 @@ import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { ContractSatisfactionSurvey } from "@/components/survey/contract-satisfaction-survey";
 import { ExpedienteNotesCard } from "@/components/contracts/expediente-notes-card";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { BentoShell } from "@/components/layout/bento-shell";
 import { appendAudit, getDraft, setNotarizationSelection, toContractInput, updateDraft } from "@/features/contracts/wizard-state";
 import { flushDraftToServer } from "@/features/contracts/draft-server-sync";
 import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-owner-list";
@@ -897,7 +898,8 @@ export default function PreviewStepPage() {
   const canGoSection = (k: Section): boolean => (k === "firma" || k === "pdf" || k === "posventa" ? Boolean(savedVersion) : true);
 
   return (
-    <WizardShell title="Revisa y finaliza tu contrato" currentStep={10} contractId={id} hideGuide>
+    <BentoShell>
+      <WizardShell title="Revisa y finaliza tu contrato" currentStep={10} contractId={id} hideGuide>
       {/* Navegación: volver a editar en el recorrido bento (/nuevo) o ver la lista.
           El «Editar en bloque» (front viejo por pasos) se retiró: el único
           recorrido es el bento, una pregunta a la vez. */}
@@ -1734,6 +1736,7 @@ export default function PreviewStepPage() {
         )}
       </div>
     </WizardShell>
+    </BentoShell>
   );
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
+import { BentoShell } from "@/components/layout/bento-shell";
 import { WizardShell } from "@/components/contracts/wizard-shell";
 import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
 import { NOVEDAD_TIPO_IDS, NOVEDAD_TIPO_LABELS, type NovedadTipoId } from "@/domain/contracts/novedades/types";
@@ -104,7 +105,7 @@ export default function NovedadesExpedientePage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl p-4 sm:p-6">
+    <BentoShell>
       <WizardShell
         title="Registrar novedades y solicitudes del arrendamiento"
         currentStep={13}
@@ -153,7 +154,7 @@ export default function NovedadesExpedientePage() {
                 name="tipo"
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value as NovedadTipoId)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border-2 border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[#5646E5]"
               >
                 {NOVEDAD_TIPO_IDS.map((k) => (
                   <option key={k} value={k}>
@@ -173,7 +174,7 @@ export default function NovedadesExpedientePage() {
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
                 maxLength={2000}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-xl border-2 border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-[#5646E5]"
                 placeholder="Explica con calma qué pasó o qué necesitas."
               />
             </div>
@@ -192,7 +193,7 @@ export default function NovedadesExpedientePage() {
             <button
               type="submit"
               disabled={submitBusy || !user}
-              className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-medium text-white shadow-sm hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-2xl bg-[#5646E5] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitBusy ? "Guardando…" : "Registrar y notificar"}
             </button>
@@ -217,7 +218,7 @@ export default function NovedadesExpedientePage() {
                     ? `/api/contracts/novedades/attachment?contractId=${encodeURIComponent(id)}&novedadId=${encodeURIComponent(r.id)}`
                     : null);
                 return (
-                  <li key={r.id} className="rounded-lg border border-slate-100 bg-white/75 p-3 text-sm">
+                  <li key={r.id} className="rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <span className="font-medium text-slate-900">{label}</span>
                       <span className="text-xs text-slate-500">
@@ -253,6 +254,6 @@ export default function NovedadesExpedientePage() {
         </p>
         </RequiresSavedContract>
       </WizardShell>
-    </div>
+    </BentoShell>
   );
 }

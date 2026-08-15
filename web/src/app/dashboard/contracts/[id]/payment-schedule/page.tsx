@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { WizardShell } from "@/components/contracts/wizard-shell";
+import { BentoShell } from "@/components/layout/bento-shell";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
@@ -124,7 +125,8 @@ export default function PaymentSchedulePage() {
   }
 
   return (
-    <WizardShell title="Calendario de pagos" currentStep={11} contractId={id} variant="extra" lean>
+    <BentoShell>
+      <WizardShell title="Calendario de pagos" currentStep={11} contractId={id} variant="extra" lean>
       {error && <p className="mb-3 text-sm text-rose-700">{error}</p>}
       <div className="grid gap-3 md:grid-cols-5">
         <Info label="Canon mensual" value={`$${leaseData.monthlyRent.toLocaleString("es-CO")}`} />
@@ -208,6 +210,7 @@ export default function PaymentSchedulePage() {
         </table>
       </div>
     </WizardShell>
+    </BentoShell>
   );
 }
 
