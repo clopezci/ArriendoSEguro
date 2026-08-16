@@ -230,7 +230,7 @@ function ReadAloudControls() {
     <div
       role="region"
       aria-label="Controles de lectura por voz"
-      className="fixed inset-x-0 bottom-4 z-50 mx-auto flex w-fit max-w-[95vw] items-center gap-2 rounded-full border border-violet-300 bg-white/95 px-3 py-2 shadow-[0_8px_28px_rgba(139,92,246,0.28)] backdrop-blur"
+      className="fixed inset-x-0 bottom-4 z-50 mx-auto flex w-fit max-w-[95vw] flex-wrap items-center justify-center gap-1.5 rounded-3xl border border-violet-300 bg-white/95 px-3 py-2 shadow-[0_8px_28px_rgba(139,92,246,0.28)] backdrop-blur"
     >
       <span className="hidden text-xs font-medium text-violet-800 sm:inline">🔊 Leyendo</span>
       <button
