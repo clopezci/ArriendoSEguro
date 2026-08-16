@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { InviteSupportRow } from "@/domain/party-invite/inviteSupports";
 import { requiredDocLabel } from "@/domain/party-invite/requiredDocs";
+import { UploadPhotoTip } from "@/components/documents/upload-photo-tip";
 
 /**
  * Subida de documentos del invitado (inquilino/codeudor) desde su enlace, con
@@ -94,6 +95,7 @@ export function InviteSupportsUpload({
   return (
     <div className="rounded-2xl border-2 border-[#5646E5]/20 bg-[#ECE9FB]/40 p-4">
       <p className="text-sm font-bold text-[#5646E5]">📎 Sube tus documentos {roleLabel}</p>
+      <UploadPhotoTip className="mt-2 bg-white/70" />
       {requiredDocs.length > 0 ? (
         <p className="mt-0.5 text-[11px] text-slate-600">
           El arrendador te pide estos documentos ({doneCount}/{requiredDocs.length} subido{doneCount === 1 ? "" : "s"}). Sube cada uno en su casilla (PDF, JPG, PNG o WEBP).

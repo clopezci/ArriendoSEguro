@@ -10,6 +10,7 @@ import {
 } from "@/domain/codebtor-supports/support-schema";
 import { useAuth } from "@/contexts/auth-context";
 import { verdictBadge, type SupportVerdict } from "@/domain/documents/verdictBadge";
+import { UploadPhotoTip } from "@/components/documents/upload-photo-tip";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -331,6 +332,7 @@ export function PartySupportsPanel({ contractId, variant = "page", party = "code
                 Adjunta cada soporte con su botón. Hasta {CODEBTOR_SUPPORT_MAX_PER_TYPE} por tipo; máx.{" "}
                 {CODEBTOR_SUPPORT_MAX_BYTES / 1024 / 1024} MB (PDF, JPG o PNG).
               </p>
+              <UploadPhotoTip className="mt-2" />
               <ul className="mt-3 space-y-2">
                 {CODEBTOR_SUPPORT_TYPES.map((t) => {
                   const n = countsByType.get(t) ?? 0;

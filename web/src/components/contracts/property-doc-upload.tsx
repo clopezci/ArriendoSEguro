@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { UploadPhotoTip } from "@/components/documents/upload-photo-tip";
 import { captureOathEvidence } from "@/lib/nuevo/oath-evidence";
 import { PROPERTY_DOC_TYPES, PROPERTY_DOC_LABELS, PODER_DOC_TYPE, type PropertyDocType, type DraftPropertyDocRow } from "@/domain/contracts/draftPropertyDocs";
 
@@ -172,6 +173,7 @@ export function PropertyDocUpload({
       {showFull && (
         <>
           <p className="mt-0.5 text-xs text-slate-500">Elige cuál vas a incluir y súbelo (PDF, JPG, PNG o WEBP).</p>
+          <UploadPhotoTip className="mt-2" />
           <div className="mt-2 flex flex-wrap gap-2">
             {PROPERTY_DOC_TYPES.map((t) => (
               <button key={t} type="button" onClick={() => onDocType(t)}

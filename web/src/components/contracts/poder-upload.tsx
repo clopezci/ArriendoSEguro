@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { UploadPhotoTip } from "@/components/documents/upload-photo-tip";
 import { PODER_DOC_TYPE, PODER_DOC_LABEL, type DraftPropertyDocRow } from "@/domain/contracts/draftPropertyDocs";
 
 /**
@@ -125,6 +126,7 @@ export function PoderUpload({ contractDraftId, onUploaded }: { contractDraftId: 
       {showFull && (
         <>
           <p className="mt-0.5 text-xs text-slate-600">Como apoderado, sube el poder que te faculta para arrendar a nombre del propietario. Puedes subirlo ahora o antes de generar el contrato.</p>
+          <UploadPhotoTip className="mt-2" />
           <label className={`mt-2 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 ${busy ? "cursor-not-allowed opacity-50" : ""}`}>
             {busy ? "Subiendo…" : hasDocs ? "Subir otro" : "Adjuntar poder"}
             <input ref={inputRef} type="file" accept="image/*,application/pdf" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }} className="sr-only" />
