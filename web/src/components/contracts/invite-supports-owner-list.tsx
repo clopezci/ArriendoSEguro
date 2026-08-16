@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { verdictBadge, type SupportVerdict as Verdict } from "@/domain/documents/verdictBadge";
+import { ManualReviewControl } from "@/components/documents/manual-review-control";
 
 type Row = { id: string; role: string; fileName: string; sizeBytes: number; uploadedAt: string; uploadedByName: string };
 
@@ -16,6 +17,7 @@ export function InviteSupportsOwnerList({ contractDraftId, role, title, codebtor
   const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [verdicts, setVerdicts] = useState<Record<string, Verdict>>({});
+  const [reviewed, setReviewed] = useState<Record<string, boolean>>({});
 
   async function verify(id: string) {
     if (!user) return;
@@ -97,7 +99,24 @@ export function InviteSupportsOwnerList({ contractDraftId, role, title, codebtor
                   </button>
                 </span>
               </div>
-              {badge && <span className={`mt-1.5 inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold ${badge.cls}`}>{badge.text}</span>}
+              {(() => {
+                const st = verdicts[r.id]?.status;
+                const isAlert = Boolean(badge) && st !== "match" && st !== "checking";
+                return (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    {badge && !reviewed[r.id] && (
+                      <span className={`inline-block rounded-full border px-2 py-0.5 text-[10px] font-semibold ${badge.cls}`}>{badge.text}</span>
+                    )}
+                    {isAlert && (
+                      <ManualReviewControl
+                        scope={contractDraftId}
+                        docKey={`support:${r.id}`}
+                        onChange={(rv) => setReviewed((p) => ({ ...p, [r.id]: rv }))}
+                      />
+                    )}
+                  </div>
+                );
+              })()}
             </li>
           );
         })}

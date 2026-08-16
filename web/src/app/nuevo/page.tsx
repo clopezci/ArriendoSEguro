@@ -992,7 +992,6 @@ export default function NuevoPage() {
                 {voiceMode ? (canListen ? (listening ? "Escuchando…" : "Voz activa") : "Leyendo") : (canListen ? "Modo voz" : "Modo lectura")}
               </button>
             )}
-            <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Vista nueva (beta)</span>
             <AccountMenu />
           </div>
         </div>
