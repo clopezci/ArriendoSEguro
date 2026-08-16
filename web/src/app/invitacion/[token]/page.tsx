@@ -229,7 +229,7 @@ export default function InvitacionPage() {
             disabled={busy || (!info?.hasEmail && !otpEmail.includes("@"))}
             className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
-            {busy ? "Enviando…" : "Enviar código a mi correo"}
+            {busy ? "Enviando…" : "Solicitar código de seguridad"}
           </button>
           <div className="flex flex-wrap items-end gap-2">
             <label className="text-sm">
