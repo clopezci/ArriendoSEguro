@@ -102,8 +102,15 @@ export async function chatWithFallback(opts: {
   const providers = resolveChatProviders();
   if (providers.length === 0) return { ok: false, reason: "no_provider", detail: "sin AI_API_KEY/GROQ/GEMINI/OPENAI" };
 
+  // Para VISIÓN, Groq lee MAL las fotos (documentos como imagen). Reordenamos para
+  // probar primero los proveedores buenos en imágenes (Gemini/OpenAI) y dejar Groq
+  // de último respaldo. Para TEXTO se mantiene el orden normal (Groq gratis primero).
+  const ordered = opts.vision
+    ? [...providers].sort((a, b) => Number(a.id === "groq") - Number(b.id === "groq"))
+    : providers;
+
   let lastDetail = "sin respuesta";
-  for (const p of providers) {
+  for (const p of ordered) {
     const models = opts.vision ? p.visionModels : p.textModels;
     for (const model of models) {
       try {
