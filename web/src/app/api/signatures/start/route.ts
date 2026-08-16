@@ -281,12 +281,20 @@ export async function POST(request: Request) {
     // clic creaba filas nuevas → "faltan 9 cuando solo son 3".
     type SigSnap = FirebaseFirestore.QueryDocumentSnapshot;
     const byParty = new Map<string, SigSnap[]>();
+    // Mapa por parte SIN filtrar por versión: nos deja detectar a quien ya firmó
+    // el MISMO documento (mismo documentHash) aunque su firma quedara en otra
+    // versión, para no reenviarle la invitación.
+    const byPartyAllVersions = new Map<string, SigSnap[]>();
     for (const d of existingSignatures.docs) {
-      const row = d.data() as { contractVersionId?: string };
+      const row = d.data() as { contractVersionId?: string; partyType?: string };
+      const key = row.partyType ?? "";
+      const allArr = byPartyAllVersions.get(key) ?? [];
+      allArr.push(d);
+      byPartyAllVersions.set(key, allArr);
       if (row.contractVersionId !== contractVersionId) continue;
-      const arr = byParty.get((d.data() as { partyType?: string }).partyType ?? "") ?? [];
+      const arr = byParty.get(key) ?? [];
       arr.push(d);
-      byParty.set((d.data() as { partyType?: string }).partyType ?? "", arr);
+      byParty.set(key, arr);
     }
     const recency = (d: SigSnap) => {
       const r = d.data() as { signedAt?: string; sentAt?: string; createdAt?: string };
@@ -310,12 +318,24 @@ export async function POST(request: Request) {
       if (!person) continue;
 
       const existingForParty = (byParty.get(party) ?? []).slice();
-      const signedDoc = existingForParty.find(
-        (d) => (d.data() as { signatureStatus?: string }).signatureStatus === "signed",
-      );
+      // ¿Ya firmó? Primero en ESTA versión; si no, en CUALQUIER versión cuyo
+      // documentHash sea igual al actual (el documento firmado es idéntico). Así
+      // "reenviar invitación" nunca vuelve a molestar a quien ya firmó.
+      const isSignedRow = (d: SigSnap) =>
+        (d.data() as { signatureStatus?: string }).signatureStatus === "signed";
+      const signedDoc =
+        existingForParty.find(isSignedRow) ??
+        (byPartyAllVersions.get(party) ?? []).find(
+          (d) => isSignedRow(d) && (d.data() as { documentHash?: string }).documentHash === version.documentHash,
+        );
 
       // Ya firmó: conservamos su firma, cancelamos duplicados y NO reenviamos.
       if (signedDoc) {
+        // Si la firma válida quedó en OTRA versión (mismo documento), la
+        // re-apuntamos a la versión actual para que cuente en el cierre.
+        if ((signedDoc.data() as { contractVersionId?: string }).contractVersionId !== contractVersionId) {
+          await signedDoc.ref.set({ contractVersionId, updatedAt: nowISO }, { merge: true });
+        }
         await Promise.all(
           existingForParty
             .filter((d) => d.id !== signedDoc.id)
