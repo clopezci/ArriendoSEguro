@@ -77,8 +77,25 @@ export default function GestionarPosventaPage() {
 
     void (async () => {
       const authH = user ? await buildAuthHeaders(user) : {};
-      fetch(`/api/contracts/property-documents/list?${vq}`, { headers: { ...authH } })
-        .then((r) => r.json()).then((j) => done("documentos", Array.isArray(j?.documents) && j.documents.length > 0)).catch(() => done("documentos", false));
+      // Documentos: cuentan tanto los del borrador (subidos en el flujo inicial)
+      // como los post-guardado. Igual criterio que «Termina tu contrato», para no
+      // marcar "pendiente" cuando en realidad ya están cargados.
+      void (async () => {
+        let found = false;
+        try {
+          const r = await fetch(`/api/contracts/property-documents/list?${vq}`, { headers: { ...authH } });
+          const j = await r.json();
+          found = Array.isArray(j?.documents) && j.documents.length > 0;
+        } catch { /* noop */ }
+        if (!found) {
+          try {
+            const r = await fetch(`/api/contracts/draft-property-docs/list?contractDraftId=${encodeURIComponent(id)}`, { headers: { ...authH } });
+            const j = await r.json();
+            found = Array.isArray(j?.docs) && j.docs.length > 0;
+          } catch { /* noop */ }
+        }
+        done("documentos", found);
+      })();
       fetch(`/api/contracts/payment-settings?contractId=${encodeURIComponent(id)}`, { headers: { ...authH } })
         .then((r) => r.json()).then((j) => done("pago", Boolean(j?.settings && j.settings.method && j.settings.method !== "none"))).catch(() => done("pago", false));
       fetch(`/api/payments/schedule/list?${vq}`, { headers: { ...authH } })
@@ -126,24 +143,34 @@ export default function GestionarPosventaPage() {
         {/* Expediente: descargar contrato y acta en PDF (celular, sin .zip). */}
         {unlocked && versionId && <ExpedienteDownloads contractId={id} versionId={versionId} />}
 
-        {/* Entrada al flujo "Termina tu contrato" (documentos, pagos y alertas). */}
-        {unlocked && (
-          <button
-            onClick={() => router.push(`/nuevo/gestionar/${id}/terminar`)}
-            className={`mt-6 flex w-full items-center gap-3 rounded-2xl border-2 p-4 text-left transition active:scale-[0.99] ${status.documentos === "pending" || status.pago === "pending" ? "border-amber-300 bg-amber-50/70 hover:border-amber-400" : "border-slate-200 bg-white/90 hover:border-[#5646E5]"}`}
-          >
-            <span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">🧩</span>
-            <span className="min-w-0 flex-1">
-              <b className="text-[15px]">Termina tu contrato</b>
-              <span className="mt-0.5 block text-[13px] text-slate-500">
-                {status.documentos === "pending" || status.pago === "pending"
-                  ? "Te falta cargar documentos y/o configurar los pagos. Complétalo paso a paso."
-                  : "Documentos, condiciones de pago y alertas — paso a paso."}
+        {/* Entrada al flujo "Termina tu contrato" (documentos, pagos y alertas).
+            El mensaje nombra SOLO lo que de verdad falta; si ya detectamos todo,
+            no insinúa que falte nada (evita mandar al dueño a "dar vueltas"). */}
+        {unlocked && (() => {
+          const pendingBits: string[] = [];
+          if (status.documentos === "pending") pendingBits.push("cargar documentos");
+          if (status.pago === "pending") pendingBits.push("configurar los pagos");
+          const anyLoading = status.documentos === "loading" || status.pago === "loading";
+          const anyPending = pendingBits.length > 0;
+          const msg = anyLoading
+            ? "Revisando qué falta…"
+            : anyPending
+              ? `Te falta ${pendingBits.join(" y ")}. Complétalo paso a paso.`
+              : "Todo detectado. Entra a confirmar cada punto y cerrarlo.";
+          return (
+            <button
+              onClick={() => router.push(`/nuevo/gestionar/${id}/terminar`)}
+              className={`mt-6 flex w-full items-center gap-3 rounded-2xl border-2 p-4 text-left transition active:scale-[0.99] ${anyPending ? "border-amber-300 bg-amber-50/70 hover:border-amber-400" : "border-slate-200 bg-white/90 hover:border-[#5646E5]"}`}
+            >
+              <span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">🧩</span>
+              <span className="min-w-0 flex-1">
+                <b className="text-[15px]">Termina tu contrato</b>
+                <span className="mt-0.5 block text-[13px] text-slate-500">{msg}</span>
               </span>
-            </span>
-            <span className="self-center text-sm font-bold text-[#5646E5]">→</span>
-          </button>
-        )}
+              <span className="self-center text-sm font-bold text-[#5646E5]">→</span>
+            </button>
+          );
+        })()}
 
         {!unlocked && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-8 rounded-3xl border border-amber-200 bg-amber-50/80 p-6 text-center">

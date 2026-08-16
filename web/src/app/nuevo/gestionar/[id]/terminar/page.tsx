@@ -178,6 +178,10 @@ export default function TerminarContratoPage() {
   const allDone = doneCount === STEPS.length;
   const current = STEPS.find((s) => s.key === active)!;
   const isDone = ack[active];
+  // ¿El sistema ya DETECTÓ configuración real en este punto (docs subidos, pago
+  // configurado, alertas activas)? Con esto dejamos de mostrar "falta algo"
+  // cuando en realidad ya está: solo queda que el dueño lo confirme.
+  const detected = signal[active];
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#F5F3EF] text-[#17151F]">
@@ -229,17 +233,29 @@ export default function TerminarContratoPage() {
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-bold">{current.title}</h2>
-                    {isDone
-                      ? <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">✓ Confirmado</span>
-                      : <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">Por confirmar</span>}
+                    {isDone ? (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">✓ Confirmado</span>
+                    ) : detected ? (
+                      <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700">Listo para confirmar</span>
+                    ) : (
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">Falta configurar</span>
+                    )}
                   </div>
-                  <p className="mt-1 text-sm text-slate-600">{current.desc}</p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {isDone
+                      ? "Confirmado. Puedes revisarlo o ajustarlo cuando quieras."
+                      : detected
+                        ? "Ya detectamos que este punto está configurado en el contrato. Revisa que esté completo y correcto, y confírmalo abajo para cerrarlo."
+                        : current.desc}
+                  </p>
                 </div>
               </div>
 
-              {/* Tips para que el dueño evalúe */}
+              {/* Tips para que el dueño evalúe (curarse en salud sin dar vueltas) */}
               <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50/70 p-3">
-                <p className="text-xs font-bold text-sky-800">Antes de confirmar, revisa:</p>
+                <p className="text-xs font-bold text-sky-800">
+                  {detected ? "Antes de confirmar, asegúrate de que:" : "Qué necesitas en este punto:"}
+                </p>
                 <ul className="mt-1.5 space-y-1">
                   {current.tips.map((t, i) => (
                     <li key={i} className="flex gap-2 text-xs text-slate-700"><span aria-hidden="true">•</span><span>{t}</span></li>
@@ -247,19 +263,33 @@ export default function TerminarContratoPage() {
                 </ul>
               </div>
 
-              {signal[active] && (
-                <p className="mt-3 text-xs font-medium text-emerald-700">✓ {current.signalDone}</p>
+              {/* Acción para configurar/ajustar. Si ya está detectado, es SECUNDARIA
+                  (revisar es opcional): así no parece que "falta entrar ahí". */}
+              {detected ? (
+                <button
+                  onClick={() => router.push(current.path(id))}
+                  className="mt-4 w-full rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-bold text-[#5646E5] transition hover:border-[#5646E5] active:scale-95"
+                >
+                  Revisar / ajustar (opcional) →
+                </button>
+              ) : (
+                <button
+                  onClick={() => router.push(current.path(id))}
+                  className="mt-4 w-full rounded-2xl bg-[#5646E5] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95"
+                >
+                  Configurar ahora →
+                </button>
               )}
 
-              <button
-                onClick={() => router.push(current.path(id))}
-                className="mt-4 w-full rounded-2xl bg-[#5646E5] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/25 transition hover:brightness-105 active:scale-95"
+              {/* Confirmación del dueño = candado real. Cuando ya está detectado,
+                  esta casilla es el PASO que cierra el punto: la resaltamos. */}
+              <label
+                className={`mt-3 flex cursor-pointer items-start gap-2 rounded-2xl border-2 p-3 text-sm transition ${
+                  detected && !isDone
+                    ? "border-[#12B886] bg-emerald-50 text-slate-800 shadow-sm"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-[#12B886]"
+                }`}
               >
-                {signal[active] ? "Revisar / ajustar →" : "Configurar ahora →"}
-              </button>
-
-              {/* Confirmación del dueño = candado real */}
-              <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-2xl border-2 border-slate-200 bg-white p-3 text-sm text-slate-700 transition hover:border-[#12B886]">
                 <input
                   type="checkbox"
                   checked={isDone}
@@ -269,6 +299,9 @@ export default function TerminarContratoPage() {
                 />
                 <span>
                   <b>Confirmo que este punto está listo</b> (lo configuré/subí) <b>o que no aplica</b> para este contrato.
+                  {detected && !isDone && (
+                    <span className="mt-0.5 block text-xs font-medium text-[#0B6E4E]">Marca esta casilla para cerrar el punto.</span>
+                  )}
                   {savingAck === active && <span className="ml-1 text-xs text-slate-400">guardando…</span>}
                 </span>
               </label>
