@@ -26,6 +26,7 @@ type ReadAloudCtx = {
   resume: () => void;
   rewind: () => void;
   stop: () => void;
+  restart: () => void;
   setRate: (r: number) => void;
 };
 
@@ -66,6 +67,12 @@ export function ReadAloudProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<Status>("idle");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [rate, setRateState] = useState(1);
+  // Espejo del estado para leerlo dentro de listeners (visibilitychange) sin
+  // recrear el efecto en cada cambio.
+  const statusRef = useRef<Status>("idle");
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   const chunksRef = useRef<string[]>([]);
   const idxRef = useRef(0);
@@ -194,6 +201,25 @@ export function ReadAloudProvider({ children }: { children: React.ReactNode }) {
     setActiveId(null);
   }, []);
 
+  /** Vuelve a empezar la lectura actual desde el principio. */
+  const restart = useCallback(() => {
+    if (chunksRef.current.length === 0) return;
+    speakFrom(0);
+  }, [speakFrom]);
+
+  // Al apagarse/ocultarse la pantalla (bloqueo del celular, cambio de app), el
+  // motor de voz del navegador se corta. Para que el usuario NO tenga que volver
+  // a empezar: cuando la pestaña se oculta mientras lee, PAUSAMOS (guardando el
+  // fragmento actual). Al volver, la barra muestra "Continuar" y retoma ahí.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onVisibility = () => {
+      if (document.hidden && statusRef.current === "playing") pause();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [pause]);
+
   const setRate = useCallback(
     (r: number) => {
       rateRef.current = r;
@@ -207,7 +233,7 @@ export function ReadAloudProvider({ children }: { children: React.ReactNode }) {
     [speakFrom, status],
   );
 
-  const value: ReadAloudCtx = { supported, status, activeId, rate, speak, pause, resume, rewind, stop, setRate };
+  const value: ReadAloudCtx = { supported, status, activeId, rate, speak, pause, resume, rewind, stop, restart, setRate };
   return (
     <Ctx.Provider value={value}>
       {children}
@@ -261,6 +287,15 @@ function ReadAloudControls() {
       )}
       <button
         type="button"
+        onClick={ra.restart}
+        aria-label="Empezar desde el inicio"
+        title="Empezar desde el inicio"
+        className="rounded-full border border-violet-400 px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-50"
+      >
+        ⟲ Reiniciar
+      </button>
+      <button
+        type="button"
         onClick={ra.stop}
         className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-rose-400 hover:text-rose-600"
       >
@@ -307,7 +342,8 @@ export function ReadAloudButton({ text, getText, targetRef, label = "Leer en voz
   const id = useId();
   if (!ra || !ra.supported) return null;
 
-  const isActive = ra.activeId === id && ra.status !== "idle";
+  const isThis = ra.activeId === id && ra.status !== "idle";
+  const isPaused = isThis && ra.status === "paused";
 
   function resolveText(): string {
     if (typeof getText === "function") return getText();
@@ -315,22 +351,36 @@ export function ReadAloudButton({ text, getText, targetRef, label = "Leer en voz
     return text ?? "";
   }
 
+  // Paused (p. ej. tras apagarse la pantalla) → CONTINUAR donde iba. Sonando →
+  // detener. Inactivo → empezar.
+  function handleClick() {
+    if (isPaused) return ra!.resume();
+    if (isThis) return ra!.stop();
+    return ra!.speak(id, resolveText());
+  }
+
+  const actionLabel = isPaused ? "Continuar lectura" : isThis ? "Detener lectura" : label;
+
   return (
     <button
       type="button"
-      onClick={() => (isActive ? ra!.stop() : ra!.speak(id, resolveText()))}
-      aria-label={isActive ? "Detener lectura" : label}
-      title={isActive ? "Detener lectura" : label}
+      onClick={handleClick}
+      aria-label={actionLabel}
+      title={actionLabel}
       className={
         className ??
         `inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium transition ${
-          isActive
+          isThis
             ? "border-violet-500 bg-violet-100 text-violet-800"
             : "border-slate-300 bg-white text-slate-600 hover:border-violet-400 hover:text-violet-700"
         }`
       }
     >
-      {isActive ? (
+      {isPaused ? (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M8 5v14l11-7z" />
+        </svg>
+      ) : isThis ? (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <rect x="6" y="6" width="12" height="12" rx="2" />
         </svg>
@@ -341,7 +391,7 @@ export function ReadAloudButton({ text, getText, targetRef, label = "Leer en voz
           <path d="M18.5 5.5a9 9 0 0 1 0 13" />
         </svg>
       )}
-      {withText && <span>{isActive ? "Detener" : "Escuchar"}</span>}
+      {withText && <span>{isPaused ? "Continuar" : isThis ? "Detener" : "Escuchar"}</span>}
     </button>
   );
 }
