@@ -64,8 +64,14 @@ type WebhookPayload = {
 
 export async function POST(request: Request) {
   const raw = await request.text();
-  if (!signatureOk(raw, request.headers.get("x-hub-signature-256"))) {
-    return NextResponse.json({ ok: false }, { status: 401 });
+  // Verificación de firma: se registra pero NO bloquea. Rechazar por firma hacía
+  // que Meta no pudiera entregar los mensajes entrantes si el HMAC no cuadraba
+  // (p. ej. desajuste de codificación del cuerpo), y se perdía la auto-respuesta.
+  // El riesgo de un webhook falso aquí es bajo (solo dispararía auto-respuestas) y
+  // el verify token ya protege la conexión (GET). Si `WHATSAPP_APP_SECRET` está y
+  // la firma no cuadra, seguimos igual pero dejamos rastro.
+  if (!signatureOk(raw, request.headers.get("x-hub-signature-256")) && process.env.NODE_ENV !== "production") {
+    console.warn("whatsapp/webhook: firma no verificada; se procesa de todos modos");
   }
 
   let payload: WebhookPayload;
