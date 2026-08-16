@@ -64,6 +64,8 @@ export default function GestionarPosventaPage() {
   const [status, setStatus] = useState<Record<StatusKey, ItemStatus>>({
     documentos: "loading", pago: "loading", calendario: "loading", entrega: "loading", notaria: "loading",
   });
+  // Confirmación del dueño (los ticks de «Termina tu contrato»): null = cargando.
+  const [terminado, setTerminado] = useState<boolean | null>(null);
 
   useEffect(() => {
     setDraft(getDraft(id));
@@ -106,6 +108,14 @@ export default function GestionarPosventaPage() {
           done("entrega", annexes.some((a) => a.annexType === "initial_delivery_act" && a.status === "generated"));
           done("notaria", annexes.some((a) => a.annexType === "notarial_authentication" && Boolean(a.pdfUrl)));
         }).catch(() => { done("entrega", false); done("notaria", false); });
+      // ¿Ya confirmó (tick) los 3 puntos de «Termina tu contrato»?
+      fetch(`/api/contracts/termination-checklist?contractId=${encodeURIComponent(id)}`, { headers: { ...authH } })
+        .then((r) => r.json())
+        .then((j) => {
+          const c = j?.checklist;
+          if (!cancelled) setTerminado(Boolean(c && c.documentos && c.pago && c.alertas));
+        })
+        .catch(() => { if (!cancelled) setTerminado(false); });
     })();
     return () => { cancelled = true; };
   }, [saved, versionId, id, user]);
@@ -150,21 +160,35 @@ export default function GestionarPosventaPage() {
           const pendingBits: string[] = [];
           if (status.documentos === "pending") pendingBits.push("cargar documentos");
           if (status.pago === "pending") pendingBits.push("configurar los pagos");
-          const anyLoading = status.documentos === "loading" || status.pago === "loading";
+          const anyLoading = status.documentos === "loading" || status.pago === "loading" || terminado === null;
           const anyPending = pendingBits.length > 0;
+          // Cuando el dueño ya confirmó (tick) los 3 puntos, la tarjeta lo celebra
+          // y deja claro que entrar a revisar es OPCIONAL (no manda a "dar vueltas").
+          const allConfirmed = terminado === true;
           const msg = anyLoading
             ? "Revisando qué falta…"
-            : anyPending
-              ? `Te falta ${pendingBits.join(" y ")}. Complétalo paso a paso.`
-              : "Todo detectado. Entra a confirmar cada punto y cerrarlo.";
+            : allConfirmed
+              ? "Todo confirmado. Si quieres, entra a revisarlo de nuevo (opcional)."
+              : anyPending
+                ? `Te falta ${pendingBits.join(" y ")}. Complétalo paso a paso.`
+                : "Todo detectado. Entra a confirmar cada punto y cerrarlo.";
           return (
             <button
               onClick={() => router.push(`/nuevo/gestionar/${id}/terminar`)}
-              className={`mt-6 flex w-full items-center gap-3 rounded-2xl border-2 p-4 text-left transition active:scale-[0.99] ${anyPending ? "border-amber-300 bg-amber-50/70 hover:border-amber-400" : "border-slate-200 bg-white/90 hover:border-[#5646E5]"}`}
+              className={`mt-6 flex w-full items-center gap-3 rounded-2xl border-2 p-4 text-left transition active:scale-[0.99] ${
+                allConfirmed
+                  ? "border-emerald-300 bg-emerald-50/70 hover:border-emerald-400"
+                  : anyPending
+                    ? "border-amber-300 bg-amber-50/70 hover:border-amber-400"
+                    : "border-slate-200 bg-white/90 hover:border-[#5646E5]"
+              }`}
             >
-              <span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">🧩</span>
+              <span className="grid h-11 w-11 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">{allConfirmed ? "✅" : "🧩"}</span>
               <span className="min-w-0 flex-1">
-                <b className="text-[15px]">Termina tu contrato</b>
+                <b className="text-[15px]">
+                  Termina tu contrato
+                  {allConfirmed && <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">✓ Completo</span>}
+                </b>
                 <span className="mt-0.5 block text-[13px] text-slate-500">{msg}</span>
               </span>
               <span className="self-center text-sm font-bold text-[#5646E5]">→</span>
