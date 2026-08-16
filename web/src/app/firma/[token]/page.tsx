@@ -419,11 +419,12 @@ export default function SignatureTokenPage() {
                 disabled={otpBusy}
                 className="rounded-lg bg-violet-600 px-3 py-2 text-sm font-medium text-white disabled:opacity-60"
               >
-                {otpBusy ? "Enviando…" : "Solicitar o reenviar código al correo"}
+                {otpBusy ? "Enviando…" : "Solicitar código de seguridad"}
               </button>
               <p className="text-xs text-slate-600">
-                El código llega a <strong>{info.signerEmail}</strong>. Si no lo ves en tu bandeja de entrada en un par de
-                minutos, revisa la carpeta de <strong>spam / correo no deseado</strong> o promociones.
+                El código llega a <strong>{info.signerEmail}</strong>. Si no te llega en un par de minutos, revisa la carpeta
+                de <strong>spam / correo no deseado</strong> o promociones, o <strong>vuelve a pulsar el botón</strong> para
+                reenviarlo.
               </p>
               <div className="flex flex-wrap items-end gap-2">
                 <label className="block text-sm">

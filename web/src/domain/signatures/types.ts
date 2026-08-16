@@ -16,7 +16,7 @@ export type SignatureStatus =
   | "cancelled"
   | "failed";
 
-export type SignatureMethod = "email_link";
+export type SignatureMethod = "email_link" | "in_app_session";
 
 export interface SignatureRecord {
   id: string;

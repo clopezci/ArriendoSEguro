@@ -185,6 +185,11 @@ export default function PreviewStepPage() {
     details: string[];
     footer?: "mock" | "send_failed";
   } | null>(null);
+  // Firma del DUEÑO en la propia app (sin invitarse a sí mismo ni OTP por correo).
+  const [ownerConsentAccepted, setOwnerConsentAccepted] = useState(false);
+  const [ownerDataConfirmed, setOwnerDataConfirmed] = useState(false);
+  const [ownerSigning, setOwnerSigning] = useState(false);
+  const [ownerSignError, setOwnerSignError] = useState<string | null>(null);
   const [signatureRows, setSignatureRows] = useState<
     Array<{
       id?: string;
@@ -858,6 +863,41 @@ export default function PreviewStepPage() {
 
   // Refresco manual del estado de firmas (botón "Actualizar estado"): re-consulta
   // la lista para que el dueño vea, sin recargar, quién ya firmó.
+  async function signAsOwner() {
+    if (!savedVersion || !user) return;
+    if (!ownerConsentAccepted) {
+      setOwnerSignError("Marca las declaraciones para firmar como dueño.");
+      return;
+    }
+    setOwnerSigning(true);
+    setOwnerSignError(null);
+    try {
+      const res = await fetch("/api/signatures/sign-owner", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({
+          contractId: savedVersion.contractId,
+          contractVersionId: savedVersion.contractVersionId,
+          consentAccepted: ownerConsentAccepted,
+          dataConfirmationAccepted: ownerDataConfirmed,
+        }),
+      });
+      const data = (await res.json()) as
+        | { success: true; contractStatus?: string }
+        | { success: false; errors: { field: string; message: string }[] };
+      if (!res.ok || !data.success) {
+        const msg = !data.success ? data.errors[0]?.message : "";
+        setOwnerSignError(msg || "No se pudo registrar tu firma. Inténtalo de nuevo.");
+        return;
+      }
+      await refreshSignatures();
+    } catch {
+      setOwnerSignError("No pudimos conectar con el servidor para firmar. Inténtalo de nuevo.");
+    } finally {
+      setOwnerSigning(false);
+    }
+  }
+
   async function refreshSignatures() {
     if (!savedVersion) return;
     setRefreshingSignatures(true);
@@ -1503,6 +1543,52 @@ export default function PreviewStepPage() {
               </p>
             </div>
           )}
+
+          {/* Firma del DUEÑO en la app: no se invita a sí mismo por correo/WhatsApp.
+              Aparece mientras su parte (arrendador) siga pendiente. */}
+          {(() => {
+            const ownerRow = signatureRows.find((s) => s.partyType === "landlord");
+            if (!ownerRow || ownerRow.signatureStatus === "signed") return null;
+            return (
+              <div className="mt-3 rounded-2xl border border-violet-300 bg-violet-50 p-4">
+                <p className="text-sm font-semibold text-violet-900">Firma tú como arrendador (dueño)</p>
+                <p className="mt-0.5 text-xs text-violet-800">
+                  No necesitas correo ni código: ya estás dentro de tu cuenta. Marca las declaraciones y firma aquí
+                  mismo. La invitación con enlace es solo para el inquilino y el codeudor.
+                </p>
+                <label className="mt-3 flex items-start gap-2 text-xs text-slate-800">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4"
+                    checked={ownerConsentAccepted}
+                    onChange={(e) => setOwnerConsentAccepted(e.target.checked)}
+                  />
+                  <span>
+                    Declaro que leí el contrato, entiendo su contenido y lo firmo electrónicamente (Ley 527 de 1999).
+                    Acepto el uso de firma electrónica para este contrato.
+                  </span>
+                </label>
+                <label className="mt-2 flex items-start gap-2 text-xs text-slate-800">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 h-4 w-4"
+                    checked={ownerDataConfirmed}
+                    onChange={(e) => setOwnerDataConfirmed(e.target.checked)}
+                  />
+                  <span>Confirmo que mis datos personales del contrato son correctos (Habeas Data, Ley 1581).</span>
+                </label>
+                {ownerSignError && <p className="mt-2 text-xs font-medium text-rose-600">{ownerSignError}</p>}
+                <button
+                  type="button"
+                  onClick={() => void signAsOwner()}
+                  disabled={ownerSigning || !ownerConsentAccepted}
+                  className="mt-3 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm disabled:opacity-60"
+                >
+                  {ownerSigning ? "Firmando…" : "✍️ Firmar como dueño"}
+                </button>
+              </div>
+            );
+          })()}
 
           {signatureRows.some((s) => s.signingUrl) && (
             <div className="mt-2 rounded-2xl border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">

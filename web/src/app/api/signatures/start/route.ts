@@ -387,34 +387,43 @@ export async function POST(request: Request) {
       const emailUrl = unifiedInviteFlowEnabled && inviteInfo.url ? inviteInfo.url : signingUrl;
       // Teléfono para el WhatsApp: el del contrato o, si falta, el de la invitación.
       const waPhone = (person.phone ?? "").trim() || inviteInfo.phone || "";
-      const emailResult = await sendSignatureEmail({
-        to: person.email,
-        signerName: person.fullName,
-        partyType: party,
-        signingUrl: emailUrl,
-        tokenExpiresAt,
-        contractId,
-        // Este es el correo de la RONDA DE FIRMA: usa la plantilla de firma
-        // (unificada: "completa lo que falte y firma en el mismo enlace"), NO la de
-        // "solo completar datos" (que prometía otro correo y confundía). El enlace
-        // ya apunta a /invitacion (flag) o /firma.
-        useInviteTemplate: false,
-        inviterName: version.contractPayload.landlord.fullName,
-      });
-      auditEvent(emailResult.delivered ? "signature_email_sent" : "signature_email_failed", {
-        contractId,
-        partyType: party,
-        mode: emailResult.mode,
-      });
-      // Refuerzo por WhatsApp del aviso "ya puedes firmar" (complemento del correo;
-      // solo sale si el canal de WhatsApp está encendido). Best-effort. Sin SMS.
-      await sendPhoneNotice({
-        to: waPhone,
-        message: `Ya puedes firmar tu contrato de arriendo en ArriendoSeguro. Fírmalo aquí: ${emailUrl}`,
-        templateCode: "signatureWa",
-        relatedEntityType: "contract",
-        relatedEntityId: contractId,
-      });
+      // El ARRENDADOR (dueño) NO se invita a sí mismo: firma directo en la app
+      // (endpoint signatures/sign-owner, identidad por sesión). Solo se invita por
+      // correo/WhatsApp a las contrapartes (inquilino/codeudor).
+      let emailMode: "real" | "mock" | "failed" | "skipped" = "skipped";
+      if (party !== "landlord") {
+        const emailResult = await sendSignatureEmail({
+          to: person.email,
+          signerName: person.fullName,
+          partyType: party,
+          signingUrl: emailUrl,
+          tokenExpiresAt,
+          contractId,
+          // Este es el correo de la RONDA DE FIRMA: usa la plantilla de firma
+          // (unificada: "completa lo que falte y firma en el mismo enlace"), NO la de
+          // "solo completar datos" (que prometía otro correo y confundía). El enlace
+          // ya apunta a /invitacion (flag) o /firma.
+          useInviteTemplate: false,
+          inviterName: version.contractPayload.landlord.fullName,
+        });
+        emailMode = emailResult.mode;
+        auditEvent(emailResult.delivered ? "signature_email_sent" : "signature_email_failed", {
+          contractId,
+          partyType: party,
+          mode: emailResult.mode,
+        });
+        // Refuerzo por WhatsApp del aviso "ya puedes firmar" (complemento del correo;
+        // solo sale si el canal de WhatsApp está encendido). Best-effort. Sin SMS.
+        await sendPhoneNotice({
+          to: waPhone,
+          message: `Ya puedes firmar tu contrato de arriendo en ArriendoSeguro. Fírmalo aquí: ${emailUrl}`,
+          templateCode: "signatureWa",
+          relatedEntityType: "contract",
+          relatedEntityId: contractId,
+        });
+      } else {
+        auditEvent("signature_owner_signs_in_app", { contractId, partyType: party });
+      }
 
       signatures.push({
         partyType: party,
@@ -422,10 +431,11 @@ export async function POST(request: Request) {
         signatureStatus: "sent",
         tokenExpiresAt,
         sentAt,
-        emailMode: emailResult.mode,
+        emailMode,
         // Modo prueba: si el correo no se entregó de verdad, devolvemos el enlace
         // para poder probar el flujo sin Resend. Con correo real NO se expone.
-        ...(emailResult.mode === "real" ? {} : { signingUrl }),
+        // El dueño (emailMode "skipped") firma en la app, no necesita enlace.
+        ...(emailMode === "real" || emailMode === "skipped" ? {} : { signingUrl }),
       });
     }
 

@@ -11,6 +11,11 @@ export function buildSignatureEvidence(input: {
   otpVerifiedAt?: string;
   otpEmail?: string;
   consentBlockHash?: string;
+  /**
+   * Cómo se reforzó la identidad del firmante: "otp_email" (enlace + código al
+   * correo) o "authenticated_session" (dueño firmando en su sesión de la app).
+   */
+  reinforcement?: "otp_email" | "authenticated_session";
 }): Record<string, unknown> {
   const base: Record<string, unknown> = {
     signerName: input.signature.signerName,
@@ -25,7 +30,7 @@ export function buildSignatureEvidence(input: {
     userAgent: input.userAgent,
     signatureMethod: input.method,
     consentTexts: input.consentTexts,
-    signatureReinforcement: "otp_email",
+    signatureReinforcement: input.reinforcement ?? "otp_email",
   };
   if (input.otpVerifiedAt) base.otpVerifiedAt = input.otpVerifiedAt;
   if (input.otpEmail) base.otpEmail = input.otpEmail;
