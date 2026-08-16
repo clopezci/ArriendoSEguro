@@ -366,13 +366,20 @@ export function signatureRequestEmail(input: {
   signingUrl: string;
   tokenExpiresAt: string;
 }): CompiledEmailTemplate {
-  const subject = "Solicitud de firma electrónica de contrato";
-  const text = `Hola ${input.signerName},\n\nTienes una solicitud de firma electrónica (${input.partyTypeLabel}) en ArriendoSeguro.\nEnlace de firma: ${input.signingUrl}\nVence: ${input.tokenExpiresAt}`;
+  const subject = "Tu contrato de arriendo está listo para firmar";
+  const text =
+    `Hola ${input.signerName},\n\n` +
+    `Tu contrato de arriendo en ArriendoSeguro está listo para firmar (${input.partyTypeLabel}).\n\n` +
+    `Entra a este enlace para revisar y completar tus datos si falta algo, y firmarlo electrónicamente. ` +
+    `Es el PASO FINAL: en el mismo enlace completas y firmas, no llegará otro correo.\n\n` +
+    `Enlace: ${input.signingUrl}\nEl enlace vence el ${input.tokenExpiresAt}.\n\n` +
+    `Al firmar confirmarás tus datos bajo gravedad de juramento.`;
   const html = baseHtml(
-    "Solicitud de firma electrónica",
-    `<p>Hola <strong>${input.signerName}</strong>, tienes una solicitud de firma electrónica (${input.partyTypeLabel}) en ArriendoSeguro.</p>
-     <p><a href="${input.signingUrl}" style="color:#6d28d9;">Firmar contrato</a></p>
-     <p>Este enlace vence el <strong>${input.tokenExpiresAt}</strong>.</p>`,
+    "Tu contrato está listo para firmar",
+    `<p>Hola <strong>${input.signerName}</strong>, tu contrato de arriendo en ArriendoSeguro está <strong>listo para firmar</strong> (${input.partyTypeLabel}).</p>
+     <p>Entra al enlace para <strong>revisar o completar tus datos</strong> (si falta algo) y <strong>firmarlo electrónicamente</strong>. Es el <strong>paso final</strong>: en el mismo enlace completas y firmas — <strong>no llegará otro correo</strong>.</p>
+     <p><a href="${input.signingUrl}" style="display:inline-block;background:#6d28d9;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;font-weight:bold;">Completar y firmar</a></p>
+     <p style="font-size:13px;color:#64748b;">El enlace vence el <strong>${input.tokenExpiresAt}</strong>. Al firmar confirmarás tus datos bajo gravedad de juramento.</p>`,
   );
   return { subject, html, text };
 }
