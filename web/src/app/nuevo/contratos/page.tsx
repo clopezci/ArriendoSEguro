@@ -52,7 +52,6 @@ export default function GestionarContratosPage() {
         <div className="mb-8 flex items-center justify-between">
           <Link href="/nuevo" className="flex items-center gap-2 text-sm font-semibold text-[#5646E5] hover:underline">← Inicio</Link>
           <div className="flex items-center gap-2">
-            <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Vista nueva (beta)</span>
             <AccountMenu />
           </div>
         </div>

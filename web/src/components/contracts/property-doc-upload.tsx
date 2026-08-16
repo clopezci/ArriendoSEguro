@@ -214,13 +214,16 @@ export function PropertyDocUpload({
       {verify && (verify.status !== "skipped" || ["pdf_scanned", "doc_legacy", "unsupported_format", "pdf_error", "docx_error", "docx_empty", "too_large", "ai_off", "provider_error", "download_error"].includes(verify.reason ?? "")) && (
         <div
           className={`mt-3 rounded-xl border-2 p-3 text-xs ${
-            verify.status === "match"
+            verify.status === "match" || (overrideAck && (verify.status === "mismatch" || verify.status === "wrong_type"))
               ? "border-emerald-200 bg-emerald-50 text-emerald-800"
               : verify.status === "mismatch" || verify.status === "wrong_type"
                 ? "border-rose-200 bg-rose-50 text-rose-800"
                 : "border-slate-200 bg-slate-50 text-slate-600"
           }`}
         >
+          {overrideAck && (verify.status === "mismatch" || verify.status === "wrong_type") && (
+            <p className="mb-1 font-bold text-emerald-800">✓ Revisado y confirmado por el dueño</p>
+          )}
           {verify.status === "checking" && "Revisando el documento con IA…"}
           {verify.status === "match" && (
             <>✓ Revisión IA: el documento <b>parece estar a nombre de {expectedName}</b>. Recuerda que es orientativo; tu declaración jurada es la que vale.</>
