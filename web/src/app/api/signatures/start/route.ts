@@ -28,14 +28,14 @@ import { PARTY_INVITES_COLLECTION, isInviteOpenForUpload, normalizeEmail, type P
  * afecta la URL del correo; el registro de firma no cambia. Devuelve null si no hay
  * invitación (p. ej. el dueño escribió los datos) → se usa el enlace /firma normal.
  */
-async function inviteUrlForParty(
+async function inviteInfoForParty(
   firestore: FirebaseFirestore.Firestore,
   contractId: string,
   party: SignaturePartyType,
   email: string,
-): Promise<string | null> {
+): Promise<{ url: string | null; phone: string | null }> {
   const role = party === "tenant" ? "tenant" : party.startsWith("solidaryCoDebtor") ? "solidaryCoDebtor" : null;
-  if (!role) return null;
+  if (!role) return { url: null, phone: null };
   const slot = party === "solidaryCoDebtor" ? 0 : party.startsWith("solidaryCoDebtor_") ? Number(party.split("_")[1]) - 1 : 0;
   try {
     const snap = await firestore
@@ -43,18 +43,24 @@ async function inviteUrlForParty(
       .where("contractDraftId", "==", contractId)
       .where("role", "==", role)
       .get();
-    const now = Date.now();
+    // No exigimos que siga "abierta": tras completar/firmar puede cerrarse, pero
+    // su `contribution.phone` sigue siendo el mejor teléfono conocido de la parte.
     const match = snap.docs
       .map((d) => d.data() as PartyInviteDoc)
       .find(
         (inv) =>
-          isInviteOpenForUpload(inv, now) &&
           normalizeEmail(inv.inviteeEmail) === normalizeEmail(email) &&
           (role === "tenant" || (inv.codebtorSlot ?? 0) === slot),
       );
-    return match ? `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/invitacion/${match.token}` : null;
+    if (!match) return { url: null, phone: null };
+    const now = Date.now();
+    const url = isInviteOpenForUpload(match, now)
+      ? `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/invitacion/${match.token}`
+      : null;
+    const phone = (match.contribution?.phone ?? "").trim() || null;
+    return { url, phone };
   } catch {
-    return null;
+    return { url: null, phone: null };
   }
 }
 
@@ -369,12 +375,18 @@ export async function POST(request: Request) {
       );
 
       auditEvent("signature_request_created", { contractId, contractVersionId, partyType: party });
+      // Invitación de la contraparte (si la hubo): nos da (a) el MISMO enlace que
+      // usó para completar datos —para que firme ahí, con el flag— y (b) su teléfono
+      // completado (`contribution.phone`), respaldo por si el payload no lo trae.
+      const inviteInfo =
+        party !== "landlord"
+          ? await inviteInfoForParty(firestore, contractId, party, person.email)
+          : { url: null, phone: null };
       // Rediseño #3 (flag): la contraparte vuelve al MISMO enlace de invitación que
       // ya usó para completar datos; ahí firma. Si no hay invitación, va a /firma.
-      const emailUrl =
-        unifiedInviteFlowEnabled && party !== "landlord"
-          ? (await inviteUrlForParty(firestore, contractId, party, person.email)) ?? signingUrl
-          : signingUrl;
+      const emailUrl = unifiedInviteFlowEnabled && inviteInfo.url ? inviteInfo.url : signingUrl;
+      // Teléfono para el WhatsApp: el del contrato o, si falta, el de la invitación.
+      const waPhone = (person.phone ?? "").trim() || inviteInfo.phone || "";
       const emailResult = await sendSignatureEmail({
         to: person.email,
         signerName: person.fullName,
@@ -382,7 +394,11 @@ export async function POST(request: Request) {
         signingUrl: emailUrl,
         tokenExpiresAt,
         contractId,
-        useInviteTemplate: party !== "landlord",
+        // Este es el correo de la RONDA DE FIRMA: usa la plantilla de firma
+        // (unificada: "completa lo que falte y firma en el mismo enlace"), NO la de
+        // "solo completar datos" (que prometía otro correo y confundía). El enlace
+        // ya apunta a /invitacion (flag) o /firma.
+        useInviteTemplate: false,
         inviterName: version.contractPayload.landlord.fullName,
       });
       auditEvent(emailResult.delivered ? "signature_email_sent" : "signature_email_failed", {
@@ -393,7 +409,7 @@ export async function POST(request: Request) {
       // Refuerzo por WhatsApp del aviso "ya puedes firmar" (complemento del correo;
       // solo sale si el canal de WhatsApp está encendido). Best-effort. Sin SMS.
       await sendPhoneNotice({
-        to: person.phone,
+        to: waPhone,
         message: `Ya puedes firmar tu contrato de arriendo en ArriendoSeguro. Fírmalo aquí: ${emailUrl}`,
         templateCode: "signatureWa",
         relatedEntityType: "contract",
