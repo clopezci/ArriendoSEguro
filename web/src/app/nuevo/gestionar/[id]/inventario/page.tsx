@@ -48,7 +48,9 @@ export default function InventarioBentoPage() {
   const versionId = sc.currentVersionId ?? "";
 
   const [phase, setPhase] = useState<Phase>("loading");
-  const [mode, setMode] = useState<Mode>("guided");
+  // Por defecto «en bloque»: es lo más rápido y fácil (opción sugerida). Quien
+  // quiera dejar más detalle elige «guiado».
+  const [mode, setMode] = useState<Mode>("block");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [inventoryId, setInventoryId] = useState<string>("");
@@ -285,14 +287,24 @@ export default function InventarioBentoPage() {
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-6 space-y-4">
             <p className="text-sm text-slate-500">El inventario es la prueba del estado del inmueble al entregarlo. Elige cómo quieres hacerlo:</p>
 
-            <button onClick={() => setMode("guided")} className={`w-full rounded-3xl border-2 p-5 text-left transition ${mode === "guided" ? "border-[#5646E5] bg-[#ECE9FB]/50" : "border-slate-200 bg-white/90 hover:border-[#5646E5]"}`}>
-              <p className="flex items-center gap-2 text-lg font-bold">🧭 Inventario guiado {mode === "guided" && <span className="rounded-full bg-[#5646E5] px-2 py-0.5 text-[10px] font-bold text-white">Elegido</span>}</p>
-              <p className="mt-1 text-sm text-slate-600">Te llevamos <b>zona por zona</b> (sala, cocina, baños…). En cada una marcas el estado, la limpieza, los elementos y tomas fotos. Más ordenado y detallado; ideal como prueba fuerte.</p>
+            {/* Sugerida primero: la más fácil y rápida. */}
+            <button onClick={() => setMode("block")} className={`w-full rounded-3xl border-2 p-5 text-left transition ${mode === "block" ? "border-[#5646E5] bg-[#ECE9FB]/50" : "border-slate-200 bg-white/90 hover:border-[#5646E5]"}`}>
+              <p className="flex flex-wrap items-center gap-2 text-lg font-bold">
+                📸 Inventario en bloque
+                <span className="rounded-full bg-[#12B886] px-2 py-0.5 text-[10px] font-bold text-white">Sugerido · más fácil</span>
+                {mode === "block" && <span className="rounded-full bg-[#5646E5] px-2 py-0.5 text-[10px] font-bold text-white">Elegido</span>}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">Tomas <b>todas las fotos que quieras</b> del inmueble, sin dividir por zonas, y dejas unas <b>notas al final</b> (puedes <b>dictarlas por voz</b>). Es lo <b>más rápido y sencillo</b>.</p>
             </button>
 
-            <button onClick={() => setMode("block")} className={`w-full rounded-3xl border-2 p-5 text-left transition ${mode === "block" ? "border-[#5646E5] bg-[#ECE9FB]/50" : "border-slate-200 bg-white/90 hover:border-[#5646E5]"}`}>
-              <p className="flex items-center gap-2 text-lg font-bold">📸 Inventario en bloque {mode === "block" && <span className="rounded-full bg-[#5646E5] px-2 py-0.5 text-[10px] font-bold text-white">Elegido</span>}</p>
-              <p className="mt-1 text-sm text-slate-600">Tomas <b>todas las fotos que quieras</b> del inmueble, sin dividir por zonas, y dejas unas <b>notas al final</b> (puedes <b>dictarlas por voz</b>). Más rápido; útil si tienes prisa.</p>
+            {/* Alternativa para quien quiera dejar más detalle. */}
+            <button onClick={() => setMode("guided")} className={`w-full rounded-3xl border-2 p-5 text-left transition ${mode === "guided" ? "border-[#5646E5] bg-[#ECE9FB]/50" : "border-slate-200 bg-white/90 hover:border-[#5646E5]"}`}>
+              <p className="flex flex-wrap items-center gap-2 text-lg font-bold">
+                🧭 Inventario guiado
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">Más detalle</span>
+                {mode === "guided" && <span className="rounded-full bg-[#5646E5] px-2 py-0.5 text-[10px] font-bold text-white">Elegido</span>}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">Te llevamos <b>zona por zona</b> (sala, cocina, baños…). En cada una marcas el estado, la limpieza, los elementos y tomas fotos. Más ordenado y detallado; ideal como prueba fuerte.</p>
             </button>
 
             <button onClick={() => setPhase("acta")} className="mt-2 w-full rounded-2xl bg-[#FF6B4A] px-7 py-4 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95">
