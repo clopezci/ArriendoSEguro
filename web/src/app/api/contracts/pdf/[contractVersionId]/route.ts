@@ -3,6 +3,11 @@ import { readFile } from "node:fs/promises";
 import { getStorage } from "firebase-admin/storage";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
+import {
+  NOTARIAL_SHARES_COLLECTION,
+  isNotarialShareUsable,
+  type NotarialShareDoc,
+} from "@/domain/contracts/notarialShare";
 
 export const runtime = "nodejs";
 
@@ -27,12 +32,22 @@ export async function GET(
     }
     const data = versionSnap.data() as { pdfStoragePath?: string; pdfUrl?: string; contractId?: string } | undefined;
 
-    // Autorización: solo partes del contrato.
-    const participant = await requireContractParticipant(request, firestore, data?.contractId ?? "", {
-      kind: "by_version",
-      contractVersionId,
-    });
-    if (!participant.ok) return participant.response;
+    // Autorización: (a) parte del contrato por sesión, o (b) enlace compartido
+    // (token) que el dueño le pasó al inquilino, acotado a esta misma versión.
+    const shareToken = new URL(request.url).searchParams.get("shareToken")?.trim() ?? "";
+    if (shareToken) {
+      const shareSnap = await firestore.collection(NOTARIAL_SHARES_COLLECTION).doc(shareToken).get();
+      const share = shareSnap.exists ? (shareSnap.data() as NotarialShareDoc) : null;
+      if (!share || !isNotarialShareUsable(share, Date.now()) || share.contractVersionId !== contractVersionId) {
+        return NextResponse.json({ success: false, message: "El enlace no es válido o ya venció." }, { status: 403 });
+      }
+    } else {
+      const participant = await requireContractParticipant(request, firestore, data?.contractId ?? "", {
+        kind: "by_version",
+        contractVersionId,
+      });
+      if (!participant.ok) return participant.response;
+    }
     if (!data?.pdfStoragePath) {
       return NextResponse.json({ success: false, message: "PDF no generado." }, { status: 404 });
     }

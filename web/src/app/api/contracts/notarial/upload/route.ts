@@ -10,6 +10,11 @@ import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
 import { persistContractPdfAsset } from "@/domain/contracts/persistContractPdfAsset";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { requireContractParticipant } from "@/lib/auth/serverAuth";
+import {
+  NOTARIAL_SHARES_COLLECTION,
+  isNotarialShareUsable,
+  type NotarialShareDoc,
+} from "@/domain/contracts/notarialShare";
 
 export const runtime = "nodejs";
 
@@ -73,11 +78,31 @@ export async function POST(request: Request) {
       );
     }
 
-    const participant = await requireContractParticipant(request, firestore, contractId, {
-      kind: "by_version",
-      contractVersionId,
-    });
-    if (!participant.ok) return participant.response;
+    // Autorización: (a) por SESIÓN (parte del contrato) o (b) por ENLACE que el
+    // dueño compartió con el inquilino (token). El token acota la subida a esta
+    // misma versión del contrato.
+    const shareToken = String(form.get("shareToken") ?? "").trim();
+    let resolvedRole = "";
+    let shareRef: FirebaseFirestore.DocumentReference | null = null;
+    if (shareToken) {
+      shareRef = firestore.collection(NOTARIAL_SHARES_COLLECTION).doc(shareToken);
+      const shareSnap = await shareRef.get();
+      const share = shareSnap.exists ? (shareSnap.data() as NotarialShareDoc) : null;
+      if (!share || !isNotarialShareUsable(share, Date.now()) || share.contractId !== contractId || share.contractVersionId !== contractVersionId) {
+        return NextResponse.json<UploadJson>(
+          { success: false, errors: [{ field: "shareToken", message: "El enlace no es válido o ya venció." }] },
+          { status: 403 },
+        );
+      }
+      resolvedRole = share.role;
+    } else {
+      const participant = await requireContractParticipant(request, firestore, contractId, {
+        kind: "by_version",
+        contractVersionId,
+      });
+      if (!participant.ok) return participant.response;
+      resolvedRole = participant.role;
+    }
 
     const buf = Buffer.from(await file.arrayBuffer());
     if (buf.length < 5 || buf.subarray(0, 5).toString("latin1") !== "%PDF-") {
@@ -115,7 +140,7 @@ export async function POST(request: Request) {
       contractVersionId,
       leaseProcessId,
       uploadedAtIso: uploadedAt,
-      uploadedByRole: participant.role,
+      uploadedByRole: resolvedRole,
     });
 
     const persisted = await persistContractPdfAsset({
@@ -151,10 +176,16 @@ export async function POST(request: Request) {
       { merge: true },
     );
 
+    // Si vino por enlace compartido, deja rastro en el doc del enlace.
+    if (shareRef) {
+      await shareRef.set({ lastUploadedAnnexId: annexId, lastUploadedAt: uploadedAt }, { merge: true });
+    }
+
     auditEvent("notarial_authentication_pdf_uploaded", {
       contractId,
       contractVersionId,
-      role: participant.role,
+      role: resolvedRole,
+      via: shareToken ? "share_link" : "session",
       annexId,
       approxBytes: buf.length,
     });
