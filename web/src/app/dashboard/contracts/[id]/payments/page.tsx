@@ -278,16 +278,16 @@ export default function PaymentsPage() {
           Generar anexo (PDF)
         </button>
         <button type="button" onClick={generateTenantLink} className="rounded border border-violet-500 px-3 py-2 text-sm text-violet-700">
-          Enlace para el inquilino
+          Enlace / QR de pago para el inquilino
         </button>
       </div>
       {tenantLink && (
         <div className="mt-2 rounded border border-violet-200 bg-violet-50/60 p-3 text-xs text-slate-700">
-          <p className="font-medium text-violet-800">Enlace copiado. Compártelo con tu inquilino (WhatsApp, etc.):</p>
+          <p className="font-medium text-violet-800">Enlace con QR de pago copiado. Compártelo con tu inquilino (WhatsApp, etc.):</p>
           <p className="mt-1 break-all font-mono text-[11px]">{tenantLink}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <a
-              href={`https://wa.me/?text=${encodeURIComponent(`Hola, para tu pago del arriendo usa este enlace seguro: ${tenantLink}`)}`}
+              href={`https://wa.me/?text=${encodeURIComponent(`Hola, para tu pago del arriendo usa este enlace seguro: ${tenantLink} . Antes de pagar, verifica que el QR/cuenta correspondan a mí (el dueño); si tienes dudas, escríbeme.`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded border border-emerald-500 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50"
@@ -317,6 +317,9 @@ export default function PaymentsPage() {
             </div>
           )}
           <p className="mt-2 text-[11px] text-slate-500">Verá cómo pagar y podrá subir su soporte; tú confirmas el pago al recibirlo.</p>
+          <p className="mt-1 rounded-lg border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900">
+            Al inquilino le mostramos un aviso para que <b>verifique que el QR/cuenta correspondan a ti</b> (el dueño) antes de pagar, y te consulte si tiene dudas. Así evitamos fraudes.
+          </p>
         </div>
       )}
 
