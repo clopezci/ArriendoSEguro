@@ -23,6 +23,25 @@ export default function PagoPublicoPage() {
   const [paidDate, setPaidDate] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [pazBusy, setPazBusy] = useState(false);
+  const [pazDone, setPazDone] = useState(false);
+
+  async function requestPazYSalvo() {
+    setPazBusy(true);
+    try {
+      const res = await fetch("/api/contracts/paz-y-salvo/request", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const j = (await res.json()) as { success?: boolean };
+      setPazDone(Boolean(res.ok && j.success));
+    } catch {
+      /* silencioso */
+    } finally {
+      setPazBusy(false);
+    }
+  }
 
   const load = useCallback(async () => {
     try {
@@ -196,6 +215,19 @@ export default function PagoPublicoPage() {
             <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
               ArriendoSeguro no recauda ni custodia tu dinero. Tu pago se confirma cuando el arrendador lo verifica.
             </p>
+
+            {/* Cierre del arriendo: el inquilino solicita su paz y salvo + recomendación. */}
+            <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50/60 p-3">
+              <p className="text-xs font-semibold text-violet-900">¿Ya terminaste tu arriendo?</p>
+              <p className="mt-0.5 text-[11px] text-slate-600">Pídele a tu arrendador tu <b>paz y salvo</b> y una <b>carta de recomendación</b>. Le llega el aviso con el enlace para generarlos.</p>
+              {pazDone ? (
+                <p className="mt-2 text-[11px] font-semibold text-emerald-700">✓ Solicitud enviada a tu arrendador.</p>
+              ) : (
+                <button type="button" onClick={() => void requestPazYSalvo()} disabled={pazBusy} className="mt-2 rounded-lg bg-[#5646E5] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60">
+                  {pazBusy ? "Enviando…" : "Solicitar paz y salvo y recomendación"}
+                </button>
+              )}
+            </div>
           </>
         )}
       </div>
