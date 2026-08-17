@@ -42,9 +42,17 @@ export function dueRenewalReminder(
 ): RenewalReminderKey | null {
   const t = renewalReminderTargets(endDateIso);
   if (!t) return null;
-  if (now > t.deadline) return null; // ya pasó el preaviso legal
-  if (!sent.r1 && now >= t.target1) return "r1";
-  if (!sent.r2 && now >= t.target2) return "r2";
+  // Ventana normal: entre el target y el preaviso legal (3 meses antes del fin).
+  if (now <= t.deadline) {
+    if (!sent.r1 && now >= t.target1) return "r1";
+    if (!sent.r2 && now >= t.target2) return "r2";
+    return null;
+  }
+  // CATCH-UP: si el contrato se firmó/cargó DENTRO o DESPUÉS de la ventana de
+  // preaviso (p. ej. se registró tarde) y NUNCA se avisó, enviar UN aviso mientras
+  // el contrato siga vigente. Así no se queda sin ninguna alerta de vencimiento.
+  const end = parseDateUtc(endDateIso);
+  if (end && now < end && !sent.r1 && !sent.r2) return "r1";
   return null;
 }
 
