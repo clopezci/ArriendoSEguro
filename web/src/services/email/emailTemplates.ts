@@ -34,6 +34,8 @@ export type EmailTemplateCode =
   | "productIdeaEmail"
   | "pazYSalvoRequest"
   | "pazYSalvoDoc"
+  | "terminationNoticeEmail"
+  | "terminationResponseEmail"
   | "deliveryActReminderEmail"
   | "paymentEscalationEmail";
 
@@ -612,6 +614,55 @@ export function deliveryActReminderEmail(input: {
      <p>Tu contrato de arriendo termina el <strong>${escapeHtml(input.endDate)}</strong>. Antes de la entrega del inmueble, hagan el <strong>Acta de entrega y devolución</strong> con fotos: es la prueba del estado en que se devuelve (evita conflictos por el depósito o daños).</p>
      <p><a href="${input.ownerLink}" style="display:inline-block;background:#5646E5;color:#ffffff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600;">Iniciar acta de entrega y devolución</a></p>
      <p style="font-size:12px;color:#64748b;">Es el mismo proceso del inventario inicial; queda como acta aparte para comparar el estado.</p>`,
+  );
+  return { subject, html, text };
+}
+
+/**
+ * Aviso a la CONTRAPARTE de una terminación / no renovación. Lleva el detalle
+ * (tipo, penalización si aplica, observación) y el enlace para aceptar o no.
+ */
+export function terminationNoticeEmail(input: {
+  recipientName: string;
+  byLabel: string;
+  typeLabel: string;
+  detailLines: string[];
+  observation?: string;
+  link: string;
+}): CompiledEmailTemplate {
+  const subject = `${input.typeLabel} de tu contrato de arriendo`;
+  const obs = input.observation?.trim() ? `\n\nObservación de ${input.byLabel}: ${input.observation.trim()}` : "";
+  const text = `Hola ${input.recipientName},\n\n${input.byLabel} registró un ${input.typeLabel.toLowerCase()} de tu contrato de arriendo.\n\n${input.detailLines.join("\n")}${obs}\n\nRevisa el detalle y responde (aceptar o no) aquí: ${input.link}\n\nArriendoSeguro deja constancia con fecha; no sustituye asesoría legal.`;
+  const html = baseHtml(
+    input.typeLabel,
+    `<p>Hola <strong>${escapeHtml(input.recipientName)}</strong>,</p>
+     <p><strong>${escapeHtml(input.byLabel)}</strong> registró un <strong>${escapeHtml(input.typeLabel.toLowerCase())}</strong> de tu contrato de arriendo.</p>
+     <ul>${input.detailLines.map((l) => `<li>${escapeHtml(l)}</li>`).join("")}</ul>
+     ${input.observation?.trim() ? `<p><strong>Observación de ${escapeHtml(input.byLabel)}:</strong> ${escapeHtml(input.observation.trim())}</p>` : ""}
+     <p><a href="${input.link}" style="display:inline-block;background:#5646E5;color:#ffffff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600;">Ver detalle y responder</a></p>
+     <p style="font-size:12px;color:#64748b;">ArriendoSeguro deja constancia con fecha; no decide ni sustituye asesoría legal.</p>`,
+  );
+  return { subject, html, text };
+}
+
+/** Aviso a quien notificó, con la respuesta de la contraparte (aceptó / no aceptó). */
+export function terminationResponseEmail(input: {
+  recipientName: string;
+  responderLabel: string;
+  accepted: boolean;
+  observation?: string;
+  link: string;
+}): CompiledEmailTemplate {
+  const verb = input.accepted ? "ACEPTÓ" : "NO aceptó";
+  const subject = `${input.responderLabel} ${input.accepted ? "aceptó" : "no aceptó"} la terminación del arriendo`;
+  const obs = input.observation?.trim() ? `\n\nObservación: ${input.observation.trim()}` : "";
+  const text = `Hola ${input.recipientName},\n\n${input.responderLabel} ${verb} la terminación/no renovación que registraste.${obs}\n\nVer el estado: ${input.link}`;
+  const html = baseHtml(
+    "Respuesta a la terminación del arriendo",
+    `<p>Hola <strong>${escapeHtml(input.recipientName)}</strong>,</p>
+     <p><strong>${escapeHtml(input.responderLabel)}</strong> <strong>${escapeHtml(verb)}</strong> la terminación/no renovación que registraste.</p>
+     ${input.observation?.trim() ? `<p><strong>Observación:</strong> ${escapeHtml(input.observation.trim())}</p>` : ""}
+     <p><a href="${input.link}" style="color:#6d28d9;">Ver el estado</a></p>`,
   );
   return { subject, html, text };
 }
