@@ -190,6 +190,27 @@ export default function TerminosPage() {
       </section>
 
       <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-slate-900">11B. Conservación y eliminación de información al terminar el contrato</h2>
+        <p>
+          Finalizado el contrato, el usuario podrá <strong>descargar</strong> la totalidad de su expediente y evidencias
+          (contrato, actas, soportes y fotografías) para conservarlo por su cuenta, u <strong>optar por la custodia en la
+          nube</strong> de ArriendoSeguro por el término y valor que se le informen al momento del cierre.
+        </p>
+        <p>
+          Transcurridos <strong>siete (7) días</strong> desde el cierre del contrato, y salvo que el usuario haya elegido
+          la custodia en la nube, ArriendoSeguro <strong>eliminará las fotografías y los soportes</strong> asociados, con
+          el fin de optimizar el almacenamiento. Se <strong>conservarán</strong> el documento del contrato, la carta de
+          recomendación, el historial y la calificación del arriendo por los términos legales aplicables (por ejemplo,
+          hasta diez (10) años, artículos 28 y 60 del Código de Comercio).
+        </p>
+        <p>
+          Es <strong>responsabilidad exclusiva del usuario</strong> descargar oportunamente su información. ArriendoSeguro
+          <strong> no será responsable</strong> por la información que el usuario no haya descargado, ni por la eliminación
+          realizada conforme a esta cláusula, todo ello en el marco de la Ley 1581 de 2012 (Habeas Data).
+        </p>
+      </section>
+
+      <section className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-900">12. Plan demo</h2>
         <p>
           El modo demo permite explorar la interfaz con datos ficticios o marcas de agua. No produce contratos válidos

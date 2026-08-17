@@ -48,6 +48,7 @@ const ACTIONS: Action[] = [
   { slug: "inventory-final", title: "Acta de entrega y devolución", desc: "Al terminar: registra el estado del inmueble al devolverlo (mismo proceso del inventario, con fotos). Queda como acta aparte para comparar.", icon: "📦", phase: "Cierre" },
   { slug: "paz-y-salvo", title: "Paz y salvo y recomendación", desc: "Al terminar: genera el paz y salvo (según pagos) y la carta de recomendación, y envíalos por WhatsApp.", icon: "🧾", phase: "Cierre" },
   { slug: "reputacion", title: "Calificar la experiencia", desc: "Califica al inquilino al final del arriendo.", icon: "⭐", phase: "Cierre" },
+  { slug: "cerrar", title: "Cerrar contrato", desc: "Cuando todo quede conciliado: descarga tu expediente (ZIP) y cierra el contrato definitivamente.", icon: "🔒", phase: "Cierre" },
   { slug: "evidencia", title: "Paquete de evidencia (ZIP)", desc: "Descarga unificada del expediente cuando esté disponible.", icon: "🗂️", phase: "Cierre" },
 ];
 
