@@ -45,6 +45,7 @@ const ACTIONS: Action[] = [
   { slug: "soportes-codeudor", title: "Soportes de ingresos", desc: "Carta laboral, colillas y extractos del codeudor e inquilino.", icon: "💼", phase: "Durante el arriendo" },
   { slug: "aliados", title: "Aliados y servicios", desc: "Seguro, cobranza, estudio de crédito, jurídica… tú eliges.", icon: "🤝", phase: "Durante el arriendo", optional: true },
   { slug: "renovar", title: "Renovar contrato", desc: "Otrosí de prórroga y reajuste (IPC) con el mismo inquilino.", icon: "🔄", phase: "Cierre" },
+  { slug: "paz-y-salvo", title: "Paz y salvo y recomendación", desc: "Al terminar: genera el paz y salvo (según pagos) y la carta de recomendación, y envíalos por WhatsApp.", icon: "🧾", phase: "Cierre" },
   { slug: "reputacion", title: "Calificar la experiencia", desc: "Califica al inquilino al final del arriendo.", icon: "⭐", phase: "Cierre" },
   { slug: "evidencia", title: "Paquete de evidencia (ZIP)", desc: "Descarga unificada del expediente cuando esté disponible.", icon: "🗂️", phase: "Cierre" },
 ];

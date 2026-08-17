@@ -32,6 +32,7 @@ export type EmailTemplateCode =
   | "customAlertEmail"
   | "userReportEmail"
   | "productIdeaEmail"
+  | "pazYSalvoRequest"
   | "paymentEscalationEmail";
 
 export type CompiledEmailTemplate = {
