@@ -132,15 +132,28 @@ export default function PazYSalvoPage() {
     return { cls: "border-rose-300 bg-rose-50 text-rose-900", text: `Hay ${pay.pendientes} pago(s) pendiente(s) (${pay.overdue} vencido(s)). No se puede emitir paz y salvo hasta estar al día.` };
   }, [pay]);
 
-  function shareWhats(text: string, label: string) {
+  async function shareWhats(text: string, label: string) {
     if (!ctx) return;
     const intro = `Hola${ctx.tenant.name ? ` ${ctx.tenant.name.split(" ")[0]}` : ""}, te comparto tu ${label} del arriendo${ctx.property.address ? ` de ${ctx.property.address}` : ""}:\n\n`;
     window.open(buildWhatsAppUrl(ctx.tenant.phone, intro + text), "_blank", "noopener,noreferrer");
+    // Además, el MISMO texto por correo al email registrado del inquilino.
+    if (!user) return;
+    try {
+      const res = await fetch("/api/contracts/paz-y-salvo/send-email", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ contractId: id, label, text }),
+      });
+      const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      setMsg(res.ok && j.success ? "Enviado por WhatsApp y también por correo ✓" : `Enviado por WhatsApp. ${j.errors?.[0]?.message ?? "El correo no se pudo enviar."}`);
+    } catch {
+      setMsg("Enviado por WhatsApp (no se pudo enviar el correo).");
+    }
   }
-  function shareBoth() {
+  async function shareBoth() {
     if (!ctx || !pazUnlocked) return;
     const combined = `${pazText}\n\n———\n\n${recText}`;
-    shareWhats(combined, "paz y salvo y carta de recomendación");
+    await shareWhats(combined, "paz y salvo y carta de recomendación");
   }
   async function copy(text: string) {
     try { await navigator.clipboard.writeText(text); setMsg("Copiado ✓"); } catch { setMsg(""); }
@@ -191,7 +204,7 @@ export default function PazYSalvoPage() {
               <>
                 <textarea value={pazText} onChange={(e) => setPazText(e.target.value)} rows={14} className="mt-3 w-full rounded-2xl border-2 border-slate-200 p-3 font-mono text-xs outline-none focus:border-[#5646E5]" />
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => shareWhats(pazText, "paz y salvo")} className="rounded-xl bg-[#25D366] px-3 py-2 text-sm font-bold text-white">🟢 Enviar por WhatsApp</button>
+                  <button type="button" onClick={() => void shareWhats(pazText, "paz y salvo")} className="rounded-xl bg-[#25D366] px-3 py-2 text-sm font-bold text-white">🟢 Enviar por WhatsApp + correo</button>
                   <button type="button" onClick={() => void copy(pazText)} className="rounded-xl border-2 border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700">Copiar</button>
                 </div>
               </>
@@ -204,14 +217,14 @@ export default function PazYSalvoPage() {
             <p className="mt-0.5 text-xs text-slate-500">Independiente del paz y salvo. Edítala a tu gusto antes de enviarla.</p>
             <textarea value={recText} onChange={(e) => setRecText(e.target.value)} rows={14} className="mt-3 w-full rounded-2xl border-2 border-slate-200 p-3 font-mono text-xs outline-none focus:border-[#5646E5]" />
             <div className="mt-2 flex flex-wrap gap-2">
-              <button type="button" onClick={() => shareWhats(recText, "carta de recomendación")} className="rounded-xl bg-[#25D366] px-3 py-2 text-sm font-bold text-white">🟢 Enviar por WhatsApp</button>
+              <button type="button" onClick={() => void shareWhats(recText, "carta de recomendación")} className="rounded-xl bg-[#25D366] px-3 py-2 text-sm font-bold text-white">🟢 Enviar por WhatsApp + correo</button>
               <button type="button" onClick={() => void copy(recText)} className="rounded-xl border-2 border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700">Copiar</button>
             </div>
           </section>
 
           {pazUnlocked && (
-            <button type="button" onClick={shareBoth} className="w-full rounded-2xl bg-[#12B886] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">
-              🟢 Enviar LOS DOS por WhatsApp al inquilino
+            <button type="button" onClick={() => void shareBoth()} className="w-full rounded-2xl bg-[#12B886] px-4 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition hover:brightness-105 active:scale-95">
+              🟢 Enviar LOS DOS por WhatsApp + correo
             </button>
           )}
 

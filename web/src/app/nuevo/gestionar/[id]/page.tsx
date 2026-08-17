@@ -71,6 +71,8 @@ export default function GestionarPosventaPage() {
   const [terminado, setTerminado] = useState<boolean | null>(null);
   // Estado de "Soportes de ingresos" para el chulo del hub.
   const [soportes, setSoportes] = useState<"loading" | "done" | "pending" | "none">("loading");
+  // "Gestionado ✓" del resto de tarjetas (paz y salvo, calificar, renovar, etc.).
+  const [managed, setManaged] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setDraft(getDraft(id));
@@ -103,6 +105,11 @@ export default function GestionarPosventaPage() {
         }
         done("documentos", found);
       })();
+      // Estado "gestionado ✓" del resto de tarjetas.
+      fetch(`/api/contracts/hub-status?contractId=${encodeURIComponent(id)}`, { headers: { ...authH } })
+        .then((r) => r.json())
+        .then((j) => { if (!cancelled && j?.success && j.managed) setManaged(j.managed as Record<string, boolean>); })
+        .catch(() => {});
       // Soportes de ingresos: ✓ si TODOS los exigidos están subidos y validados.
       fetch(`/api/party-invite/support/reconcile?contractId=${encodeURIComponent(id)}`, { headers: { ...authH } })
         .then((r) => r.json())
@@ -139,14 +146,37 @@ export default function GestionarPosventaPage() {
   const title = (draft?.property?.address || "").trim() || "Tu contrato";
   const tenant = (draft?.tenant?.fullName || "").trim();
 
+  const doneChip = <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">✓ Hecho</span>;
+  // Tarjetas que muestran ✓ cuando ya se gestionaron (y nada si aún no).
+  const managedKeyBySlug: Record<string, string> = {
+    "paz-y-salvo": "pazYSalvo",
+    reputacion: "calificado",
+    renovar: "renovado",
+    "inventory-final": "actaFinal",
+    cerrar: "cerrado",
+    mantenimiento: "mantenimiento",
+    novedades: "novedades",
+    payments: "pagos",
+  };
+  /** ¿La tarjeta ya está gestionada (para el ✓ y el mensajito)? */
+  function cardDone(a: Action): boolean {
+    if (a.slug === "soportes-codeudor") return soportes === "done";
+    const mk = managedKeyBySlug[a.slug];
+    if (mk) return Boolean(managed[mk]);
+    if (a.statusKey) return status[a.statusKey] === "done";
+    return false;
+  }
+
   function badge(a: Action) {
     // Soportes de ingresos: chulo propio (no usa statusKey; se calcula aparte).
     if (a.slug === "soportes-codeudor") {
       if (soportes === "loading") return <span className="text-[11px] text-slate-400">…</span>;
-      if (soportes === "done") return <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">✓ Hecho</span>;
+      if (soportes === "done") return doneChip;
       if (soportes === "pending") return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">Pendiente</span>;
       return null; // "none": no exigió documentos → sin chulo
     }
+    const mk = managedKeyBySlug[a.slug];
+    if (mk) return managed[mk] ? doneChip : null;
     if (!a.statusKey) return null;
     const st = status[a.statusKey];
     if (st === "loading") return <span className="text-[11px] text-slate-400">…</span>;
@@ -250,6 +280,7 @@ export default function GestionarPosventaPage() {
                       {badge(a)}
                     </span>
                     <span className="mt-1 block text-[13px] leading-snug text-slate-500">{a.desc}</span>
+                    {cardDone(a) && <span className="mt-0.5 block text-[11px] font-medium text-emerald-600">✓ Ya lo gestionaste · puedes editarlo cuando quieras</span>}
                   </span>
                   <span className="self-center text-sm font-bold text-[#5646E5]">→</span>
                 </motion.button>

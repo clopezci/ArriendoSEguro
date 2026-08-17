@@ -16,8 +16,7 @@ export default function CerrarContratoPage() {
   const [versionId, setVersionId] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
-  const [choice, setChoice] = useState<Choice | "">("");
-  const [consent, setConsent] = useState(false);
+  const [confirmDl, setConfirmDl] = useState(false); // modal de confirmación de "descargar y conservar yo"
   const [downloaded, setDownloaded] = useState(false);
   const [dlBusy, setDlBusy] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -85,22 +84,20 @@ export default function CerrarContratoPage() {
     }
   }
 
-  async function closeContract() {
+  async function closeContract(choiceArg: Choice) {
     if (!user) return;
-    if (!choice) { setMsg("Es obligatorio elegir una opción para cerrar el contrato."); return; }
-    if (!consent) { setMsg("Debes aceptar las condiciones de cierre."); return; }
     setBusy(true);
     setMsg("");
     try {
       const res = await fetch("/api/contracts/close", {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ contractId: id, choice, consentAccepted: true }),
+        body: JSON.stringify({ contractId: id, choice: choiceArg, consentAccepted: true }),
       });
       const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!res.ok || !j.success) { setMsg(j.errors?.[0]?.message ?? "No se pudo cerrar el contrato."); return; }
-      // Si eligió la nube, el cierre queda registrado y pasamos al pago.
-      if (choice === "cloud") { await payCustody(); return; }
+      // Si eligió la nube, el cierre queda registrado y pasamos DIRECTO al pago.
+      if (choiceArg === "cloud") { await payCustody(); return; }
       await load();
     } catch {
       setMsg("Error de red al cerrar el contrato.");
@@ -159,36 +156,49 @@ export default function CerrarContratoPage() {
             {downloaded && <p className="mt-2 text-xs font-semibold text-emerald-700">✓ Descargado</p>}
           </section>
 
-          {/* Paso 2: elegir qué pasa con las fotos y soportes */}
+          {/* Paso 2: qué vas a hacer con TU información. Solo dos opciones. */}
           <section className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
-            <p className="text-sm font-bold text-slate-900">2) Elige qué hacemos con tus fotos y soportes</p>
-            <p className="mt-1 text-xs text-slate-600">El <b>contrato, la recomendación, el historial y la calificación se conservan siempre</b>. Lo que se libera para reducir costos son las <b>fotos y soportes</b>.</p>
-            <div className="mt-3 space-y-2">
-              <label className={`flex cursor-pointer items-start gap-2 rounded-2xl border-2 p-3 text-sm ${choice === "download" ? "border-[#5646E5] bg-[#ECE9FB]/50" : "border-slate-200"}`}>
-                <input type="radio" name="choice" checked={choice === "download"} onChange={() => setChoice("download")} className="mt-0.5 h-4 w-4" />
-                <span><b>📥 Ya descargué y lo conservo yo.</b> En 7 días eliminamos las fotos y soportes de la nube. Es mi responsabilidad haberlos descargado.</span>
-              </label>
-              <label className={`flex cursor-pointer items-start gap-2 rounded-2xl border-2 p-3 text-sm ${choice === "cloud" ? "border-[#5646E5] bg-[#ECE9FB]/50" : "border-slate-200"}`}>
-                <input type="radio" name="choice" checked={choice === "cloud"} onChange={() => setChoice("cloud")} className="mt-0.5 h-4 w-4" />
-                <span><b>☁️ Guárdalo en la nube de ArriendoSeguro (5 años · $20.000).</b> Conservamos también las fotos y soportes; no se borran. Activamos tu custodia y coordinamos el pago simbólico.</span>
-              </label>
-              <label className={`flex cursor-pointer items-start gap-2 rounded-2xl border-2 p-3 text-sm ${choice === "undecided" ? "border-amber-400 bg-amber-50" : "border-slate-200"}`}>
-                <input type="radio" name="choice" checked={choice === "undecided"} onChange={() => setChoice("undecided")} className="mt-0.5 h-4 w-4" />
-                <span><b>Decidir después.</b> Tengo <b>7 días</b> para descargar o elegir la nube; si no, las fotos y soportes <b>se eliminarán</b> automáticamente.</span>
-              </label>
+            <p className="text-sm font-bold text-slate-900">2) Elige qué vas a hacer con tu información</p>
+            <p className="mt-1 text-xs text-slate-600">Al cerrar el contrato, elige una de estas dos opciones:</p>
+            <div className="mt-3 grid gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDl(true)}
+                disabled={busy}
+                className="rounded-2xl border-2 border-slate-200 bg-white p-4 text-left transition hover:border-[#5646E5] disabled:opacity-60"
+              >
+                <span className="block text-sm font-bold text-slate-900">📥 La descargo y la conservo yo</span>
+                <span className="mt-0.5 block text-xs text-slate-600">Entiendo que ArriendoSeguro <b>eliminará toda mi información en 7 días</b> y no es responsable de conservarla.</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => void closeContract("cloud")}
+                disabled={busy}
+                className="rounded-2xl border-2 border-[#5646E5] bg-[#ECE9FB]/40 p-4 text-left transition hover:brightness-105 disabled:opacity-60"
+              >
+                <span className="block text-sm font-bold text-[#3a2fb0]">☁️ Guardar en la nube por 5 años — $20.000</span>
+                <span className="mt-0.5 block text-xs text-slate-600">Conservamos tu información 5 años. Al elegir esta opción, te llevamos al <b>pago</b>.</span>
+              </button>
             </div>
-
-            <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-2xl border-2 border-slate-200 bg-white p-3 text-xs text-slate-700">
-              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#12B886]" />
-              <span>Entiendo y acepto que, salvo que elija la custodia en la nube, <b>en 7 días se eliminarán las fotos y soportes</b>; que es <b>mi responsabilidad</b> haber descargado mi información; y <b>eximo a ArriendoSeguro de responsabilidad</b> por ello (Ley 1581 de 2012). El contrato, la recomendación, el historial y la calificación se conservan.</span>
-            </label>
-
             {msg && <p className="mt-2 rounded-lg border border-slate-200 bg-white/80 p-2 text-xs text-slate-800">{msg}</p>}
-
-            <button onClick={() => void closeContract()} disabled={busy} className="mt-3 w-full rounded-2xl bg-[#FF6B4A] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-orange-500/25 transition hover:brightness-105 active:scale-95 disabled:opacity-60">
-              {busy ? "Cerrando…" : "Cerrar contrato definitivamente"}
-            </button>
           </section>
+
+          {/* Confirmación de la opción "descargar y conservar yo". */}
+          {confirmDl && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setConfirmDl(false)}>
+              <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                <p className="text-base font-bold text-slate-900">Confirma el cierre</p>
+                <p className="mt-1 text-sm text-slate-600">
+                  ¿Descargaste tu información? Al confirmar, cerramos el contrato y <b>en 7 días se eliminará toda tu
+                  información</b>. ArriendoSeguro no será responsable de conservarla.
+                </p>
+                <div className="mt-4 flex flex-col gap-2">
+                  <button type="button" onClick={() => { setConfirmDl(false); void closeContract("download"); }} disabled={busy} className="w-full rounded-2xl bg-[#FF6B4A] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60">Sí, cerrar (conservo yo)</button>
+                  <button type="button" onClick={() => setConfirmDl(false)} className="w-full rounded-2xl border-2 border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700">Volver</button>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </main>

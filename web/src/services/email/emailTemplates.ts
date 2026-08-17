@@ -33,6 +33,7 @@ export type EmailTemplateCode =
   | "userReportEmail"
   | "productIdeaEmail"
   | "pazYSalvoRequest"
+  | "pazYSalvoDoc"
   | "deliveryActReminderEmail"
   | "paymentEscalationEmail";
 
