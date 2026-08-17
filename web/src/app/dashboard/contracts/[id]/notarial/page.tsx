@@ -28,6 +28,10 @@ export default function NotarialOptionalPage() {
   const [zipBusy, setZipBusy] = useState(false);
   const [hasNotarialAnnex, setHasNotarialAnnex] = useState(false);
   const [notarialPdfUrl, setNotarialPdfUrl] = useState<string | null>(null);
+  // Compartir con el inquilino (enlace para que firme con el Estado y suba el PDF).
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareMsg, setShareMsg] = useState("");
 
   const annexId = versionId && id ? notarialAnnexFirestoreId(id, versionId) : null;
 
@@ -118,6 +122,46 @@ export default function NotarialOptionalPage() {
       setUploadMsg("Error de red al generar el ZIP.");
     } finally {
       setZipBusy(false);
+    }
+  }
+
+  /**
+   * Genera el enlace para el inquilino y abre el WhatsApp del dueño con el mensaje
+   * listo. Si conocemos el celular del inquilino, lo prellenamos como destinatario.
+   */
+  async function shareWithTenant() {
+    if (!versionId || !user) {
+      setShareMsg("Inicia sesión y guarda una versión del contrato para compartir el enlace.");
+      return;
+    }
+    setShareBusy(true);
+    setShareMsg("");
+    try {
+      const res = await fetch("/api/contracts/notarial/share", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ contractId: id, contractVersionId: versionId, role: "tenant" }),
+      });
+      const j = (await res.json()) as
+        | { success: true; url: string; inviteeName?: string; inviteePhone?: string }
+        | { success: false; errors: { message?: string }[] };
+      if (!res.ok || !j.success) {
+        setShareMsg(!j.success ? j.errors?.[0]?.message ?? "No se pudo generar el enlace." : "No se pudo generar el enlace.");
+        return;
+      }
+      setShareUrl(j.url);
+      const firstName = (j.inviteeName ?? "").split(" ")[0];
+      const digits = String(j.inviteePhone ?? "").replace(/\D/g, "");
+      const withCc = digits.length === 10 && digits.startsWith("3") ? `57${digits}` : digits;
+      const text = `Hola${firstName ? ` ${firstName}` : ""}, para firmar el contrato de arriendo con la firma digital GRATIS del Estado y dejarlo guardado, entra a este enlace: ${j.url}`;
+      const wa = withCc
+        ? `https://wa.me/${withCc}?text=${encodeURIComponent(text)}`
+        : `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.open(wa, "_blank", "noopener,noreferrer");
+    } catch {
+      setShareMsg("Error de red al generar el enlace.");
+    } finally {
+      setShareBusy(false);
     }
   }
 
@@ -244,6 +288,42 @@ export default function NotarialOptionalPage() {
               vigentes. ArriendoSeguro no es notaría ni cobra por estos trámites; valida costos y requisitos directamente
               con la entidad.
             </p>
+
+            {/* Atajo: compartir solo con el inquilino para que él firme y suba. */}
+            <div className="mt-3 rounded-2xl border border-[#5646E5]/25 bg-[#ECE9FB]/40 p-3">
+              <p className="text-xs font-semibold text-[#3a2fb0]">
+                ¿Solo quieres que el <strong>inquilino</strong> firme y autentique con el Estado?
+              </p>
+              <p className="mt-1 text-[11px] text-slate-600">
+                Compártele un enlace: él descarga el contrato, lo firma con la Agencia Nacional Digital y lo sube al
+                contrato con un clic —<strong>sin crear cuenta</strong>. Se abre <strong>tu propio WhatsApp</strong> con
+                el mensaje listo para enviárselo.
+              </p>
+              <button
+                type="button"
+                onClick={() => void shareWithTenant()}
+                disabled={shareBusy || !user || !versionId}
+                className="mt-2.5 inline-flex items-center gap-2 rounded-xl bg-[#25D366] px-3 py-2 text-sm font-bold text-white shadow-sm transition hover:brightness-105 active:scale-95 disabled:opacity-60"
+              >
+                {shareBusy ? "Generando enlace…" : "🟢 Compartir con el inquilino por WhatsApp"}
+              </button>
+              {shareUrl && (
+                <div className="mt-2 rounded-xl border border-slate-200 bg-white/80 p-2">
+                  <p className="text-[11px] font-medium text-slate-600">Enlace para el inquilino (por si prefieres copiarlo):</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <input readOnly value={shareUrl} className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-700" onFocus={(e) => e.currentTarget.select()} />
+                    <button
+                      type="button"
+                      onClick={() => { void navigator.clipboard?.writeText(shareUrl).then(() => setShareMsg("Enlace copiado ✓")).catch(() => setShareMsg("")); }}
+                      className="flex-none rounded-lg border border-[#5646E5] px-2 py-1 text-[11px] font-semibold text-[#5646E5]"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                </div>
+              )}
+              {shareMsg && <p className="mt-1.5 text-[11px] text-emerald-700">{shareMsg}</p>}
+            </div>
           </section>
 
           {!versionId && (
