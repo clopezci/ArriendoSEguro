@@ -69,6 +69,8 @@ export default function GestionarPosventaPage() {
   });
   // Confirmación del dueño (los ticks de «Termina tu contrato»): null = cargando.
   const [terminado, setTerminado] = useState<boolean | null>(null);
+  // Estado de "Soportes de ingresos" para el chulo del hub.
+  const [soportes, setSoportes] = useState<"loading" | "done" | "pending" | "none">("loading");
 
   useEffect(() => {
     setDraft(getDraft(id));
@@ -101,6 +103,17 @@ export default function GestionarPosventaPage() {
         }
         done("documentos", found);
       })();
+      // Soportes de ingresos: ✓ si TODOS los exigidos están subidos y validados.
+      fetch(`/api/party-invite/support/reconcile?contractId=${encodeURIComponent(id)}`, { headers: { ...authH } })
+        .then((r) => r.json())
+        .then((j) => {
+          if (cancelled) return;
+          const parties: Array<{ requiredTotal?: number; requiredDocs?: Array<{ uploaded?: boolean; validated?: boolean }> }> = Array.isArray(j?.parties) ? j.parties : [];
+          if (!j?.success || !parties.some((p) => (p.requiredTotal ?? 0) > 0)) { setSoportes("none"); return; }
+          const allDone = parties.every((p) => (p.requiredDocs ?? []).every((d) => d.uploaded && d.validated));
+          setSoportes(allDone ? "done" : "pending");
+        })
+        .catch(() => { if (!cancelled) setSoportes("none"); });
       fetch(`/api/contracts/payment-settings?contractId=${encodeURIComponent(id)}`, { headers: { ...authH } })
         .then((r) => r.json()).then((j) => done("pago", Boolean(j?.settings && j.settings.method && j.settings.method !== "none"))).catch(() => done("pago", false));
       fetch(`/api/payments/schedule/list?${vq}`, { headers: { ...authH } })
@@ -127,6 +140,13 @@ export default function GestionarPosventaPage() {
   const tenant = (draft?.tenant?.fullName || "").trim();
 
   function badge(a: Action) {
+    // Soportes de ingresos: chulo propio (no usa statusKey; se calcula aparte).
+    if (a.slug === "soportes-codeudor") {
+      if (soportes === "loading") return <span className="text-[11px] text-slate-400">…</span>;
+      if (soportes === "done") return <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">✓ Hecho</span>;
+      if (soportes === "pending") return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">Pendiente</span>;
+      return null; // "none": no exigió documentos → sin chulo
+    }
     if (!a.statusKey) return null;
     const st = status[a.statusKey];
     if (st === "loading") return <span className="text-[11px] text-slate-400">…</span>;

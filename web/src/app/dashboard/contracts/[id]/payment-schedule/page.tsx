@@ -42,6 +42,9 @@ export default function PaymentSchedulePage() {
   const [busyRow, setBusyRow] = useState("");
   const [pendingRow, setPendingRow] = useState<ScheduledPayment | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Modal del check rápido (Sí/No claros, en vez del OK/Cancelar del navegador).
+  const [modalRow, setModalRow] = useState<ScheduledPayment | null>(null);
+  const [modalStep, setModalStep] = useState<"ask" | "confirm">("ask");
 
   const load = useCallback(async () => {
     const latest = await fetch(`/api/contracts/latest-version?contractId=${encodeURIComponent(id)}`).then((r) => r.json());
@@ -159,20 +162,26 @@ export default function PaymentSchedulePage() {
     return true;
   }
 
-  /** El check de un mes: pregunta si adjunta soporte; si no, confirma sin soporte. */
+  /** El check de un mes abre un modal claro (Sí/No), sin el confuso OK/Cancelar. */
   function onQuickCheck(s: ScheduledPayment) {
     if (s.status === "reported_paid" || busyRow) return;
     setError("");
-    const withSupport = window.confirm(
-      `Registrar el pago de ${s.periodLabel} ($${s.expectedAmount.toLocaleString("es-CO")}).\n\n¿Quieres adjuntar el soporte de pago?\n\nAceptar = sí, adjuntar comprobante · Cancelar = registrar sin soporte`,
-    );
-    if (withSupport) {
-      setPendingRow(s);
-      fileInputRef.current?.click();
-      return;
-    }
-    const ok = window.confirm("¿Estás de acuerdo con que el pago quede registrado SIN soporte? Como arrendador (dueño) lo das por recibido.");
-    if (!ok) return;
+    setModalRow(s);
+    setModalStep("ask");
+  }
+  /** El dueño eligió adjuntar comprobante: abre el selector de archivo. */
+  function modalAttach() {
+    const s = modalRow;
+    setModalRow(null);
+    if (!s) return;
+    setPendingRow(s);
+    fileInputRef.current?.click();
+  }
+  /** Registra el pago sin comprobante (confirmado en el 2º paso del modal). */
+  function modalConfirmNoSupport() {
+    const s = modalRow;
+    setModalRow(null);
+    if (!s) return;
     void (async () => {
       setBusyRow(s.id);
       if (await createQuickPayment(s)) await load();
@@ -210,6 +219,33 @@ export default function PaymentSchedulePage() {
 
   return (
     <BentoShell>
+      {/* Modal claro (Sí/No) del check rápido. */}
+      {modalRow && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setModalRow(null)}>
+          <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            {modalStep === "ask" ? (
+              <>
+                <p className="text-base font-bold text-slate-900">Registrar pago de {modalRow.periodLabel}</p>
+                <p className="mt-1 text-sm text-slate-600">Valor ${modalRow.expectedAmount.toLocaleString("es-CO")}. ¿Vas a adjuntar el comprobante?</p>
+                <div className="mt-4 flex flex-col gap-2">
+                  <button type="button" onClick={modalAttach} className="w-full rounded-2xl bg-[#5646E5] px-4 py-2.5 text-sm font-bold text-white">Sí, adjuntar comprobante</button>
+                  <button type="button" onClick={() => setModalStep("confirm")} className="w-full rounded-2xl border-2 border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700">No, registrar sin comprobante</button>
+                  <button type="button" onClick={() => setModalRow(null)} className="mt-1 text-xs font-medium text-slate-400">Cancelar</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-base font-bold text-slate-900">¿Registrar sin comprobante?</p>
+                <p className="mt-1 text-sm text-slate-600">Como arrendador (dueño) lo das por recibido. Podrás adjuntar el soporte después.</p>
+                <div className="mt-4 flex flex-col gap-2">
+                  <button type="button" onClick={modalConfirmNoSupport} className="w-full rounded-2xl bg-[#12B886] px-4 py-2.5 text-sm font-bold text-white">Sí, registrar</button>
+                  <button type="button" onClick={() => setModalStep("ask")} className="w-full rounded-2xl border-2 border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700">No, volver</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       <WizardShell title="Calendario de pagos" currentStep={11} contractId={id} variant="extra" lean>
       {error && <p className="mb-3 text-sm text-rose-700">{error}</p>}
       <div className="grid gap-3 md:grid-cols-5">
