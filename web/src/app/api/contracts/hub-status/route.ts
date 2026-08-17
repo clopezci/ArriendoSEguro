@@ -20,7 +20,7 @@ export async function GET(request: Request) {
     const cRef = firestore.collection("contracts").doc(contractId);
     const cSnap = await cRef.get();
     if (!cSnap.exists) return NextResponse.json({ success: false, errors: [{ field: "contractId", message: "Contrato no encontrado." }] }, { status: 404 });
-    const c = cSnap.data() as { currentVersionId?: string; status?: string; pazYSalvoSentAt?: string } | undefined;
+    const c = cSnap.data() as { currentVersionId?: string; status?: string; pazYSalvoSentAt?: string; terminationNotice?: unknown } | undefined;
     const currentVersionId = c?.currentVersionId ?? "";
 
     const participant = await requireContractParticipant(request, firestore, contractId, currentVersionId ? { kind: "by_version", contractVersionId: currentVersionId } : { kind: "current" });
@@ -42,6 +42,7 @@ export async function GET(request: Request) {
         pazYSalvo: Boolean(c?.pazYSalvoSentAt),
         calificado: Boolean(revLtT?.exists || revTtL?.exists),
         renovado: annexTypes.has("renewal_addendum"),
+        terminacion: Boolean(c?.terminationNotice),
         actaFinal: annexTypes.has("final_delivery_act"),
         notarial: annexTypes.has("notarial_authentication"),
         cerrado: c?.status === "closed",

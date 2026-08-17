@@ -227,11 +227,11 @@ export default function RenovarPage() {
             de lo contrario puede entenderse prorrogado.
           </p>
           <div className="flex flex-wrap gap-2 pt-1">
-            <Link href="/calculadoras/preaviso" className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white transition hover:brightness-105">
-              Calcular mi preaviso →
+            <Link href={`/dashboard/contracts/${id}/terminacion`} className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white transition hover:brightness-105">
+              Avisar NO renovación o terminación →
             </Link>
-            <Link href={`/nuevo/gestionar/${id}`} className="rounded-xl border-2 border-amber-400 bg-white px-4 py-2 text-sm font-bold text-amber-800 transition hover:border-amber-500">
-              Gestionar / avisar la terminación
+            <Link href="/calculadoras/preaviso" className="rounded-xl border-2 border-amber-400 bg-white px-4 py-2 text-sm font-bold text-amber-800 transition hover:border-amber-500">
+              Calcular mi preaviso
             </Link>
           </div>
           <p className="text-[11px] text-amber-800/80">
