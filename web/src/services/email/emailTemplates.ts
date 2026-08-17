@@ -45,6 +45,7 @@ function appBaseUrl() {
 }
 
 function baseHtml(title: string, body: string) {
+  const base = appBaseUrl().replace(/\/$/, "");
   return `
     <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
       <h2 style="margin: 0 0 12px;">${title}</h2>
@@ -52,6 +53,13 @@ function baseHtml(title: string, body: string) {
       <p style="margin-top: 20px; font-size: 12px; color: #475569;">
         Este mensaje fue generado por ArriendoSeguro. Si no reconoces este correo, puedes ignorarlo.
       </p>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;">
+        <p style="margin:0 0 4px;">
+          <strong style="color:#5646E5;">ArriendoSeguro</strong> — crea, firma y administra tu contrato de arriendo en línea.
+          <a href="${base}/" style="color:#5646E5;text-decoration:none;font-weight:600;">Empezar es gratis →</a>
+        </p>
+        <p style="margin:0;color:#94a3b8;">Un producto de LOTIC.</p>
+      </div>
     </div>
   `.trim();
 }
