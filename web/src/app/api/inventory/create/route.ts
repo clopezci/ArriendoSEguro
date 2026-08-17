@@ -13,7 +13,9 @@ const schema = z.object({
   leaseProcessId: z.string().min(3),
   contractId: z.string().min(3),
   contractVersionId: z.string().min(3),
-  inventoryType: z.literal("initial"),
+  // "initial" = acta de entrega inicial; "final" = acta de entrega y devolución
+  // (al terminar el arriendo). Reusa el mismo flujo; se guardan por separado.
+  inventoryType: z.enum(["initial", "final"]),
 });
 
 export async function POST(request: Request) {

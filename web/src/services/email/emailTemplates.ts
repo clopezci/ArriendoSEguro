@@ -33,6 +33,7 @@ export type EmailTemplateCode =
   | "userReportEmail"
   | "productIdeaEmail"
   | "pazYSalvoRequest"
+  | "deliveryActReminderEmail"
   | "paymentEscalationEmail";
 
 export type CompiledEmailTemplate = {
@@ -589,6 +590,27 @@ export function ipcUpdateReminderEmail(input: { currentIpcPercent: number; curre
     `<p>Es momento de actualizar el <strong>IPC del año anterior</strong> que usa la app para el reajuste del canon (Ley 820, art. 20).</p>
      <p>Valor actual configurado: <strong>${input.currentIpcPercent}%</strong> (IPC ${input.currentIpcYear}).</p>
      <p>Entra al <a href="${base}/admin" style="color:#6d28d9;">panel administrativo</a>, verifica la cifra oficial del DANE y <strong>guarda o confirma</strong> para dejar de recibir este recordatorio.</p>`,
+  );
+  return { subject, html, text };
+}
+
+/**
+ * Recordatorio (última semana) del ACTA DE ENTREGA Y DEVOLUCIÓN a ambas partes.
+ * El dueño la inicia con el enlace; el inquilino queda avisado para coordinar.
+ */
+export function deliveryActReminderEmail(input: {
+  recipientName: string;
+  endDate: string;
+  ownerLink: string;
+}): CompiledEmailTemplate {
+  const subject = `Acta de entrega y devolución — tu arriendo termina el ${input.endDate}`;
+  const text = `Hola ${input.recipientName},\n\nTu contrato de arriendo termina el ${input.endDate}. Antes de la entrega del inmueble, hagan el ACTA DE ENTREGA Y DEVOLUCIÓN con fotos: es la prueba del estado en que se devuelve (evita conflictos por el depósito o daños).\n\nEl dueño puede iniciarla aquí: ${input.ownerLink}\n\nEs el mismo proceso del inventario inicial; queda como acta aparte para comparar.`;
+  const html = baseHtml(
+    "Acta de entrega y devolución",
+    `<p>Hola <strong>${escapeHtml(input.recipientName)}</strong>,</p>
+     <p>Tu contrato de arriendo termina el <strong>${escapeHtml(input.endDate)}</strong>. Antes de la entrega del inmueble, hagan el <strong>Acta de entrega y devolución</strong> con fotos: es la prueba del estado en que se devuelve (evita conflictos por el depósito o daños).</p>
+     <p><a href="${input.ownerLink}" style="display:inline-block;background:#5646E5;color:#ffffff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600;">Iniciar acta de entrega y devolución</a></p>
+     <p style="font-size:12px;color:#64748b;">Es el mismo proceso del inventario inicial; queda como acta aparte para comparar el estado.</p>`,
   );
   return { subject, html, text };
 }

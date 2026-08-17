@@ -219,12 +219,12 @@ export default function PagoPublicoPage() {
             {/* Cierre del arriendo: el inquilino solicita su paz y salvo + recomendación. */}
             <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50/60 p-3">
               <p className="text-xs font-semibold text-violet-900">¿Ya terminaste tu arriendo?</p>
-              <p className="mt-0.5 text-[11px] text-slate-600">Pídele a tu arrendador tu <b>paz y salvo</b> y una <b>carta de recomendación</b>. Le llega el aviso con el enlace para generarlos.</p>
+              <p className="mt-0.5 text-[11px] text-slate-600">Pídele a tu arrendador tu <b>paz y salvo</b>, una <b>carta de recomendación</b> y el <b>acta de entrega y devolución</b>. Le llega el aviso con el enlace para generarlos.</p>
               {pazDone ? (
                 <p className="mt-2 text-[11px] font-semibold text-emerald-700">✓ Solicitud enviada a tu arrendador.</p>
               ) : (
                 <button type="button" onClick={() => void requestPazYSalvo()} disabled={pazBusy} className="mt-2 rounded-lg bg-[#5646E5] px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60">
-                  {pazBusy ? "Enviando…" : "Solicitar paz y salvo y recomendación"}
+                  {pazBusy ? "Enviando…" : "Solicitar cierre del arriendo"}
                 </button>
               )}
             </div>

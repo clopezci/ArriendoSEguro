@@ -140,6 +140,7 @@ export async function POST(request: Request) {
     }
 
     const annexId = `annex_delivery_${inventory.id}`;
+    const isFinal = inventory.inventoryType === "final";
     const now = new Date().toISOString();
     await firestore.collection("contract_annexes").doc(annexId).set(
       {
@@ -147,8 +148,8 @@ export async function POST(request: Request) {
         contractId: parsed.data.contractId,
         contractVersionId: parsed.data.contractVersionId,
         leaseProcessId: inventory.leaseProcessId,
-        annexType: "initial_delivery_act",
-        title: "Anexo No. 2 - Acta de entrega inicial",
+        annexType: isFinal ? "final_delivery_act" : "initial_delivery_act",
+        title: isFinal ? "Anexo - Acta de entrega y devolución" : "Anexo No. 2 - Acta de entrega inicial",
         status: "generated",
         htmlContent: rendered.html,
         pdfUrl: pdfUrl || null,

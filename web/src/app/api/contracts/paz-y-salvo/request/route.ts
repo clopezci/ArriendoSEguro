@@ -36,9 +36,10 @@ export async function POST(request: Request) {
     const base = appConfig.publicUrl.replace(/\/$/, "");
     const link = `${base}/dashboard/contracts/${tok.contractId}/paz-y-salvo`;
 
+    const inventarioFinalLink = `${base}/nuevo/gestionar/${tok.contractId}/inventario?kind=final`;
     await sendPhoneNotice({
       to: landlordPhone,
-      message: `${tenantName} te solicitó el PAZ Y SALVO y la carta de recomendación del arriendo${address ? ` de ${address}` : ""}. Genéralos y envíalos aquí: ${link}`,
+      message: `${tenantName} solicitó el CIERRE del arriendo${address ? ` de ${address}` : ""}: paz y salvo, carta de recomendación y acta de entrega y devolución. Paz y salvo/recomendación: ${link} · Acta de entrega: ${inventarioFinalLink}`,
       templateCode: "generalWa",
       relatedEntityType: "contract",
       relatedEntityId: tok.contractId,

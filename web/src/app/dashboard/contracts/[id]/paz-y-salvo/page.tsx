@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
 import { useAuth } from "@/contexts/auth-context";
@@ -163,6 +164,16 @@ export default function PazYSalvoPage() {
       {!loading && ctx && (
         <>
           {paymentBanner && <div className={`rounded-2xl border p-3 text-sm ${paymentBanner.cls}`}>{paymentBanner.text}</div>}
+
+          {/* Enlace al acta de entrega y devolución (mismo cierre del arriendo). */}
+          <Link href={`/nuevo/gestionar/${id}/inventario?kind=final`} className="flex items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white/90 p-4 transition hover:border-[#5646E5]">
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-lg">📦</span>
+            <span className="min-w-0 flex-1">
+              <b className="text-sm">Acta de entrega y devolución</b>
+              <span className="mt-0.5 block text-[12px] text-slate-500">Registra con fotos el estado del inmueble al devolverlo (mismo proceso del inventario). Queda aparte para comparar.</span>
+            </span>
+            <span className="text-sm font-bold text-[#5646E5]">→</span>
+          </Link>
 
           {/* PAZ Y SALVO */}
           <section className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">

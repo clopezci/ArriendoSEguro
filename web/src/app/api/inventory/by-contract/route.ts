@@ -9,6 +9,8 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const contractId = url.searchParams.get("contractId") ?? "";
     const contractVersionId = url.searchParams.get("contractVersionId") ?? "";
+    // "initial" (por defecto) o "final" (acta de entrega y devolución).
+    const inventoryType = url.searchParams.get("inventoryType") === "final" ? "final" : "initial";
     if (!contractId || !contractVersionId) {
       return NextResponse.json({ success: false, errors: [{ field: "query", message: "contractId y contractVersionId son obligatorios." }] }, { status: 422 });
     }
@@ -23,7 +25,7 @@ export async function GET(request: Request) {
       .collection("inventories")
       .where("contractId", "==", contractId)
       .where("contractVersionId", "==", contractVersionId)
-      .where("inventoryType", "==", "initial")
+      .where("inventoryType", "==", inventoryType)
       .limit(1)
       .get();
     if (snap.empty) return NextResponse.json({ success: true, inventory: null });
