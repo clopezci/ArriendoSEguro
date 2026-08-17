@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { TenantPromoFooter } from "@/components/marketing/tenant-promo-footer";
 
 type Info = {
   landlordName: string;
@@ -198,6 +199,7 @@ export default function PagoPublicoPage() {
           </>
         )}
       </div>
+      <TenantPromoFooter variant="landlord" />
     </main>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { TenantPromoFooter } from "@/components/marketing/tenant-promo-footer";
 
 /**
  * Página PÚBLICA (sin cuenta) para que el inquilino firme y autentique el contrato
@@ -212,6 +213,7 @@ export default function NotariaSharePage() {
             </p>
           </>
         )}
+        <TenantPromoFooter variant="landlord" />
       </div>
     </div>
   );

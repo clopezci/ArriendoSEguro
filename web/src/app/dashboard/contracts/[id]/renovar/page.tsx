@@ -216,6 +216,30 @@ export default function RenovarPage() {
         </>
       )}
 
+      {/* Opción alterna SIEMPRE visible: NO renovar (terminar el arriendo). El
+          recordatorio de vencimiento enlaza aquí (#no-renovar) con las dos vías. */}
+      {!loading && isActive && (
+        <section id="no-renovar" className="scroll-mt-20 space-y-2 rounded-2xl border-2 border-amber-300 bg-amber-50/70 p-4">
+          <h2 className="text-base font-bold text-amber-900">¿No vas a renovar? (terminar el arriendo)</h2>
+          <p className="text-sm text-amber-900/90">
+            Si decides <strong>no renovar</strong>, el contrato termina en su fecha de fin. Para terminarlo debes dar el{" "}
+            <strong>preaviso legal de al menos 3 meses</strong> antes del vencimiento (Ley 820 de 2003, vivienda urbana);
+            de lo contrario puede entenderse prorrogado.
+          </p>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Link href="/calculadoras/preaviso" className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white transition hover:brightness-105">
+              Calcular mi preaviso →
+            </Link>
+            <Link href={`/nuevo/gestionar/${id}`} className="rounded-xl border-2 border-amber-400 bg-white px-4 py-2 text-sm font-bold text-amber-800 transition hover:border-amber-500">
+              Gestionar / avisar la terminación
+            </Link>
+          </div>
+          <p className="text-[11px] text-amber-800/80">
+            ArriendoSeguro no decide por ti ni sustituye asesoría legal; solo te ayuda a hacerlo a tiempo y en regla.
+          </p>
+        </section>
+      )}
+
       {result && (
         <section className="space-y-2 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900">
           <p className="font-semibold">¡Contrato renovado!</p>
