@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
@@ -43,6 +43,10 @@ function chip(sel: boolean) {
 
 export default function InventarioBentoPage() {
   const id = String(useParams<{ id: string }>().id);
+  // ?kind=final → Acta de entrega y DEVOLUCIÓN (al terminar). Reusa todo el flujo
+  // pero se guarda como inventario/acta aparte, sin pisar la entrega inicial.
+  const isFinal = useSearchParams().get("kind") === "final";
+  const inventoryType: "initial" | "final" = isFinal ? "final" : "initial";
   const { user } = useAuth();
   const sc = useSavedContract(id);
   const versionId = sc.currentVersionId ?? "";
@@ -99,14 +103,14 @@ export default function InventarioBentoPage() {
     const h = { "content-type": "application/json", ...(await authHeaders()) };
     let invId = "";
     try {
-      const r = await fetch(`/api/inventory/by-contract?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}`, { headers: { ...(await authHeaders()) } });
+      const r = await fetch(`/api/inventory/by-contract?contractId=${encodeURIComponent(id)}&contractVersionId=${encodeURIComponent(versionId)}&inventoryType=${inventoryType}`, { headers: { ...(await authHeaders()) } });
       const j = (await r.json()) as { success?: boolean; inventory?: { id?: string } | null };
       if (r.ok && j.success && j.inventory?.id) invId = j.inventory.id;
     } catch { /* noop */ }
     if (!invId) {
       const r = await fetch("/api/inventory/create", {
         method: "POST", headers: h,
-        body: JSON.stringify({ leaseProcessId: id, contractId: id, contractVersionId: versionId, inventoryType: "initial" }),
+        body: JSON.stringify({ leaseProcessId: id, contractId: id, contractVersionId: versionId, inventoryType }),
       });
       const j = (await r.json()) as { success?: boolean; inventoryId?: string; errors?: { message?: string }[] };
       if (!r.ok || !j.success || !j.inventoryId) throw new Error(j.errors?.[0]?.message ?? "No se pudo crear el inventario. (Requiere Plan Plus.)");
@@ -276,7 +280,8 @@ export default function InventarioBentoPage() {
           <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs text-slate-500">Inventario y acta</span>
         </div>
 
-        <h1 className="text-balance text-3xl font-extrabold tracking-tight">Inventario y acta de entrega</h1>
+        <h1 className="text-balance text-3xl font-extrabold tracking-tight">{isFinal ? "Acta de entrega y devolución" : "Inventario y acta de entrega"}</h1>
+        {isFinal && <p className="mt-1 text-sm text-slate-500">Registra el estado del inmueble al DEVOLVERLO (fin del arriendo). Es el mismo proceso del inventario inicial; queda como acta aparte para comparar.</p>}
 
         {phase === "loading" && <p className="mt-6 text-slate-400">Cargando…</p>}
 
