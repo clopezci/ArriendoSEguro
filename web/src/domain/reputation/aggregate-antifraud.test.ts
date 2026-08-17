@@ -65,10 +65,10 @@ test("aggregateReviews pondera la reseña reciente por encima de la antigua", ()
   assert.equal(agg.totalReviews, 2);
 });
 
-test("caducidad: reseña con más de 4 años ni caduca ni cuenta", () => {
+test("caducidad: reseña más vieja que la retención ni cuenta ni vale", () => {
   const now = Date.parse("2026-06-01T00:00:00.000Z");
   const day = 86_400_000;
-  const vieja = new Date(now - (REPUTATION_RETENTION_YEARS + 1) * 365 * day).toISOString(); // 5 años
+  const vieja = new Date(now - (REPUTATION_RETENTION_YEARS + 1) * 365 * day).toISOString(); // > retención
   const reciente = new Date(now - 30 * day).toISOString();
   assert.equal(isReviewExpired(vieja, now), true);
   assert.equal(isReviewExpired(reciente, now), false);
