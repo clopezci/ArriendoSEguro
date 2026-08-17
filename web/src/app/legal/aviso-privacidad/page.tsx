@@ -121,6 +121,14 @@ export default function AvisoPrivacidadPage() {
           electrónica. Aplicamos medidas técnicas y organizativas razonables (control de acceso, cifrado en tránsito
           cuando el proveedor lo ofrece, minimización y registro de auditoría en eventos sensibles).
         </p>
+        <p>
+          Al <strong>terminar un contrato</strong>, tienes <strong>siete (7) días</strong> para descargar tu expediente o
+          contratar la <strong>custodia en la nube</strong>. Después de ese plazo, y salvo custodia contratada,{" "}
+          <strong>eliminamos las fotografías y los soportes</strong> (principio de temporalidad, Ley 1581 de 2012),
+          conservando el contrato, la recomendación, el historial y la calificación. La descarga oportuna es tu
+          responsabilidad. Ver el detalle en la{" "}
+          <a href="/legal/privacidad" className="text-violet-700 underline">Política de tratamiento de datos</a>.
+        </p>
       </section>
 
       <section className="space-y-3">
