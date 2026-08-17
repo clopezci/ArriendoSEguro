@@ -7,6 +7,7 @@ import { sendEmail } from "@/services/email/sendEmail";
 import { sendPhoneNotice } from "@/services/notify/phoneChannel";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { logServerError } from "@/lib/observability/observability";
+import { appConfig } from "@/lib/config";
 import type { ResidentialLeaseContractInput, PersonParty } from "@/domain/contracts/types";
 
 export const runtime = "nodejs";
@@ -55,6 +56,11 @@ export async function POST(request: Request) {
       if (!due) continue;
 
       const days = daysUntilEnd(endDate, now);
+      // Enlace directo a la plataforma (mismo destino que el botón del correo):
+      // el dueño/inquilino entra de una a gestionar/renovar su contrato.
+      const base = appConfig.publicUrl.replace(/\/$/, "");
+      const dashId = c.draftId ?? doc.id;
+      const renewUrl = `${base}/dashboard/contracts/${dashId}/renovar`;
       const parties: Array<{ party?: PersonParty; role: string }> = [
         { party: payload?.landlord, role: "landlord" },
         { party: payload?.tenant, role: "tenant" },
@@ -85,7 +91,7 @@ export async function POST(request: Request) {
         // interruptor maestro de WhatsApp está encendido.
         await sendPhoneNotice({
           to: party.phone,
-          message: `Tu contrato de arriendo vence el ${endDate} (~${days} días). Recuerda el preaviso de 3 meses. Decide renovación o terminación en la plataforma.`,
+          message: `Tu contrato de arriendo vence el ${endDate} (~${days} días). Entra y elige: RENOVAR o NO renovar (terminar). Recuerda el preaviso de 3 meses. Aquí tienes las dos opciones: ${renewUrl}`,
           templateCode: "renewalReminderWa",
           relatedEntityType: "contract",
           relatedEntityId: doc.id,

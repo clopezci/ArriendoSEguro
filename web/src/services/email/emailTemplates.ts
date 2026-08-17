@@ -549,16 +549,19 @@ export function contractRenewalReminderEmail(input: {
   const base = appBaseUrl();
   const dashId = input.leaseProcessId ?? input.contractId;
   const renewLink = `${base}/dashboard/contracts/${dashId}/renovar`;
-  const manageLink = `${base}/dashboard/contracts/${dashId}/gestion`;
+  const noRenewLink = `${renewLink}#no-renovar`;
   const subject = `Tu contrato de arriendo vence el ${input.endDate}: decide renovación o terminación`;
-  const text = `Hola ${input.recipientName},\n\nTu contrato de arriendo termina el ${input.endDate} (en aproximadamente ${input.daysUntilEnd} días).\n\nSi vas a seguir con el mismo inquilino, puedes RENOVARLO con un clic (generamos el otrosí de prórroga con el reajuste del IPC): ${renewLink}\n\nSi lo vas a terminar, recuerda el preaviso de al menos 3 meses (Ley 820 de 2003). Gestiona tu arriendo: ${manageLink}\n\nArriendoSeguro no decide por ti; solo te recordamos a tiempo.`;
+  const text = `Hola ${input.recipientName},\n\nTu contrato de arriendo termina el ${input.endDate} (en aproximadamente ${input.daysUntilEnd} días). Tienes dos opciones:\n\n• RENOVAR con un clic (generamos el otrosí de prórroga con el reajuste del IPC): ${renewLink}\n\n• NO RENOVAR / terminar el arriendo (recuerda el preaviso de al menos 3 meses, Ley 820 de 2003): ${noRenewLink}\n\nArriendoSeguro no decide por ti; solo te recordamos a tiempo.`;
   const html = baseHtml(
     "Recordatorio: vencimiento de tu contrato de arriendo",
     `<p>Hola <strong>${escapeHtml(input.recipientName)}</strong>,</p>
-     <p>Tu contrato de arriendo termina el <strong>${escapeHtml(input.endDate)}</strong> (en aproximadamente <strong>${input.daysUntilEnd} días</strong>).</p>
-     <p>Si vas a seguir con el mismo inquilino, puedes <strong>renovarlo con un clic</strong>: generamos el otrosí de prórroga con el reajuste del IPC y lo enviamos a todas las partes.</p>
-     <p><a href="${renewLink}" style="display:inline-block;background:#059669;color:#ffffff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600;">Renovar contrato</a></p>
-     <p>Si lo vas a terminar, recuerda el <strong>preaviso de al menos 3 meses</strong> (Ley 820 de 2003, vivienda urbana). <a href="${manageLink}" style="color:#6d28d9;">Gestionar mi arriendo</a>.</p>
+     <p>Tu contrato de arriendo termina el <strong>${escapeHtml(input.endDate)}</strong> (en aproximadamente <strong>${input.daysUntilEnd} días</strong>). Tienes <strong>dos opciones</strong>:</p>
+     <p style="margin:16px 0;">
+       <a href="${renewLink}" style="display:inline-block;background:#059669;color:#ffffff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600;margin:0 6px 8px 0;">Renovar contrato</a>
+       <a href="${noRenewLink}" style="display:inline-block;background:#ffffff;color:#b45309;border:2px solid #f59e0b;padding:8px 16px;border-radius:8px;text-decoration:none;font-weight:600;margin:0 0 8px 0;">No renovar (terminar)</a>
+     </p>
+     <p><strong>Renovar</strong>: generamos el otrosí de prórroga con el reajuste del IPC y lo enviamos a todas las partes.</p>
+     <p><strong>No renovar</strong>: recuerda el <strong>preaviso de al menos 3 meses</strong> (Ley 820 de 2003, vivienda urbana); ahí te ayudamos a calcularlo y a avisar en regla.</p>
      <p style="font-size:12px;color:#64748b;">ArriendoSeguro solo te recuerda a tiempo; no decide ni sustituye asesoría legal.</p>`,
   );
   return { subject, html, text };
