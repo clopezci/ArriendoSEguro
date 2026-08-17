@@ -173,13 +173,14 @@ export async function POST(request: Request) {
     const phoneTargets = [payload?.landlord, payload?.tenant]
       .filter((p): p is NonNullable<typeof p> => Boolean(p?.phone))
       .filter((p) => (p.email ?? "").toLowerCase() !== authorEmailLc);
+    const mantLink = `${(process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "")}/dashboard/contracts/${contractId}/mantenimiento`;
     const seen = new Set<string>();
     for (const p of phoneTargets) {
       if (seen.has(p.phone!)) continue;
       seen.add(p.phone!);
       await sendPhoneNotice({
         to: p.phone!,
-        message: `Nueva ${kindLabel.toLowerCase()} en tu arriendo: ${check.values.title}. Revísala y responde en la plataforma.`,
+        message: `Nueva ${kindLabel.toLowerCase()} en tu arriendo: ${check.values.title}. Revísala y responde aquí: ${mantLink}`,
         templateCode: "maintenanceWa",
         relatedEntityType: "contract",
         relatedEntityId: contractId,
