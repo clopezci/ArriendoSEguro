@@ -151,6 +151,18 @@ export default function PrivacidadPage() {
           necesarios para defensa de derechos, auditoría o cumplimiento de obligaciones legales (por ejemplo,
           tributarias o probatorias), adoptando supresión o anonimización cuando corresponda.
         </p>
+        <p>
+          <strong>Eliminación al terminar el contrato.</strong> Una vez el usuario cierra un contrato, dispone de{" "}
+          <strong>siete (7) días</strong> para descargar la totalidad de su expediente (contrato, actas, soportes y
+          fotografías) o para contratar la <strong>custodia en la nube</strong> por el término y valor que se le informen.
+          Transcurrido ese plazo, y salvo que haya contratado la custodia, ArriendoSeguro <strong>eliminará las
+          fotografías y los soportes</strong> (comprobantes de pago, soportes de ingresos y demás archivos), en aplicación
+          del principio de temporalidad (Ley 1581 de 2012). Se conservan el documento del contrato, la carta de
+          recomendación, el historial y la calificación del arriendo por el término definido como servicio. La calificación
+          de reputación caduca a los <strong>cuatro (4) años</strong>. La descarga oportuna de la información es
+          responsabilidad del usuario; ArriendoSeguro no responde por la información no descargada. ArriendoSeguro
+          conserva, de forma independiente, los soportes de su propia contabilidad conforme a la ley.
+        </p>
       </section>
 
       <section className="space-y-3">
