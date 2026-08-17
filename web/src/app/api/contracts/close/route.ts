@@ -46,11 +46,10 @@ export async function POST(request: Request) {
     const now = new Date();
     const closedAt = now.toISOString();
     const purgeAt = new Date(now.getTime() + GRACE_DAYS * 24 * 60 * 60 * 1000);
-    const cloudUntil = new Date(now); cloudUntil.setUTCFullYear(cloudUntil.getUTCFullYear() + CLOUD_YEARS);
 
     const consentText =
       choice === "cloud"
-        ? `Cierro el contrato y elijo CUSTODIA EN LA NUBE de ArriendoSeguro por ${CLOUD_YEARS} años. Entiendo que se conservan el contrato, la recomendación, el historial y la calificación.`
+        ? `Cierro el contrato y elijo CUSTODIA EN LA NUBE de ArriendoSeguro por ${CLOUD_YEARS} años (pago de la custodia pendiente). Entiendo que si no completo el pago en ${GRACE_DAYS} días se eliminarán las fotos y soportes. Se conservan el contrato, la recomendación, el historial y la calificación.`
         : `Cierro el contrato. Entiendo que en ${GRACE_DAYS} días se eliminarán las fotos y soportes, que es mi responsabilidad haber descargado mi información, y eximo a ArriendoSeguro de responsabilidad por ello (Ley 1581 de 2012). Se conservan el contrato, la recomendación, el historial y la calificación.`;
 
     await contractSnap.ref.set(
@@ -58,10 +57,13 @@ export async function POST(request: Request) {
         status: "closed",
         closedAt,
         retentionChoice: choice,
-        // Purga programada solo cuando NO se eligió nube (descargar o indeciso).
-        purgeScheduledAt: choice === "cloud" ? null : purgeAt.toISOString(),
+        // Purga programada SIEMPRE como red de seguridad; el pago de la custodia
+        // (webhook Wompi) la cancela poniendo purgeScheduledAt=null.
+        purgeScheduledAt: purgeAt.toISOString(),
         purgedAt: null,
-        cloudRetentionUntil: choice === "cloud" ? cloudUntil.toISOString() : null,
+        // La nube se activa (cloudRetentionUntil) solo cuando el pago se aprueba.
+        cloudRetentionUntil: null,
+        custodyStatus: choice === "cloud" ? "pending_payment" : null,
         closureRemindersSent: {},
         closureEvidence: {
           choice,
@@ -76,14 +78,14 @@ export async function POST(request: Request) {
       },
       { merge: true },
     );
-    auditEvent("contract_closed", { contractId, choice, purgeScheduledAt: choice === "cloud" ? null : purgeAt.toISOString() });
+    auditEvent("contract_closed", { contractId, choice, purgeScheduledAt: purgeAt.toISOString() });
 
     return NextResponse.json({
       success: true,
       status: "closed",
       choice,
-      purgeScheduledAt: choice === "cloud" ? null : purgeAt.toISOString(),
-      cloudRetentionUntil: choice === "cloud" ? cloudUntil.toISOString() : null,
+      purgeScheduledAt: purgeAt.toISOString(),
+      custodyPending: choice === "cloud",
     });
   } catch (e) {
     if (process.env.NODE_ENV !== "production") console.error("contracts/close", e);

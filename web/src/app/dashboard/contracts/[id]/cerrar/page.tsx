@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
@@ -11,6 +11,7 @@ type Choice = "download" | "cloud" | "undecided";
 export default function CerrarContratoPage() {
   const id = String(useParams<{ id: string }>().id);
   const router = useRouter();
+  const custodyReturn = useSearchParams().get("custody") === "return";
   const { user } = useAuth();
   const [versionId, setVersionId] = useState("");
   const [status, setStatus] = useState("");
@@ -63,6 +64,27 @@ export default function CerrarContratoPage() {
     }
   }
 
+  /** Inicia el pago de la custodia ($20.000) y redirige al checkout de Wompi. */
+  async function payCustody() {
+    if (!user) return;
+    setBusy(true);
+    setMsg("");
+    try {
+      const res = await fetch("/api/contracts/custody/create-order", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ contractId: id }),
+      });
+      const j = (await res.json()) as { success?: boolean; checkoutUrl?: string; errors?: { message?: string }[] };
+      if (!res.ok || !j.success || !j.checkoutUrl) { setMsg(j.errors?.[0]?.message ?? "No se pudo iniciar el pago de la custodia."); return; }
+      window.location.href = j.checkoutUrl;
+    } catch {
+      setMsg("Error de red al iniciar el pago.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function closeContract() {
     if (!user) return;
     if (!choice) { setMsg("Es obligatorio elegir una opción para cerrar el contrato."); return; }
@@ -77,6 +99,8 @@ export default function CerrarContratoPage() {
       });
       const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!res.ok || !j.success) { setMsg(j.errors?.[0]?.message ?? "No se pudo cerrar el contrato."); return; }
+      // Si eligió la nube, el cierre queda registrado y pasamos al pago.
+      if (choice === "cloud") { await payCustody(); return; }
       await load();
     } catch {
       setMsg("Error de red al cerrar el contrato.");
@@ -99,15 +123,26 @@ export default function CerrarContratoPage() {
         </p>
       </header>
 
-      {loading && <p className="text-sm text-slate-600">Cargando…</p>}
+      {custodyReturn && (
+        <p className="rounded-2xl border border-sky-300 bg-sky-50 p-3 text-sm text-sky-900">
+          Estamos confirmando tu pago de custodia. Puede tardar un momento; si ya pagaste, tu información quedará
+          protegida y no se eliminará. Recarga esta página en unos minutos para verlo reflejado.
+        </p>
+      )}
 
       {!loading && isClosed && (
         <section className="rounded-3xl border-2 border-emerald-400 bg-emerald-50 p-5 text-emerald-900">
           <p className="text-lg font-bold">✓ Contrato cerrado</p>
           <p className="mt-1 text-sm">Quedó registrado como conciliado y cerrado. Puedes descargar tu expediente cuando lo necesites.</p>
-          <button onClick={() => void downloadZip()} disabled={dlBusy} className="mt-3 rounded-xl border-2 border-emerald-500 bg-white px-4 py-2 text-sm font-bold text-emerald-700 disabled:opacity-60">
-            {dlBusy ? "Generando…" : "⬇️ Descargar expediente (ZIP)"}
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button onClick={() => void downloadZip()} disabled={dlBusy} className="rounded-xl border-2 border-emerald-500 bg-white px-4 py-2 text-sm font-bold text-emerald-700 disabled:opacity-60">
+              {dlBusy ? "Generando…" : "⬇️ Descargar expediente (ZIP)"}
+            </button>
+            <button onClick={() => void payCustody()} disabled={busy} className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white disabled:opacity-60">
+              {busy ? "Abriendo pago…" : "☁️ Activar custodia en la nube ($20.000)"}
+            </button>
+          </div>
+          <p className="mt-2 text-[11px] text-emerald-800/80">Si no activas la custodia, las fotos y soportes se eliminarán a los 7 días del cierre. El contrato, la recomendación, el historial y la calificación se conservan.</p>
           {msg && <p className="mt-2 text-xs">{msg}</p>}
         </section>
       )}
