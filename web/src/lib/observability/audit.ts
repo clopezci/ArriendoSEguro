@@ -4,6 +4,7 @@ import { getAdminInternalEmailSet } from "@/lib/admin/internal-admin";
 import { isWompiConfigured } from "@/domain/platform-payments/provider-factory";
 import { isTelegramConfigured, sendTelegram, type SendTelegramOutput } from "@/services/telegram/sendTelegram";
 import { ERROR_EVENTS_COLLECTION } from "@/lib/observability/observability";
+import { isBenignClientError } from "@/lib/observability/ignore-noise";
 import { recordObservabilityRun } from "@/lib/observability/runlog";
 import { formatAppDateTime } from "@/lib/datetime/appTime";
 import { appConfig } from "@/lib/config";
@@ -125,7 +126,11 @@ export async function summarizeErrors(): Promise<ErrorSummary | null> {
       .get();
     const now = Date.now();
     const DAY = 24 * 60 * 60 * 1000;
-    const rows = snap.docs.map((d) => d.data() as Record<string, unknown>);
+    // Excluimos el ruido benigno (terceros/extensiones) del conteo y del top: si
+    // ya lo silenciamos como no accionable, tampoco debe ensuciar la auditoría.
+    const rows = snap.docs
+      .map((d) => d.data() as Record<string, unknown>)
+      .filter((r) => !isBenignClientError(String(r.message ?? "")));
     let unresolved = 0;
     let occurrences = 0;
     let new24h = 0;

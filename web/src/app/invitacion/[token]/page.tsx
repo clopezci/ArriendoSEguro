@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { TenantPromoFooter } from "@/components/marketing/tenant-promo-footer";
 import { PartyDataFields } from "@/components/contracts/party-data-fields";
 import { OathEvidenceBadge } from "@/components/contracts/oath-evidence-badge";
 import { sanitizePartyFromForm } from "@/features/contracts/party-sanitize";
@@ -396,6 +397,7 @@ export default function InvitacionPage() {
           <button type="button" onClick={() => setFinished(false)} className="text-sm font-semibold text-[#5646E5] underline">← Volver a subir documentos</button>
         </div>
       )}
+      <TenantPromoFooter variant="generic" />
       </main>
     </div>
   );

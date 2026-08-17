@@ -33,6 +33,13 @@ const BENIGN_PATTERNS: RegExp[] = [
   /ethereum/i,
   /web3/i,
   /Cannot redefine property: ethereum/i,
+  // Ruido de terceros/extensiones observado en producción (inactivo desde jun–jul
+  // 2026, sin correlación con flujos de la app):
+  //  - `e[o] is not a function`: rechazo desde script minificado de terceros.
+  //  - `object is not extensible`: una librería/extensión intenta escribir en un
+  //    objeto congelado (p. ej. añadir `.code` a un Error inmutable).
+  /\be\[o\] is not a function\b/i,
+  /object is not extensible/i,
 ];
 
 /** ¿El mensaje de error es ruido benigno que debemos ignorar? */
