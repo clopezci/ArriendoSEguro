@@ -38,18 +38,23 @@ export async function POST(request: Request) {
         currentVersionId?: string;
         draftId?: string;
         retentionChoice?: string;
+        custodyPaidAt?: string | null;
         purgeScheduledAt?: string | null;
         purgedAt?: string | null;
         closureRemindersSent?: { r1?: string; r2?: string };
       };
-      if (c.retentionChoice === "cloud") continue; // custodia elegida: no se purga
+      // La custodia en la nube protege de la purga SOLO si ya se pagó.
+      if (c.retentionChoice === "cloud" && c.custodyPaidAt) continue;
       if (c.purgedAt) continue; // ya purgado
       const purgeAt = c.purgeScheduledAt ? Date.parse(c.purgeScheduledAt) : NaN;
       if (!Number.isFinite(purgeAt)) continue;
 
-      // (a) Ventana de gracia: recordar al dueño si sigue indeciso.
+      // ¿Aún necesita decidir/pagar? (indeciso, o eligió nube pero no ha pagado)
+      const needsAction = c.retentionChoice === "undecided" || (c.retentionChoice === "cloud" && !c.custodyPaidAt);
+
+      // (a) Ventana de gracia: recordar al dueño si aún debe actuar.
       if (now.getTime() < purgeAt) {
-        if (c.retentionChoice !== "undecided") continue; // ya eligió descargar: no molestar
+        if (!needsAction) continue; // ya descargó: no molestar
         const daysLeft = Math.max(0, Math.ceil((purgeAt - now.getTime()) / (1000 * 60 * 60 * 24)));
         const sent = c.closureRemindersSent ?? {};
         let which: "r1" | "r2" | null = null;

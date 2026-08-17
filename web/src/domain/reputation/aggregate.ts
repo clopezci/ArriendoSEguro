@@ -46,14 +46,12 @@ export const RECENCY_WEIGHT_FLOOR = 0.25;
 const DAY_MS = 86_400_000;
 
 /**
- * Caducidad del dato de reputación: las calificaciones con más de estos años
- * **dejan de contar** y se **borran** por un cron. Alinea con el principio de
- * temporalidad (Ley 1581 de 2012) y con el período de custodia del expediente
- * (5 años). NOTA LEGAL: el dato NEGATIVO puede tener un tope de permanencia
- * menor (~4 años, Ley 1266 de 2008) si se considera dato financiero/comercial;
- * pendiente sign-off del abogado (si aplica, bajar a 4 para calificaciones bajas).
+ * Caducidad legal del dato de reputación: las calificaciones con más de estos
+ * años **dejan de contar** y se **borran** por un cron. Alinea con el principio
+ * de temporalidad (Ley 1581 de 2012) y con el tope de permanencia del dato
+ * negativo (~4 años, Ley 1266 de 2008). Lo reciente es lo que importa.
  */
-export const REPUTATION_RETENTION_YEARS = 5;
+export const REPUTATION_RETENTION_YEARS = 4;
 
 /** Instante (ms) antes del cual una reseña ya caducó. */
 export function retentionCutoffMs(nowMs: number): number {

@@ -5,6 +5,7 @@ import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
 import { verifyWompiWebhookSignature } from "@/domain/platform-payments/wompi-signature";
 import { decideWebhookHandling } from "@/domain/platform-payments/webhook-logic";
 import { processHubWompiEvent } from "@/domain/hub/hub-webhook";
+import { processCustodyWompiEvent, CUSTODY_REFERENCE_PREFIX } from "@/features/contracts/custody-webhook";
 import { plusAccessConfirmedEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
 import { notifyLegalPartnerForPaidClause } from "@/lib/legal/notifySpecialClause";
@@ -94,6 +95,12 @@ export async function POST(request: Request) {
     // de Wompi sirve para ArriendoSeguro y para el hub.
     if (providerReference.startsWith("HUB_")) {
       const result = await processHubWompiEvent(firestore, event, Date.now());
+      return NextResponse.json(result.body, { status: result.httpStatus });
+    }
+
+    // Custodia en la nube de un contrato ($20.000): rama propia, no es Plan Plus.
+    if (providerReference.startsWith(CUSTODY_REFERENCE_PREFIX)) {
+      const result = await processCustodyWompiEvent(firestore, event);
       return NextResponse.json(result.body, { status: result.httpStatus });
     }
 
