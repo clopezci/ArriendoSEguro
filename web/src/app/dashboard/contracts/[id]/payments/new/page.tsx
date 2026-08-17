@@ -99,6 +99,12 @@ export default function NewPaymentPage() {
     try {
       if (!periodLabel.trim() || periodLabel.trim().length < 3) throw new Error("Elige o escribe el periodo pagado (ej. Mayo 2026).");
       if (!dueDate || dueDate.length < 8) throw new Error("Falta la fecha de vencimiento (YYYY-MM-DD).");
+      // Confirmación si registras un pago SIN comprobante (permitido para el dueño,
+      // que lo da por recibido; el inquilino sí debe adjuntarlo).
+      if (!supportFile && Number(amountPaid) > 0) {
+        const ok = window.confirm("¿Seguro que quieres registrar el pago SIN comprobante? Como dueño puedes hacerlo (lo das por recibido). Podrás adjuntar el soporte después.");
+        if (!ok) { setSaving(false); return; }
+      }
       const uploadedSupportUrl = await uploadSupportIfAny();
       const res = await fetch("/api/payments/create", {
         method: "POST",

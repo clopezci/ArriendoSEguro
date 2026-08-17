@@ -150,6 +150,20 @@ export default function PagoPublicoPage() {
               <p className="mt-3 text-xs text-slate-600">Acuerda el medio de pago directamente con tu arrendador.</p>
             )}
 
+            {/* Aviso ANTIFRAUDE: el QR/cuenta los pone el arrendador; el inquilino
+                debe verificar que correspondan al dueño antes de pagar. */}
+            {(info.method === "qr" || info.method === "account") && (
+              <div className="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-[12px] leading-relaxed text-amber-900">
+                <p className="font-semibold">⚠️ Antes de pagar, verifica a quién le pagas</p>
+                <p className="mt-0.5">
+                  Confirma que {info.method === "qr" ? "el QR" : "la cuenta"} corresponda a{" "}
+                  <strong>{info.landlordName || "el arrendador"}</strong>, el dueño del inmueble. Si tienes cualquier
+                  duda, valídalo directamente con él/ella por un medio que ya conozcas antes de transferir.
+                  ArriendoSeguro no genera ni administra estos datos: los registra el arrendador.
+                </p>
+              </div>
+            )}
+
             <hr className="my-4 border-slate-200" />
             <p className="text-sm font-semibold text-slate-900">Sube tu comprobante</p>
             <div className="mt-2 space-y-3">
