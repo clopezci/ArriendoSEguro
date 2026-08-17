@@ -5,11 +5,15 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 
 /**
- * Fotos de una zona del inventario: permite **tomar foto con la cámara** (móvil)
- * o elegir **varias imágenes de la galería a la vez**. Cada imagen se **comprime
- * en el navegador** (canvas) antes de subir —así no pesa de más (evita el error
- * 413 «Payload Too Large» y sube mucho más rápido)— y se envía a Storage vía
- * nuestra API. La subida es EN LOTE con **barra de progreso** para no impacientar.
+ * Fotos de una zona del inventario. Flujo tipo "ráfaga":
+ *  1) Tomas fotos con la cámara (una tras otra) o eliges varias de la galería;
+ *     cada una entra a una **bandeja local** (galería virtual) con su miniatura,
+ *     SIN subir todavía. Puedes descartar las que no sirvan.
+ *  2) Cuando termines, pulsas **«Cargar»** y se suben TODAS juntas con una
+ *     **barra de progreso**.
+ * Cada imagen se **comprime en el navegador** (canvas) antes de subir —así no
+ * pesa de más (evita el error 413 «Payload Too Large» y sube más rápido)— y se
+ * guarda en Storage vía nuestra API. Hay un **tope de fotos** (`maxPhotos`).
  */
 
 /**
@@ -45,12 +49,23 @@ async function compressImage(file: File, maxDim = 1600, quality = 0.82): Promise
   }
 }
 
+type PendingPhoto = { id: string; file: File; preview: string };
+
+function newId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `p_${Date.now()}_${Math.round(Math.random() * 1e6)}`;
+  }
+}
+
 export function InventoryZonePhotos({
   inventoryId,
   zoneId,
   photoUrls,
   onChange,
   maxPhotos = 30,
+  onPendingChange,
 }: {
   inventoryId: string;
   zoneId: string;
@@ -58,16 +73,26 @@ export function InventoryZonePhotos({
   onChange: (next: string[]) => void;
   /** Tope de fotos (control de costo/almacenamiento). */
   maxPhotos?: number;
+  /** Avisa al padre cuántas fotos quedan en la bandeja sin subir (para no
+   *  finalizar y perderlas). */
+  onPendingChange?: (count: number) => void;
 }) {
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
-  const remaining = Math.max(0, maxPhotos - photoUrls.length);
-  const atLimit = remaining <= 0;
+  // Bandeja local: fotos tomadas/elegidas que aún NO se han subido.
+  const [pending, setPending] = useState<PendingPhoto[]>([]);
 
-  // Resolver miniaturas (URL firmada) para los storagePath gs://.
+  const total = photoUrls.length + pending.length; // subidas + en bandeja
+  const capacity = Math.max(0, maxPhotos - total);
+  const atLimit = capacity <= 0;
+
+  // Avisar al padre del número de fotos SIN subir (para bloquear "finalizar").
+  useEffect(() => { onPendingChange?.(pending.length); }, [pending.length, onPendingChange]);
+
+  // Resolver miniaturas (URL firmada) para los storagePath gs:// ya subidos.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -92,32 +117,50 @@ export function InventoryZonePhotos({
     };
   }, [photoUrls, user, thumbs]);
 
-  /** Sube una o varias fotos EN LOTE: comprime → sube → va sumando al listado. */
-  async function onPickMany(files: File[]) {
-    if (!user || !inventoryId) {
-      setMsg("Guarda primero el inventario para subir fotos.");
-      return;
-    }
+  /** Agrega fotos a la bandeja (aún sin subir), respetando el tope. */
+  function addToTray(files: File[]) {
     if (files.length === 0) return;
-    if (remaining <= 0) {
-      setMsg(`Llegaste al máximo de ${maxPhotos} fotos. Borra alguna si necesitas agregar otra.`);
+    if (!inventoryId) {
+      setMsg("Guarda primero el inventario para agregar fotos.");
       return;
     }
-    // Respeta el tope: si eligieron más de las que caben, tomamos las primeras.
-    let capped = false;
-    if (files.length > remaining) {
-      files = files.slice(0, remaining);
-      capped = true;
+    if (capacity <= 0) {
+      setMsg(`Llegaste al máximo de ${maxPhotos} fotos. Borra alguna si necesitas otra.`);
+      return;
     }
+    const take = files.slice(0, capacity);
+    const capped = files.length > capacity;
+    const additions: PendingPhoto[] = take.map((file) => {
+      let preview = "";
+      try { preview = URL.createObjectURL(file); } catch { /* noop */ }
+      return { id: newId(), file, preview };
+    });
+    setPending((p) => [...p, ...additions]);
+    setMsg(capped ? `Agregamos ${take.length}; solo caben ${maxPhotos} en total.` : "");
+  }
+
+  /** Quita una foto de la bandeja antes de subir. */
+  function removePending(id: string) {
+    setPending((p) => {
+      const found = p.find((x) => x.id === id);
+      if (found?.preview) { try { URL.revokeObjectURL(found.preview); } catch { /* noop */ } }
+      return p.filter((x) => x.id !== id);
+    });
+  }
+
+  /** Sube TODAS las fotos de la bandeja con barra de progreso. */
+  async function uploadTray() {
+    if (!user || !inventoryId || pending.length === 0 || busy) return;
     setBusy(true);
     setMsg("");
-    setProgress({ done: 0, total: files.length });
-    const next = [...photoUrls];
-    let okCount = 0;
-    let failCount = 0;
-    for (let i = 0; i < files.length; i++) {
+    const items = [...pending];
+    setProgress({ done: 0, total: items.length });
+    const uploadedPaths: string[] = [];
+    const failed: PendingPhoto[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
       try {
-        const f = await compressImage(files[i]);
+        const f = await compressImage(it.file);
         const q = new URLSearchParams({
           inventoryId,
           selectedZoneId: zoneId,
@@ -132,26 +175,25 @@ export function InventoryZonePhotos({
         let upJson: { success?: boolean; storagePath?: string; errors?: { message?: string }[] } = {};
         try { upJson = (await up.json()) as typeof upJson; } catch { /* respuesta no-JSON */ }
         if (up.ok && upJson.success && upJson.storagePath) {
-          // Vista previa INSTANTÁNEA con la imagen local ya comprimida.
-          try { setThumbs((t) => ({ ...t, [upJson.storagePath!]: URL.createObjectURL(f) })); } catch { /* noop */ }
-          next.push(upJson.storagePath);
-          onChange([...next]); // se ve aparecer cada foto a medida que sube
-          okCount++;
+          // Reusa la miniatura local ya generada (no la revocamos: sigue visible).
+          if (it.preview) setThumbs((t) => ({ ...t, [upJson.storagePath!]: it.preview }));
+          uploadedPaths.push(upJson.storagePath);
         } else {
-          failCount++;
+          failed.push(it);
         }
       } catch {
-        failCount++;
+        failed.push(it);
       }
-      setProgress({ done: i + 1, total: files.length });
+      setProgress({ done: i + 1, total: items.length });
     }
+    if (uploadedPaths.length > 0) onChange([...photoUrls, ...uploadedPaths]);
+    setPending(failed); // solo quedan en bandeja las que fallaron
     setBusy(false);
     setProgress(null);
-    const capNote = capped ? ` Solo caben ${maxPhotos} en total; el resto no se agregó.` : "";
     setMsg(
-      failCount > 0
-        ? `Subimos ${okCount} de ${files.length}. ${failCount} no se pudo(eron); intenta de nuevo esa(s).${capNote}`
-        : `¡Listo! ${okCount} foto(s) guardada(s) ✓${capNote}`,
+      failed.length > 0
+        ? `Subimos ${uploadedPaths.length}. ${failed.length} no se pudo(eron); quedaron en la bandeja para reintentar.`
+        : `¡Listo! ${uploadedPaths.length} foto(s) guardada(s) ✓`,
     );
   }
 
@@ -161,14 +203,13 @@ export function InventoryZonePhotos({
     <div className="mt-2">
       <p className="text-xs font-medium text-slate-700">Fotos de la zona</p>
       <p className="mt-0.5 text-[11px] text-slate-500">
-        Puedes elegir <b>varias de la galería a la vez</b>; se suben solas (comprimidas) con su barra de avance.
-        <b> Hasta {maxPhotos} fotos</b> — elige las que mejor muestren el estado.
+        Toma varias <b>(una tras otra)</b> o elige de la galería; se juntan abajo y luego pulsas <b>Cargar</b>.
+        <b> Hasta {maxPhotos} fotos.</b>
       </p>
       <div className="mt-1.5 flex flex-wrap items-center gap-2">
-        {/* Dos opciones EXPLÍCITAS: algunos navegadores/webviews, sin `capture`,
-            abrían la galería directo sin ofrecer la cámara. */}
+        {/* Cámara: cada toque agrega UNA a la bandeja (efecto ráfaga). */}
         <label className={`cursor-pointer rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-violet-500 ${busy || atLimit ? "cursor-not-allowed opacity-50" : ""}`}>
-          {busy ? "Subiendo…" : "📷 Tomar foto"}
+          📷 Tomar foto
           <input
             type="file"
             accept="image/*"
@@ -177,7 +218,7 @@ export function InventoryZonePhotos({
             disabled={busy || atLimit}
             onChange={(e) => {
               const fs = Array.from(e.target.files ?? []);
-              if (fs.length) void onPickMany(fs);
+              if (fs.length) addToTray(fs);
               e.currentTarget.value = "";
             }}
           />
@@ -192,52 +233,100 @@ export function InventoryZonePhotos({
             disabled={busy || atLimit}
             onChange={(e) => {
               const fs = Array.from(e.target.files ?? []);
-              if (fs.length) void onPickMany(fs);
+              if (fs.length) addToTray(fs);
               e.currentTarget.value = "";
             }}
           />
         </label>
-        <span className={`text-[11px] ${atLimit ? "font-semibold text-amber-700" : "text-slate-500"}`}>{photoUrls.length}/{maxPhotos} foto(s)</span>
+        <span className={`text-[11px] ${atLimit ? "font-semibold text-amber-700" : "text-slate-500"}`}>
+          {photoUrls.length} subida(s){pending.length > 0 ? ` · ${pending.length} sin cargar` : ""} · máx {maxPhotos}
+        </span>
       </div>
 
-      {/* Barra de progreso del lote. */}
-      {progress && (
-        <div className="mt-2">
-          <div className="flex items-center justify-between text-[11px] font-medium text-slate-600">
-            <span>Subiendo {progress.done} de {progress.total}…</span>
-            <span>{pct}%</span>
+      {/* Bandeja local (sin subir) con botón «Cargar». */}
+      {pending.length > 0 && (
+        <div className="mt-2 rounded-2xl border-2 border-dashed border-violet-300 bg-violet-50/50 p-2.5">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold text-violet-800">Por cargar ({pending.length})</p>
+            <button
+              type="button"
+              onClick={() => { pending.forEach((p) => p.preview && URL.revokeObjectURL(p.preview)); setPending([]); }}
+              disabled={busy}
+              className="text-[11px] font-medium text-slate-500 underline disabled:opacity-50"
+            >
+              Vaciar bandeja
+            </button>
           </div>
-          <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-200">
-            <div className="h-full rounded-full bg-violet-600 transition-all" style={{ width: `${pct}%` }} />
+          <div className="mt-2 flex flex-wrap gap-2">
+            {pending.map((p) => (
+              <div key={p.id} className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.preview} alt="Por cargar" className="h-16 w-16 rounded border border-violet-300 object-cover opacity-90" />
+                {!busy && (
+                  <button
+                    type="button"
+                    onClick={() => removePending(p.id)}
+                    className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-rose-600 text-[11px] font-bold text-white"
+                    aria-label="Descartar foto"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
+          <button
+            type="button"
+            onClick={() => void uploadTray()}
+            disabled={busy}
+            className="mt-2.5 w-full rounded-xl bg-[#12B886] px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:brightness-105 active:scale-95 disabled:opacity-60"
+          >
+            {busy ? "Cargando…" : `⬆️ Cargar ${pending.length} foto(s)`}
+          </button>
+          {/* Barra de progreso del lote. */}
+          {progress && (
+            <div className="mt-2">
+              <div className="flex items-center justify-between text-[11px] font-medium text-slate-600">
+                <span>Subiendo {progress.done} de {progress.total}…</span>
+                <span>{pct}%</span>
+              </div>
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-200">
+                <div className="h-full rounded-full bg-[#12B886] transition-all" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
+      {/* Fotos ya subidas. */}
       {photoUrls.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-2">
-          {photoUrls.map((sp, i) => (
-            <div key={`${sp}-${i}`} className="relative">
-              {thumbs[sp] ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={thumbs[sp]} alt={`Foto ${i + 1}`} className="h-20 w-20 rounded border border-slate-300 object-cover" />
-              ) : (
-                <div className="flex h-20 w-20 items-center justify-center rounded border border-slate-300 bg-slate-100 text-[10px] text-slate-500">
-                  {sp.startsWith("gs://") ? "…" : "foto"}
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => onChange(photoUrls.filter((_, j) => j !== i))}
-                className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-rose-600 text-[11px] font-bold text-white"
-                aria-label="Quitar foto"
-              >
-                ×
-              </button>
-            </div>
-          ))}
+        <div className="mt-2">
+          <p className="text-[11px] font-semibold text-emerald-700">Subidas ({photoUrls.length})</p>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {photoUrls.map((sp, i) => (
+              <div key={`${sp}-${i}`} className="relative">
+                {thumbs[sp] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={thumbs[sp]} alt={`Foto ${i + 1}`} className="h-20 w-20 rounded border border-slate-300 object-cover" />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded border border-slate-300 bg-slate-100 text-[10px] text-slate-500">
+                    {sp.startsWith("gs://") ? "…" : "foto"}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onChange(photoUrls.filter((_, j) => j !== i))}
+                  className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-rose-600 text-[11px] font-bold text-white"
+                  aria-label="Quitar foto"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
-      {msg && <p className="mt-1 text-[11px] text-emerald-700">{msg}</p>}
+      {msg && <p className="mt-1.5 text-[11px] text-emerald-700">{msg}</p>}
     </div>
   );
 }

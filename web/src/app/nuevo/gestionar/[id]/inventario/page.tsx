@@ -81,6 +81,9 @@ export default function InventarioBentoPage() {
   // Bloque
   const [blockZoneId, setBlockZoneId] = useState("");
   const [blockPhotos, setBlockPhotos] = useState<string[]>([]);
+  // Fotos en la bandeja sin subir del componente montado (guiado o bloque),
+  // para no avanzar/finalizar y perderlas.
+  const [pendingUploads, setPendingUploads] = useState(0);
   const [blockNotes, setBlockNotes] = useState("");
 
   const authHeaders = useCallback(async () => (user ? await buildAuthHeaders(user) : {}), [user]);
@@ -199,6 +202,7 @@ export default function InventarioBentoPage() {
 
   async function saveZoneAndNext() {
     if (!cur) return;
+    if (pendingUploads > 0) { setMsg(`Tienes ${pendingUploads} foto(s) sin cargar en esta zona. Pulsa «⬆️ Cargar» antes de continuar.`); return; }
     if (!curData.generalCondition || !curData.cleanlinessStatus) { setMsg("Indica el estado general y la limpieza de la zona."); return; }
     setBusy(true); setMsg("");
     try {
@@ -237,6 +241,7 @@ export default function InventarioBentoPage() {
     setBusy(true); setMsg("");
     try {
       if (mode === "block") {
+        if (pendingUploads > 0) { setMsg(`Tienes ${pendingUploads} foto(s) sin cargar. Pulsa «⬆️ Cargar» antes de finalizar.`); setBusy(false); return; }
         if (blockPhotos.length === 0) { setMsg("Agrega al menos una foto del inmueble antes de finalizar."); setBusy(false); return; }
         const ok = await saveBlockZone();
         if (!ok) { setMsg("No se pudo guardar el inventario en bloque."); setBusy(false); return; }
@@ -439,7 +444,7 @@ export default function InventarioBentoPage() {
             </div>
 
             <div className="mt-4 rounded-2xl border-2 border-slate-200 bg-white/70 p-3">
-              <InventoryZonePhotos inventoryId={inventoryId} zoneId={cur.id} photoUrls={curData.photoUrls} onChange={(next) => setCur({ photoUrls: next })} maxPhotos={12} />
+              <InventoryZonePhotos inventoryId={inventoryId} zoneId={cur.id} photoUrls={curData.photoUrls} onChange={(next) => setCur({ photoUrls: next })} maxPhotos={12} onPendingChange={setPendingUploads} />
             </div>
 
             <div className="mt-5 flex items-center gap-3">
@@ -458,7 +463,7 @@ export default function InventarioBentoPage() {
               <p className="text-lg font-semibold">Fotos del inmueble</p>
               <p className="mt-1 text-sm text-slate-500">Toma todas las que necesites (habitaciones, cocina, baños, daños, medidores…). Cada foto queda guardada como prueba.</p>
               <div className="mt-3">
-                <InventoryZonePhotos inventoryId={inventoryId} zoneId={blockZoneId} photoUrls={blockPhotos} onChange={setBlockPhotos} maxPhotos={40} />
+                <InventoryZonePhotos inventoryId={inventoryId} zoneId={blockZoneId} photoUrls={blockPhotos} onChange={setBlockPhotos} maxPhotos={40} onPendingChange={setPendingUploads} />
               </div>
             </div>
 
