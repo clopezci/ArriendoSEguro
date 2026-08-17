@@ -23,6 +23,7 @@ const TASKS = [
   "/api/payments/tenant-reminders/send-due", // recordatorios de pago al inquilino + escalamiento
   "/api/contracts/renewal-reminders/send-due", // vencimiento / renovación (preaviso 3 meses)
   "/api/contracts/delivery-act-reminders/send-due", // acta de entrega y devolución (última semana)
+  "/api/contracts/purge-closed/send-due", // limpieza BD: recuerda y purga fotos+soportes de contratos cerrados (7 días)
   "/api/legal/ipc-reminder/send-due", // aviso de incremento anual por IPC
   "/api/contracts/custom-alerts/send-due", // alertas personalizadas del dueño
   "/api/observability/error-alert/send-due", // alertas de errores (operación)
