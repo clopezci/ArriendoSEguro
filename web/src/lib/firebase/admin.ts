@@ -60,11 +60,26 @@ function initAdmin(): App | null {
   }
 }
 
+let adminFirestore: Firestore | null = null;
+
 export function getAdminFirestore(): Firestore | null {
   if (globalThis.__TEST_FIRESTORE__) return globalThis.__TEST_FIRESTORE__;
+  if (adminFirestore) return adminFirestore;
   const app = initAdmin();
   if (!app) return null;
-  return getFirestore(app);
+  const db = getFirestore(app);
+  try {
+    // `ignoreUndefinedProperties`: omite campos `undefined` en vez de LANZAR al
+    // guardar. Sin esto, cualquier `.set()`/`.add()` con un campo opcional en
+    // `undefined` (p. ej. un pago sin soporte) revienta con error 500. Es la
+    // configuración recomendada del Admin SDK y aplica a toda la app. Solo puede
+    // fijarse antes de la primera operación; por eso memoizamos la instancia.
+    db.settings({ ignoreUndefinedProperties: true });
+  } catch {
+    // Ya se hizo alguna operación con Firestore en este proceso: se conserva.
+  }
+  adminFirestore = db;
+  return adminFirestore;
 }
 
 export function getAdminAuth(): Auth | null {

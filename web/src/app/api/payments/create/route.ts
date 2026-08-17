@@ -127,16 +127,31 @@ export async function POST(request: Request) {
       auditEvent("payment_support_validation_failed", { contractId: parsed.data.contractId });
       return NextResponse.json({ success: false, errors: supportValidation.errors }, { status: 422 });
     }
+    // ¿Quién registra? El DUEÑO puede registrar el pago SIN soporte (lo da por
+    // recibido; el comprobante es sugerido pero opcional). El INQUILINO/CODEUDOR
+    // SÍ debe adjuntar el comprobante (luego el dueño lo confirma/acepta).
+    const isOwner = participant.role === "landlord";
     const hasValidSupport = supportValidation.ok;
+    if (!isOwner && parsed.data.amountPaid > 0 && !hasValidSupport) {
+      return NextResponse.json(
+        {
+          success: false,
+          errors: [{ field: "support", message: "Para registrar el pago debes adjuntar el comprobante. El dueño lo confirmará." }],
+        },
+        { status: 422 },
+      );
+    }
+    // El dueño da fe del pago aunque no suba soporte → cuenta como válido.
+    const supportForStatus = hasValidSupport || isOwner;
     const status = computePaymentStatus({
       dueDate: parsed.data.dueDate,
       paidDate: parsed.data.paidDate,
       amountDue: parsed.data.amountDue,
       amountPaid: parsed.data.amountPaid,
-      hasValidSupport,
+      hasValidSupport: supportForStatus,
     });
     const effectiveStatus =
-      parsed.data.amountPaid > 0 && !hasValidSupport
+      parsed.data.amountPaid > 0 && !supportForStatus
         ? (parsed.data.paidDate ? "pending_support" : "reported_without_support")
         : status;
 
