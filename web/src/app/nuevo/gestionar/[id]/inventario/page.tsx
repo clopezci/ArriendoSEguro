@@ -439,7 +439,7 @@ export default function InventarioBentoPage() {
             </div>
 
             <div className="mt-4 rounded-2xl border-2 border-slate-200 bg-white/70 p-3">
-              <InventoryZonePhotos inventoryId={inventoryId} zoneId={cur.id} photoUrls={curData.photoUrls} onChange={(next) => setCur({ photoUrls: next })} />
+              <InventoryZonePhotos inventoryId={inventoryId} zoneId={cur.id} photoUrls={curData.photoUrls} onChange={(next) => setCur({ photoUrls: next })} maxPhotos={12} />
             </div>
 
             <div className="mt-5 flex items-center gap-3">
@@ -458,7 +458,7 @@ export default function InventarioBentoPage() {
               <p className="text-lg font-semibold">Fotos del inmueble</p>
               <p className="mt-1 text-sm text-slate-500">Toma todas las que necesites (habitaciones, cocina, baños, daños, medidores…). Cada foto queda guardada como prueba.</p>
               <div className="mt-3">
-                <InventoryZonePhotos inventoryId={inventoryId} zoneId={blockZoneId} photoUrls={blockPhotos} onChange={setBlockPhotos} />
+                <InventoryZonePhotos inventoryId={inventoryId} zoneId={blockZoneId} photoUrls={blockPhotos} onChange={setBlockPhotos} maxPhotos={40} />
               </div>
             </div>
 

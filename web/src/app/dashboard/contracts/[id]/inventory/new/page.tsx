@@ -542,6 +542,7 @@ export default function InventoryNewPage() {
                     },
                   }))
                 }
+                maxPhotos={12}
               />
 
               <h4 className="mt-4 text-sm font-semibold text-slate-900">Elementos relevantes (opcional)</h4>
