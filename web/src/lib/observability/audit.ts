@@ -54,10 +54,16 @@ export function runPostureAudit(): AuditResult {
     ? { key: "cron", level: "ok", message: "Cron protegido con CRON_SECRET." }
     : { key: "cron", level: "warning", message: "CRON_SECRET no configurado: los crons quedan abiertos." });
 
-  // IA de validación de documentos
-  f.push(process.env.AI_VISION_API_KEY?.trim() || process.env.AI_API_KEY?.trim()
-    ? { key: "ia", level: "ok", message: "Proveedor de IA de visión configurado (validación de documentos)." }
-    : { key: "ia", level: "info", message: "IA de visión no configurada: la validación de documentos queda inactiva." });
+  // IA de validación de documentos: cadena de proveedores (Groq→Gemini→OpenAI).
+  // Antes revisaba AI_VISION_API_KEY (obsoleto) y salía "en gris" aunque la IA
+  // estuviera configurada. Ahora comprueba las llaves reales de la cadena.
+  const aiProviders: string[] = [];
+  if (process.env.GROQ_API_KEY?.trim() || process.env.AI_API_KEY?.trim()) aiProviders.push("Groq");
+  if (process.env.GEMINI_API_KEY?.trim()) aiProviders.push("Gemini");
+  if (process.env.OPENAI_API_KEY?.trim()) aiProviders.push("OpenAI");
+  f.push(aiProviders.length > 0
+    ? { key: "ia", level: "ok", message: `IA de documentos configurada (cadena: ${aiProviders.join(" → ")}).` }
+    : { key: "ia", level: "info", message: "IA de documentos no configurada (falta GROQ_API_KEY / GEMINI_API_KEY / OPENAI_API_KEY): la validación queda inactiva." });
 
   // Admins internos
   f.push(getAdminInternalEmailSet().size > 0
