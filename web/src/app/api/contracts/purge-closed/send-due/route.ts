@@ -82,12 +82,21 @@ export async function POST(request: Request) {
         for (const inv of invs?.docs ?? []) {
           await bucket.deleteFiles({ prefix: `inventories/${inv.id}/` }).catch(() => {});
         }
-        // Soportes subidos por invitación (inquilino/codeudor).
+        // Todo lo PESADO bajo prefijos conocidos (NUNCA la carpeta annexes/ ni el
+        // PDF del contrato): soportes de invitación, comprobantes de pago y
+        // soportes de ingresos del inquilino/codeudor.
         await bucket.deleteFiles({ prefix: `contracts/${draftId}/invite-supports/` }).catch(() => {});
+        await bucket.deleteFiles({ prefix: `contracts/${doc.id}/payment-supports/` }).catch(() => {});
+        await bucket.deleteFiles({ prefix: `contracts/${doc.id}/tenant-supports/` }).catch(() => {});
+        await bucket.deleteFiles({ prefix: `contracts/${doc.id}/codebtor-supports/` }).catch(() => {});
       }
-      // Documentos de soportes de invitación (referencias en Firestore).
+      // Referencias en Firestore de esos soportes (metadatos livianos).
       const sup = await firestore.collection(PARTY_INVITE_SUPPORTS_COLLECTION).where("contractDraftId", "==", draftId).limit(200).get().catch(() => null);
       await Promise.all((sup?.docs ?? []).map((d) => d.ref.delete().catch(() => {})));
+      for (const subName of ["codebtor_supports", "tenant_supports"]) {
+        const subSnap = await firestore.collection("contracts").doc(doc.id).collection(subName).limit(300).get().catch(() => null);
+        await Promise.all((subSnap?.docs ?? []).map((d) => d.ref.delete().catch(() => {})));
+      }
 
       await doc.ref.set({ purgedAt: now.toISOString(), updatedAt: now.toISOString() }, { merge: true });
       auditEvent("contract_media_purged", { contractId: doc.id, invSupportsDeleted: sup?.size ?? 0 });

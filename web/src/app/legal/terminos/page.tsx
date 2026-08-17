@@ -198,10 +198,12 @@ export default function TerminosPage() {
         </p>
         <p>
           Transcurridos <strong>siete (7) días</strong> desde el cierre del contrato, y salvo que el usuario haya elegido
-          la custodia en la nube, ArriendoSeguro <strong>eliminará las fotografías y los soportes</strong> asociados, con
-          el fin de optimizar el almacenamiento. Se <strong>conservarán</strong> el documento del contrato, la carta de
-          recomendación, el historial y la calificación del arriendo por los términos legales aplicables (por ejemplo,
-          hasta diez (10) años, artículos 28 y 60 del Código de Comercio).
+          la custodia en la nube, ArriendoSeguro <strong>eliminará las fotografías y los soportes</strong> asociados
+          (comprobantes de pago, soportes de ingresos y demás archivos), con el fin de optimizar el almacenamiento y en
+          aplicación del principio de temporalidad (Ley 1581 de 2012). Se <strong>conservarán</strong> el documento del
+          contrato, la carta de recomendación, el historial y la calificación del arriendo por un término aproximado de
+          <strong> cinco (5) años</strong> como servicio de referencia. ArriendoSeguro conservará, de forma independiente,
+          los soportes de su propia contabilidad por los términos que la ley le exija como comerciante.
         </p>
         <p>
           Es <strong>responsabilidad exclusiva del usuario</strong> descargar oportunamente su información. ArriendoSeguro
