@@ -114,7 +114,7 @@ export async function POST(request: Request) {
       });
       await sendPhoneNotice({
         to: creatorPhone,
-        message: `Respondieron tu solicitud "${cur.title}": ${actionLabel}. Revísala en la plataforma.`,
+        message: `Respondieron tu solicitud "${cur.title}": ${actionLabel}.${link ? ` Revísala aquí: ${link}` : " Revísala en la plataforma."}`,
         templateCode: "maintenanceWa",
         relatedEntityType: "contract",
         relatedEntityId: contractId,

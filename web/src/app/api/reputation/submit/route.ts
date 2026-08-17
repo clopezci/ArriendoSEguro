@@ -7,6 +7,7 @@ import { auditEvent } from "@/features/contracts/audit-server";
 import { logServerError } from "@/lib/observability/observability";
 import {
   REPUTATION_DIRECTIONS,
+  REPUTATION_CRITERIA,
   REPLICA_WINDOW_HOURS,
   directionForRaterRole,
   lowCriteria,
@@ -173,6 +174,18 @@ export async function POST(request: Request) {
       try {
         const link = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/dashboard/contracts/${contractId}/reputacion`;
         const lowLabels = lowList.map((c) => `"${c.label}"`).join(", ");
+        // Resumen de la calificación (cómo quedó) para incluirlo en el aviso.
+        const starsOf = (n: number) => "★".repeat(Math.max(0, Math.min(5, Math.round(n)))) + "☆".repeat(Math.max(0, 5 - Math.round(n)));
+        const crit = REPUTATION_CRITERIA[direction];
+        const overallStars = starsOf(check.overall);
+        const summaryRowsHtml = crit
+          .map((c) => `<tr><td style="padding:2px 8px;color:#334155;">${c.label}</td><td style="padding:2px 8px;font-weight:bold;color:#0f172a;">${starsOf(Number(check.values[c.key] ?? 0))} ${Number(check.values[c.key] ?? 0)}/5</td></tr>`)
+          .join("");
+        const summaryHtml =
+          `<div style="margin:12px 0;border:1px solid #e2e8f0;border-radius:10px;padding:12px;background:#f8fafc;">` +
+          `<p style="margin:0 0 6px;font-weight:bold;color:#0f172a;">Tu calificación: ${overallStars} ${check.overall}/5</p>` +
+          `<table style="border-collapse:collapse;font-size:13px;">${summaryRowsHtml}</table></div>`;
+        const summaryText = `Tu calificación: ${check.overall}/5 (${crit.map((c) => `${c.label} ${Number(check.values[c.key] ?? 0)}`).join(", ")}).`;
         // Derecho de réplica/rectificación PERMANENTE (Ley 1581 de 2012). Las 48 h
         // son una ventana sugerida para responder pronto, NO un plazo que extinga
         // el derecho. No prometemos funciones inexistentes ("acuerdo de mejora").
@@ -181,20 +194,25 @@ export async function POST(request: Request) {
           `rectificación (Ley 1581 de 2012); permanece disponible mientras exista la calificación. ` +
           `Conforme a la política de evaluación de ArriendoSeguro: calificación privada, estructurada, sin listas ` +
           `negras ni búsqueda pública.</p>`;
+        const replyBtn = link.startsWith("http")
+          ? `<p><a href="${link}" style="display:inline-block;background:#5646E5;color:#ffffff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600;">Ver mi calificación y responder</a></p>`
+          : "";
         const html = isLow
           ? `<p>Hola,</p>` +
             `<p>Recibiste una <strong>calificación baja</strong> en ${lowLabels} de parte de la otra parte de tu arriendo ` +
             `(calificación estructurada, solo estrellas). Es privada: nadie puede consultarla por tu cédula.</p>` +
+            summaryHtml +
             `<p>Puedes ejercer tu <strong>derecho de réplica</strong> desde tu expediente. Te sugerimos hacerlo dentro de las ` +
             `próximas <strong>${REPLICA_WINDOW_HOURS} horas</strong> para que tu versión quede registrada pronto; ` +
             `este derecho permanece disponible siempre.</p>` +
-            (link.startsWith("http") ? `<p><a href="${link}">Responder ahora</a></p>` : "") +
+            replyBtn +
             habeasNote
           : `<p>Hola,</p>` +
             `<p>La otra parte de tu arriendo registró una <strong>calificación estructurada</strong> de la experiencia ` +
             `(solo estrellas, sin comentarios de texto). Es privada: nadie puede consultarla por tu cédula.</p>` +
+            summaryHtml +
             `<p>Tienes <strong>derecho de réplica</strong>: puedes responder desde tu expediente.</p>` +
-            (link.startsWith("http") ? `<p><a href="${link}">Ver la calificación y responder</a></p>` : "") +
+            replyBtn +
             habeasNote;
         await sendEmail({
           to: subjectEmail,
@@ -203,22 +221,23 @@ export async function POST(request: Request) {
             : "Recibiste una calificación de tu arriendo — ArriendoSeguro",
           html,
           text: isLow
-            ? `Recibiste una calificación baja en ${lowLabels}. Puedes ejercer tu derecho de réplica desde tu expediente en ArriendoSeguro; te sugerimos hacerlo dentro de ${REPLICA_WINDOW_HOURS} horas, aunque este derecho (Ley 1581 de 2012) permanece disponible siempre.`
-            : "La otra parte calificó la experiencia de tu arriendo. Tienes derecho de réplica desde tu expediente en ArriendoSeguro.",
+            ? `Recibiste una calificación baja en ${lowLabels}. ${summaryText} Puedes ejercer tu derecho de réplica: ${link}. Te sugerimos hacerlo dentro de ${REPLICA_WINDOW_HOURS} horas, aunque este derecho (Ley 1581 de 2012) permanece disponible siempre.`
+            : `La otra parte calificó la experiencia de tu arriendo. ${summaryText} Puedes ver y responder aquí: ${link}`,
           templateCode: isLow ? "reputationLowRatingEmail" : "reputationReviewReceivedEmail",
           relatedEntityType: "contract",
           relatedEntityId: contractId,
         });
 
-        // Complemento al CELULAR (WhatsApp) si la calificación es baja. Solo sale
-        // si el interruptor maestro de WhatsApp está encendido; si no, queda el
-        // correo (que lleva el enlace para replicar).
-        if (isLow && subjectPhone) {
-          const firstLabel = lowList[0]?.label ?? "una variable";
-          const others = lowList.length > 1 ? " y otras variables" : "";
+        // Complemento al CELULAR (WhatsApp): SIEMPRE que haya celular, con el
+        // resumen de la calificación y el enlace directo para ver/responder.
+        // Solo sale si el interruptor maestro de WhatsApp está encendido.
+        if (subjectPhone) {
+          const waMsg = isLow
+            ? `Recibiste una calificación baja en tu arriendo. ${summaryText} Puedes ejercer tu derecho de réplica aquí: ${link} (te sugerimos dentro de ${REPLICA_WINDOW_HOURS} h).`
+            : `La otra parte calificó tu arriendo. ${summaryText} Míralo y responde aquí: ${link}`;
           await sendPhoneNotice({
             to: subjectPhone,
-            message: `Recibiste una calificación baja en "${firstLabel}"${others}. Puedes ejercer tu derecho de réplica en tu expediente; te sugerimos hacerlo dentro de ${REPLICA_WINDOW_HOURS} h.`,
+            message: waMsg,
             templateCode: "reputationLowRatingWa",
             relatedEntityType: "contract",
             relatedEntityId: contractId,
