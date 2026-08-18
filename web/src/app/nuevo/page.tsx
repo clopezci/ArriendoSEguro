@@ -21,7 +21,6 @@ import { useVoice } from "@/lib/nuevo/useVoice";
 import { MicButton } from "@/components/nuevo/mic-button";
 import { ExpressRegister } from "@/components/nuevo/express-register";
 import { PartyInvitePanel } from "@/components/contracts/party-invite-panel";
-import { TenantRoleLink } from "@/components/nuevo/tenant-role-link";
 import { CodebtorViaTenantPanel } from "@/components/contracts/codebtor-via-tenant-panel";
 import { InviteSupportsOwnerList } from "@/components/contracts/invite-supports-owner-list";
 import { AdditionalCodebtorsManager } from "@/components/contracts/additional-codebtors-manager";
@@ -1010,10 +1009,10 @@ export default function NuevoPage() {
               <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#5646E5]">Hola 👋</p>
               <h1 className="mt-3 text-balance text-4xl font-extrabold leading-none tracking-tight sm:text-5xl">{greeting}</h1>
               <p className="mt-3 h-7 text-lg text-slate-500">{SUBPHRASES[subIdx]}</p>
-              <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <BentoCard theme={themes[0]} title="Crear un contrato" sub="Te guío una pregunta a la vez. Sin formularios eternos." cta="Empezar" onClick={start} icon={<path d="M8 3h6l4 4v14H6V5M14 3v4h4M9 13h6M9 17h4" />} />
                 <BentoCard theme={themes[1]} title="Gestionar mis contratos" sub="Firmas, pagos, inventario y alertas de los que ya creaste." cta="Ver mis contratos" onClick={() => router.push("/nuevo/contratos")} icon={<path d="M3 7h6l2 2h10v11H3zM3 7V5h5l2 2" />} />
-                <TenantRoleLink />
+                <BentoCard theme={["#12B886", "#0B7A55"]} title="Entrar como inquilino" sub="¿Estás arrendando? Gestiona tus arriendos: reparaciones, novedades y calificación." cta="Ver mis arriendos" onClick={() => router.push("/inquilino")} icon={<path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10" />} />
                 <div className="col-span-full flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/70 p-3 text-sm text-slate-500 backdrop-blur">
                   🔒 <b className="text-[#17151F]">Tranquilo:</b> puedes pausar y seguir después; tus datos quedan guardados.
                 </div>
@@ -1923,14 +1922,14 @@ function ProgressBar({ pct }: { pct: number }) {
 
 function BentoCard({ theme, title, sub, cta, onClick, icon }: { theme: [string, string]; title: string; sub: string; cta: string; onClick: () => void; icon: ReactNode }) {
   return (
-    <motion.button type="button" onClick={onClick} whileHover={{ y: -6, rotate: -0.6 }} whileTap={{ scale: 0.99 }} className="relative flex min-h-[210px] flex-col justify-between overflow-hidden rounded-3xl p-6 text-left text-white shadow-2xl" style={{ background: `linear-gradient(155deg, ${theme[0]}, ${theme[1]})` }}>
+    <motion.button type="button" onClick={onClick} whileHover={{ y: -6, rotate: -0.6 }} whileTap={{ scale: 0.99 }} className="relative flex min-h-[176px] flex-col justify-between overflow-hidden rounded-3xl p-5 text-left text-white shadow-2xl" style={{ background: `linear-gradient(155deg, ${theme[0]}, ${theme[1]})` }}>
       <span className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(120deg, rgba(255,255,255,.28), transparent 42%)" }} />
       <div>
-        <span className="mb-3.5 grid h-12 w-12 place-items-center rounded-[15px] bg-white/20">
-          <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">{icon}</svg>
+        <span className="mb-3 grid h-11 w-11 place-items-center rounded-[14px] bg-white/20">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">{icon}</svg>
         </span>
-        <h3 className="text-[23px] font-bold tracking-tight">{title}</h3>
-        <p className="mt-1 text-[14.5px] opacity-90">{sub}</p>
+        <h3 className="text-[20px] font-bold tracking-tight">{title}</h3>
+        <p className="mt-1 text-[13.5px] opacity-90">{sub}</p>
       </div>
       <span className="mt-4 inline-flex items-center gap-1.5 text-[14.5px] font-bold">
         {cta} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M5 12h14M13 6l6 6-6 6" /></svg>

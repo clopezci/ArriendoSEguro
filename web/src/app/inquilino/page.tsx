@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { MAINTENANCE_CATEGORY_LABELS } from "@/domain/maintenance/maintenance";
@@ -10,11 +11,14 @@ type TenantContract = { contractId: string; address: string; landlordName: strin
 const CATS = Object.entries(MAINTENANCE_CATEGORY_LABELS) as [string, string][];
 
 /**
- * Vista "Ver como inquilino": lista los contratos donde el usuario es inquilino
- * (o codeudor) y le permite REPORTAR UN DAÑO (mantenimiento) sin ser el dueño.
+ * Hub del INQUILINO: lista los contratos donde el usuario es inquilino (o
+ * codeudor) y, por cada uno, le da acceso a TODAS sus opciones (reparaciones y
+ * solicitudes, otras novedades, calificar/refutar), además del reporte rápido de
+ * un daño. Reusa las páginas existentes, que ya validan por rol de participante.
  */
 export default function InquilinoPage() {
   const { user, loading } = useAuth();
+  const router = useRouter();
   const [contracts, setContracts] = useState<TenantContract[] | null>(null);
   const [openFor, setOpenFor] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -62,6 +66,12 @@ export default function InquilinoPage() {
   if (loading) return <p className="p-6 text-slate-500">Cargando…</p>;
   if (!user) return <p className="p-6 text-slate-500">Inicia sesión para ver tus arriendos como inquilino.</p>;
 
+  const actions = (c: TenantContract): Array<{ icon: string; label: string; sub: string; href: string }> => [
+    { icon: "🔧", label: "Reparaciones y solicitudes", sub: "Reporta daños o pide algo al dueño y sigue las respuestas.", href: `/dashboard/contracts/${c.contractId}/mantenimiento` },
+    { icon: "🗒️", label: "Otras novedades", sub: "Deja constancia de acuerdos, avisos o incidencias.", href: `/dashboard/contracts/${c.contractId}/novedades` },
+    { icon: "⭐", label: "Calificar / refutar", sub: "Califica tu experiencia o responde una calificación recibida.", href: `/dashboard/contracts/${c.contractId}/reputacion` },
+  ];
+
   return (
     <div className="relative min-h-screen bg-[#F5F3EF] text-[#17151F]">
       <div className="mx-auto max-w-2xl px-6 py-8">
@@ -69,8 +79,8 @@ export default function InquilinoPage() {
           <Link href="/nuevo" className="text-sm font-semibold text-[#5646E5] hover:underline">← Inicio</Link>
           <Link href="/nuevo/contratos" className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-[#5646E5]">Ver como dueño →</Link>
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight">Mis arriendos como inquilino</h1>
-        <p className="mt-2 text-slate-500">Aquí puedes reportar daños y hacer seguimiento de los inmuebles que tienes en arriendo.</p>
+        <h1 className="text-3xl font-extrabold tracking-tight">Administra mis arriendos</h1>
+        <p className="mt-2 text-slate-500">Estos son los inmuebles que tienes en arriendo. Elige uno y gestiona tus opciones como inquilino.</p>
 
         {msg && <p className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800">{msg}</p>}
 
@@ -84,16 +94,39 @@ export default function InquilinoPage() {
         ) : (
           <div className="mt-6 space-y-4">
             {contracts.map((c) => (
-              <div key={c.contractId} className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm">
-                <p className="text-lg font-bold">{c.address}</p>
+              <div key={c.contractId} className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
+                <p className="text-lg font-bold">{c.address || "Tu arriendo"}</p>
                 <p className="text-sm text-slate-500">{c.landlordName ? `Dueño: ${c.landlordName}` : ""}{c.role === "codebtor" ? " · (eres codeudor)" : ""}</p>
-                <button
-                  type="button"
-                  onClick={() => { setOpenFor(openFor === c.contractId ? null : c.contractId); setMsg(""); }}
-                  className="mt-3 rounded-xl bg-[#5646E5] px-4 py-2.5 text-sm font-bold text-white transition hover:brightness-105"
-                >
-                  🔧 Reportar un daño
-                </button>
+
+                {/* Opciones del inquilino para este contrato. */}
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  {actions(c).map((a) => (
+                    <button
+                      key={a.href}
+                      type="button"
+                      onClick={() => router.push(a.href)}
+                      className="flex items-start gap-3 rounded-2xl border-2 border-slate-200 bg-white p-3 text-left transition hover:border-[#5646E5] active:scale-[0.99]"
+                    >
+                      <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-lg">{a.icon}</span>
+                      <span className="min-w-0">
+                        <b className="text-sm">{a.label}</b>
+                        <span className="mt-0.5 block text-[12px] leading-snug text-slate-500">{a.sub}</span>
+                      </span>
+                    </button>
+                  ))}
+                  {/* Reporte rápido de daño (inline). */}
+                  <button
+                    type="button"
+                    onClick={() => { setOpenFor(openFor === c.contractId ? null : c.contractId); setMsg(""); }}
+                    className="flex items-start gap-3 rounded-2xl border-2 border-slate-200 bg-white p-3 text-left transition hover:border-[#12B886] active:scale-[0.99]"
+                  >
+                    <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#E9F9F1] text-lg">⚡</span>
+                    <span className="min-w-0">
+                      <b className="text-sm">Reporte rápido de daño</b>
+                      <span className="mt-0.5 block text-[12px] leading-snug text-slate-500">Envía un daño al dueño sin salir de aquí.</span>
+                    </span>
+                  </button>
+                </div>
 
                 {openFor === c.contractId && (
                   <div className="mt-4 space-y-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
