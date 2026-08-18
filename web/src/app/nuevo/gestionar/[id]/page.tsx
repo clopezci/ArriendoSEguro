@@ -45,7 +45,7 @@ const ACTIONS: Action[] = [
   { slug: "soportes-codeudor", title: "Soportes de ingresos", desc: "Carta laboral, colillas y extractos del codeudor e inquilino.", icon: "💼", phase: "Durante el arriendo" },
   { slug: "aliados", title: "Aliados y servicios", desc: "Seguro, cobranza, estudio de crédito, jurídica… tú eliges.", icon: "🤝", phase: "Durante el arriendo", optional: true },
   { slug: "renovar", title: "Renovar contrato", desc: "Otrosí de prórroga y reajuste (IPC) con el mismo inquilino.", icon: "🔄", phase: "Cierre" },
-  { slug: "terminacion", title: "Avisar renovación o terminación", desc: "Registra el aviso de NO renovación (fin de vigencia) o una terminación anticipada, con constancia y aviso a la otra parte.", icon: "📄", phase: "Cierre" },
+  { slug: "terminacion", title: "Avisar de NO renovación o terminación", desc: "Registra el aviso de NO renovación (fin de vigencia) o una terminación anticipada, con constancia y aviso a la otra parte.", icon: "📄", phase: "Cierre" },
   { slug: "inventory-final", title: "Acta de entrega y devolución", desc: "Al terminar: registra el estado del inmueble al devolverlo (mismo proceso del inventario, con fotos). Queda como acta aparte para comparar.", icon: "📦", phase: "Cierre" },
   { slug: "paz-y-salvo", title: "Paz y salvo y recomendación", desc: "Al terminar: genera el paz y salvo (según pagos) y la carta de recomendación, y envíalos por WhatsApp.", icon: "🧾", phase: "Cierre" },
   { slug: "reputacion", title: "Calificar la experiencia", desc: "Califica al inquilino al final del arriendo.", icon: "⭐", phase: "Cierre" },

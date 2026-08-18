@@ -91,7 +91,7 @@ export default function TerminacionPage() {
     <main className="mx-auto max-w-2xl space-y-5">
       <ExpedientePostWizardNav contractId={id} />
       <header className="space-y-2">
-        <h1 className="text-balance text-3xl font-extrabold tracking-tight text-[#17151F]">Avisar renovación o terminación</h1>
+        <h1 className="text-balance text-3xl font-extrabold tracking-tight text-[#17151F]">Avisar de NO renovación o terminación</h1>
         <p className="mt-2 text-slate-500">Registra el <b>aviso de no renovación</b> (fin de vigencia) o una <b>terminación anticipada</b>. Se deja constancia y se notifica a la otra parte para su respuesta.</p>
       </header>
 
