@@ -66,10 +66,25 @@ export default function InquilinoPage() {
   if (loading) return <p className="p-6 text-slate-500">Cargando…</p>;
   if (!user) return <p className="p-6 text-slate-500">Inicia sesión para ver tus arriendos como inquilino.</p>;
 
+  async function requestPaz(contractId: string) {
+    if (!user) return;
+    setBusy(true); setMsg("");
+    try {
+      const res = await fetch("/api/contracts/paz-y-salvo/request-auth", {
+        method: "POST", headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ contractId }),
+      });
+      const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      setMsg(res.ok && j.success ? "✅ Solicitud enviada a tu arrendador (paz y salvo, recomendación y acta)." : (j.errors?.[0]?.message ?? "No se pudo enviar la solicitud."));
+    } catch { setMsg("Error de red."); } finally { setBusy(false); }
+  }
+
   const actions = (c: TenantContract): Array<{ icon: string; label: string; sub: string; href: string }> => [
+    { icon: "💳", label: "Mis pagos", sub: "Registra tu pago del mes con comprobante y ve el calendario.", href: `/inquilino/${c.contractId}/pagos` },
     { icon: "🔧", label: "Reparaciones y solicitudes", sub: "Reporta daños o pide algo al dueño y sigue las respuestas.", href: `/dashboard/contracts/${c.contractId}/mantenimiento` },
     { icon: "🗒️", label: "Otras novedades", sub: "Deja constancia de acuerdos, avisos o incidencias.", href: `/dashboard/contracts/${c.contractId}/novedades` },
     { icon: "⭐", label: "Calificar / refutar", sub: "Califica tu experiencia o responde una calificación recibida.", href: `/dashboard/contracts/${c.contractId}/reputacion` },
+    { icon: "📄", label: "Avisar NO renovación / terminación", sub: "Registra el aviso de no renovar o terminar, con constancia.", href: `/dashboard/contracts/${c.contractId}/terminacion` },
   ];
 
   return (
@@ -114,6 +129,19 @@ export default function InquilinoPage() {
                       </span>
                     </button>
                   ))}
+                  {/* Solicitar cierre: paz y salvo + recomendación + acta. */}
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void requestPaz(c.contractId)}
+                    className="flex items-start gap-3 rounded-2xl border-2 border-slate-200 bg-white p-3 text-left transition hover:border-[#5646E5] active:scale-[0.99] disabled:opacity-60"
+                  >
+                    <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-lg">🧾</span>
+                    <span className="min-w-0">
+                      <b className="text-sm">Solicitar paz y salvo</b>
+                      <span className="mt-0.5 block text-[12px] leading-snug text-slate-500">Al terminar: pídele al dueño tu paz y salvo, recomendación y acta.</span>
+                    </span>
+                  </button>
                   {/* Reporte rápido de daño (inline). */}
                   <button
                     type="button"
