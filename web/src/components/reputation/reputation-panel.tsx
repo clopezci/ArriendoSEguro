@@ -77,6 +77,33 @@ export function ReputationPanel({ contractId }: { contractId: string }) {
   const [replyFile, setReplyFile] = useState<File | null>(null);
   const [replyBusy, setReplyBusy] = useState(false);
   const [replyMsg, setReplyMsg] = useState("");
+  const [textFlagged, setTextFlagged] = useState(false);
+  const [checkingText, setCheckingText] = useState(false);
+
+  // Moderación IA con debounce: bloquea el botón si el texto es ofensivo.
+  useEffect(() => {
+    const t = replyText.trim();
+    if (!t) { setTextFlagged(false); setCheckingText(false); return; }
+    let cancelled = false;
+    setCheckingText(true);
+    const timer = setTimeout(async () => {
+      try {
+        if (!user) return;
+        const res = await fetch("/api/reputation/moderate-text", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+          body: JSON.stringify({ text: t }),
+        });
+        const j = (await res.json()) as { allowed?: boolean };
+        if (!cancelled) setTextFlagged(res.ok && j.allowed === false);
+      } catch {
+        if (!cancelled) setTextFlagged(false); // fail-open
+      } finally {
+        if (!cancelled) setCheckingText(false);
+      }
+    }, 700);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [replyText, user]);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -343,10 +370,16 @@ export function ReputationPanel({ contractId }: { contractId: string }) {
               {replyFile && (
                 <p className="mt-1 text-[11px] text-slate-600">Adjuntará: {replyFile.name}</p>
               )}
+              {checkingText && <p className="mt-1 text-[11px] text-slate-400">Revisando el texto…</p>}
+              {textFlagged && (
+                <p className="mt-1 rounded-lg border border-rose-300 bg-rose-50 p-2 text-[11px] font-medium text-rose-700">
+                  ⚠️ El texto parece contener lenguaje ofensivo o inapropiado. Reformúlalo en términos respetuosos para poder enviar la réplica. (También puedes dejar solo el motivo, sin texto.)
+                </p>
+              )}
               <button
                 type="button"
                 onClick={() => void submitReply()}
-                disabled={replyBusy || !replyReason}
+                disabled={replyBusy || !replyReason || textFlagged || checkingText}
                 className="mt-2 rounded-lg border border-violet-500 bg-white px-3 py-1.5 text-xs font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-50"
               >
                 {replyBusy ? "Guardando…" : info.counterpartReview.reply ? "Actualizar réplica" : "Enviar réplica"}

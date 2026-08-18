@@ -7,6 +7,7 @@ import { persistExpedienteAttachment } from "@/domain/contracts/persistExpedient
 import { auditEvent } from "@/features/contracts/audit-server";
 import { logServerError } from "@/lib/observability/observability";
 import { REPLICA_REASONS, REPLICA_TEXT_MAX, reviewDirectionAboutRole } from "@/domain/reputation/criteria";
+import { moderateFreeText } from "@/lib/ai/moderateText";
 
 export const runtime = "nodejs";
 
@@ -64,6 +65,17 @@ export async function POST(request: Request) {
     }
     const { contractId, reason } = parsed.data;
     const text = (parsed.data.text ?? "").trim();
+
+    // Moderación IA del texto libre: bloquea groserías/obscenidades/amenazas/odio.
+    if (text) {
+      const mod = await moderateFreeText(text);
+      if (!mod.allowed) {
+        return NextResponse.json<Err>(
+          { success: false, errors: [{ field: "text", message: "Tu réplica contiene lenguaje ofensivo o inapropiado. Reformúlala en términos respetuosos para poder enviarla." }] },
+          { status: 422 },
+        );
+      }
+    }
 
     const participant = await requireContractParticipant(request, firestore, contractId, { kind: "current" });
     if (!participant.ok) return participant.response;
