@@ -21,6 +21,12 @@ export default function CerrarContratoPage() {
   const [dlBusy, setDlBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  // Guardia de fecha: cerrar el contrato solo tiene sentido cerca del fin (o
+  // después), o si ya hubo una terminación anticipada. Si falta mucho, se bloquea.
+  const [closeGate, setCloseGate] = useState<"checking" | "ok" | "blocked">("checking");
+  const [endDate, setEndDate] = useState("");
+  const [daysLeft, setDaysLeft] = useState<number | null>(null);
+  const [earlyStep, setEarlyStep] = useState<0 | 1>(0);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -28,9 +34,24 @@ export default function CerrarContratoPage() {
       const r = await fetch(`/api/contracts/latest-version?contractId=${encodeURIComponent(id)}`);
       const j = await r.json();
       setVersionId(j?.version?.id ?? j?.contract?.currentVersionId ?? "");
-      setStatus(j?.contract?.status ?? "");
-    } catch { /* noop */ } finally { setLoading(false); }
-  }, [id]);
+      const st = j?.contract?.status ?? "";
+      setStatus(st);
+      const end = String(j?.version?.contractPayload?.lease?.endDate ?? "").trim();
+      setEndDate(end);
+      if (st === "closed") { setCloseGate("ok"); return; }
+      let hasEarly = false;
+      if (user) {
+        try {
+          const tc = await fetch(`/api/contracts/termination/context?contractId=${encodeURIComponent(id)}`, { headers: { ...(await buildAuthHeaders(user)) } }).then((x) => x.json());
+          hasEarly = Boolean(tc?.success && tc?.notice && tc.notice.type === "early");
+        } catch { /* noop */ }
+      }
+      if (!end) { setCloseGate("ok"); return; }
+      const days = Math.ceil((new Date(end.length === 10 ? `${end}T00:00:00` : end).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+      setDaysLeft(days);
+      setCloseGate(days <= 7 || days < 0 || hasEarly ? "ok" : "blocked");
+    } catch { setCloseGate("ok"); } finally { setLoading(false); }
+  }, [id, user]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -144,7 +165,39 @@ export default function CerrarContratoPage() {
         </section>
       )}
 
-      {!loading && !isClosed && (
+      {/* Guardia: no cerrar a destiempo sin terminación anticipada. */}
+      {!loading && !isClosed && closeGate === "checking" && <p className="text-sm text-slate-400">Verificando la fecha del contrato…</p>}
+      {!loading && !isClosed && closeGate === "blocked" && (
+        <section className="rounded-3xl border-2 border-amber-300 bg-amber-50/80 p-5">
+          {earlyStep === 0 ? (
+            <>
+              <p className="text-lg font-bold text-amber-900">Aún falta para el fin del contrato</p>
+              <p className="mt-1 text-sm text-amber-900/90">
+                Cerrar el contrato es el paso FINAL, cuando el arriendo ya terminó. Tu contrato vence el <b>{endDate || "—"}</b>
+                {daysLeft !== null ? ` (faltan ~${daysLeft} días)` : ""}. ¿Seguro que quieres cerrarlo ahora?
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" onClick={() => setEarlyStep(1)} className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white">Sí, continuar</button>
+                <button type="button" onClick={() => router.push(`/nuevo/gestionar/${id}`)} className="rounded-xl border-2 border-amber-400 bg-white px-4 py-2 text-sm font-bold text-amber-800">Cancelar</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-bold text-amber-900">Para cerrar a destiempo, usa Terminación anticipada</p>
+              <p className="mt-1 text-sm text-amber-900/90">
+                Terminar el arriendo <b>antes de tiempo</b> tiene condiciones legales (preaviso e indemnización, Ley 820). Debes
+                registrar primero la <b>Terminación anticipada</b> del contrato; una vez aceptada, podrás cerrarlo aquí.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" onClick={() => router.push(`/dashboard/contracts/${id}/terminacion`)} className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white">Ir a Terminación anticipada →</button>
+                <button type="button" onClick={() => setEarlyStep(0)} className="rounded-xl border-2 border-amber-400 bg-white px-4 py-2 text-sm font-bold text-amber-800">Volver</button>
+              </div>
+            </>
+          )}
+        </section>
+      )}
+
+      {!loading && !isClosed && closeGate === "ok" && (
         <>
           {/* Paso 1: descargar todo */}
           <section className="rounded-3xl border-2 border-slate-200 bg-white/90 p-5 shadow-sm">
