@@ -118,7 +118,9 @@ export default function GestionarPosventaPage() {
           if (cancelled) return;
           const parties: Array<{ requiredTotal?: number; requiredDocs?: Array<{ uploaded?: boolean; validated?: boolean }> }> = Array.isArray(j?.parties) ? j.parties : [];
           if (!j?.success || !parties.some((p) => (p.requiredTotal ?? 0) > 0)) { setSoportes("none"); return; }
-          const allDone = parties.every((p) => (p.requiredDocs ?? []).every((d) => d.uploaded && d.validated));
+          // "Listo" = todos los documentos EXIGIDOS están subidos (validarlos es
+          // opcional; el dueño puede marcarlos revisados uno a uno si quiere).
+          const allDone = parties.every((p) => (p.requiredDocs ?? []).every((d) => d.uploaded));
           setSoportes(allDone ? "done" : "pending");
         })
         .catch(() => { if (!cancelled) setSoportes("none"); });

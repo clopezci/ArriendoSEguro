@@ -39,9 +39,6 @@ export default function SoportesCodeudorPage() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [sharing, setSharing] = useState("");
-  // Estado local de "validado por ti" por soporte, para reflejar el toggle SIN
-  // recargar toda la lista (evita el parpadeo/bucle de re-render).
-  const [reviewedOverride, setReviewedOverride] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -122,12 +119,11 @@ export default function SoportesCodeudorPage() {
     }
   }
 
-  // "Todo listo" = alguna parte tenía exigidos y TODOS están subidos y validados.
-  const isDocValidated = (supportId: string | null, validated: boolean) =>
-    supportId ? (reviewedOverride[supportId] ?? validated) : validated;
-  const allValidated =
+  // "Todo listo" = alguna parte tenía exigidos y TODOS están subidos. Validarlos
+  // es opcional (cada doc tiene su botón "Lo revisé" si el dueño quiere marcarlo).
+  const allUploaded =
     parties.some((p) => p.requiredTotal > 0) &&
-    parties.every((p) => p.requiredDocs.every((d) => d.uploaded && isDocValidated(d.supportId, d.validated)));
+    parties.every((p) => p.requiredDocs.every((d) => d.uploaded));
 
   return (
     <main className="mx-auto max-w-2xl space-y-5">
@@ -144,10 +140,10 @@ export default function SoportesCodeudorPage() {
       {loading && parties.length === 0 && <p className="text-sm text-slate-600">Cargando estado…</p>}
       {err && <p className="rounded-2xl border border-rose-300 bg-rose-50 p-3 text-sm text-rose-800">{err}</p>}
 
-      {/* Banner "todo listo": todos los exigidos subidos Y validados por el dueño. */}
-      {!err && parties.length > 0 && allValidated && (
+      {/* Banner "todo listo": todos los documentos exigidos ya están subidos. */}
+      {!err && parties.length > 0 && allUploaded && (
         <div className="rounded-2xl border-2 border-emerald-400 bg-emerald-50 p-3 text-sm font-semibold text-emerald-800">
-          ✓ Listo: todos los documentos exigidos están subidos y validados por ti.
+          ✓ Listo: todos los documentos exigidos ya están subidos. (Validarlos uno a uno es opcional.)
         </div>
       )}
 
@@ -178,24 +174,18 @@ export default function SoportesCodeudorPage() {
           {/* Documentos EXIGIDOS con su estado real. */}
           {p.requiredDocs.length > 0 && (
             <ul className="mt-3 space-y-1.5">
-              {p.requiredDocs.map((d) => {
-                const isValidated = d.supportId ? (reviewedOverride[d.supportId] ?? d.validated) : d.validated;
-                return (
+              {p.requiredDocs.map((d) => (
                 <li key={d.key} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-sm">
                   <span className="min-w-0 truncate text-slate-800">{d.label}</span>
                   <span className="flex flex-none flex-wrap items-center gap-1.5">
                     {d.uploaded ? (
                       <>
                         <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">✓ Subido</span>
-                        {isValidated ? (
-                          <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold text-white">✓ Validado por ti</span>
-                        ) : (
-                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">Sin validar</span>
-                        )}
                         {d.supportId && (
                           <>
                             <button type="button" onClick={() => void download(d.supportId!)} className="rounded-lg bg-[#5646E5] px-2 py-0.5 text-[11px] font-bold text-white">Ver</button>
-                            <ManualReviewControl scope={draftId} docKey={`support:${d.supportId}`} onChange={(r) => setReviewedOverride((o) => ({ ...o, [d.supportId!]: r }))} />
+                            {/* Validar es OPCIONAL: el control muestra su propio "✓ Revisado por ti". */}
+                            <ManualReviewControl scope={draftId} docKey={`support:${d.supportId}`} />
                           </>
                         )}
                       </>
@@ -204,8 +194,7 @@ export default function SoportesCodeudorPage() {
                     )}
                   </span>
                 </li>
-                );
-              })}
+              ))}
             </ul>
           )}
 
@@ -220,7 +209,7 @@ export default function SoportesCodeudorPage() {
                     <span className="flex flex-none items-center gap-1.5">
                       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">No exigido</span>
                       <button type="button" onClick={() => void download(e.id)} className="rounded-lg bg-[#5646E5] px-2 py-0.5 text-[11px] font-bold text-white">Ver</button>
-                      <ManualReviewControl scope={draftId} docKey={`support:${e.id}`} onChange={(r) => setReviewedOverride((o) => ({ ...o, [e.id]: r }))} />
+                      <ManualReviewControl scope={draftId} docKey={`support:${e.id}`} />
                     </span>
                   </li>
                 ))}
