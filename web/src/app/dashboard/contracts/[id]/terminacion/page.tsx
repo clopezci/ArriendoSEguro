@@ -7,6 +7,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { earlyTerminationPenaltyMonths, terminationLegalText, terminationTypeLabel, NOTICE_MONTHS, type LeasePhase, type TerminationType } from "@/domain/contracts/termination";
 
+type Acceptance = { effectiveDate?: string; penaltyAmountAgreed?: number; paymentMethod?: string; acknowledged?: boolean; byRole?: string; at?: string };
+type PaymentTrace = { status?: "pending" | "paid" | "unpaid"; updatedAt?: string | null; note?: string };
 type Notice = {
   type: TerminationType;
   byRole: string;
@@ -19,6 +21,8 @@ type Notice = {
   responseByRole?: string | null;
   responseObservation?: string | null;
   respondedAt?: string | null;
+  acceptance?: Acceptance | null;
+  paymentTrace?: PaymentTrace | null;
 };
 type Ctx = { viewerRole: string; canon: number; startDate: string; endDate: string; propertyAddress: string; notice: Notice | null };
 
@@ -35,6 +39,13 @@ export default function TerminacionPage() {
   const [acc1, setAcc1] = useState(false);
   const [acc2, setAcc2] = useState(false);
   const [respObs, setRespObs] = useState("");
+  // Formulario de aceptación de la parte afectada (acreedora).
+  const [effectiveDate, setEffectiveDate] = useState("");
+  const [agreedAmount, setAgreedAmount] = useState("");
+  const [payMethod, setPayMethod] = useState("");
+  const [ackResp, setAckResp] = useState(false);
+  // Trazabilidad del pago.
+  const [payNote, setPayNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -49,6 +60,14 @@ export default function TerminacionPage() {
     } catch { setErr("No se pudo conectar."); } finally { setLoading(false); }
   }, [id, user]);
   useEffect(() => { void load(); }, [load]);
+
+  // Prefill del monto acordado con el MÁXIMO legal del aviso (la contraparte puede bajarlo).
+  useEffect(() => {
+    const nn = ctx?.notice;
+    if (nn && nn.status === "notified" && nn.type === "early" && (nn.penaltyAmount ?? 0) > 0 && !agreedAmount) {
+      setAgreedAmount(String(nn.penaltyAmount));
+    }
+  }, [ctx, agreedAmount]);
 
   const earlyMonths = useMemo(() => (ctx ? earlyTerminationPenaltyMonths(ctx.viewerRole, phase) : 0), [ctx, phase]);
   const earlyAmount = ctx ? Math.round(ctx.canon * earlyMonths) : 0;
@@ -70,15 +89,44 @@ export default function TerminacionPage() {
 
   async function respond(accept: boolean) {
     if (!user) return;
+    const nn = ctx?.notice;
+    const isEarly = nn?.type === "early" && (nn?.penaltyAmount ?? 0) > 0;
+    // Al aceptar una terminación anticipada con indemnización, exigimos el formulario.
+    if (accept && isEarly) {
+      if (!effectiveDate) { setMsg("Indica a partir de qué fecha aceptas la terminación."); return; }
+      if (!ackResp) { setMsg("Debes aceptar la declaración final para continuar."); return; }
+    }
+    const amountNum = Math.round(Number((agreedAmount || "").replace(/[^\d]/g, "")) || 0);
     setBusy(true); setMsg("");
     try {
       const res = await fetch("/api/contracts/termination/respond", {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ contractId: id, accept, observation: respObs }),
+        body: JSON.stringify({
+          contractId: id, accept, observation: respObs,
+          effectiveDate: accept ? effectiveDate : "",
+          penaltyAmountAgreed: accept ? amountNum : 0,
+          paymentMethod: accept ? payMethod : "",
+          acknowledged: accept ? ackResp : false,
+        }),
       });
       const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!res.ok || !j.success) { setMsg(j.errors?.[0]?.message ?? "No se pudo registrar la respuesta."); return; }
+      await load();
+    } catch { setMsg("Error de red."); } finally { setBusy(false); }
+  }
+
+  async function markPaid(paid: boolean) {
+    if (!user) return;
+    setBusy(true); setMsg("");
+    try {
+      const res = await fetch("/api/contracts/termination/payment-status", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ contractId: id, paid, note: payNote }),
+      });
+      const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      if (!res.ok || !j.success) { setMsg(j.errors?.[0]?.message ?? "No se pudo registrar el estado del pago."); return; }
       await load();
     } catch { setMsg("Error de red."); } finally { setBusy(false); }
   }
@@ -115,14 +163,72 @@ export default function TerminacionPage() {
               {iAmCounter && n.status === "notified" && (
                 <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
                   <p className="text-sm font-semibold text-slate-900">Tu respuesta</p>
+
+                  {/* Terminación anticipada con indemnización → formulario de aceptación. */}
+                  {n.type === "early" && n.penaltyAmount > 0 && (
+                    <div className="mt-2 space-y-3 rounded-xl border border-rose-200 bg-rose-50/40 p-3">
+                      <p className="text-xs text-slate-700">Si <b>aceptas</b>, define las condiciones. Tú eres la parte que <b>recibe</b> la indemnización.</p>
+                      <label className="block text-xs font-semibold text-slate-800">
+                        A partir de qué fecha aceptas la terminación
+                        <input type="date" value={effectiveDate} onChange={(e) => setEffectiveDate(e.target.value)} className="mt-1 block w-full rounded-xl border-2 border-slate-200 p-2 text-sm outline-none focus:border-[#5646E5]" />
+                      </label>
+                      <label className="block text-xs font-semibold text-slate-800">
+                        Valor de la indemnización a cobrar (máximo legal: ${n.penaltyAmount.toLocaleString("es-CO")})
+                        <input inputMode="numeric" value={agreedAmount} onChange={(e) => setAgreedAmount(e.target.value.replace(/[^\d]/g, ""))} className="mt-1 block w-full rounded-xl border-2 border-slate-200 p-2 text-sm outline-none focus:border-[#5646E5]" />
+                        {Number(agreedAmount || 0) > n.penaltyAmount && <span className="mt-1 block text-[11px] font-bold text-rose-600">No puede superar el máximo legal.</span>}
+                      </label>
+                      <label className="block text-xs font-semibold text-slate-800">
+                        Medio de pago con el que recibirás (cuenta, Nequi, etc.)
+                        <input value={payMethod} onChange={(e) => setPayMethod(e.target.value)} placeholder="Ej.: Bancolimbia ahorros 123-456, o Nequi 300…" className="mt-1 block w-full rounded-xl border-2 border-slate-200 p-2 text-sm outline-none focus:border-[#5646E5]" />
+                      </label>
+                      <label className="flex items-start gap-2 text-[11px] text-slate-800">
+                        <input type="checkbox" checked={ackResp} onChange={(e) => setAckResp(e.target.checked)} className="mt-0.5 h-4 w-4 accent-rose-600" />
+                        <span>Entiendo que <b>ArriendoSeguro solo envía esta comunicación</b>; la transacción del pago la realizamos directamente entre las partes y yo puedo dejar la trazabilidad aquí.</span>
+                      </label>
+                    </div>
+                  )}
+
                   <textarea value={respObs} onChange={(e) => setRespObs(e.target.value)} rows={3} placeholder="Observación (opcional)" className="mt-2 w-full rounded-xl border-2 border-slate-200 p-2 text-sm outline-none focus:border-[#5646E5]" />
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => void respond(true)} disabled={busy} className="rounded-xl bg-[#12B886] px-4 py-2 text-sm font-bold text-white disabled:opacity-60">Aceptar</button>
+                    <button type="button" onClick={() => void respond(true)} disabled={busy || (n.type === "early" && n.penaltyAmount > 0 && Number(agreedAmount || 0) > n.penaltyAmount)} className="rounded-xl bg-[#12B886] px-4 py-2 text-sm font-bold text-white disabled:opacity-60">Aceptar</button>
                     <button type="button" onClick={() => void respond(false)} disabled={busy} className="rounded-xl border-2 border-rose-300 px-4 py-2 text-sm font-bold text-rose-700 disabled:opacity-60">No acepto</button>
                   </div>
                 </div>
               )}
               {iAmNotifier && n.status === "notified" && <p className="mt-2 text-xs text-slate-500">Notificamos a la otra parte; te avisaremos cuando responda.</p>}
+
+              {/* Condiciones acordadas (tras aceptar). */}
+              {n.status === "accepted" && n.acceptance && (
+                <div className="mt-3 rounded-2xl border border-emerald-200 bg-white p-3 text-sm text-slate-700">
+                  <p className="font-semibold text-emerald-800">Condiciones acordadas</p>
+                  {n.acceptance.effectiveDate && <p className="mt-1">Termina a partir de: <b>{n.acceptance.effectiveDate}</b>.</p>}
+                  <p className="mt-1">{(n.acceptance.penaltyAmountAgreed ?? 0) > 0 ? <>Indemnización: <b>${(n.acceptance.penaltyAmountAgreed ?? 0).toLocaleString("es-CO")}</b>.</> : "Sin indemnización."}</p>
+                  {n.acceptance.paymentMethod && <p className="mt-1">Medio de pago para recibir: <b>{n.acceptance.paymentMethod}</b>.</p>}
+                  <p className="mt-2 text-[11px] text-slate-500">ArriendoSeguro solo deja constancia de esta comunicación. El pago lo hacen directamente entre ustedes.</p>
+                </div>
+              )}
+
+              {/* Trazabilidad del pago: solo la parte que RECIBE (quien aceptó) la marca. */}
+              {n.status === "accepted" && n.acceptance && (n.acceptance.penaltyAmountAgreed ?? 0) > 0 && (
+                <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
+                  <p className="text-sm font-semibold text-slate-900">Estado del pago</p>
+                  <p className="mt-1 text-sm">
+                    {n.paymentTrace?.status === "paid" ? "✓ La parte que recibe confirmó que le pagaron." : n.paymentTrace?.status === "unpaid" ? "⏳ Aún no le han pagado." : "Sin registrar todavía."}
+                    {n.paymentTrace?.note ? ` — ${n.paymentTrace.note}` : ""}
+                  </p>
+                  {n.acceptance.byRole === ctx.viewerRole ? (
+                    <div className="mt-2">
+                      <textarea value={payNote} onChange={(e) => setPayNote(e.target.value)} rows={2} placeholder="Nota (opcional)" className="w-full rounded-xl border-2 border-slate-200 p-2 text-sm outline-none focus:border-[#5646E5]" />
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button type="button" onClick={() => void markPaid(true)} disabled={busy} className="rounded-xl bg-[#12B886] px-4 py-2 text-sm font-bold text-white disabled:opacity-60">✓ Ya me pagaron</button>
+                        <button type="button" onClick={() => void markPaid(false)} disabled={busy} className="rounded-xl border-2 border-amber-300 px-4 py-2 text-sm font-bold text-amber-700 disabled:opacity-60">Aún no me pagan</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-1 text-[11px] text-slate-500">Solo la parte que recibe el pago puede actualizar este estado.</p>
+                  )}
+                </div>
+              )}
             </section>
           )}
 
