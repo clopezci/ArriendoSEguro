@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import { requireContractParticipant } from "@/lib/auth/serverAuth";
+import { requireContractParticipant, requestClientIp, requestUserAgent } from "@/lib/auth/serverAuth";
 import { sendPhoneNotice } from "@/services/notify/phoneChannel";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { appConfig } from "@/lib/config";
@@ -49,7 +49,11 @@ export async function POST(request: Request) {
       {
         terminationNotice: {
           ...notice,
-          paymentTrace: { status: paid ? "paid" : "unpaid", updatedAt: now, note },
+          paymentTrace: {
+            status: paid ? "paid" : "unpaid", updatedAt: now, note,
+            byRole: participant.role, byEmail: participant.user.email,
+            evidence: { ipAddress: requestClientIp(request) ?? "unknown", userAgent: requestUserAgent(request) ?? "unknown", at: now },
+          },
         },
         updatedAt: FieldValue.serverTimestamp(),
       },

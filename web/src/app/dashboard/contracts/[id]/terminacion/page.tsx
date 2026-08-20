@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { ExpedientePostWizardNav } from "@/components/contracts/expediente-post-wizard-nav";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
-import { earlyTerminationPenaltyMonths, terminationLegalText, terminationTypeLabel, NOTICE_MONTHS, type LeasePhase, type TerminationType } from "@/domain/contracts/termination";
+import { earlyTerminationPenaltyMonths, terminationLegalText, terminationTypeLabel, NOTICE_MONTHS, TERMINATION_ACK, type LeasePhase, type TerminationType } from "@/domain/contracts/termination";
 
 type Acceptance = { effectiveDate?: string; penaltyAmountAgreed?: number; paymentMethod?: string; acknowledged?: boolean; byRole?: string; at?: string };
 type PaymentTrace = { status?: "pending" | "paid" | "unpaid"; updatedAt?: string | null; note?: string };
@@ -183,8 +183,9 @@ export default function TerminacionPage() {
                       </label>
                       <label className="flex items-start gap-2 text-[11px] text-slate-800">
                         <input type="checkbox" checked={ackResp} onChange={(e) => setAckResp(e.target.checked)} className="mt-0.5 h-4 w-4 accent-rose-600" />
-                        <span>Entiendo que <b>ArriendoSeguro solo envía esta comunicación</b>; la transacción del pago la realizamos directamente entre las partes y yo puedo dejar la trazabilidad aquí.</span>
+                        <span>{TERMINATION_ACK.intermediation}</span>
                       </label>
+                      <a href="/legal/terminos" target="_blank" rel="noopener noreferrer" className="block text-[11px] font-semibold text-[#5646E5] underline">Ver Términos y Condiciones (§8B)</a>
                     </div>
                   )}
 

@@ -15,7 +15,7 @@ export default function TerminosPage() {
         <p className="text-xs font-medium uppercase tracking-wide text-violet-700">Información legal</p>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Términos y condiciones de uso</h1>
         <p className="text-xs text-slate-500">
-          Última actualización: 11 de agosto de 2026. Vigencia: Colombia. Responsable/operador: LOTIC (persona natural
+          Última actualización: 20 de agosto de 2026. Vigencia: Colombia. Responsable/operador: LOTIC (persona natural
           comerciante, NIT 71.217.228, Medellín).
         </p>
         <Link href="/" className="inline-block text-xs text-violet-700 hover:underline">
@@ -155,6 +155,32 @@ export default function TerminosPage() {
         <p>
           {appConfig.name} no recibe ni administra el dinero del canon entre las partes. Los pagos del canon se
           realizan fuera de la plataforma o por los medios que las partes acuerden, bajo su propio riesgo.
+        </p>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-slate-900">8B. Avisos de terminación / no renovación y pagos entre las partes</h2>
+        <p>
+          La plataforma permite a cada parte <strong>registrar y notificar</strong> avisos de no renovación o de
+          terminación anticipada, calcular de forma orientativa la indemnización según la Ley 820 de 2003, y dejar
+          <strong> constancia con fecha, IP y dispositivo</strong> de lo que cada parte aceptó (incluidas las
+          declaraciones y el formulario de aceptación de la contraparte). Esta evidencia queda disponible en el
+          expediente digital y en el paquete de evidencia descargable.
+        </p>
+        <p>
+          El papel de {appConfig.name} <strong>llega hasta el envío de la comunicación y la conservación de la
+          constancia</strong>. {appConfig.name} <strong>no recauda, administra, retiene ni garantiza</strong> el pago de
+          la indemnización, penalización o cualquier suma acordada entre las partes; dicho pago lo realizan las partes
+          <strong> directamente entre sí, por fuera de la plataforma y bajo su propio riesgo</strong>. La casilla o
+          función de “trazabilidad del pago” es un <strong>registro meramente informativo</strong> declarado por las
+          partes y <strong>no constituye comprobante, recaudo, garantía ni certificación de pago</strong> por parte de
+          {" "}{appConfig.name}.
+        </p>
+        <p>
+          Los <strong>montos, causales, validez y oportunidad</strong> de la terminación dependen del caso concreto, de
+          lo acordado y de la asesoría legal de las partes. El cálculo que muestra la plataforma es orientativo y
+          <strong> no sustituye asesoría jurídica</strong>. Al registrar un aviso o aceptar una terminación, el usuario
+          declara conocer y aceptar lo aquí previsto.
         </p>
       </section>
 
