@@ -81,6 +81,38 @@ export default function InventarioBentoPage() {
   // Acta (se pide AL PRINCIPIO)
   const [deliveryDate, setDeliveryDate] = useState("");
   const [receiverName, setReceiverName] = useState("");
+  // Guardia del acta FINAL: solo se permite generarla en la última semana antes
+  // del fin (o después), o si YA hay una terminación anticipada registrada. Si no,
+  // se bloquea con una explicación (evita cerrar el arriendo a destiempo).
+  const [finalGate, setFinalGate] = useState<"checking" | "ok" | "blocked">(isFinal ? "checking" : "ok");
+  const [finalEndDate, setFinalEndDate] = useState("");
+  const [finalDaysLeft, setFinalDaysLeft] = useState<number | null>(null);
+  const [earlyStep, setEarlyStep] = useState<0 | 1>(0);
+
+  useEffect(() => {
+    if (!isFinal || !user) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const lv = await fetch(`/api/contracts/latest-version?contractId=${encodeURIComponent(id)}`).then((r) => r.json());
+        const end = String(lv?.version?.contractPayload?.lease?.endDate ?? "").trim();
+        let hasEarly = false;
+        try {
+          const tc = await fetch(`/api/contracts/termination/context?contractId=${encodeURIComponent(id)}`, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json());
+          hasEarly = Boolean(tc?.success && tc?.notice && tc.notice.type === "early");
+        } catch { /* noop */ }
+        if (cancelled) return;
+        setFinalEndDate(end);
+        if (!end) { setFinalGate("ok"); return; }
+        const days = Math.ceil((new Date(end.length === 10 ? `${end}T00:00:00` : end).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        setFinalDaysLeft(days);
+        setFinalGate(days <= 7 || days < 0 || hasEarly ? "ok" : "blocked");
+      } catch {
+        if (!cancelled) setFinalGate("ok"); // fail-open: no romper el flujo
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isFinal, id, user]);
   const [actObservations, setActObservations] = useState("");
   // Bloque
   const [blockZoneId, setBlockZoneId] = useState("");
@@ -283,6 +315,39 @@ export default function InventarioBentoPage() {
         <h1 className="text-balance text-3xl font-extrabold tracking-tight">{isFinal ? "Acta de entrega y devolución" : "Inventario y acta de entrega"}</h1>
         {isFinal && <p className="mt-1 text-sm text-slate-500">Registra el estado del inmueble al DEVOLVERLO (fin del arriendo). Es el mismo proceso del inventario inicial; queda como acta aparte para comparar.</p>}
 
+        {/* Guardia del acta FINAL a destiempo. */}
+        {isFinal && finalGate === "checking" && <p className="mt-6 text-slate-400">Verificando la fecha del contrato…</p>}
+        {isFinal && finalGate === "blocked" && (
+          <section className="mt-6 rounded-3xl border-2 border-amber-300 bg-amber-50/80 p-5">
+            {earlyStep === 0 ? (
+              <>
+                <p className="text-lg font-bold text-amber-900">Aún falta para el fin del contrato</p>
+                <p className="mt-1 text-sm text-amber-900/90">
+                  El <b>acta de entrega y devolución</b> se hace al <b>final</b> del arriendo. Tu contrato vence el{" "}
+                  <b>{finalEndDate || "—"}</b>{finalDaysLeft !== null ? ` (faltan ~${finalDaysLeft} días)` : ""}. ¿Seguro que quieres crear el acta ahora?
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setEarlyStep(1)} className="rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white">Sí, continuar</button>
+                  <Link href={`/nuevo/gestionar/${id}`} className="rounded-xl border-2 border-amber-400 bg-white px-4 py-2 text-sm font-bold text-amber-800">Cancelar acta</Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-bold text-amber-900">Para hacerla a destiempo, usa Terminación anticipada</p>
+                <p className="mt-1 text-sm text-amber-900/90">
+                  Generar el acta de entrega <b>antes de la última semana</b> implica cerrar el arriendo a destiempo. Para eso debes registrar primero la{" "}
+                  <b>Terminación anticipada del contrato</b> (con su penalización y evidencia). Cuando esté registrada, podrás generar el acta aquí.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link href={`/dashboard/contracts/${id}/terminacion`} className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-bold text-white">Ir a Terminación anticipada →</Link>
+                  <button type="button" onClick={() => setEarlyStep(0)} className="rounded-xl border-2 border-amber-400 bg-white px-4 py-2 text-sm font-bold text-amber-800">Volver</button>
+                </div>
+              </>
+            )}
+          </section>
+        )}
+
+        {(!isFinal || finalGate === "ok") && (<>
         {phase === "loading" && <p className="mt-6 text-slate-400">Cargando…</p>}
 
         {phase === "locked" && (
@@ -526,6 +591,7 @@ export default function InventarioBentoPage() {
         )}
 
         {msg && <p className="mt-4 rounded-xl border border-slate-200 bg-white/80 p-3 text-sm text-slate-700">{msg}</p>}
+        </>)}
       </div>
     </div>
   );
