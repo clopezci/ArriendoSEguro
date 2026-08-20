@@ -12,6 +12,7 @@ import {
   terminationLegalText,
   terminationTypeLabel,
   NOTICE_MONTHS,
+  TERMINATION_ACK,
   type TerminationType,
   type LeasePhase,
 } from "@/domain/contracts/termination";
@@ -82,6 +83,10 @@ export async function POST(request: Request) {
         ipAddress: requestClientIp(request) ?? "unknown",
         userAgent: requestUserAgent(request) ?? "unknown",
         acceptedPenalty: type === "early",
+        // Texto LITERAL que aceptó quien registró el aviso (para el expediente).
+        acceptedTexts: type === "early"
+          ? [TERMINATION_ACK.notifierPenalty(penaltyAmount, penaltyMonths), TERMINATION_ACK.notifierNotice]
+          : [],
         at: now,
       },
       responseByRole: null,

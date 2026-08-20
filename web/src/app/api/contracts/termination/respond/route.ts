@@ -7,6 +7,7 @@ import { sendPhoneNotice } from "@/services/notify/phoneChannel";
 import { terminationResponseEmail } from "@/services/email/emailTemplates";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { appConfig } from "@/lib/config";
+import { TERMINATION_ACK } from "@/domain/contracts/termination";
 import type { ResidentialLeaseContractInput } from "@/domain/contracts/types";
 
 export const runtime = "nodejs";
@@ -68,7 +69,14 @@ export async function POST(request: Request) {
           responseEvidence: { ipAddress: requestClientIp(request) ?? "unknown", userAgent: requestUserAgent(request) ?? "unknown", at: now },
           // Formulario de aceptación de la parte afectada (acreedora).
           acceptance: accept
-            ? { effectiveDate, penaltyAmountAgreed, paymentMethod, acknowledged, byRole: participant.role, at: now }
+            ? {
+                effectiveDate, penaltyAmountAgreed, paymentMethod, acknowledged,
+                // Texto LITERAL del descargo de intermediación que aceptó (expediente).
+                acknowledgedText: TERMINATION_ACK.intermediation,
+                byRole: participant.role, byEmail: participant.user.email,
+                evidence: { ipAddress: requestClientIp(request) ?? "unknown", userAgent: requestUserAgent(request) ?? "unknown", at: now },
+                at: now,
+              }
             : null,
           // Trazabilidad del pago (la marca luego la parte que recibe).
           paymentTrace: accept ? { status: "pending", updatedAt: null, note: "" } : null,

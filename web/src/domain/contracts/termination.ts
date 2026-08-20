@@ -53,3 +53,20 @@ export function terminationLegalText(input: { type: TerminationType; byRole: str
 export function terminationTypeLabel(type: TerminationType): string {
   return type === "non_renewal" ? "Aviso de no renovación" : "Terminación anticipada";
 }
+
+/**
+ * Textos EXACTOS que cada parte acepta al registrar/responder una terminación.
+ * Se usan tanto en la UI como al guardar la evidencia, para que en el expediente
+ * quede constancia literal de QUÉ aceptó cada quien (no solo un booleano) y que
+ * sabían que ArriendoSeguro es solo la plataforma de intermediación.
+ */
+export const TERMINATION_ACK = {
+  /** Quien inicia la terminación anticipada: reconoce la indemnización. */
+  notifierPenalty: (amount: number, months: number): string =>
+    `Reconozco que la terminación anticipada genera una indemnización de $${amount.toLocaleString("es-CO")} (${months} meses de canon).`,
+  /** Quien inicia: entiende el preaviso y que ArriendoSeguro solo deja constancia. */
+  notifierNotice: `Entiendo que debo dar el preaviso de ${NOTICE_MONTHS} meses y que ArriendoSeguro solo deja constancia; no sustituye asesoría legal.`,
+  /** Quien acepta (parte que recibe): descargo de intermediación + pago por fuera. */
+  intermediation:
+    "Entiendo y acepto que ArriendoSeguro es únicamente la plataforma de intermediación tecnológica: envía esta comunicación y deja la constancia con fecha y evidencia, pero NO recauda, administra, retiene ni garantiza el pago de la indemnización ni de ninguna suma entre las partes. La transacción la realizamos directamente las partes, por fuera de la plataforma y bajo nuestro propio riesgo. Podré, si quiero, dejar la trazabilidad del pago en la plataforma.",
+} as const;

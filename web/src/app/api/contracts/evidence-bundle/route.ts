@@ -310,6 +310,66 @@ export async function GET(request: Request) {
       manifest.push("- (omitido) Solicitudes y reportes: no se pudieron leer.");
     }
 
+    // Aviso de terminación / no renovación con TODA su trazabilidad: quién avisó,
+    // qué aceptó literalmente (indemnización, preaviso), la aceptación de la otra
+    // parte (fecha, monto ≤ tope legal, medio de pago, descargo de intermediación)
+    // y el estado del pago que reportó quien recibe. Deja constancia de que las
+    // partes sabían que ArriendoSeguro solo envía la comunicación.
+    try {
+      const cSnap = await firestore.collection("contracts").doc(contractId).get();
+      const tn = (cSnap.data() as { terminationNotice?: Record<string, unknown> } | undefined)?.terminationNotice;
+      if (tn) {
+        const roleName = (r: unknown) => (String(r).startsWith("landlord") ? "Dueño (arrendador)" : String(r).startsWith("tenant") ? "Inquilino (arrendatario)" : String(r || "—"));
+        const money = (v: unknown) => `$${Number(v ?? 0).toLocaleString("es-CO")}`;
+        const ev = (e: unknown) => { const o = (e ?? {}) as Record<string, unknown>; return `IP ${o.ipAddress ?? "—"} · ${o.at ?? "—"} · ${o.userAgent ?? "—"}`; };
+        const lines: string[] = [];
+        lines.push("AVISO DE TERMINACIÓN / NO RENOVACIÓN");
+        lines.push(`Contrato: ${contractId}`);
+        lines.push(`Generado: ${new Date().toISOString()}`);
+        lines.push("");
+        lines.push(`Tipo: ${tn.type === "early" ? "Terminación anticipada" : "Aviso de no renovación"}`);
+        lines.push(`Registrado por: ${roleName(tn.byRole)} (${tn.byEmail ?? "—"}) · ${tn.createdAt ?? "—"}`);
+        lines.push(`Etapa: ${tn.phase === "renewal" ? "prórroga" : "vigencia inicial"} · Preaviso: ${tn.noticeMonths ?? "—"} meses`);
+        lines.push(`Indemnización estimada (máx. legal): ${money(tn.penaltyAmount)} (${tn.penaltyMonths ?? 0} meses de canon)`);
+        if (tn.observation) lines.push(`Observación de quien avisó: ${tn.observation}`);
+        const nEv = tn.evidence as Record<string, unknown> | undefined;
+        lines.push(`Evidencia del aviso: ${ev(nEv)}`);
+        const accTexts = Array.isArray(nEv?.acceptedTexts) ? (nEv?.acceptedTexts as string[]) : [];
+        if (accTexts.length) { lines.push("Declaraciones aceptadas por quien avisó:"); accTexts.forEach((t) => lines.push(`   • ${t}`)); }
+        lines.push("");
+        lines.push(`Estado: ${tn.status === "accepted" ? "ACEPTADO por la otra parte" : tn.status === "rejected" ? "NO aceptado por la otra parte" : "esperando respuesta"}`);
+        if (tn.respondedAt) lines.push(`Respondido: ${tn.respondedAt} por ${roleName(tn.responseByRole)}`);
+        if (tn.responseObservation) lines.push(`Observación de la respuesta: ${tn.responseObservation}`);
+        const rEv = tn.responseEvidence as Record<string, unknown> | undefined;
+        if (rEv) lines.push(`Evidencia de la respuesta: ${ev(rEv)}`);
+        const acc = tn.acceptance as Record<string, unknown> | null | undefined;
+        if (acc) {
+          lines.push("");
+          lines.push("CONDICIONES ACORDADAS (formulario de aceptación de la parte que recibe):");
+          lines.push(`   Termina a partir de: ${acc.effectiveDate ?? "—"}`);
+          lines.push(`   Indemnización acordada: ${money(acc.penaltyAmountAgreed)} (tope legal ${money(tn.penaltyAmount)})`);
+          lines.push(`   Medio de pago para recibir: ${acc.paymentMethod ?? "—"}`);
+          lines.push(`   Aceptado por: ${roleName(acc.byRole)} (${acc.byEmail ?? "—"}) · ${acc.at ?? "—"}`);
+          lines.push(`   Evidencia: ${ev(acc.evidence)}`);
+          if (acc.acknowledgedText) lines.push(`   Declaración aceptada: ${acc.acknowledgedText}`);
+        }
+        const pt = tn.paymentTrace as Record<string, unknown> | null | undefined;
+        if (pt && pt.status) {
+          lines.push("");
+          lines.push("TRAZABILIDAD DEL PAGO (reportada por la parte que recibe):");
+          lines.push(`   Estado: ${pt.status === "paid" ? "PAGADO / recibido" : "AÚN NO pagado"}`);
+          if (pt.note) lines.push(`   Nota: ${pt.note}`);
+          lines.push(`   Reportado por: ${roleName(pt.byRole)} (${pt.byEmail ?? "—"})`);
+          lines.push(`   Evidencia: ${ev(pt.evidence)}`);
+        }
+        lines.push("");
+        lines.push("Nota: ArriendoSeguro es solo la plataforma de intermediación tecnológica: envía esta comunicación y deja la constancia, pero no recauda ni garantiza el pago, que las partes realizan directamente entre sí.");
+        tryAdd("06-terminacion.txt", lines.join("\n"), "06-terminacion.txt (aviso de terminación/no renovación, aceptación y trazabilidad del pago con IP/fecha/dispositivo)");
+      }
+    } catch {
+      manifest.push("- (omitido) Aviso de terminación: no se pudo leer.");
+    }
+
     manifest.push("");
     manifest.push(
       "Notas: los archivos omitidos pueden deberse a que aún no se generó el PDF, a rutas no accesibles desde el servidor, a URLs firmadas expiradas o a los límites de tamaño del paquete. Vuelve a generar o descarga individual desde la vista de evidencia.",
