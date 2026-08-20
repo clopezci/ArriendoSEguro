@@ -38,7 +38,7 @@ export function terminationLegalText(input: { type: TerminationType; byRole: str
     ];
   }
   const base = input.byRole === "landlord"
-    ? `Como ARRENDADOR, la terminación anticipada unilateral procede por las causales especiales del art. 22 de la Ley 820 de 2003, con preaviso de ${NOTICE_MONTHS} meses e indemnización equivalente a ${input.penaltyMonths} meses de canon.`
+    ? `Como ARRENDADOR NO puedes terminar unilateralmente a mitad de vigencia por tu sola voluntad: la Ley 820 protege la estabilidad del arrendatario. Solo procede por (a) incumplimiento del arrendatario (causa justa, sin indemnización, con el debido proceso), (b) mutuo acuerdo, o (c) causales especiales a la fecha de vencimiento (necesitar el inmueble, demolición, etc.), que exigen preaviso de ${NOTICE_MONTHS} meses e indemnización a favor del ARRENDATARIO equivalente a ${input.penaltyMonths} meses de canon. Este registro deja constancia del aviso; consulta a tu abogado sobre la causal y el monto.`
     : input.phase === "renewal"
       ? `Como ARRENDATARIO, durante las prórrogas puedes terminar unilateralmente con preaviso de ${NOTICE_MONTHS} meses e indemnización equivalente a ${input.penaltyMonths} meses de canon (art. 24 §2, Ley 820 de 2003).`
       : `Como ARRENDATARIO, en la vigencia inicial puedes terminar unilateralmente con preaviso de ${NOTICE_MONTHS} meses e indemnización equivalente a ${input.penaltyMonths} meses de canon (art. 24 §1, Ley 820 de 2003).`;
