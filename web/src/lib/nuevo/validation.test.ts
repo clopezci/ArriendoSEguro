@@ -6,6 +6,7 @@ const base: Answers = {
   contractType: "VIVIENDA_URBANA",
   name: "", docType: "CC", docNumber: "", phone: "", email: "", ownerCity: "",
   acting: "", proxyOath: false, poderdanteName: "",
+  propertyAlias: "",
   address: "", city: "", department: "",
   registry: "", propertyType: "", registrySkip: false, propertyDocType: "", propertyOath: false,
   canon: "", commercialValue: "", noCommercialValue: false,

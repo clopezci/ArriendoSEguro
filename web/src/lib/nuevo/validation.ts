@@ -71,6 +71,9 @@ export type Answers = {
   // Nombre del propietario que otorga el poder (solo si actúa como apoderado).
   poderdanteName: string;
   // Inmueble
+  // Nombre/apodo OPCIONAL de la propiedad, para identificarla al administrar
+  // varios arriendos (no va en el contrato legal).
+  propertyAlias: string;
   address: string; city: string; department: string;
   registry: string; propertyType: string; registrySkip: boolean;
   // Documento que soporta la propiedad del inmueble (reemplaza la matrícula):

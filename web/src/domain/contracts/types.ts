@@ -113,6 +113,13 @@ export interface PersonParty {
 }
 
 export interface PropertyData {
+  /**
+   * Nombre/apodo OPCIONAL que el arrendador le da a la propiedad (p. ej.
+   * "Apto 302 Laureles", "Casa de mi mamá") para identificarla fácilmente
+   * cuando administra varios arriendos. No aparece en el contrato legal;
+   * es solo una ayuda de organización interna en la plataforma.
+   */
+  alias?: string;
   address: string;
   city: string;
   department: string;
