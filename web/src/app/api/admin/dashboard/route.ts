@@ -103,7 +103,8 @@ export async function GET(request: Request) {
       countSafe(() => firestore.collection("contracts").count().get()),
       countSafe(() => firestore.collection("contract_versions").count().get()),
       countSafe(() =>
-        firestore.collection("platform_payments").where("status", "==", "approved").count().get(),
+        // platform_payments guarda el estado del PSP en MAYÚSCULAS ("APPROVED").
+        firestore.collection("platform_payments").where("status", "==", "APPROVED").count().get(),
       ),
       countSafe(() => firestore.collection("contracts").where("status", "==", "signed").count().get()),
     ]);

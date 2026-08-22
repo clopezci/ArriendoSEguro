@@ -6,6 +6,7 @@ import { isTelegramConfigured, sendTelegram, type SendTelegramOutput } from "@/s
 import { ERROR_EVENTS_COLLECTION } from "@/lib/observability/observability";
 import { isBenignClientError } from "@/lib/observability/ignore-noise";
 import { recordObservabilityRun } from "@/lib/observability/runlog";
+import { summarizeGa4Visits, ga4VisitsToText, type Ga4Visits } from "@/lib/observability/ga4";
 import { formatAppDateTime } from "@/lib/datetime/appTime";
 import { appConfig } from "@/lib/config";
 
@@ -184,10 +185,14 @@ export function errorSummaryToText(e: ErrorSummary | null): string {
  * `count()` (baratas) y es best-effort: si una consulta falla, ese dato va null.
  */
 export type ActivitySummary = {
+  surveys: number | null;
+  surveys24h: number | null;
   contracts: number | null;
   contracts24h: number | null;
   signed: number | null;
   payments: number | null;
+  payments24h: number | null;
+  plusPaid: number | null;
   reviews: number | null;
 };
 
@@ -203,22 +208,37 @@ export async function summarizeActivity(): Promise<ActivitySummary | null> {
       return null;
     }
   };
-  const [contracts, contracts24h, signed, payments, reviews] = await Promise.all([
+  const [surveys, surveys24h, contracts, contracts24h, signed, payments, payments24h, plusPaid, reviews] = await Promise.all([
+    safeCount(firestore.collection("lead_forms")),
+    safeCount(firestore.collection("lead_forms").where("createdAt", ">=", dayAgo)),
     safeCount(firestore.collection("contracts")),
     safeCount(firestore.collection("contracts").where("createdAt", ">=", dayAgo)),
     safeCount(firestore.collection("signatures").where("signatureStatus", "==", "signed")),
+    // OJO: platform_payments guarda el estado del PSP en MAYÚSCULAS ("APPROVED").
     safeCount(firestore.collection("platform_payments").where("status", "==", "APPROVED")),
+    safeCount(firestore.collection("platform_payments").where("status", "==", "APPROVED").where("createdAt", ">=", dayAgo)),
+    // "Cuántos compraron" de forma estable: accesos Plan Plus pagados y activos.
+    safeCount(firestore.collection("access_entitlements").where("status", "==", "active").where("accessType", "==", "plus_paid")),
     safeCount(firestore.collection("reputation_reviews")),
   ]);
-  return { contracts, contracts24h, signed, payments, reviews };
+  return { surveys, surveys24h, contracts, contracts24h, signed, payments, payments24h, plusPaid, reviews };
+}
+
+/** % con 1 decimal (o null si no hay denominador). */
+function pct(num: number | null, den: number | null): number | null {
+  return num != null && den != null && den > 0 ? Math.round((num / den) * 1000) / 10 : null;
 }
 
 export function activityToText(a: ActivitySummary | null): string {
   if (!a) return "📊 *Actividad:* sin acceso a la base.";
   const n = (v: number | null) => (v === null ? "—" : String(v));
+  const p = (v: number | null) => (v === null ? "—" : `${v}%`);
   return [
-    "📊 *Actividad*",
-    `Contratos: ${n(a.contracts)} (nuevos 24h: ${n(a.contracts24h)}) · firmas completadas: ${n(a.signed)} · pagos aprobados: ${n(a.payments)} · calificaciones: ${n(a.reviews)}`,
+    "📊 *Actividad y embudo*",
+    `Encuestas: ${n(a.surveys)} (24h: ${n(a.surveys24h)})`,
+    `Contratos: ${n(a.contracts)} (24h: ${n(a.contracts24h)}) · firmados: ${n(a.signed)}`,
+    `Compras (Plan Plus): ${n(a.plusPaid)} · pagos aprobados: ${n(a.payments)} (24h: ${n(a.payments24h)}) · calificaciones: ${n(a.reviews)}`,
+    `Conversión → firma/contrato: ${p(pct(a.signed, a.contracts))} · compra/contrato: ${p(pct(a.plusPaid, a.contracts))}`,
   ].join("\n");
 }
 
@@ -231,13 +251,16 @@ export async function sendAuditReport(source = "manual_admin"): Promise<{
   audit: AuditResult;
   errors: ErrorSummary | null;
   activity: ActivitySummary | null;
+  visits: Ga4Visits | null;
   telegram: SendTelegramOutput;
   telegramSent: number;
 }> {
   const audit = runPostureAudit();
-  const [errors, activity] = await Promise.all([summarizeErrors(), summarizeActivity()]);
+  const [errors, activity, visits] = await Promise.all([summarizeErrors(), summarizeActivity(), summarizeGa4Visits()]);
   const text = [
     auditToText(audit),
+    "",
+    ga4VisitsToText(visits),
     "",
     activityToText(activity),
     "",
@@ -261,5 +284,5 @@ export async function sendAuditReport(source = "manual_admin"): Promise<{
     telegramError: tg.errorMessage ?? null,
     notes: `warnings:${audit.summary.warning} errores:${errors ? errors.distinct : "sin-acceso-db"}`,
   });
-  return { audit, errors, activity, telegram: tg, telegramSent: tg.status === "sent" ? tg.sent : 0 };
+  return { audit, errors, activity, visits, telegram: tg, telegramSent: tg.status === "sent" ? tg.sent : 0 };
 }
