@@ -74,7 +74,9 @@ export default function GestionarContratosPage() {
           <div className="mt-8 grid grid-cols-1 gap-4">
             {drafts.map((d, idx) => {
               const complete = isExpedienteCompleto(d);
-              const title = (d.property?.address || "").trim() || "Contrato en preparación";
+              const alias = (d.property?.alias || "").trim();
+              const address = (d.property?.address || "").trim();
+              const title = alias || address || "Contrato en preparación";
               const owner = (d.landlord?.fullName || "").trim();
               const tenant = (d.tenant?.fullName || "").trim();
               const updated = new Date(d.lastUpdatedAt).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
@@ -84,6 +86,7 @@ export default function GestionarContratosPage() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-lg font-bold tracking-tight">{title}</p>
+                      {alias && address && <p className="mt-0.5 truncate text-xs text-slate-400">📍 {address}</p>}
                       <p className="mt-0.5 truncate text-sm text-slate-500">
                         {owner ? `Dueño: ${owner}` : "Sin dueño aún"}{tenant ? ` · Inquilino: ${tenant}` : ""}
                       </p>

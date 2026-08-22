@@ -146,7 +146,9 @@ export default function GestionarPosventaPage() {
     return () => { cancelled = true; };
   }, [saved, versionId, id, user]);
 
-  const title = (draft?.property?.address || "").trim() || "Tu contrato";
+  const aliasName = (draft?.property?.alias || "").trim();
+  const address = (draft?.property?.address || "").trim();
+  const title = aliasName || address || "Tu contrato";
   const tenant = (draft?.tenant?.fullName || "").trim();
 
   const doneChip = <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">✓ Hecho</span>;
@@ -201,7 +203,7 @@ export default function GestionarPosventaPage() {
 
         <h1 className="text-balance text-4xl font-extrabold leading-none tracking-tight">Administra tu arriendo</h1>
         <p className="mt-3 text-lg text-slate-500">
-          {title}{tenant ? ` · Inquilino: ${tenant}` : ""}. Elige <b>una cosa a la vez</b>.
+          <b>{title}</b>{aliasName && address ? ` (${address})` : ""}{tenant ? ` · Inquilino: ${tenant}` : ""}. Elige <b>una cosa a la vez</b>.
         </p>
 
         {/* Iniciar el contrato definitivo (anti-abuso: bloquea + consume el cupo). */}

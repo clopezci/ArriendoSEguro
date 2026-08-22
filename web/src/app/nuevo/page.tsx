@@ -114,6 +114,7 @@ const EMPTY: Answers = {
   contractType: "VIVIENDA_URBANA",
   name: "", docType: "CC", docNumber: "", phone: "", email: "", ownerCity: "",
   acting: "", proxyOath: false, poderdanteName: "",
+  propertyAlias: "",
   address: "", city: "", department: "",
   registry: "", propertyType: "", registrySkip: false, propertyDocType: "", propertyOath: false,
   canon: "", commercialValue: "", noCommercialValue: false,
@@ -188,6 +189,7 @@ function answersFromDraft(d: ContractDraft): Answers {
     acting: d.actingAs || "",
     proxyOath: Boolean(d.proxyDeclarationAcceptedAt),
     poderdanteName: d.grantorFullName || "",
+    propertyAlias: d.property?.alias || "",
     address: d.property?.address || "",
     city: d.property?.city || "",
     department: d.property?.department || "",
@@ -345,6 +347,7 @@ export default function NuevoPage() {
       },
       property: {
         ...d.property,
+        alias: n.propertyAlias.trim() || d.property.alias || "",
         address: n.address.trim() || d.property.address,
         city: n.city.trim() || d.property.city,
         department: n.department.trim() || d.property.department,
@@ -1161,6 +1164,7 @@ export default function NuevoPage() {
                 <ReviewItem label="Contrato" value="Vivienda urbana (Ley 820)" />
                 <ReviewItem label="Arrendador" value={`${a.name || "—"} · ${a.docType} ${a.docNumber || ""}`.trim()} />
                 <ReviewItem label="Calidad" value={a.acting === "proxy" ? "Apoderado" : a.acting === "owner" ? "Dueño" : "—"} />
+                {a.propertyAlias.trim() && <ReviewItem label="Nombre de la propiedad" value={a.propertyAlias.trim()} />}
                 <ReviewItem label="Inmueble" value={`${a.propertyType || "—"} · ${a.address || "—"}${a.city ? ", " + a.city : ""}`} />
                 <ReviewItem label="Soporte de propiedad" value={`${a.propertyDocType === "tradicion" ? "Certificado de tradición" : a.propertyDocType === "servicios" ? "Servicios públicos" : a.propertyDocType === "predial" ? "Impuesto predial" : a.propertyDocType === "escritura" ? "Escritura pública" : a.propertyDocType === "otro" ? "Otro documento" : "—"}${a.propertyOath ? " · declaración de facultad aceptada ✓" : ""}`} />
                 <ReviewItem label="Canon" value={a.canon ? `$ ${Number(a.canon.replace(/[^\d]/g, "")).toLocaleString("es-CO")}` : "—"} />
@@ -1406,7 +1410,11 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
     case "addr":
       return (
         <div className="flex flex-col gap-2.5">
-          <InputMic autoFocus autoComplete="street-address" placeholder="Calle 00 # 00-00" value={a.address} onChange={(e) => setA({ ...a, address: e.target.value })} voice={(t) => setA({ ...a, address: t })} />
+          <div>
+            <InputMic autoFocus placeholder="🏷️ Nombre para identificar la propiedad (opcional)" value={a.propertyAlias} onChange={(e) => setA({ ...a, propertyAlias: e.target.value })} voice={(t) => setA({ ...a, propertyAlias: t })} />
+            <p className="mt-1 px-1 text-xs text-slate-500">Opcional. Si arriendas varias propiedades, ponle un nombre (ej. “Apto 302 Laureles”) para reconocerla fácil cuando administres tus arriendos. No aparece en el contrato.</p>
+          </div>
+          <InputMic autoComplete="street-address" placeholder="Calle 00 # 00-00" value={a.address} onChange={(e) => setA({ ...a, address: e.target.value })} voice={(t) => setA({ ...a, address: t })} />
           <InputMic autoComplete="address-level2" placeholder="Ciudad" value={a.city} onChange={(e) => setA({ ...a, city: e.target.value })} voice={(t) => setA({ ...a, city: t })} />
           <InputMic placeholder="Departamento (ej. Antioquia)" value={a.department} onChange={(e) => setA({ ...a, department: e.target.value })} voice={(t) => setA({ ...a, department: t })} />
         </div>
