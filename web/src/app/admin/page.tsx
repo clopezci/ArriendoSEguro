@@ -28,6 +28,13 @@ type DashboardPayload = {
       registeredToContract: number | null;
       contractToSigned: number | null;
     };
+    ga4?: {
+      configured: boolean;
+      daily: { date: string; users: number; newUsers: number; sessions: number; views: number }[];
+      channels: { label: string; users: number; sessions: number }[];
+      devices: { label: string; users: number; sessions: number }[];
+      topPages: { path: string; views: number; users: number }[];
+    } | null;
     recentErrors: { eventName: string; createdAt: string; metadataSummary: string }[];
   };
   surveys?: Record<string, unknown>[];
@@ -3164,6 +3171,92 @@ function Resumen({ s }: { s?: DashboardPayload["summary"] }) {
           </div>
         ))}
       </div>
+      {/* Visitas (GA4): cuántas personas entran cada día + de dónde llegan. */}
+      <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
+        <p className="text-sm font-semibold text-slate-900">👣 Visitas (Google Analytics)</p>
+        {!s.ga4?.configured ? (
+          <p className="mt-1 text-[11px] text-slate-500">
+            Aún no se ven las visitas aquí. Falta terminar la conexión con GA4 (definir <code>GA4_PROPERTY_ID</code> en
+            Vercel y dar acceso de Lector a la cuenta de servicio en la propiedad GA4), o esperar unos minutos tras
+            configurarlo. Mientras tanto puedes verlas en Google Analytics.
+          </p>
+        ) : (
+          <div className="mt-3 space-y-4">
+            {/* Serie por día: cuántas personas entraron cada día (últimos 14). */}
+            {(() => {
+              const daily = s.ga4?.daily ?? [];
+              const maxU = Math.max(1, ...daily.map((d) => d.users));
+              const fmt = (iso: string) => (iso.length >= 10 ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : iso);
+              return (
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Personas por día (últimos 14 días)</p>
+                  <div className="mt-2 space-y-1">
+                    {daily.length === 0 && <p className="text-xs text-slate-500">Sin datos todavía.</p>}
+                    {daily.map((d) => (
+                      <div key={d.date} className="flex items-center gap-2 text-xs">
+                        <span className="w-12 shrink-0 tabular-nums text-slate-500">{fmt(d.date)}</span>
+                        <div className="h-4 flex-1 overflow-hidden rounded bg-slate-100">
+                          <div className="h-full rounded bg-violet-500" style={{ width: `${Math.round((d.users / maxU) * 100)}%` }} />
+                        </div>
+                        <span className="w-16 shrink-0 text-right tabular-nums font-semibold text-slate-800">
+                          {d.users.toLocaleString("es-CO")}
+                        </span>
+                        <span className="hidden w-24 shrink-0 text-right tabular-nums text-slate-400 sm:inline">
+                          {d.sessions.toLocaleString("es-CO")} ses.
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-[11px] text-slate-400">Barra = usuarios (personas). A la derecha: personas y sesiones de cada día.</p>
+                </div>
+              );
+            })()}
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {/* De dónde llegan (canal de adquisición). */}
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">De dónde llegan (28 días)</p>
+                <ul className="mt-2 space-y-1 text-xs text-slate-700">
+                  {(s.ga4?.channels ?? []).length === 0 && <li className="text-slate-400">—</li>}
+                  {(s.ga4?.channels ?? []).map((c) => (
+                    <li key={c.label} className="flex justify-between gap-2">
+                      <span className="truncate">{c.label}</span>
+                      <span className="shrink-0 font-semibold tabular-nums">{c.users.toLocaleString("es-CO")}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {/* Dispositivo. */}
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Dispositivo (28 días)</p>
+                <ul className="mt-2 space-y-1 text-xs text-slate-700">
+                  {(s.ga4?.devices ?? []).length === 0 && <li className="text-slate-400">—</li>}
+                  {(s.ga4?.devices ?? []).map((d) => (
+                    <li key={d.label} className="flex justify-between gap-2">
+                      <span className="truncate">{d.label === "mobile" ? "📱 Móvil" : d.label === "desktop" ? "💻 Escritorio" : d.label === "tablet" ? "📲 Tablet" : d.label}</span>
+                      <span className="shrink-0 font-semibold tabular-nums">{d.users.toLocaleString("es-CO")}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {/* Páginas más vistas. */}
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Páginas más vistas (7 días)</p>
+                <ul className="mt-2 space-y-1 text-xs text-slate-700">
+                  {(s.ga4?.topPages ?? []).length === 0 && <li className="text-slate-400">—</li>}
+                  {(s.ga4?.topPages ?? []).map((p) => (
+                    <li key={p.path} className="flex justify-between gap-2">
+                      <span className="truncate" title={p.path}>{p.path}</span>
+                      <span className="shrink-0 font-semibold tabular-nums">{p.views.toLocaleString("es-CO")}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {s.funnel && (
         <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
           <p className="text-sm font-semibold text-slate-900">Embudo de conversión (KPIs)</p>

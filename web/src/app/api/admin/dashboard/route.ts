@@ -4,6 +4,7 @@ import { Timestamp, type QuerySnapshot } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin";
 import { requireInternalAdmin } from "@/lib/admin/internal-admin";
 import { buildAdminSurveyRow } from "@/lib/validations/lead-form-export-labels";
+import { summarizeGa4Detail } from "@/lib/observability/ga4";
 
 export const runtime = "nodejs";
 
@@ -122,6 +123,10 @@ export async function GET(request: Request) {
       registeredToContract: pct(contractsCount, usersRegistered),
       contractToSigned: pct(contractsSigned, contractsCount),
     };
+
+    // Visitas GA4 (serie por día + desgloses). Best-effort: si no está configurado
+    // o falla, viene con configured:false y el panel muestra la ayuda de setup.
+    const ga4 = await summarizeGa4Detail().catch(() => null);
 
     const [leadsSnap, auditSnap, entitlementsSnap, ordersSnap, paymentsSnap, contractsSnap] =
       await Promise.all([
@@ -282,6 +287,7 @@ export async function GET(request: Request) {
         platformPaymentsApproved: paymentsApproved,
         contractsSigned,
         funnel,
+        ga4,
         recentErrors: errorish.slice(0, 25),
       },
       surveys,
