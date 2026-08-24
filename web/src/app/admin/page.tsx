@@ -5,7 +5,7 @@ import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { PLAN_PLUS_CUSTOM_COP_LIMITS } from "@/domain/platform-payments/plan-plus-pricing";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 
 type DashboardPayload = {
   success: boolean;
@@ -34,6 +34,16 @@ type DashboardPayload = {
       channels: { label: string; users: number; sessions: number }[];
       devices: { label: string; users: number; sessions: number }[];
       topPages: { path: string; views: number; users: number }[];
+    } | null;
+    lean?: {
+      northStar: number | null;
+      acquisition: { visitors7d: number | null; signups: number | null; surveys: number | null };
+      activation: { contractsCreated: number | null; contractsGenerated: number | null; rate: number | null };
+      retention: { repeatUsers: number | null; reviews: number | null; repeatRate: number | null };
+      revenue: { total: number; last30: number; count: number; ticket: number | null; arpu: number | null; payers: number };
+      referral: { invitesSent: number | null; referralCodes: number | null; invitesPerUser: number | null };
+      engines: { viralK: number | null; stickyRepeatRate: number | null; paidTicket: number | null };
+      race: { label: string; bars: { key: string; value: number }[] }[];
     } | null;
     recentErrors: { eventName: string; createdAt: string; metadataSummary: string }[];
   };
@@ -108,6 +118,7 @@ export default function AdminPage() {
   const router = useRouter();
   const [tab, setTab] = useState<
     | "resumen"
+    | "lean"
     | "encuestas"
     | "usuarios"
     | "accesos"
@@ -2962,6 +2973,7 @@ export default function AdminPage() {
           {(
             [
               ["resumen", "Resumen"],
+              ["lean", "📈 Lean"],
               ["encuestas", "Encuestas"],
               ["usuarios", "Usuarios"],
               ["accesos", "Accesos"],
@@ -2994,6 +3006,7 @@ export default function AdminPage() {
         {!data && !loadError && <p className="text-sm text-slate-500">Cargando datos…</p>}
 
         {data && tab === "resumen" && <Resumen s={data.summary} />}
+        {data && tab === "lean" && <LeanTab s={data.summary} />}
         {data && tab === "encuestas" && (
           <Encuestas rows={data.surveys ?? []} onExport={() => void downloadSurveysCsv()} />
         )}
@@ -3147,6 +3160,176 @@ function ErroresTab({
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Bar chart race: barras que crecen y se reordenan semana a semana. Autocontenido. */
+const RACE_COLORS: Record<string, string> = {
+  Encuestas: "#f59e0b",
+  Registros: "#6366f1",
+  Contratos: "#0ea5e9",
+  Compras: "#10b981",
+};
+function BarChartRace({ frames }: { frames: { label: string; bars: { key: string; value: number }[] }[] }) {
+  const [fi, setFi] = useState(0);
+  const [playing, setPlaying] = useState(true);
+  const n = frames.length;
+
+  useEffect(() => {
+    if (!playing || n <= 1) return;
+    const t = setInterval(() => setFi((f) => (f + 1) % n), 1100);
+    return () => clearInterval(t);
+  }, [playing, n]);
+
+  if (n === 0) return <p className="text-xs text-slate-500">Sin datos suficientes para la animación todavía.</p>;
+
+  const series = frames[0].bars.map((b) => b.key);
+  const overallMax = Math.max(1, ...frames.flatMap((fr) => fr.bars.map((b) => b.value)));
+  const cur = frames[Math.min(fi, n - 1)];
+  const valueOf = (k: string) => cur.bars.find((b) => b.key === k)?.value ?? 0;
+  const ranked = [...series].sort((a, b) => valueOf(b) - valueOf(a));
+  const rankOf = (k: string) => ranked.indexOf(k);
+  const ROW = 34;
+
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-3">
+        <button type="button" onClick={() => setPlaying((p) => !p)} className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-700">
+          {playing ? "⏸ Pausar" : "▶ Reproducir"}
+        </button>
+        <input type="range" min={0} max={n - 1} value={Math.min(fi, n - 1)} onChange={(e) => { setPlaying(false); setFi(Number(e.target.value)); }} className="flex-1 accent-violet-500" />
+        <span className="w-24 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-700">Semana {cur.label}</span>
+      </div>
+      <div className="relative" style={{ height: series.length * ROW }}>
+        {series.map((k) => {
+          const v = valueOf(k);
+          const w = Math.round((v / overallMax) * 100);
+          return (
+            <div key={k} className="absolute left-0 right-0 flex items-center gap-2" style={{ top: 0, transform: `translateY(${rankOf(k) * ROW}px)`, transition: "transform 700ms ease" }}>
+              <span className="w-20 shrink-0 text-right text-[11px] font-semibold text-slate-600">{k}</span>
+              <div className="h-6 flex-1 overflow-hidden rounded bg-slate-100">
+                <div className="flex h-full items-center justify-end rounded px-2 text-[11px] font-bold text-white" style={{ width: `${Math.max(w, 6)}%`, background: RACE_COLORS[k] ?? "#8b5cf6", transition: "width 700ms ease" }}>
+                  {v}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[11px] text-slate-400">Acumulado semana a semana. Barras = personas/registros/contratos/compras alcanzados hasta esa fecha.</p>
+    </div>
+  );
+}
+
+/** Pestaña LEAN: AARRR + ingresos + motores de crecimiento + North Star + race. */
+function LeanTab({ s }: { s?: DashboardPayload["summary"] }) {
+  const lean = s?.lean;
+  if (!lean) {
+    return <p className="rounded-xl border border-slate-300 bg-white/95 p-4 text-sm text-slate-600">Aún no hay datos Lean. Recarga en unos segundos.</p>;
+  }
+  const num = (v: number | null | undefined) => (v == null ? "—" : v.toLocaleString("es-CO"));
+  const pctTxt = (v: number | null | undefined) => (v == null ? "—" : `${v}%`);
+  const cop = (v: number | null | undefined) => (v == null ? "—" : `$${Number(v).toLocaleString("es-CO")}`);
+
+  const Card = ({ title, color, children }: { title: string; color: string; children: ReactNode }) => (
+    <div className="rounded-xl border bg-white/95 p-3" style={{ borderColor: color }}>
+      <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color }}>{title}</p>
+      <div className="mt-1 space-y-0.5 text-sm text-slate-800">{children}</div>
+    </div>
+  );
+  const Row = ({ l, v }: { l: string; v: string }) => (
+    <p className="flex justify-between gap-2"><span className="text-slate-500">{l}</span><span className="font-semibold tabular-nums">{v}</span></p>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* North Star */}
+      <div className="rounded-xl border-2 border-violet-400 bg-violet-50/60 p-4">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-violet-700">⭐ North Star — arriendos activos gestionados</p>
+        <p className="mt-1 text-4xl font-extrabold text-violet-900">{num(lean.northStar)}</p>
+        <p className="mt-1 text-xs text-slate-500">Contratos firmados y vigentes. Es el número que resume el valor real entregado (activación + ingreso + retención).</p>
+      </div>
+
+      {/* AARRR */}
+      <div>
+        <p className="mb-2 text-sm font-semibold text-slate-900">Métricas AARRR (embudo pirata)</p>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <Card title="Adquisición" color="#6366f1">
+            <Row l="Visitas 7d" v={num(lean.acquisition.visitors7d)} />
+            <Row l="Registros" v={num(lean.acquisition.signups)} />
+            <Row l="Encuestas" v={num(lean.acquisition.surveys)} />
+          </Card>
+          <Card title="Activación" color="#0ea5e9">
+            <Row l="Contratos" v={num(lean.activation.contractsCreated)} />
+            <Row l="Generados" v={num(lean.activation.contractsGenerated)} />
+            <Row l="Registro→contrato" v={pctTxt(lean.activation.rate)} />
+          </Card>
+          <Card title="Retención" color="#14b8a6">
+            <Row l="Recurrentes (2+)" v={num(lean.retention.repeatUsers)} />
+            <Row l="Calificaciones" v={num(lean.retention.reviews)} />
+            <Row l="% recurrentes" v={pctTxt(lean.retention.repeatRate)} />
+          </Card>
+          <Card title="Ingresos" color="#10b981">
+            <Row l="Total" v={cop(lean.revenue.total)} />
+            <Row l="Últimos 30d" v={cop(lean.revenue.last30)} />
+            <Row l="Compras" v={num(lean.revenue.count)} />
+          </Card>
+          <Card title="Referidos" color="#f59e0b">
+            <Row l="Invitaciones" v={num(lean.referral.invitesSent)} />
+            <Row l="Códigos referido" v={num(lean.referral.referralCodes)} />
+            <Row l="Invit./usuario" v={num(lean.referral.invitesPerUser)} />
+          </Card>
+        </div>
+      </div>
+
+      {/* Ingresos detalle */}
+      <div className="rounded-xl border border-emerald-300 bg-emerald-50/40 p-4">
+        <p className="text-sm font-semibold text-emerald-900">💵 Ingresos (COP)</p>
+        <div className="mt-2 grid gap-3 sm:grid-cols-4">
+          {[
+            ["Total histórico", cop(lean.revenue.total)],
+            ["Últimos 30 días", cop(lean.revenue.last30)],
+            ["Ticket promedio", cop(lean.revenue.ticket)],
+            ["ARPU (ingreso/usuario)", cop(lean.revenue.arpu)],
+          ].map(([l, v]) => (
+            <div key={l} className="rounded-lg border border-emerald-200 bg-white/80 p-3 text-center">
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">{l}</p>
+              <p className="mt-1 text-lg font-bold text-emerald-800">{v}</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-slate-500">{num(lean.revenue.payers)} pagador(es) distinto(s). El monto ya está en pesos.</p>
+      </div>
+
+      {/* Motores de crecimiento */}
+      <div>
+        <p className="mb-2 text-sm font-semibold text-slate-900">Motores de crecimiento (Lean)</p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-300 bg-white/95 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">Viral</p>
+            <p className="mt-1 text-2xl font-extrabold text-slate-900">k ≈ {num(lean.engines.viralK)}</p>
+            <p className="text-[11px] text-slate-500">Invitaciones por usuario (aprox.). Con k&gt;1 el crecimiento se autosostiene.</p>
+          </div>
+          <div className="rounded-xl border border-slate-300 bg-white/95 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-teal-600">Pegajoso</p>
+            <p className="mt-1 text-2xl font-extrabold text-slate-900">{pctTxt(lean.engines.stickyRepeatRate)}</p>
+            <p className="text-[11px] text-slate-500">% de usuarios que vuelven (2+ contratos). Sube si activación &gt; abandono.</p>
+          </div>
+          <div className="rounded-xl border border-slate-300 bg-white/95 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-600">Pagado</p>
+            <p className="mt-1 text-2xl font-extrabold text-slate-900">{cop(lean.engines.paidTicket)}</p>
+            <p className="text-[11px] text-slate-500">Ticket promedio. Crece si LTV &gt; CAC (costo de adquirir).</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Bar chart race */}
+      <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
+        <p className="text-sm font-semibold text-slate-900">🏁 Crecimiento semana a semana (animado)</p>
+        <p className="mb-3 text-[11px] text-slate-500">Mira cómo compiten y crecen las etapas del embudo en el tiempo.</p>
+        <BarChartRace frames={lean.race} />
+      </div>
+    </div>
   );
 }
 
