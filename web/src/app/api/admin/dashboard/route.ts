@@ -128,6 +128,131 @@ export async function GET(request: Request) {
     // o falla, viene con configured:false y el panel muestra la ayuda de setup.
     const ga4 = await summarizeGa4Detail().catch(() => null);
 
+    // ————————————————————————————————————————————————————————————————
+    // Indicadores LEAN (AARRR + ingresos + motores de crecimiento + serie
+    // semanal para el bar chart race). Todo derivado de colecciones existentes;
+    // best-effort (cada consulta puede fallar sin tumbar el panel).
+    // ————————————————————————————————————————————————————————————————
+    const NOW = Date.now();
+    const DAY = 24 * 60 * 60 * 1000;
+    const toMs = (v: unknown): number | null => {
+      if (v instanceof Timestamp) return v.toDate().getTime();
+      if (typeof v === "string") { const t = Date.parse(v); return Number.isFinite(t) ? t : null; }
+      return null;
+    };
+
+    const [payAllSnap, contractsAllSnap, leadsAllSnap, entLeanSnap, partyInvitesCount, referralCodesCount, reviewsCount] =
+      await Promise.all([
+        safeQueryDocs("payments_approved", () =>
+          firestore.collection("platform_payments").where("status", "==", "APPROVED").limit(2000).get(),
+        ),
+        safeQueryDocs("contracts_all", () => firestore.collection("contracts").limit(2000).get()),
+        safeQueryDocs("leads_all", () => firestore.collection("lead_forms").limit(2000).get()),
+        safeQueryDocs("ent_lean", () => firestore.collection("access_entitlements").limit(500).get()),
+        countSafe(() => firestore.collection("party_invites").count().get()),
+        countSafe(() => firestore.collection("referral_codes").count().get()),
+        countSafe(() => firestore.collection("reputation_reviews").count().get()),
+      ]);
+
+    // Ingresos $ (COP). platform_payments.amount ya viene en pesos enteros.
+    const payDates: number[] = [];
+    let revenueTotal = 0;
+    let revenue30 = 0;
+    let paidCount = 0;
+    const payerEmails = new Set<string>();
+    (payAllSnap?.docs ?? []).forEach((d) => {
+      const x = d.data() as Record<string, unknown>;
+      const amt = Number(x.amount ?? 0) || 0;
+      const at = toMs(x.approvedAt) ?? toMs(x.createdAtServer) ?? toMs(x.createdAt);
+      revenueTotal += amt;
+      paidCount += 1;
+      if (at != null) { payDates.push(at); if (NOW - at <= 30 * DAY) revenue30 += amt; }
+      const em = String(x.userEmail ?? "").toLowerCase();
+      if (em) payerEmails.add(em);
+    });
+    const distinctPayers = payerEmails.size || paidCount;
+    const revenue = {
+      total: revenueTotal,
+      last30: revenue30,
+      count: paidCount,
+      ticket: paidCount > 0 ? Math.round(revenueTotal / paidCount) : null,
+      arpu: usersRegistered > 0 ? Math.round(revenueTotal / usersRegistered) : null,
+      payers: distinctPayers,
+    };
+
+    // Retención: usuarios con 2+ expedientes (recurrentes) vía entitlements.
+    const contractsByUser = new Map<string, number>();
+    (entLeanSnap?.docs ?? []).forEach((d) => {
+      const x = d.data() as Record<string, unknown>;
+      const uid = String(x.userId ?? "");
+      const lease = String(x.leaseProcessId ?? "");
+      if (uid && lease) contractsByUser.set(uid, (contractsByUser.get(uid) ?? 0) + 1);
+    });
+    const repeatUsers = [...contractsByUser.values()].filter((c) => c >= 2).length;
+
+    // Motor viral (aproximado): invitaciones por usuario registrado.
+    const invitesPerUser = usersRegistered > 0 && partyInvitesCount != null
+      ? Math.round((partyInvitesCount / usersRegistered) * 100) / 100
+      : null;
+
+    // Serie semanal ACUMULADA (últimas 8 semanas) para el bar chart race.
+    const contractDates: number[] = (contractsAllSnap?.docs ?? [])
+      .map((d) => toMs((d.data() as Record<string, unknown>).createdAt))
+      .filter((n): n is number => n != null);
+    const leadDates: number[] = (leadsAllSnap?.docs ?? [])
+      .map((d) => toMs((d.data() as Record<string, unknown>).createdAt))
+      .filter((n): n is number => n != null);
+    const signupDates: number[] = authUsers
+      .map((u) => (u.metadata.creationTime ? Date.parse(u.metadata.creationTime) : NaN))
+      .filter((n) => Number.isFinite(n));
+    const cumUpTo = (arr: number[], end: number) => arr.filter((t) => t <= end).length;
+    const WEEKS = 8;
+    const raceFrames = Array.from({ length: WEEKS }, (_, i) => {
+      const end = NOW - (WEEKS - 1 - i) * 7 * DAY;
+      const d = new Date(end);
+      const label = `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+      return {
+        label,
+        bars: [
+          { key: "Encuestas", value: cumUpTo(leadDates, end) },
+          { key: "Registros", value: cumUpTo(signupDates, end) },
+          { key: "Contratos", value: cumUpTo(contractDates, end) },
+          { key: "Compras", value: cumUpTo(payDates, end) },
+        ],
+      };
+    });
+
+    const lean = {
+      northStar: contractsSigned,          // arriendos activos gestionados (firmados)
+      acquisition: {
+        visitors7d: ga4?.configured ? (ga4.daily.slice(-7).reduce((a, b) => a + b.users, 0)) : null,
+        signups: usersRegistered,
+        surveys: surveysCount,
+      },
+      activation: {
+        contractsCreated: contractsCount,
+        contractsGenerated: versionsCount,
+        rate: pct(contractsCount, usersRegistered), // registros → contrato
+      },
+      retention: {
+        repeatUsers,
+        reviews: reviewsCount,
+        repeatRate: pct(repeatUsers, usersRegistered),
+      },
+      revenue,
+      referral: {
+        invitesSent: partyInvitesCount,
+        referralCodes: referralCodesCount,
+        invitesPerUser,
+      },
+      engines: {
+        viralK: invitesPerUser,            // aprox: invitaciones por usuario
+        stickyRepeatRate: pct(repeatUsers, usersRegistered),
+        paidTicket: revenue.ticket,
+      },
+      race: raceFrames,
+    };
+
     const [leadsSnap, auditSnap, entitlementsSnap, ordersSnap, paymentsSnap, contractsSnap] =
       await Promise.all([
         safeQueryDocs("lead_forms", () =>
@@ -288,6 +413,7 @@ export async function GET(request: Request) {
         contractsSigned,
         funnel,
         ga4,
+        lean,
         recentErrors: errorish.slice(0, 25),
       },
       surveys,
