@@ -1,5 +1,5 @@
 import "server-only";
-import { getAdminFirestore } from "@/lib/firebase/admin";
+import { getAdminFirestore, getAdminAuth } from "@/lib/firebase/admin";
 import { getAdminInternalEmailSet } from "@/lib/admin/internal-admin";
 import { isWompiConfigured } from "@/domain/platform-payments/provider-factory";
 import { isTelegramConfigured, sendTelegram, type SendTelegramOutput } from "@/services/telegram/sendTelegram";
@@ -243,6 +243,141 @@ export function activityToText(a: ActivitySummary | null): string {
 }
 
 /**
+ * Indicadores LEAN clave para el reporte: ingresos, LTV/CAC, k viral, tiempo a
+ * convertir y la cohorte de la semana con su tendencia. Compacto y best-effort
+ * (cada pieza guardada); si falta la base, devuelve null.
+ */
+export type LeanReport = {
+  revenueTotal: number;
+  revenue30: number;
+  ticket: number | null;
+  ltv: number | null;
+  cac: number | null;
+  ltvCac: number | null;
+  viralK: number | null;
+  acceptanceRate: number | null;
+  medianDaysToConvert: number | null;
+  cohortWeek: string | null;
+  cohortActivatedPct: number | null;
+  cohortTrend: "up" | "flat" | "down" | "na";
+};
+
+export async function summarizeLean(): Promise<LeanReport | null> {
+  const db = getAdminFirestore();
+  if (!db) return null;
+  const auth = getAdminAuth();
+  const NOW = Date.now();
+  const DAY = 24 * 60 * 60 * 1000;
+  const toMs = (v: unknown): number | null => {
+    const asTs = v as { toDate?: () => Date } | null;
+    if (asTs?.toDate) return asTs.toDate().getTime();
+    if (typeof v === "string") { const t = Date.parse(v); return Number.isFinite(t) ? t : null; }
+    return null;
+  };
+  try {
+    const [paySnap, entSnap, invSnap, mkDoc] = await Promise.all([
+      db.collection("platform_payments").where("status", "==", "APPROVED").limit(2000).get().catch(() => null),
+      db.collection("access_entitlements").limit(500).get().catch(() => null),
+      db.collection("party_invites").limit(3000).get().catch(() => null),
+      db.collection("admin_config").doc("marketing").get().catch(() => null),
+    ]);
+
+    let total = 0, r30 = 0, count = 0, count30 = 0;
+    const firstPayByEmail = new Map<string, number>();
+    (paySnap?.docs ?? []).forEach((d) => {
+      const x = d.data() as Record<string, unknown>;
+      const amt = Number(x.amount ?? 0) || 0;
+      const at = toMs(x.approvedAt) ?? toMs(x.createdAtServer) ?? toMs(x.createdAt);
+      total += amt; count += 1;
+      if (at != null) {
+        if (NOW - at <= 30 * DAY) { r30 += amt; count30 += 1; }
+        const em = String(x.userEmail ?? "").toLowerCase();
+        if (em) { const p = firstPayByEmail.get(em); if (p == null || at < p) firstPayByEmail.set(em, at); }
+      }
+    });
+    const ticket = count > 0 ? Math.round(total / count) : null;
+
+    const leasesByUid = new Map<string, Set<string>>();
+    const payerUids = new Set<string>();
+    (entSnap?.docs ?? []).forEach((d) => {
+      const x = d.data() as Record<string, unknown>;
+      const uid = String(x.userId ?? ""); const lease = String(x.leaseProcessId ?? "");
+      if (uid && lease) { const s = leasesByUid.get(uid) ?? new Set<string>(); s.add(lease); leasesByUid.set(uid, s); }
+      if (uid && String(x.accessType ?? "") === "plus_paid") payerUids.add(uid);
+    });
+    let ltv: number | null = null;
+    if (payerUids.size > 0 && ticket != null) {
+      let l = 0; payerUids.forEach((u) => { l += leasesByUid.get(u)?.size ?? 0; });
+      ltv = Math.round(ticket * Math.max(1, l / payerUids.size));
+    }
+
+    const spend = Number((mkDoc?.data() as Record<string, unknown> | undefined)?.monthlyCop ?? 0) || 0;
+    const cac = spend > 0 && count30 > 0 ? Math.round(spend / count30) : null;
+    const ltvCac = cac != null && cac > 0 && ltv != null ? Math.round((ltv / cac) * 100) / 100 : null;
+
+    const invitesSent = invSnap?.size ?? 0;
+    const invitesAccepted = (invSnap?.docs ?? []).filter((d) => Boolean((d.data() as Record<string, unknown>).completedAt)).length;
+    const acceptanceRate = invitesSent > 0 ? invitesAccepted / invitesSent : null;
+
+    // Auth: registrados + fechas de alta (para k, tiempo a convertir y cohortes).
+    let registered = 0;
+    const createdByUid = new Map<string, number>();
+    const uidByEmail = new Map<string, string>();
+    if (auth) {
+      let token: string | undefined;
+      for (let p = 0; p < 10; p++) {
+        const res = await auth.listUsers(1000, token);
+        registered += res.users.length;
+        res.users.forEach((u) => {
+          const c = u.metadata.creationTime ? Date.parse(u.metadata.creationTime) : NaN;
+          if (Number.isFinite(c)) createdByUid.set(u.uid, c);
+          const em = (u.email ?? "").toLowerCase(); if (em) uidByEmail.set(em, u.uid);
+        });
+        token = res.pageToken; if (!token) break;
+      }
+    }
+    const invitesPerUser = registered > 0 ? invitesSent / registered : null;
+    const viralK = invitesPerUser != null && acceptanceRate != null ? Math.round(invitesPerUser * acceptanceRate * 100) / 100 : null;
+
+    const convDays: number[] = [];
+    firstPayByEmail.forEach((at, em) => { const uid = uidByEmail.get(em); const c = uid ? createdByUid.get(uid) : null; if (c != null && at >= c) convDays.push((at - c) / DAY); });
+    const sc = [...convDays].sort((a, b) => a - b);
+    const medianDaysToConvert = sc.length ? Math.round(sc[Math.floor(sc.length / 2)] * 10) / 10 : null;
+
+    const activatedUids = new Set<string>(leasesByUid.keys());
+    const weekKey = (ms: number) => { const d = new Date(ms); const dow = (d.getUTCDay() + 6) % 7; const mon = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - dow); const md = new Date(mon); return { key: `${String(md.getUTCDate()).padStart(2, "0")}/${String(md.getUTCMonth() + 1).padStart(2, "0")}`, order: Math.floor(mon / (7 * DAY)) }; };
+    const cmap = new Map<string, { order: number; size: number; act: number }>();
+    createdByUid.forEach((c, uid) => { if (NOW - c > 8 * 7 * DAY) return; const { key, order } = weekKey(c); const o = cmap.get(key) ?? { order, size: 0, act: 0 }; o.size += 1; if (activatedUids.has(uid)) o.act += 1; cmap.set(key, o); });
+    const carr = [...cmap.entries()].sort((a, b) => a[1].order - b[1].order).map(([week, c]) => ({ week, pct: c.size > 0 ? Math.round((c.act / c.size) * 100) : 0 }));
+    const last = carr[carr.length - 1]; const prev = carr[carr.length - 2];
+    let cohortTrend: "up" | "flat" | "down" | "na" = "na";
+    if (last && prev) cohortTrend = last.pct > prev.pct + 2 ? "up" : last.pct < prev.pct - 2 ? "down" : "flat";
+
+    return {
+      revenueTotal: total, revenue30: r30, ticket, ltv, cac, ltvCac, viralK,
+      acceptanceRate: acceptanceRate != null ? Math.round(acceptanceRate * 1000) / 10 : null,
+      medianDaysToConvert,
+      cohortWeek: last?.week ?? null, cohortActivatedPct: last?.pct ?? null, cohortTrend,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function leanToText(l: LeanReport | null): string {
+  if (!l) return "📈 *Lean:* sin acceso a la base.";
+  const cop = (v: number | null) => (v == null ? "—" : `$${v.toLocaleString("es-CO")}`);
+  const trend = l.cohortTrend === "up" ? "🟢" : l.cohortTrend === "down" ? "🔴" : l.cohortTrend === "flat" ? "🟡" : "—";
+  return [
+    "📈 *Lean*",
+    `Ingresos: ${cop(l.revenueTotal)} (30d: ${cop(l.revenue30)}) · ticket ${cop(l.ticket)}`,
+    `LTV ${cop(l.ltv)} · CAC ${cop(l.cac)} · LTV/CAC ${l.ltvCac != null ? `${l.ltvCac}×` : "—"}`,
+    `k viral ${l.viralK ?? "—"} (aceptación ${l.acceptanceRate != null ? `${l.acceptanceRate}%` : "—"}) · a pagar ${l.medianDaysToConvert != null ? `${l.medianDaysToConvert}d` : "—"}`,
+    `Cohorte ${l.cohortWeek ?? "—"}: activación ${l.cohortActivatedPct != null ? `${l.cohortActivatedPct}%` : "—"} ${trend}`,
+  ].join("\n");
+}
+
+/**
  * Corre la auditoría de POSTURA + ACTIVIDAD + resumen de ERRORES y manda el
  * reporte completo por Telegram. Nunca lanza. Lleva fecha (hora Colombia) para
  * que se vea cuándo se generó y confirmar que el cron sigue vivo.
@@ -252,17 +387,20 @@ export async function sendAuditReport(source = "manual_admin"): Promise<{
   errors: ErrorSummary | null;
   activity: ActivitySummary | null;
   visits: Ga4Visits | null;
+  lean: LeanReport | null;
   telegram: SendTelegramOutput;
   telegramSent: number;
 }> {
   const audit = runPostureAudit();
-  const [errors, activity, visits] = await Promise.all([summarizeErrors(), summarizeActivity(), summarizeGa4Visits()]);
+  const [errors, activity, visits, lean] = await Promise.all([summarizeErrors(), summarizeActivity(), summarizeGa4Visits(), summarizeLean()]);
   const text = [
     auditToText(audit),
     "",
     ga4VisitsToText(visits),
     "",
     activityToText(activity),
+    "",
+    leanToText(lean),
     "",
     errorSummaryToText(errors),
     "",
@@ -284,5 +422,5 @@ export async function sendAuditReport(source = "manual_admin"): Promise<{
     telegramError: tg.errorMessage ?? null,
     notes: `warnings:${audit.summary.warning} errores:${errors ? errors.distinct : "sin-acceso-db"}`,
   });
-  return { audit, errors, activity, visits, telegram: tg, telegramSent: tg.status === "sent" ? tg.sent : 0 };
+  return { audit, errors, activity, visits, lean, telegram: tg, telegramSent: tg.status === "sent" ? tg.sent : 0 };
 }

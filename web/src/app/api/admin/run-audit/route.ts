@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
-import { auditToText, errorSummaryToText, activityToText, sendAuditReport } from "@/lib/observability/audit";
+import { auditToText, errorSummaryToText, activityToText, leanToText, sendAuditReport } from "@/lib/observability/audit";
 import { ga4VisitsToText } from "@/lib/observability/ga4";
 
 export const runtime = "nodejs";
@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   if (!isInternalAdminEmail(auth.user.email)) {
     return NextResponse.json({ success: false, error: "forbidden" }, { status: 403 });
   }
-  const { audit, errors, activity, visits, telegram, telegramSent } = await sendAuditReport();
+  const { audit, errors, activity, visits, lean, telegram, telegramSent } = await sendAuditReport();
 
   // Línea de diagnóstico CLARA para el panel: dice si Telegram envió, si no está
   // configurado (mock) o por qué falló. Así se ve en un clic qué pasa con el envío.
@@ -34,6 +34,6 @@ export async function POST(request: Request) {
     telegram,
     summary: audit.summary,
     errors,
-    report: [tgLine, "", auditToText(audit), "", ga4VisitsToText(visits), "", activityToText(activity), "", errorSummaryToText(errors)].join("\n"),
+    report: [tgLine, "", auditToText(audit), "", ga4VisitsToText(visits), "", activityToText(activity), "", leanToText(lean), "", errorSummaryToText(errors)].join("\n"),
   });
 }
