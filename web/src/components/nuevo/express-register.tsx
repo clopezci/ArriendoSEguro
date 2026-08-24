@@ -218,6 +218,7 @@ export function ExpressRegister({
               </svg>
               Continuar con Google
             </button>
+            {process.env.NEXT_PUBLIC_FACEBOOK_LOGIN_ENABLED === "true" && (
             <button
               type="button"
               onClick={() => void submitFacebook()}
@@ -229,6 +230,7 @@ export function ExpressRegister({
               </svg>
               Continuar con Facebook
             </button>
+            )}
             <div className="flex items-center gap-3 text-xs text-slate-400">
               <span className="h-px flex-1 bg-slate-200" />o con tu correo<span className="h-px flex-1 bg-slate-200" />
             </div>

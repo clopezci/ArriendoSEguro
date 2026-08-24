@@ -257,6 +257,10 @@ export function IngresarForm() {
         {mode === "crear" ? "Crear cuenta con Google" : "Continuar con Google"}
       </button>
 
+      {/* El botón de Facebook solo se muestra si el permiso ya fue aprobado por Meta
+          (flag NEXT_PUBLIC_FACEBOOK_LOGIN_ENABLED=true). Mientras está en revisión,
+          se oculta para no mostrar a los clientes el aviso de "permiso no aprobado". */}
+      {process.env.NEXT_PUBLIC_FACEBOOK_LOGIN_ENABLED === "true" && (
       <button
         type="button"
         onClick={() => void submitFacebook()}
@@ -268,6 +272,7 @@ export function IngresarForm() {
         </svg>
         {mode === "crear" ? "Crear cuenta con Facebook" : "Continuar con Facebook"}
       </button>
+      )}
 
       <div className="flex items-center gap-3 text-xs text-slate-400">
         <span className="h-px flex-1 bg-slate-200" aria-hidden="true" />
