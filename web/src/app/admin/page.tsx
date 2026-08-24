@@ -45,12 +45,14 @@ type DashboardPayload = {
         wizard: { index: number; step: string; users: number }[];
         wizardReview: number;
         wizardCompleted: number;
+        reachedPayment: number;
+        cancelReasons: { key: string; label: string; count: number }[];
         hasData: boolean;
       };
       acquisition: { visitors7d: number | null; signups: number | null; surveys: number | null };
       activation: { contractsCreated: number | null; contractsGenerated: number | null; rate: number | null };
       retention: { repeatUsers: number | null; reviews: number | null; repeatRate: number | null };
-      revenue: { total: number; last30: number; count: number; ticket: number | null; arpu: number | null; payers: number };
+      revenue: { total: number; last30: number; count: number; ticket: number | null; arpu: number | null; payers: number; ltv?: number | null };
       referral: { invitesSent: number | null; referralCodes: number | null; invitesPerUser: number | null };
       engines: { viralK: number | null; stickyRepeatRate: number | null; paidTicket: number | null };
       race: { label: string; bars: { key: string; value: number }[] }[];
@@ -3300,7 +3302,7 @@ function LeanTab({ s }: { s?: DashboardPayload["summary"] }) {
             ["Total histórico", cop(lean.revenue.total)],
             ["Últimos 30 días", cop(lean.revenue.last30)],
             ["Ticket promedio", cop(lean.revenue.ticket)],
-            ["ARPU (ingreso/usuario)", cop(lean.revenue.arpu)],
+            ["LTV (valor de vida)", cop(lean.revenue.ltv)],
           ].map(([l, v]) => (
             <div key={l} className="rounded-lg border border-emerald-200 bg-white/80 p-3 text-center">
               <p className="text-[11px] uppercase tracking-wide text-slate-500">{l}</p>
@@ -3308,7 +3310,12 @@ function LeanTab({ s }: { s?: DashboardPayload["summary"] }) {
             </div>
           ))}
         </div>
-        <p className="mt-2 text-[11px] text-slate-500">{num(lean.revenue.payers)} pagador(es) distinto(s). El monto ya está en pesos.</p>
+        <p className="mt-2 text-[11px] text-slate-500">
+          {num(lean.revenue.payers)} pagador(es) distinto(s). El monto ya está en pesos.
+          {lean.abandon && lean.abandon.reachedPayment > 0 && (
+            <> · Llegaron a la pasarela: <b>{num(lean.abandon.reachedPayment)}</b> → pagaron: <b>{num(lean.revenue.count)}</b> (conversión checkout {lean.abandon.reachedPayment > 0 ? Math.round((lean.revenue.count / lean.abandon.reachedPayment) * 100) : 0}%).</>
+          )}
+        </p>
       </div>
 
       {/* Motores de crecimiento */}
@@ -3335,7 +3342,7 @@ function LeanTab({ s }: { s?: DashboardPayload["summary"] }) {
 
       {/* Abandono y motivos + embudo del asistente */}
       {lean.abandon && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-3">
           <div className="rounded-xl border border-rose-300 bg-rose-50/40 p-4">
             <p className="text-sm font-semibold text-rose-900">🚪 Por qué se van (motivos de abandono)</p>
             {!lean.abandon.hasData ? (
@@ -3390,6 +3397,29 @@ function LeanTab({ s }: { s?: DashboardPayload["summary"] }) {
                 </p>
               </>
             )}
+          </div>
+
+          <div className="rounded-xl border border-amber-300 bg-amber-50/40 p-4">
+            <p className="text-sm font-semibold text-amber-900">👋 Por qué se dan de baja</p>
+            {(lean.abandon.cancelReasons?.length ?? 0) === 0 ? (
+              <p className="mt-2 text-xs text-slate-500">Nadie se ha dado de baja con motivo todavía.</p>
+            ) : (
+              <div className="mt-3 space-y-1.5">
+                {(() => {
+                  const maxC = Math.max(1, ...lean.abandon.cancelReasons.map((c) => c.count));
+                  return lean.abandon.cancelReasons.map((c) => (
+                    <div key={c.key} className="flex items-center gap-2 text-xs">
+                      <span className="w-32 shrink-0 truncate text-slate-700">{c.label}</span>
+                      <div className="h-4 flex-1 overflow-hidden rounded bg-slate-100">
+                        <div className="h-full rounded bg-amber-500" style={{ width: `${Math.round((c.count / maxC) * 100)}%` }} />
+                      </div>
+                      <span className="w-8 shrink-0 text-right font-semibold tabular-nums">{c.count}</span>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
+            <p className="mt-2 text-[11px] text-slate-500">Motivos que marcan al eliminar su cuenta (encuesta de salida de un paso).</p>
           </div>
         </div>
       )}

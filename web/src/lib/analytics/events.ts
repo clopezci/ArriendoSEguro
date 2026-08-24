@@ -20,6 +20,7 @@ export const ALLOWED_EVENTS = new Set<string>([
   "nuevo_review",       // llegó a la revisión final
   "nuevo_completed",    // terminó el contrato
   "reached_payment",    // llegó a la pasarela de pago
+  "account_cancel_reason", // motivo de baja de cuenta (props.reason)
   "cta_click",          // clic en un llamado a la acción (props.cta)
 ]);
 

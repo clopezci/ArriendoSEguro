@@ -2,11 +2,23 @@
 
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { track } from "@/lib/analytics/track";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const PHRASE = "ELIMINAR MI CUENTA";
+
+const CANCEL_REASONS: { key: string; label: string }[] = [
+  { key: "ya_no_necesito", label: "Ya no lo necesito" },
+  { key: "no_le_di_uso", label: "No le di uso" },
+  { key: "costoso", label: "Muy costoso" },
+  { key: "faltan_funciones", label: "Me faltaron funciones" },
+  { key: "problema", label: "Tuve un problema/error" },
+  { key: "otra_opcion", label: "Encontré otra opción" },
+  { key: "privacidad", label: "Privacidad / mis datos" },
+  { key: "otro", label: "Otro" },
+];
 
 export default function EliminarCuentaPage() {
   const { user, loading, signOut } = useAuth();
@@ -18,6 +30,20 @@ export default function EliminarCuentaPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
+  // Encuesta de salida (baja): un paso, opcional, para saber por qué se va.
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelOther, setCancelOther] = useState("");
+  const [reasonThanks, setReasonThanks] = useState(false);
+  const reasonSent = useRef(false);
+
+  const sendCancelReason = () => {
+    if (reasonSent.current || !cancelReason) return;
+    reasonSent.current = true;
+    track("account_cancel_reason", {
+      reason: cancelReason,
+      ...(cancelReason === "otro" ? { detail: cancelOther.trim().slice(0, 200) } : {}),
+    });
+  };
 
   useEffect(() => {
     if (loading || !user) return;
@@ -45,6 +71,8 @@ export default function EliminarCuentaPage() {
     setErr("");
     setMsg("");
     if (!user) return;
+    // Registra el motivo de baja (si lo marcó) antes de eliminar.
+    sendCancelReason();
     if (!step1) {
       setErr("Marca la casilla de confirmación después de leer el aviso.");
       return;
@@ -144,6 +172,47 @@ export default function EliminarCuentaPage() {
           <li>Los borradores guardados solo en tu navegador se pierden si limpias el almacenamiento local.</li>
           <li>Si tienes un pago o plan activo, revisa con soporte si aplica reembolso según las condiciones del producto.</li>
         </ul>
+      </section>
+
+      {/* Encuesta de salida (baja): un solo paso, opcional. */}
+      <section className="rounded-xl border border-violet-200 bg-violet-50/50 p-4">
+        <p className="text-sm font-semibold text-violet-900">Antes de irte, ¿nos cuentas por qué? <span className="font-normal text-slate-500">(opcional, anónimo)</span></p>
+        {reasonThanks ? (
+          <p className="mt-2 text-sm font-semibold text-emerald-700">¡Gracias por tu respuesta! 💜</p>
+        ) : (
+          <>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {CANCEL_REASONS.map((r) => (
+                <button
+                  key={r.key}
+                  type="button"
+                  onClick={() => setCancelReason(r.key)}
+                  className={`rounded-full border-2 px-3 py-1.5 text-xs font-semibold transition ${cancelReason === r.key ? "border-violet-500 bg-violet-100 text-violet-800" : "border-slate-200 bg-white text-slate-700 hover:border-violet-400"}`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+            {cancelReason === "otro" && (
+              <input
+                value={cancelOther}
+                onChange={(e) => setCancelOther(e.target.value)}
+                placeholder="Cuéntanos en una línea…"
+                className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-violet-500"
+              />
+            )}
+            {/* Permite dejar el motivo aunque no complete la eliminación (p. ej. con contratos firmados). */}
+            {cancelReason && (
+              <button
+                type="button"
+                onClick={() => { sendCancelReason(); setReasonThanks(true); }}
+                className="mt-3 rounded-lg border border-violet-400 px-3 py-1.5 text-xs font-bold text-violet-700 hover:bg-violet-100"
+              >
+                Enviar motivo
+              </button>
+            )}
+          </>
+        )}
       </section>
 
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
