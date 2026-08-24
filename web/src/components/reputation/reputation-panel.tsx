@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { StarRating } from "@/components/reputation/star-rating";
+import { FileButton } from "@/components/ui/file-button";
 import {
   REPLICA_REASONS,
   REPLICA_TEXT_MAX,
@@ -357,19 +358,12 @@ export function ReputationPanel({ contractId }: { contractId: string }) {
                 onChange={(e) => setReplyText(e.target.value)}
                 disabled={replyBusy}
               />
-              <label className="mt-2 block text-[11px] font-medium text-slate-700">
-                Documento de soporte (opcional · PDF, JPG o PNG · máx. 5 MB)
-                <input
-                  type="file"
-                  accept="application/pdf,image/jpeg,image/png"
-                  className="mt-1 block w-full text-[11px] text-slate-600 file:mr-2 file:rounded file:border-0 file:bg-violet-100 file:px-2 file:py-1 file:text-violet-700"
-                  onChange={(e) => setReplyFile(e.target.files?.[0] ?? null)}
-                  disabled={replyBusy}
-                />
-              </label>
-              {replyFile && (
-                <p className="mt-1 text-[11px] text-slate-600">Adjuntará: {replyFile.name}</p>
-              )}
+              <div className="mt-2 text-[11px] font-medium text-slate-700">
+                <span className="block">Documento de soporte (opcional · PDF, JPG o PNG · máx. 5 MB)</span>
+                <div className="mt-1">
+                  <FileButton file={replyFile} onFile={setReplyFile} accept="application/pdf,image/jpeg,image/png" label="Elegir documento" disabled={replyBusy} />
+                </div>
+              </div>
               {checkingText && <p className="mt-1 text-[11px] text-slate-400">Revisando el texto…</p>}
               {textFlagged && (
                 <p className="mt-1 rounded-lg border border-rose-300 bg-rose-50 p-2 text-[11px] font-medium text-rose-700">

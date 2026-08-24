@@ -7,6 +7,7 @@ import { BentoShell } from "@/components/layout/bento-shell";
 import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { FileButton } from "@/components/ui/file-button";
 import {
   MAINTENANCE_CATEGORIES,
   MAINTENANCE_CATEGORY_LABELS,
@@ -321,15 +322,10 @@ export default function MantenimientoPage() {
                   />
                 </label>
 
-                <label className="block text-sm">
+                <div className="block text-sm">
                   <span className="mb-1 block font-medium text-slate-600">Foto / soporte (opcional, JPG/PNG)</span>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png"
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                    className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-violet-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-violet-900"
-                  />
-                </label>
+                  <FileButton file={file} onFile={setFile} accept="image/jpeg,image/png" label="Elegir foto o soporte" />
+                </div>
                 <button
                   type="button"
                   disabled={busy}

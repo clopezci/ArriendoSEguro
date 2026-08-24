@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { TenantPromoFooter } from "@/components/marketing/tenant-promo-footer";
+import { FileButton } from "@/components/ui/file-button";
 
 type Info = {
   landlordName: string;
@@ -187,13 +188,7 @@ export default function PagoPublicoPage() {
             <hr className="my-4 border-slate-200" />
             <p className="text-sm font-semibold text-slate-900">Sube tu comprobante</p>
             <div className="mt-2 space-y-3">
-              <input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.webp"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="w-full text-sm"
-                aria-label="Comprobante de pago"
-              />
+              <FileButton file={file} onFile={setFile} accept=".pdf,.jpg,.jpeg,.png,.webp" label="Elegir comprobante" />
               <label className="block text-sm">
                 <span className="mb-1 block text-slate-700">Valor que pagaste (COP)</span>
                 <input inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />

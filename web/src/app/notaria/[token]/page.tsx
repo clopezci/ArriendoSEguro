@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { TenantPromoFooter } from "@/components/marketing/tenant-promo-footer";
+import { FileButton } from "@/components/ui/file-button";
 
 /**
  * Página PÚBLICA (sin cuenta) para que el inquilino firme y autentique el contrato
@@ -187,13 +188,7 @@ export default function NotariaSharePage() {
                   <p className="text-sm font-bold text-slate-900">3) Sube aquí el PDF firmado</p>
                   <p className="mt-1 text-xs text-slate-600">Con un clic queda guardado en el contrato. Solo PDF, hasta 15 MB.</p>
                   <form className="mt-3 space-y-3" onSubmit={(ev) => void onUpload(ev)}>
-                    <input
-                      name="file"
-                      type="file"
-                      accept="application/pdf"
-                      required
-                      className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-violet-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-violet-900"
-                    />
+                    <FileButton name="file" accept="application/pdf" label="Elegir PDF firmado" />
                     <button
                       type="submit"
                       disabled={upBusy}

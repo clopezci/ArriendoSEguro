@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { FileButton } from "@/components/ui/file-button";
 import { MAINTENANCE_CATEGORY_LABELS } from "@/domain/maintenance/maintenance";
 
 type TenantContract = { contractId: string; address: string; landlordName: string; role: "tenant" | "codebtor" };
@@ -27,6 +28,8 @@ export default function InquilinoPage() {
   const [photo, setPhoto] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [pazBusyFor, setPazBusyFor] = useState<string | null>(null);
+  const [pazSentFor, setPazSentFor] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!user) return;
@@ -68,15 +71,17 @@ export default function InquilinoPage() {
 
   async function requestPaz(contractId: string) {
     if (!user) return;
-    setBusy(true); setMsg("");
+    setPazBusyFor(contractId); setBusy(true); setMsg("");
     try {
       const res = await fetch("/api/contracts/paz-y-salvo/request-auth", {
         method: "POST", headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
         body: JSON.stringify({ contractId }),
       });
       const j = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
-      setMsg(res.ok && j.success ? "✅ Solicitud enviada a tu arrendador (paz y salvo, recomendación y acta)." : (j.errors?.[0]?.message ?? "No se pudo enviar la solicitud."));
-    } catch { setMsg("Error de red."); } finally { setBusy(false); }
+      const ok = res.ok && Boolean(j.success);
+      setMsg(ok ? "✅ Solicitud enviada a tu arrendador (paz y salvo, recomendación y acta)." : (j.errors?.[0]?.message ?? "No se pudo enviar la solicitud."));
+      if (ok) { setPazSentFor(contractId); setTimeout(() => setPazSentFor((cur) => (cur === contractId ? null : cur)), 6000); }
+    } catch { setMsg("Error de red."); } finally { setBusy(false); setPazBusyFor(null); }
   }
 
   const actions = (c: TenantContract): Array<{ icon: string; label: string; sub: string; href: string }> => [
@@ -132,7 +137,7 @@ export default function InquilinoPage() {
                   {/* Solicitar cierre: paz y salvo + recomendación + acta. */}
                   <button
                     type="button"
-                    disabled={busy}
+                    disabled={pazBusyFor === c.contractId}
                     onClick={() => void requestPaz(c.contractId)}
                     className="flex items-start gap-3 rounded-2xl border-2 border-slate-200 bg-white p-3 text-left transition hover:border-[#5646E5] active:scale-[0.99] disabled:opacity-60"
                   >
@@ -140,6 +145,8 @@ export default function InquilinoPage() {
                     <span className="min-w-0">
                       <b className="text-sm">Solicitar paz y salvo</b>
                       <span className="mt-0.5 block text-[12px] leading-snug text-slate-500">Al terminar: pídele al dueño tu paz y salvo, recomendación y acta.</span>
+                      {pazBusyFor === c.contractId && <span className="mt-1 block text-[12px] font-bold text-slate-500">Enviando…</span>}
+                      {pazSentFor === c.contractId && <span className="mt-1 block rounded-lg bg-emerald-50 px-2 py-1 text-[12px] font-bold text-emerald-700">✓ ¡Solicitud enviada al dueño!</span>}
                     </span>
                   </button>
                   {/* Reporte rápido de daño (inline). */}
@@ -163,10 +170,10 @@ export default function InquilinoPage() {
                     <select value={cat} onChange={(e) => setCat(e.target.value)} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
                       {CATS.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
                     </select>
-                    <label className="block text-xs text-slate-600">
-                      Foto (opcional)
-                      <input type="file" accept="image/*,application/pdf" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} className="mt-1 block w-full text-xs" />
-                    </label>
+                    <div className="text-xs text-slate-600">
+                      <span className="block">Foto (opcional)</span>
+                      <div className="mt-1"><FileButton file={photo} onFile={setPhoto} accept="image/*,application/pdf" label="Elegir foto" /></div>
+                    </div>
                     <button type="button" disabled={busy} onClick={() => void report(c.contractId)} className="w-full rounded-xl bg-[#12B886] px-4 py-2.5 text-sm font-bold text-white transition hover:brightness-105 disabled:opacity-50">
                       {busy ? "Enviando…" : "Enviar reporte al dueño"}
                     </button>
