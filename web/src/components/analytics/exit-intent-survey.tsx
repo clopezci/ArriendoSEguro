@@ -41,6 +41,8 @@ export function ExitIntentSurvey() {
   const mountedAt = useRef(0);
   const abandonLogged = useRef(false);
   const returnLogged = useRef(false);
+  const interacted = useRef(false);   // ¿el usuario tocó/movió algo? (apagar pantalla no cuenta)
+  const lastVisibleAt = useRef(0);    // para ignorar el popstate que dispara "despertar" la pantalla
 
   const inCooldown = useCallback((): boolean => {
     try {
@@ -59,8 +61,12 @@ export function ExitIntentSurvey() {
     if (shownThisSession || open) return;
     if (Date.now() - mountedAt.current < DWELL_MS) return;
     if (inCooldown()) return;
-    // Clave: NUNCA mostrar si la página no está visible (evita el "aparece cuando
-    // vuelves de otra app"). Solo se ve estando el usuario en pantalla.
+    // Requiere una interacción real (mover/tocar). Apagar/encender la pantalla NO
+    // cuenta → así no aparece al despertar el celular/tablet.
+    if (!interacted.current) return;
+    // Ignora si acaba de volver a estar visible (despertar la pantalla ~1.5 s).
+    if (Date.now() - lastVisibleAt.current < 1500) return;
+    // NUNCA mostrar si la página no está visible.
     if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
     const el = document.activeElement?.tagName;
     if (el === "INPUT" || el === "TEXTAREA" || el === "SELECT") return;
@@ -73,6 +79,7 @@ export function ExitIntentSurvey() {
     mountedAt.current = Date.now();
     abandonLogged.current = false;
     returnLogged.current = false;
+    lastVisibleAt.current = Date.now();
 
     // 1) Escritorio: el cursor sale por el borde superior (va a cerrar/cambiar tab).
     const onMouseOut = (e: MouseEvent) => {
@@ -86,12 +93,16 @@ export function ExitIntentSurvey() {
     };
     const onVis = () => {
       if (document.visibilityState === "hidden") { onHide(); return; }
+      lastVisibleAt.current = Date.now(); // marca el "despertar" para ignorar popstate espurio
       // Volvió a la app tras haberse ido → lo contamos como RETORNO (una vez).
       if (abandonLogged.current && !returnLogged.current) {
         returnLogged.current = true;
         track("app_return", { path: pathname });
       }
     };
+    // Marca que hubo interacción real (tocar/mover/teclear). Apagar/encender la
+    // pantalla no dispara ninguno de estos → la encuesta no aparece al despertar.
+    const markInteracted = () => { interacted.current = true; };
 
     // 3) Móvil (y escritorio): TRAMPA del botón "Atrás". Al presionar atrás, la
     // página aún está visible → mostramos la encuesta en vez de dejarlo salir en
@@ -101,6 +112,8 @@ export function ExitIntentSurvey() {
       try { history.pushState({ _asExitGuard: true }, ""); } catch { /* noop */ }
     };
     const onPop = () => {
+      // Ignora el popstate espurio al despertar la pantalla, o sin interacción real.
+      if (!interacted.current || Date.now() - lastVisibleAt.current < 1500) return;
       // Si ya la vio, o no aplica, o entró hace nada → dejar salir normal.
       if (shownThisSession || inCooldown() || Date.now() - mountedAt.current < DWELL_MS) return;
       // Re-empujamos el estado para retenerlo un momento y mostramos la encuesta.
@@ -113,6 +126,9 @@ export function ExitIntentSurvey() {
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("pagehide", onHide);
     window.addEventListener("popstate", onPop);
+    ["pointerdown", "keydown", "touchstart", "mousemove", "wheel"].forEach((ev) =>
+      window.addEventListener(ev, markInteracted, { passive: true }),
+    );
 
     return () => {
       window.clearTimeout(armTimer);
@@ -120,6 +136,9 @@ export function ExitIntentSurvey() {
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("pagehide", onHide);
       window.removeEventListener("popstate", onPop);
+      ["pointerdown", "keydown", "touchstart", "mousemove", "wheel"].forEach((ev) =>
+        window.removeEventListener(ev, markInteracted),
+      );
     };
   }, [armed, pathname, trigger]);
 
@@ -160,7 +179,7 @@ export function ExitIntentSurvey() {
             <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="text-sm font-bold text-slate-900">¿Nos ayudas con algo rápido? 🙏</p>
-                <p className="text-xs text-slate-500">¿Qué te hizo salir? (un toque, es anónimo)</p>
+                <p className="text-xs text-slate-500">Si te fueras sin usar la aplicación, ¿por qué sería? (un toque, es anónimo)</p>
               </div>
               <button type="button" onClick={dismiss} aria-label="Cerrar" className="-mt-1 rounded-full px-2 py-0.5 text-lg leading-none text-slate-400 hover:text-slate-600">×</button>
             </div>

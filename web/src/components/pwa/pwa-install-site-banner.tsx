@@ -7,9 +7,13 @@ import { usePwaInstall } from "@/hooks/use-pwa-install";
 
 const DISMISS_KEY = "as-pwa-install-banner-dismissed";
 
-/** Rutas donde no mostramos el banner (la landing ya tiene sección dedicada). */
-function shouldHideBanner(pathname: string): boolean {
-  return pathname === "/";
+/**
+ * Rutas donde NO mostramos el banner. Antes se ocultaba en `/` (la landing tiene
+ * su botón), pero en tablet mucha gente no veía ningún mensaje de instalar; ahora
+ * el banner aparece en todas las páginas (es dismissible con "Ahora no").
+ */
+function shouldHideBanner(_pathname: string): boolean {
+  return false;
 }
 
 /**
