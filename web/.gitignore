@@ -49,3 +49,6 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# Clave de cuenta de servicio para scripts (NUNCA subir)
+serviceAccount*.json
