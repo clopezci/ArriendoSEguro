@@ -141,7 +141,7 @@ export async function GET(request: Request) {
       return null;
     };
 
-    const [payAllSnap, contractsAllSnap, leadsAllSnap, entLeanSnap, analyticsSnap, partyInvitesCount, referralCodesCount, reviewsCount] =
+    const [payAllSnap, contractsAllSnap, leadsAllSnap, entLeanSnap, analyticsSnap, partyInvitesSnap, referralSnap, reviewsCount, marketingDoc] =
       await Promise.all([
         safeQueryDocs("payments_approved", () =>
           firestore.collection("platform_payments").where("status", "==", "APPROVED").limit(2000).get(),
@@ -150,10 +150,16 @@ export async function GET(request: Request) {
         safeQueryDocs("leads_all", () => firestore.collection("lead_forms").limit(2000).get()),
         safeQueryDocs("ent_lean", () => firestore.collection("access_entitlements").limit(500).get()),
         safeQueryDocs("analytics_events", () => firestore.collection("analytics_events").orderBy("at", "desc").limit(4000).get()),
-        countSafe(() => firestore.collection("party_invites").count().get()),
-        countSafe(() => firestore.collection("referral_codes").count().get()),
+        safeQueryDocs("party_invites", () => firestore.collection("party_invites").limit(3000).get()),
+        safeQueryDocs("referral_codes", () => firestore.collection("referral_codes").limit(2000).get()),
         countSafe(() => firestore.collection("reputation_reviews").count().get()),
+        firestore.collection("admin_config").doc("marketing").get().catch(() => null),
       ]);
+    const partyInvitesCount = partyInvitesSnap?.size ?? null;
+    const invitesAccepted = (partyInvitesSnap?.docs ?? []).filter((d) => Boolean((d.data() as Record<string, unknown>).completedAt)).length;
+    const referralCodesCount = referralSnap?.size ?? null;
+    const referralQualified = (referralSnap?.docs ?? []).reduce((a, d) => a + (Number((d.data() as Record<string, unknown>).qualifiedCount) || 0), 0);
+    const marketingMonthlyCop = Number((marketingDoc?.data() as Record<string, unknown> | undefined)?.monthlyCop ?? 0) || 0;
 
     // Ingresos $ (COP). platform_payments.amount ya viene en pesos enteros.
     const payDates: number[] = [];
@@ -209,6 +215,84 @@ export async function GET(request: Request) {
       const perPayer = leases / payerUids.size;
       ltv = Math.round(revenue.ticket * Math.max(1, perPayer));
     }
+
+    // Fechas de alta por usuario (Auth) para tiempo-a-convertir y cohortes.
+    const userCreatedByUid = new Map<string, number>();
+    const uidByEmail = new Map<string, string>();
+    authUsers.forEach((u) => {
+      const created = u.metadata.creationTime ? Date.parse(u.metadata.creationTime) : NaN;
+      if (Number.isFinite(created)) userCreatedByUid.set(u.uid, created);
+      const em = (u.email ?? "").toLowerCase();
+      if (em) uidByEmail.set(em, u.uid);
+    });
+
+    // Tiempo hasta convertir: primer pago por usuario − fecha de alta (días).
+    const firstPayByUid = new Map<string, number>();
+    (payAllSnap?.docs ?? []).forEach((d) => {
+      const x = d.data() as Record<string, unknown>;
+      const uid = uidByEmail.get(String(x.userEmail ?? "").toLowerCase());
+      const at = toMs(x.approvedAt) ?? toMs(x.createdAtServer) ?? toMs(x.createdAt);
+      if (uid && at != null) {
+        const prev = firstPayByUid.get(uid);
+        if (prev == null || at < prev) firstPayByUid.set(uid, at);
+      }
+    });
+    const convDays: number[] = [];
+    firstPayByUid.forEach((payAt, uid) => {
+      const created = userCreatedByUid.get(uid);
+      if (created != null && payAt >= created) convDays.push((payAt - created) / DAY);
+    });
+    const sortedConv = [...convDays].sort((a, b) => a - b);
+    const timeToConvert = {
+      avgDays: convDays.length ? Math.round((convDays.reduce((a, b) => a + b, 0) / convDays.length) * 10) / 10 : null,
+      medianDays: sortedConv.length ? Math.round(sortedConv[Math.floor(sortedConv.length / 2)] * 10) / 10 : null,
+      n: convDays.length,
+    };
+
+    // CAC (últimos 30 días) + relación LTV/CAC. Usa el gasto de marketing (config).
+    const paidCount30 = payDates.filter((t) => NOW - t <= 30 * DAY).length;
+    const cac = marketingMonthlyCop > 0 && paidCount30 > 0 ? Math.round(marketingMonthlyCop / paidCount30) : null;
+    const ltvCac = cac != null && cac > 0 && ltv != null ? Math.round((ltv / cac) * 100) / 100 : null;
+
+    // Coeficiente viral REAL: invitaciones por usuario × tasa de aceptación.
+    const acceptanceRate = partyInvitesCount != null && partyInvitesCount > 0 ? invitesAccepted / partyInvitesCount : null;
+    const viralK = invitesPerUser != null && acceptanceRate != null
+      ? Math.round(invitesPerUser * acceptanceRate * 100) / 100
+      : invitesPerUser;
+
+    // Cohortes semanales (altas por semana) con su conversión posterior + semáforo.
+    const activatedUids = new Set<string>(contractsByUser.keys());
+    const weekKey = (ms: number): { key: string; order: number } => {
+      const d = new Date(ms);
+      const dow = (d.getUTCDay() + 6) % 7; // 0 = lunes
+      const monday = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - dow);
+      const md = new Date(monday);
+      return { key: `${String(md.getUTCDate()).padStart(2, "0")}/${String(md.getUTCMonth() + 1).padStart(2, "0")}`, order: Math.floor(monday / (7 * DAY)) };
+    };
+    const cohortMap = new Map<string, { order: number; size: number; activated: number; paid: number }>();
+    authUsers.forEach((u) => {
+      const created = u.metadata.creationTime ? Date.parse(u.metadata.creationTime) : NaN;
+      if (!Number.isFinite(created) || NOW - created > 8 * 7 * DAY) return;
+      const { key, order } = weekKey(created);
+      const c = cohortMap.get(key) ?? { order, size: 0, activated: 0, paid: 0 };
+      c.size += 1;
+      if (activatedUids.has(u.uid)) c.activated += 1;
+      if (payerUids.has(u.uid)) c.paid += 1;
+      cohortMap.set(key, c);
+    });
+    const cohortArr = [...cohortMap.entries()]
+      .sort((a, b) => a[1].order - b[1].order)
+      .map(([week, c]) => ({
+        week, size: c.size,
+        activated: c.activated, activatedPct: c.size > 0 ? Math.round((c.activated / c.size) * 100) : 0,
+        paid: c.paid, paidPct: c.size > 0 ? Math.round((c.paid / c.size) * 100) : 0,
+      }));
+    const cohorts = cohortArr.map((c, idx) => {
+      const prev = cohortArr[idx - 1];
+      let trend: "up" | "flat" | "down" | "na" = "na";
+      if (prev) trend = c.activatedPct > prev.activatedPct + 2 ? "up" : c.activatedPct < prev.activatedPct - 2 ? "down" : "flat";
+      return { ...c, trend };
+    });
 
     // Serie semanal ACUMULADA (últimas 8 semanas) para el bar chart race.
     const contractDates: number[] = (contractsAllSnap?.docs ?? [])
@@ -335,14 +419,23 @@ export async function GET(request: Request) {
       revenue: { ...revenue, ltv },
       referral: {
         invitesSent: partyInvitesCount,
+        invitesAccepted,
+        acceptanceRate: acceptanceRate != null ? Math.round(acceptanceRate * 1000) / 10 : null,
         referralCodes: referralCodesCount,
+        referralQualified,
         invitesPerUser,
       },
       engines: {
-        viralK: invitesPerUser,            // aprox: invitaciones por usuario
+        viralK,                             // real: invitaciones/usuario × aceptación
         stickyRepeatRate: pct(repeatUsers, usersRegistered),
         paidTicket: revenue.ticket,
+        ltv,
+        cac,
+        ltvCac,
       },
+      timeToConvert,
+      cohorts,
+      marketing: { monthlyCop: marketingMonthlyCop },
       race: raceFrames,
     };
 

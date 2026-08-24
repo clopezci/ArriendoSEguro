@@ -53,8 +53,11 @@ type DashboardPayload = {
       activation: { contractsCreated: number | null; contractsGenerated: number | null; rate: number | null };
       retention: { repeatUsers: number | null; reviews: number | null; repeatRate: number | null };
       revenue: { total: number; last30: number; count: number; ticket: number | null; arpu: number | null; payers: number; ltv?: number | null };
-      referral: { invitesSent: number | null; referralCodes: number | null; invitesPerUser: number | null };
-      engines: { viralK: number | null; stickyRepeatRate: number | null; paidTicket: number | null };
+      referral: { invitesSent: number | null; invitesAccepted?: number; acceptanceRate?: number | null; referralCodes: number | null; referralQualified?: number; invitesPerUser: number | null };
+      engines: { viralK: number | null; stickyRepeatRate: number | null; paidTicket: number | null; ltv?: number | null; cac?: number | null; ltvCac?: number | null };
+      timeToConvert?: { avgDays: number | null; medianDays: number | null; n: number };
+      cohorts?: { week: string; size: number; activated: number; activatedPct: number; paid: number; paidPct: number; trend: "up" | "flat" | "down" | "na" }[];
+      marketing?: { monthlyCop: number };
       race: { label: string; bars: { key: string; value: number }[] }[];
     } | null;
     recentErrors: { eventName: string; createdAt: string; metadataSummary: string }[];
@@ -3018,7 +3021,7 @@ export default function AdminPage() {
         {!data && !loadError && <p className="text-sm text-slate-500">Cargando datos…</p>}
 
         {data && tab === "resumen" && <Resumen s={data.summary} />}
-        {data && tab === "lean" && <LeanTab s={data.summary} />}
+        {data && tab === "lean" && <LeanTab s={data.summary} onReload={() => void load()} />}
         {data && tab === "encuestas" && (
           <Encuestas rows={data.surveys ?? []} onExport={() => void downloadSurveysCsv()} />
         )}
@@ -3233,8 +3236,40 @@ function BarChartRace({ frames }: { frames: { label: string; bars: { key: string
   );
 }
 
+/** Editor del gasto de marketing mensual (para el CAC). Solo admin interno. */
+function MarketingSpendEditor({ current, onSaved }: { current: number; onSaved: () => void }) {
+  const { user } = useAuth();
+  const [val, setVal] = useState(String(current || ""));
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const save = async () => {
+    if (!user) return;
+    setBusy(true); setMsg("");
+    try {
+      const res = await fetch("/api/admin/marketing-config", {
+        method: "PUT",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ monthlyCop: Number((val || "0").replace(/[^\d]/g, "")) || 0 }),
+      });
+      const j = (await res.json()) as { success?: boolean };
+      if (res.ok && j.success) { setMsg("Guardado ✓"); onSaved(); } else setMsg("No se pudo guardar.");
+    } catch { setMsg("Error de red."); } finally { setBusy(false); }
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-xs text-slate-500">Gasto de marketing / mes (COP):</span>
+      <input inputMode="numeric" value={val} onChange={(e) => setVal(e.target.value.replace(/[^\d]/g, ""))}
+        placeholder="0" className="w-32 rounded-lg border border-slate-300 px-2 py-1 text-sm" />
+      <button type="button" onClick={() => void save()} disabled={busy} className="rounded-lg bg-[#5646E5] px-3 py-1 text-xs font-bold text-white disabled:opacity-60">
+        {busy ? "…" : "Guardar"}
+      </button>
+      {msg && <span className="text-[11px] text-slate-500">{msg}</span>}
+    </div>
+  );
+}
+
 /** Pestaña LEAN: AARRR + ingresos + motores de crecimiento + North Star + race. */
-function LeanTab({ s }: { s?: DashboardPayload["summary"] }) {
+function LeanTab({ s, onReload }: { s?: DashboardPayload["summary"]; onReload: () => void }) {
   const lean = s?.lean;
   if (!lean) {
     return <p className="rounded-xl border border-slate-300 bg-white/95 p-4 text-sm text-slate-600">Aún no hay datos Lean. Recarga en unos segundos.</p>;
@@ -3288,8 +3323,8 @@ function LeanTab({ s }: { s?: DashboardPayload["summary"] }) {
           </Card>
           <Card title="Referidos" color="#f59e0b">
             <Row l="Invitaciones" v={num(lean.referral.invitesSent)} />
-            <Row l="Códigos referido" v={num(lean.referral.referralCodes)} />
-            <Row l="Invit./usuario" v={num(lean.referral.invitesPerUser)} />
+            <Row l="Aceptadas" v={num(lean.referral.invitesAccepted ?? null)} />
+            <Row l="Referidos calif." v={num(lean.referral.referralQualified ?? null)} />
           </Card>
         </div>
       </div>
@@ -3321,11 +3356,13 @@ function LeanTab({ s }: { s?: DashboardPayload["summary"] }) {
       {/* Motores de crecimiento */}
       <div>
         <p className="mb-2 text-sm font-semibold text-slate-900">Motores de crecimiento (Lean)</p>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-xl border border-slate-300 bg-white/95 p-3">
             <p className="text-[11px] font-bold uppercase tracking-wide text-amber-600">Viral</p>
             <p className="mt-1 text-2xl font-extrabold text-slate-900">k ≈ {num(lean.engines.viralK)}</p>
-            <p className="text-[11px] text-slate-500">Invitaciones por usuario (aprox.). Con k&gt;1 el crecimiento se autosostiene.</p>
+            <p className="text-[11px] text-slate-500">
+              {num(lean.referral.invitesPerUser)} invit./usuario × {pctTxt(lean.referral.acceptanceRate ?? null)} aceptación. Con k&gt;1 se autosostiene.
+            </p>
           </div>
           <div className="rounded-xl border border-slate-300 bg-white/95 p-3">
             <p className="text-[11px] font-bold uppercase tracking-wide text-teal-600">Pegajoso</p>
@@ -3333,12 +3370,55 @@ function LeanTab({ s }: { s?: DashboardPayload["summary"] }) {
             <p className="text-[11px] text-slate-500">% de usuarios que vuelven (2+ contratos). Sube si activación &gt; abandono.</p>
           </div>
           <div className="rounded-xl border border-slate-300 bg-white/95 p-3">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-600">Pagado</p>
-            <p className="mt-1 text-2xl font-extrabold text-slate-900">{cop(lean.engines.paidTicket)}</p>
-            <p className="text-[11px] text-slate-500">Ticket promedio. Crece si LTV &gt; CAC (costo de adquirir).</p>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-emerald-600">Pagado — LTV/CAC</p>
+            <p className="mt-1 text-2xl font-extrabold text-slate-900">{lean.engines.ltvCac == null ? "—" : `${lean.engines.ltvCac}×`}</p>
+            <p className="text-[11px] text-slate-500">
+              LTV {cop(lean.engines.ltv)} / CAC {cop(lean.engines.cac)}. Sano si LTV/CAC ≥ 3×.
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-300 bg-white/95 p-3">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-indigo-600">Tiempo a convertir</p>
+            <p className="mt-1 text-2xl font-extrabold text-slate-900">{lean.timeToConvert?.medianDays == null ? "—" : `${lean.timeToConvert.medianDays} d`}</p>
+            <p className="text-[11px] text-slate-500">Mediana registro→pago{lean.timeToConvert?.avgDays != null ? ` · prom. ${lean.timeToConvert.avgDays} d` : ""} ({lean.timeToConvert?.n ?? 0} pagos).</p>
           </div>
         </div>
+        <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <MarketingSpendEditor current={lean.marketing?.monthlyCop ?? 0} onSaved={onReload} />
+          <p className="mt-1 text-[11px] text-slate-400">El CAC = gasto de marketing ÷ pagos de los últimos 30 días. Es el único dato que no se deriva solo.</p>
+        </div>
       </div>
+
+      {/* Semáforo de cohortes (contabilidad de la innovación) */}
+      {(lean.cohorts?.length ?? 0) > 0 && (
+        <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
+          <p className="text-sm font-semibold text-slate-900">🚦 Cohortes semanales (¿mejora el motor?)</p>
+          <p className="mb-3 text-[11px] text-slate-500">De los que se registraron cada semana, cuántos activaron (crearon contrato) y pagaron. El semáforo compara la activación con la semana anterior.</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-slate-500">
+                  <th className="py-1 pr-3 font-medium">Semana (alta)</th>
+                  <th className="py-1 pr-3 font-medium">Altas</th>
+                  <th className="py-1 pr-3 font-medium">Activaron</th>
+                  <th className="py-1 pr-3 font-medium">Pagaron</th>
+                  <th className="py-1 font-medium">Tendencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lean.cohorts!.map((c) => (
+                  <tr key={c.week} className="border-t border-slate-100">
+                    <td className="py-1 pr-3 font-semibold tabular-nums">{c.week}</td>
+                    <td className="py-1 pr-3 tabular-nums">{c.size}</td>
+                    <td className="py-1 pr-3 tabular-nums">{c.activated} <span className="text-slate-400">({c.activatedPct}%)</span></td>
+                    <td className="py-1 pr-3 tabular-nums">{c.paid} <span className="text-slate-400">({c.paidPct}%)</span></td>
+                    <td className="py-1">{c.trend === "up" ? "🟢 mejora" : c.trend === "down" ? "🔴 baja" : c.trend === "flat" ? "🟡 igual" : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Abandono y motivos + embudo del asistente */}
       {lean.abandon && (
