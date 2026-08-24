@@ -268,10 +268,22 @@ Leyenda: ✅ automático · ⚠️ automático pero aproximado · ❌ falta fuen
 | Tiempo hasta convertir | registro → 1er pago | ❌ no calculado aún |
 | Semáforo de cohortes | conversión por semana de alta | ❌ no construido |
 
-## 9. Plan para que TODO se alimente solo (lo que falta)
+## 9. Plan para que TODO se alimente solo — ✅ IMPLEMENTADO
 
-Orden sugerido; todo queda auto-actualizado en cada carga (sin trabajo manual,
-salvo el gasto de marketing que sí es un dato externo):
+Todo lo de abajo quedó construido (prod, 2026-08-24) y se auto-actualiza en cada
+carga del panel. Único dato manual: el gasto de marketing (1 vez al mes).
+
+- ✅ **LTV automático**: ticket × contratos por cliente pagador.
+- ✅ **Coeficiente viral `k` real**: invitaciones/usuario × tasa de aceptación
+  (`party_invites.completedAt`); referidos calificados = Σ `referral_codes.qualifiedCount`.
+- ✅ **Tiempo hasta convertir**: primer pago − alta (promedio y mediana).
+- ✅ **Semáforo de cohortes** 🟢🟡🔴: altas por semana + su activación/pago, y
+  comparación con la cohorte previa (contabilidad de la innovación).
+- ✅ **CAC + LTV/CAC**: mini-form de gasto de marketing en /admin → Lean
+  (`/api/admin/marketing-config`, doc `admin_config/marketing`); CAC = gasto ÷
+  pagos de 30 días; se muestra la relación LTV/CAC (sano ≥ 3×).
+
+Detalle original del plan (referencia):
 
 1. **LTV automático (⚠️→✅)**: `LTV ≈ ticket × (contratos por cliente pagador)`.
    Datos ya disponibles (`platform_payments` + `access_entitlements`). Solo es
