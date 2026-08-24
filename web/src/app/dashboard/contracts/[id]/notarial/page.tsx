@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { FileButton } from "@/components/ui/file-button";
 import { ExpedienteNav } from "@/components/contracts/expediente-nav";
 import { ContractPdfDownloadLink } from "@/components/contracts/contract-pdf-download";
 import { RequiresSavedContract } from "@/components/contracts/requires-saved-contract";
@@ -388,13 +389,7 @@ export default function NotarialOptionalPage() {
                   </p>
                 )}
                 <form className="mt-4 space-y-3" onSubmit={(ev) => void onUpload(ev)}>
-                  <input
-                    name="file"
-                    type="file"
-                    accept="application/pdf"
-                    required
-                    className="block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-violet-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-violet-900"
-                  />
+                  <FileButton name="file" accept="application/pdf" label="Elegir PDF firmado" />
                   <button
                     type="submit"
                     disabled={uploadBusy || !user}

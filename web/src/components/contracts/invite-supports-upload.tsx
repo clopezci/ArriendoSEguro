@@ -126,13 +126,16 @@ export function InviteSupportsUpload({
                     <button type="button" onClick={() => void remove(done.id)} aria-label="Quitar documento" className="flex-none rounded-lg border border-rose-300 bg-white px-2 py-0.5 text-[11px] font-bold text-rose-600 hover:bg-rose-50">Quitar</button>
                   </div>
                 ) : (
-                  <input
-                    type="file"
-                    accept="image/*,application/pdf"
-                    disabled={busy || busyKey !== null}
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f, key); e.target.value = ""; }}
-                    className="mt-1.5 block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-[#5646E5] file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white disabled:opacity-50"
-                  />
+                  <label className={`mt-1.5 inline-flex items-center gap-2 rounded-lg bg-[#5646E5] px-3 py-1.5 text-xs font-bold text-white transition hover:brightness-105 ${busy || busyKey !== null ? "cursor-not-allowed opacity-50" : "cursor-pointer active:scale-95"}`}>
+                    📎 Elegir documento
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      disabled={busy || busyKey !== null}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f, key); e.target.value = ""; }}
+                      className="sr-only"
+                    />
+                  </label>
                 )}
                 {busy && <p className="mt-1 text-[11px] text-slate-600">Subiendo…</p>}
               </li>
@@ -144,14 +147,17 @@ export function InviteSupportsUpload({
       {/* Subida libre (adicionales, o único método si no hay lista requerida). */}
       <div className="mt-3">
         {requiredDocs.length > 0 && <p className="mb-1 text-[11px] font-medium text-slate-500">¿Otro documento adicional?</p>}
-        <input
-          ref={extraRef}
-          type="file"
-          accept="image/*,application/pdf"
-          disabled={busyKey !== null}
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }}
-          className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-[#5646E5] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white disabled:opacity-50"
-        />
+        <label className={`inline-flex items-center gap-2 rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105 ${busyKey !== null ? "cursor-not-allowed opacity-50" : "cursor-pointer active:scale-95"}`}>
+          📎 Subir documento
+          <input
+            ref={extraRef}
+            type="file"
+            accept="image/*,application/pdf"
+            disabled={busyKey !== null}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) void upload(f); }}
+            className="sr-only"
+          />
+        </label>
       </div>
       {busyKey === "extra" && <p className="mt-2 text-xs text-slate-600">Subiendo…</p>}
       {msg && <p className="mt-2 text-xs font-medium text-slate-700">{msg}</p>}

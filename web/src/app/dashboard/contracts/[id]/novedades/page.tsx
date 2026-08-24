@@ -7,6 +7,7 @@ import { RequiresSavedContract } from "@/components/contracts/requires-saved-con
 import { NOVEDAD_TIPO_IDS, NOVEDAD_TIPO_LABELS, type NovedadTipoId } from "@/domain/contracts/novedades/types";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { FileButton } from "@/components/ui/file-button";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -179,16 +180,10 @@ export default function NovedadesExpedientePage() {
               />
             </div>
             <div>
-              <label htmlFor="nov-file" className="block text-xs font-medium text-slate-700">
-                Archivo opcional
-              </label>
-              <input
-                id="nov-file"
-                name="file"
-                type="file"
-                accept="image/jpeg,image/png,application/pdf"
-                className="mt-1 block w-full text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-violet-100 file:px-3 file:py-2 file:text-sm file:font-medium file:text-violet-900"
-              />
+              <span className="block text-xs font-medium text-slate-700">Archivo opcional</span>
+              <div className="mt-1">
+                <FileButton name="file" accept="image/jpeg,image/png,application/pdf" label="Elegir foto o PDF" />
+              </div>
             </div>
             <button
               type="submit"
