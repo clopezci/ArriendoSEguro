@@ -196,6 +196,20 @@ export async function GET(request: Request) {
       ? Math.round((partyInvitesCount / usersRegistered) * 100) / 100
       : null;
 
+    // LTV (auto-derivado): ticket × contratos por cliente PAGADOR.
+    const payerUids = new Set<string>();
+    (entLeanSnap?.docs ?? []).forEach((d) => {
+      const x = d.data() as Record<string, unknown>;
+      if (String(x.accessType ?? "") === "plus_paid" && String(x.userId ?? "")) payerUids.add(String(x.userId));
+    });
+    let ltv: number | null = null;
+    if (payerUids.size > 0 && revenue.ticket != null) {
+      let leases = 0;
+      payerUids.forEach((u) => { leases += contractsByUser.get(u) ?? 0; });
+      const perPayer = leases / payerUids.size;
+      ltv = Math.round(revenue.ticket * Math.max(1, perPayer));
+    }
+
     // Serie semanal ACUMULADA (últimas 8 semanas) para el bar chart race.
     const contractDates: number[] = (contractsAllSnap?.docs ?? [])
       .map((d) => toMs((d.data() as Record<string, unknown>).createdAt))
@@ -233,6 +247,16 @@ export async function GET(request: Request) {
       falta_info: "Me faltó información",
       otro: "Otro",
     };
+    const CANCEL_LABELS: Record<string, string> = {
+      ya_no_necesito: "Ya no lo necesito",
+      no_le_di_uso: "No le di uso",
+      costoso: "Muy costoso",
+      faltan_funciones: "Me faltaron funciones",
+      problema: "Tuve un problema/error",
+      otra_opcion: "Encontré otra opción",
+      privacidad: "Privacidad / mis datos",
+      otro: "Otro",
+    };
     const evDocs = (analyticsSnap?.docs ?? []).map((d) => d.data() as Record<string, unknown>);
     const reasonCounts = new Map<string, number>();
     let pageAbandon = 0;
@@ -241,6 +265,8 @@ export async function GET(request: Request) {
     const stepUsers = new Map<number, { step: string; anon: Set<string> }>();
     const reviewUsers = new Set<string>();
     const completedUsers = new Set<string>();
+    const reachedPaymentUsers = new Set<string>();
+    const cancelCounts = new Map<string, number>();
     for (const e of evDocs) {
       const name = String(e.name ?? "");
       const props = (e.props ?? {}) as Record<string, unknown>;
@@ -260,7 +286,15 @@ export async function GET(request: Request) {
         }
       } else if (name === "nuevo_review") { if (who) reviewUsers.add(who); }
       else if (name === "nuevo_completed") { if (who) completedUsers.add(who); }
+      else if (name === "reached_payment") { if (who) reachedPaymentUsers.add(who); }
+      else if (name === "account_cancel_reason") {
+        const r = String(props.reason ?? "otro");
+        cancelCounts.set(r, (cancelCounts.get(r) ?? 0) + 1);
+      }
     }
+    const cancelReasons = [...cancelCounts.entries()]
+      .map(([key, count]) => ({ key, label: CANCEL_LABELS[key] ?? key, count }))
+      .sort((a, b) => b.count - a.count);
     const abandonReasons = [...reasonCounts.entries()]
       .map(([key, count]) => ({ key, label: REASON_LABELS[key] ?? key, count }))
       .sort((a, b) => b.count - a.count);
@@ -275,6 +309,8 @@ export async function GET(request: Request) {
       wizard: wizardFunnel,
       wizardReview: reviewUsers.size,
       wizardCompleted: completedUsers.size,
+      reachedPayment: reachedPaymentUsers.size,
+      cancelReasons,
       hasData: evDocs.length > 0,
     };
 
@@ -296,7 +332,7 @@ export async function GET(request: Request) {
         reviews: reviewsCount,
         repeatRate: pct(repeatUsers, usersRegistered),
       },
-      revenue,
+      revenue: { ...revenue, ltv },
       referral: {
         invitesSent: partyInvitesCount,
         referralCodes: referralCodesCount,

@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { track } from "@/lib/analytics/track";
 import { TaxLegalNote } from "@/components/legal/tax-legal-note";
 import { canSeeInternalDashboardTools } from "@/lib/dashboard/internal-tools";
 import { useFreeTier } from "@/lib/useFreeTier";
@@ -357,6 +358,8 @@ export default function PlansPage() {
         return;
       }
       if (url) {
+        // Analítica del embudo: llegó a la pasarela (orden creada, listo para pagar).
+        track("reached_payment", { plan: "plus", amountCop: cart?.totalCop ?? 0, provider: data.providerCode ?? "" });
         // Tarjeta y Bre-B van a la MISMA pasarela: mostramos la confirmación de
         // salida al sitio de pago (con el aviso de elegir Bre-B si aplica).
         setShowRedirectConfirm(true);

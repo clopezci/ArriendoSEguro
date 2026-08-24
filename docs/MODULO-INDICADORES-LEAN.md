@@ -225,6 +225,76 @@ Se ve en `/admin` → Lean → "🚪 Por qué se van" (ranking de motivos) y
 > Reusable: copia el componente + `lib/analytics/{track,events}.ts` +
 > `/api/analytics/event`. Ajusta `ARMED_ROUTES`, los motivos y el cooldown.
 
+## 6c. Encuesta de BAJA (churn) de un solo paso
+
+Al **eliminar la cuenta** (`/dashboard/cuenta/eliminar`) se muestra una encuesta
+**de un paso, opcional y anónima**: chips de motivo (ya no lo necesito / no le di
+uso / muy costoso / faltan funciones / problema / encontré otra opción / privacidad
+/ otro→texto). Registra `account_cancel_reason`. Un botón "Enviar motivo" permite
+dejar la razón aunque la baja automática esté bloqueada (p. ej. con contratos
+firmados). Se ve en `/admin` → Lean → "👋 Por qué se dan de baja".
+
+---
+
+## 8. Auditoría de fuentes de datos (¿cada indicador se alimenta solo?)
+
+> **Freshness:** el panel **recalcula en vivo en cada carga** (`GET
+> /api/admin/dashboard` consulta Firestore + GA4 al momento). No hay cachés que
+> envejezcan: cuando entras, todo está al día. Lo único que varía es si un
+> indicador **tiene fuente** o no.
+
+Leyenda: ✅ automático · ⚠️ automático pero aproximado · ❌ falta fuente.
+
+| Indicador | Fuente | Estado |
+|---|---|---|
+| Usuarios registrados | Firebase Auth (`listUsers`) | ✅ |
+| Encuestas | `lead_forms` | ✅ |
+| Accesos demo / Plus activos | `access_entitlements` | ✅ |
+| Contratos creados / versiones / firmados | `contracts`, `contract_versions` | ✅ |
+| Pagos aprobados / Ingresos $ / ticket | `platform_payments` (APPROVED, COP) | ✅ |
+| ARPU | ingresos ÷ registrados | ✅ |
+| Visitas / canal / dispositivo / páginas | GA4 Data API | ✅ (requiere `GA4_PROPERTY_ID`) |
+| Embudo encuesta→registro→contrato→firma | derivado | ✅ |
+| North Star (arriendos activos) | `contracts` firmados | ✅ |
+| Abandono + motivos | `analytics_events` (`page_abandon`, `abandon_reason`) | ✅ |
+| Drop-off del asistente | `analytics_events` (`nuevo_step`) | ✅ |
+| Checkout alcanzado → pago | `analytics_events` (`reached_payment`) + pagos | ✅ |
+| Motivos de baja | `analytics_events` (`account_cancel_reason`) | ✅ |
+| Recurrentes / retención | agrupado por usuario en `access_entitlements` | ⚠️ aprox |
+| Coeficiente viral `k` | invitaciones ÷ usuarios (`party_invites`) | ⚠️ aprox (falta tasa de aceptación) |
+| Referidos calificados | `referral_codes` / eventos `referral_*` | ⚠️ sin desglose |
+| LTV | ticket × contratos por cliente | ❌ no calculado aún |
+| **CAC** | gasto de marketing ÷ nuevos pagos | ❌ no hay fuente del gasto |
+| Tiempo hasta convertir | registro → 1er pago | ❌ no calculado aún |
+| Semáforo de cohortes | conversión por semana de alta | ❌ no construido |
+
+## 9. Plan para que TODO se alimente solo (lo que falta)
+
+Orden sugerido; todo queda auto-actualizado en cada carga (sin trabajo manual,
+salvo el gasto de marketing que sí es un dato externo):
+
+1. **LTV automático (⚠️→✅)**: `LTV ≈ ticket × (contratos por cliente pagador)`.
+   Datos ya disponibles (`platform_payments` + `access_entitlements`). Solo es
+   cálculo en el endpoint. *Esfuerzo: bajo.*
+2. **Coeficiente viral `k` real (⚠️→✅)**: `k = invitaciones/usuario ×
+   aceptación`. Contar `party_invites` aceptadas (campo de estado) y/o eventos
+   `referral_qualified` ÷ `referral_registered`. *Esfuerzo: bajo-medio.*
+3. **Tiempo hasta convertir (❌→✅)**: por cada usuario pagador, `fecha 1er pago −
+   fecha de alta` (Auth). Promedio + mediana. *Esfuerzo: bajo.*
+4. **Semáforo de cohortes (❌→✅)**: agrupar altas por semana y medir su
+   conversión posterior (activó / firmó / pagó); comparar cohorte N vs N-1 →
+   🟢🟡🔴. Datos: Auth + `contracts` + `platform_payments` por usuario. Con esto
+   se cierra la **contabilidad de la innovación**. *Esfuerzo: medio.*
+5. **CAC (❌→✅ con 1 dato/mes)**: única pieza que necesita un dato externo. Añadir
+   un mini-formulario en `/admin` que guarde el **gasto de marketing mensual** en
+   `analytics_config/marketing`. Con eso: `CAC = gasto ÷ nuevos pagos` y, junto al
+   LTV, el semáforo `LTV/CAC`. *Esfuerzo: bajo (form) + criterio del dueño.*
+6. **Instrumentar más `cta_click`** (botones "Crear contrato", "Entrar como
+   inquilino", etc.) para medir intención antes del registro. *Esfuerzo: trivial.*
+
+Con 1–5 el tablero queda **100% auto-alimentado** salvo el gasto de marketing
+(dato que solo tú conoces), que se captura una vez al mes.
+
 ## 7. Estado en ArriendoSeguro (se irá actualizando)
 
 - **Hecho**: visitas GA4 (panel + Telegram), embudo derivado
