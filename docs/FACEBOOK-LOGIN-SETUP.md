@@ -21,16 +21,19 @@ Dato del proyecto: dominio de producción **https://arriendoseguro.app**
 5. Ponle nombre (p. ej. *ArriendoSeguro*) y un correo de contacto → **Crear app**
    (te pedirá tu contraseña de Facebook).
 
-## Paso 2 — Añadir “Inicio de sesión con Facebook”
-1. En el panel de la app, en **Agregar productos** / **Add products**, busca
-   **Facebook Login** → **Configurar** / **Set up**.
-2. Plataforma: elige **Web**.
-3. En **Site URL** pon: `https://arriendoseguro.app` → guarda. (Puedes saltarte
-   el resto del asistente rápido; lo importante es el Paso 3.)
+## Paso 2 — (Interfaz NUEVA por “Casos de uso”)
+La interfaz actual de Meta ya NO tiene “Agregar productos → Facebook Login”. Se
+configura dentro del **caso de uso** que ya creaste (*"Autenticar y solicitar
+datos a usuarios con el inicio de sesión con Facebook"*).
+
+1. Menú izquierdo → **Casos de uso**.
+2. En la tarjeta *"Autenticar y solicitar datos…"* → **Personalizar** / **Editar**.
+3. Aparece un submenú con **Permisos** y **Configuración**:
+   - **Permisos**: ten **`public_profile`** y agrega **`email`** (*Agregar*). Con
+     acceso estándar basta; no requiere App Review.
 
 ## Paso 3 — Configurar el Redirect URI válido (clave)
-1. Menú izquierdo: **Inicio de sesión con Facebook → Configuración**
-   (Facebook Login → Settings).
+1. Dentro del caso de uso (Paso 2), entra a **Configuración** (Settings).
 2. En **URI de redireccionamiento de OAuth válidos** / *Valid OAuth Redirect
    URIs*, pega **exactamente**:
    ```
@@ -38,8 +41,11 @@ Dato del proyecto: dominio de producción **https://arriendoseguro.app**
    ```
    Si vas a probar en preview de Vercel, agrega también esa URL de preview con el
    mismo path `/api/auth/facebook/callback`.
-3. Deja activados **“Client OAuth Login”** y **“Web OAuth Login”**.
+3. Deja activados **“Login de OAuth de cliente”** y **“Login de OAuth web”**.
 4. **Guardar cambios**.
+
+> Nota: en versiones más viejas esto estaba en “Facebook Login → Configuración”.
+> Si ves esa opción en el menú, sirve igual; es el mismo campo.
 
 ## Paso 4 — Copiar App ID y App Secret
 1. Menú izquierdo: **Configuración → Básica** (Settings → Basic).
@@ -56,10 +62,10 @@ Dato del proyecto: dominio de producción **https://arriendoseguro.app**
 3. **Save** y **redeploy** (Deployments → ⋯ → Redeploy, o un push).
 
 ## Paso 6 — Poner la app en modo “En vivo” (Live)
-Mientras la app esté en modo **Desarrollo**, solo pueden entrar las cuentas que
-agregues como **Roles → Probadores/Administradores**. Para el público:
-1. Arriba, junto al nombre de la app, cambia el interruptor de **Desarrollo** a
-   **En vivo** / **Live**.
+Mientras la app esté **“Sin publicar”**, solo pueden entrar las cuentas que
+agregues en **Roles de la app → Roles / Usuarios de prueba**. Para el público:
+1. Menú izquierdo → **Publicar** (o el interruptor Desarrollo→En vivo) y sigue los
+   pasos.
 2. Meta pedirá una **Política de privacidad**: usa
    `https://arriendoseguro.app/legal/privacidad`.
 3. El permiso **`email`** y **`public_profile`** son de acceso estándar: NO

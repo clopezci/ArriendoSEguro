@@ -125,6 +125,19 @@ export function ExpressRegister({
     window.location.href = `/api/auth/google/start?next=${encodeURIComponent(next)}`;
   }
 
+  /** Login con Facebook del lado del SERVIDOR (mismo patrón que Google). */
+  function submitFacebook() {
+    setError(null);
+    if (!consent) {
+      setConsentInvalid(true);
+      setError("Marca la aceptación de tratamiento de datos para continuar con Facebook.");
+      return;
+    }
+    setBusy(true);
+    const next = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/nuevo";
+    window.location.href = `/api/auth/facebook/start?next=${encodeURIComponent(next)}`;
+  }
+
   async function submit() {
     setError(null);
     const mail = email.trim();
@@ -204,6 +217,17 @@ export function ExpressRegister({
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38z" />
               </svg>
               Continuar con Google
+            </button>
+            <button
+              type="button"
+              onClick={() => void submitFacebook()}
+              disabled={busy}
+              className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-[#1877F2] bg-[#1877F2] px-6 py-3 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-50"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#ffffff" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.68 4.53-4.68 1.31 0 2.68.23 2.68.23v2.97h-1.51c-1.49 0-1.96.93-1.96 1.89v2.25h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z" />
+              </svg>
+              Continuar con Facebook
             </button>
             <div className="flex items-center gap-3 text-xs text-slate-400">
               <span className="h-px flex-1 bg-slate-200" />o con tu correo<span className="h-px flex-1 bg-slate-200" />
