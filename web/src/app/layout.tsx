@@ -10,6 +10,7 @@ import { PwaRegister } from "@/components/pwa-register";
 import { AppProviders } from "@/components/providers/app-providers";
 import { ReadAloudProvider } from "@/components/a11y/read-aloud";
 import { ReferralTracker } from "@/components/referrals/referral-tracker";
+import { ExitIntentSurvey } from "@/components/analytics/exit-intent-survey";
 import { appConfig } from "@/lib/config";
 import Script from "next/script";
 import type { Metadata, Viewport } from "next";
@@ -90,6 +91,7 @@ export default function RootLayout({
             </div>
             <PwaInstallSiteBanner />
             <CookieConsentBanner />
+            <ExitIntentSurvey />
           </ReadAloudProvider>
         </AppProviders>
         {/* Métricas reales de rendimiento (Core Web Vitals) en Vercel; no-op fuera de Vercel. */}

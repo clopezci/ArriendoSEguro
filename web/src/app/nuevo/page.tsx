@@ -14,6 +14,7 @@ import { JourneyScene } from "@/components/nuevo/journey-scene";
 import { AccountMenu } from "@/components/nuevo/account-menu";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { validateStep, type Answers } from "@/lib/nuevo/validation";
+import { track } from "@/lib/analytics/track";
 import { pesosEnLetras } from "@/lib/nuevo/pesos-en-letras";
 import { captureOathEvidence } from "@/lib/nuevo/oath-evidence";
 import { OathEvidenceToast } from "@/components/nuevo/oath-evidence-toast";
@@ -247,6 +248,14 @@ export default function NuevoPage() {
   const [i, setI] = useState(0);
   const [a, setARaw] = useState<Answers>(EMPTY);
   const [error, setError] = useState<string | null>(null);
+
+  // Analítica del embudo: registra el paso alcanzado (drop-off), la revisión y el
+  // cierre del asistente. Best-effort; no bloquea la UX.
+  useEffect(() => {
+    if (mode === "flow") track("nuevo_step", { index: i, step: QUESTIONS[i]?.id ?? "" });
+    else if (mode === "review") track("nuevo_review");
+    else if (mode === "done") track("nuevo_completed");
+  }, [i, mode]);
   // F7 — registro exprés al 50%: cuando alguien sin sesión termina lo básico,
   // pedimos crear cuenta + consentimiento antes de seguir con lo adicional.
   const [gate, setGate] = useState<"register" | null>(null);

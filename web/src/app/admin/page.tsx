@@ -37,6 +37,16 @@ type DashboardPayload = {
     } | null;
     lean?: {
       northStar: number | null;
+      abandon?: {
+        pageAbandon: number;
+        reasonGiven: number;
+        dismissed: number;
+        reasons: { key: string; label: string; count: number }[];
+        wizard: { index: number; step: string; users: number }[];
+        wizardReview: number;
+        wizardCompleted: number;
+        hasData: boolean;
+      };
       acquisition: { visitors7d: number | null; signups: number | null; surveys: number | null };
       activation: { contractsCreated: number | null; contractsGenerated: number | null; rate: number | null };
       retention: { repeatUsers: number | null; reviews: number | null; repeatRate: number | null };
@@ -3322,6 +3332,67 @@ function LeanTab({ s }: { s?: DashboardPayload["summary"] }) {
           </div>
         </div>
       </div>
+
+      {/* Abandono y motivos + embudo del asistente */}
+      {lean.abandon && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-xl border border-rose-300 bg-rose-50/40 p-4">
+            <p className="text-sm font-semibold text-rose-900">🚪 Por qué se van (motivos de abandono)</p>
+            {!lean.abandon.hasData ? (
+              <p className="mt-2 text-xs text-slate-500">Aún no hay eventos. Se irán registrando cuando la gente use la micro-encuesta de salida.</p>
+            ) : lean.abandon.reasons.length === 0 ? (
+              <p className="mt-2 text-xs text-slate-500">Nadie ha marcado un motivo todavía. Salidas registradas: {num(lean.abandon.pageAbandon)}.</p>
+            ) : (
+              <>
+                <div className="mt-3 space-y-1.5">
+                  {(() => {
+                    const maxR = Math.max(1, ...lean.abandon.reasons.map((r) => r.count));
+                    return lean.abandon.reasons.map((r) => (
+                      <div key={r.key} className="flex items-center gap-2 text-xs">
+                        <span className="w-36 shrink-0 truncate text-slate-700">{r.label}</span>
+                        <div className="h-4 flex-1 overflow-hidden rounded bg-slate-100">
+                          <div className="h-full rounded bg-rose-500" style={{ width: `${Math.round((r.count / maxR) * 100)}%` }} />
+                        </div>
+                        <span className="w-8 shrink-0 text-right font-semibold tabular-nums">{r.count}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+                <p className="mt-2 text-[11px] text-slate-500">
+                  Salidas: {num(lean.abandon.pageAbandon)} · motivos dados: {num(lean.abandon.reasonGiven)} · cerraron sin responder: {num(lean.abandon.dismissed)}.
+                </p>
+              </>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
+            <p className="text-sm font-semibold text-slate-900">🧭 Dónde se caen en el asistente</p>
+            {(lean.abandon.wizard?.length ?? 0) === 0 ? (
+              <p className="mt-2 text-xs text-slate-500">Aún sin datos de pasos. Se registran a medida que la gente avanza en /nuevo.</p>
+            ) : (
+              <>
+                <div className="mt-3 space-y-1.5">
+                  {(() => {
+                    const maxS = Math.max(1, ...lean.abandon.wizard.map((w) => w.users));
+                    return lean.abandon.wizard.map((w) => (
+                      <div key={w.index} className="flex items-center gap-2 text-xs">
+                        <span className="w-28 shrink-0 truncate text-slate-700" title={w.step}>{w.index + 1}. {w.step}</span>
+                        <div className="h-4 flex-1 overflow-hidden rounded bg-slate-100">
+                          <div className="h-full rounded bg-indigo-500" style={{ width: `${Math.round((w.users / maxS) * 100)}%` }} />
+                        </div>
+                        <span className="w-8 shrink-0 text-right font-semibold tabular-nums">{w.users}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+                <p className="mt-2 text-[11px] text-slate-500">
+                  Llegaron a revisión: {num(lean.abandon.wizardReview)} · completaron: {num(lean.abandon.wizardCompleted)}. La barra = personas únicas que alcanzaron ese paso; donde cae fuerte, ahí se abandona.
+                </p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Bar chart race */}
       <div className="rounded-xl border border-slate-300 bg-white/95 p-4">

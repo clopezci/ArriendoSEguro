@@ -141,7 +141,7 @@ export async function GET(request: Request) {
       return null;
     };
 
-    const [payAllSnap, contractsAllSnap, leadsAllSnap, entLeanSnap, partyInvitesCount, referralCodesCount, reviewsCount] =
+    const [payAllSnap, contractsAllSnap, leadsAllSnap, entLeanSnap, analyticsSnap, partyInvitesCount, referralCodesCount, reviewsCount] =
       await Promise.all([
         safeQueryDocs("payments_approved", () =>
           firestore.collection("platform_payments").where("status", "==", "APPROVED").limit(2000).get(),
@@ -149,6 +149,7 @@ export async function GET(request: Request) {
         safeQueryDocs("contracts_all", () => firestore.collection("contracts").limit(2000).get()),
         safeQueryDocs("leads_all", () => firestore.collection("lead_forms").limit(2000).get()),
         safeQueryDocs("ent_lean", () => firestore.collection("access_entitlements").limit(500).get()),
+        safeQueryDocs("analytics_events", () => firestore.collection("analytics_events").orderBy("at", "desc").limit(4000).get()),
         countSafe(() => firestore.collection("party_invites").count().get()),
         countSafe(() => firestore.collection("referral_codes").count().get()),
         countSafe(() => firestore.collection("reputation_reviews").count().get()),
@@ -222,8 +223,64 @@ export async function GET(request: Request) {
       };
     });
 
+    // Abandono (motivos) + embudo del asistente (drop-off), desde analytics_events.
+    const REASON_LABELS: Record<string, string> = {
+      solo_mirando: "Solo estaba mirando",
+      equivocado: "Me equivoqué de sitio",
+      no_es_lo_que_busco: "No es lo que buscaba",
+      complicado: "Se me hizo complicado",
+      precio: "Por el precio",
+      falta_info: "Me faltó información",
+      otro: "Otro",
+    };
+    const evDocs = (analyticsSnap?.docs ?? []).map((d) => d.data() as Record<string, unknown>);
+    const reasonCounts = new Map<string, number>();
+    let pageAbandon = 0;
+    let reasonGiven = 0;
+    let dismissed = 0;
+    const stepUsers = new Map<number, { step: string; anon: Set<string> }>();
+    const reviewUsers = new Set<string>();
+    const completedUsers = new Set<string>();
+    for (const e of evDocs) {
+      const name = String(e.name ?? "");
+      const props = (e.props ?? {}) as Record<string, unknown>;
+      const who = String(e.anonId ?? e.uid ?? "");
+      if (name === "abandon_reason") {
+        reasonGiven += 1;
+        const r = String(props.reason ?? "otro");
+        reasonCounts.set(r, (reasonCounts.get(r) ?? 0) + 1);
+      } else if (name === "page_abandon") pageAbandon += 1;
+      else if (name === "abandon_dismissed") dismissed += 1;
+      else if (name === "nuevo_step") {
+        const idx = Number(props.index ?? -1);
+        if (idx >= 0) {
+          const cur = stepUsers.get(idx) ?? { step: String(props.step ?? idx), anon: new Set<string>() };
+          if (who) cur.anon.add(who);
+          stepUsers.set(idx, cur);
+        }
+      } else if (name === "nuevo_review") { if (who) reviewUsers.add(who); }
+      else if (name === "nuevo_completed") { if (who) completedUsers.add(who); }
+    }
+    const abandonReasons = [...reasonCounts.entries()]
+      .map(([key, count]) => ({ key, label: REASON_LABELS[key] ?? key, count }))
+      .sort((a, b) => b.count - a.count);
+    const wizardFunnel = [...stepUsers.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([index, v]) => ({ index, step: v.step, users: v.anon.size }));
+    const abandon = {
+      pageAbandon,
+      reasonGiven,
+      dismissed,
+      reasons: abandonReasons,
+      wizard: wizardFunnel,
+      wizardReview: reviewUsers.size,
+      wizardCompleted: completedUsers.size,
+      hasData: evDocs.length > 0,
+    };
+
     const lean = {
       northStar: contractsSigned,          // arriendos activos gestionados (firmados)
+      abandon,
       acquisition: {
         visitors7d: ga4?.configured ? (ga4.daily.slice(-7).reduce((a, b) => a + b.users, 0)) : null,
         signups: usersRegistered,
