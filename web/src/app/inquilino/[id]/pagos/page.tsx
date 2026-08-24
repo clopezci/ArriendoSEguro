@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { FileButton } from "@/components/ui/file-button";
 
 type Sched = { id: string; periodLabel?: string; dueDate?: string; expectedAmount?: number; status?: string };
 
@@ -113,9 +114,13 @@ export default function InquilinoPagosPage() {
                   </div>
                   {openFor === s.id && !paid && (
                     <div className="mt-3 space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                      <label className="block text-xs text-slate-600">Comprobante (obligatorio)
-                        <input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="mt-1 block w-full text-xs" />
-                      </label>
+                      <div className="text-xs text-slate-600">
+                        <span className="block text-sm font-semibold text-slate-800">Comprobante de pago (obligatorio)</span>
+                        <span className="mt-0.5 block text-[11px] text-slate-500">Sube una foto o el PDF del comprobante.</span>
+                        <div className="mt-2">
+                          <FileButton file={file} onFile={setFile} accept="image/*,.pdf" label="Elegir comprobante" />
+                        </div>
+                      </div>
                       <label className="block text-xs text-slate-600">Valor pagado
                         <input inputMode="numeric" value={amount} onChange={(e) => setAmount(e.target.value)} className="mt-1 block w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
                       </label>

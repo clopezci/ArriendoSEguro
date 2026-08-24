@@ -6,6 +6,7 @@ import { WizardShell } from "@/components/contracts/wizard-shell";
 import { useDraftGuard } from "@/components/contracts/draft-tools";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { FileButton } from "@/components/ui/file-button";
 
 type SchedRow = { id: string; periodLabel?: string; dueDate?: string; expectedAmount?: number; status?: string };
 
@@ -181,21 +182,22 @@ export default function NewPaymentPage() {
             <option>otro</option>
           </select>
         </label>
-        <label className="text-xs text-slate-700 md:col-span-2">
-          Comprobante de pago <span className="font-normal text-slate-400">(opcional, recomendado)</span>
-          <input
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,.webp"
-            className="mt-1 w-full rounded border border-slate-300 bg-white p-2 text-sm"
-            onChange={(e) => {
-              const file = e.target.files?.[0] ?? null;
-              setSupportFile(file);
-              setSupportFileName(file?.name ?? "");
-              setSupportFileType(file?.type ?? "");
-              setSupportFileSize(file?.size ?? 0);
-            }}
-          />
-        </label>
+        <div className="text-xs text-slate-700 md:col-span-2">
+          <span className="block text-sm font-semibold text-slate-800">Comprobante de pago <span className="font-normal text-slate-400">(opcional, recomendado)</span></span>
+          <div className="mt-1.5">
+            <FileButton
+              file={supportFile}
+              accept=".pdf,.jpg,.jpeg,.png,.webp"
+              label="Elegir comprobante"
+              onFile={(file) => {
+                setSupportFile(file);
+                setSupportFileName(file?.name ?? "");
+                setSupportFileType(file?.type ?? "");
+                setSupportFileSize(file?.size ?? 0);
+              }}
+            />
+          </div>
+        </div>
       </div>
 
       <p className="mt-2 rounded border border-slate-200 bg-white/95 p-3 text-xs text-slate-700">
