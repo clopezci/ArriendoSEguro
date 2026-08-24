@@ -201,16 +201,44 @@ Principio: **cada número dice una acción**. Nada de tablas frías sin contexto
 
 ---
 
+## 6b. Captura de MOTIVOS DE ABANDONO (micro-encuesta de salida)
+
+Patrón "pro" y **no intrusivo** para saber *por qué* se va la gente sin actuar:
+
+- **Componente global** `components/analytics/exit-intent-survey.tsx`, montado en el
+  `layout`. Se **arma solo en rutas del embudo** (`/`, `/nuevo`).
+- **Disparadores**: en escritorio, cuando el cursor sale por el borde superior
+  (va a cerrar/cambiar de pestaña); en cualquier dispositivo, 75 s de inactividad
+  como respaldo suave. Nunca antes de 8 s en la página; no interrumpe si está
+  escribiendo en un campo.
+- **Anti-cansancio**: máximo **una vez por sesión** y, si la ve, **no vuelve en
+  14 días** (`localStorage`). Cierre fácil con la "×".
+- **Una sola pregunta** con chips de motivo (solo mirando / me equivoqué / no es
+  lo que buscaba / complicado / precio / falta info / otro→texto). Un toque →
+  evento `abandon_reason` con `props.reason`. Cerrar → `abandon_dismissed`.
+- **Pasivo**: al ocultarse la página (`visibilitychange`/`pagehide`) se registra
+  `page_abandon` para tener la **tasa de abandono** aunque no respondan.
+
+Se ve en `/admin` → Lean → "🚪 Por qué se van" (ranking de motivos) y
+"🧭 Dónde se caen en el asistente" (drop-off por paso, con personas únicas).
+
+> Reusable: copia el componente + `lib/analytics/{track,events}.ts` +
+> `/api/analytics/event`. Ajusta `ARMED_ROUTES`, los motivos y el cooldown.
+
 ## 7. Estado en ArriendoSeguro (se irá actualizando)
 
 - **Hecho**: visitas GA4 (panel + Telegram), embudo derivado
   (Encuestas→Registrados→Contratos→Firmados), compras (Plan Plus), corrección del
   conteo de pagos (`APPROVED`).
-- **En este módulo**: pestaña **Lean** con tarjetas AARRR, **ingresos $** (total /
-  30 días / ticket / ARPU), motores de crecimiento (viral/sticky/pagado),
-  North Star y **bar chart race** semanal.
-- **Siguiente (fase evt)**: `analytics_events` + instrumentar drop-off del
-  asistente `/nuevo` y el evento "llegó a pagar" para el embudo por cohortes
-  completo desde la visita.
+- **Pestaña Lean**: tarjetas AARRR, **ingresos $** (total / 30 días / ticket /
+  ARPU), motores de crecimiento (viral/sticky/pagado), North Star y **bar chart
+  race** semanal.
+- **Fase de eventos (hecho)**: `lib/analytics/{events,track}.ts` +
+  `/api/analytics/event` (colección `analytics_events`); instrumentado el
+  **drop-off del asistente** (`nuevo_step`/`nuevo_review`/`nuevo_completed`) y la
+  **micro-encuesta de abandono** (`abandon_reason`/`page_abandon`). Visible en
+  Lean → "Por qué se van" y "Dónde se caen en el asistente".
+- **Siguiente**: instrumentar `reached_payment` (llegó a la pasarela) para cerrar
+  el embudo desde la visita, y el **semáforo de cohortes** semanal 🟢🟡🔴.
 
 _Referencia viva; actualízalo al evolucionar el módulo._
