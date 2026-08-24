@@ -3,6 +3,7 @@ import { getAdminFirestore } from "../src/lib/firebase/admin";
 import {
   HUB_APPS_COLLECTION,
   generateHubCredentials,
+  hashApiKey,
   type HubApp,
 } from "../src/domain/hub/hub-apps";
 
@@ -14,16 +15,25 @@ function parseArgs() {
     const [k, ...rest] = arg.slice(2).split("=");
     map.set(k, rest.join("="));
   }
-  return { name: (map.get("name") ?? "").trim(), webhook: (map.get("webhook") ?? "").trim() };
+  return {
+    name: (map.get("name") ?? "").trim(),
+    webhook: (map.get("webhook") ?? "").trim(),
+    // RESTAURAR: si pasas la apiKey y el hmacSecret que ya tiene la app externa,
+    // se recrea el registro IDÉNTICO (no hay que cambiar nada en esa app).
+    apiKey: (map.get("apiKey") ?? "").trim(),
+    hmacSecret: (map.get("hmacSecret") ?? "").trim(),
+  };
 }
 
 async function main() {
   if (!(process.env.NODE_ENV === "development" || process.env.ADMIN_INTERNAL_ENABLED === "true")) {
     throw new Error("Operación bloqueada. Usa development o ADMIN_INTERNAL_ENABLED=true.");
   }
-  const { name, webhook } = parseArgs();
+  const { name, webhook, apiKey, hmacSecret } = parseArgs();
   if (name.length < 2 || !webhook) {
-    throw new Error('Uso: npm run hub:register -- --name="MiApp" --webhook="https://miapp.com/api/hub/webhook"');
+    throw new Error('Uso: npm run hub:register -- --name="MiApp" --webhook="https://miapp.com/api/hub/webhook"\n' +
+      'Para RESTAURAR una app existente (sin cambiar sus credenciales):\n' +
+      '  npm run hub:register -- --name="MiApp" --webhook="…" --apiKey="hubk_…" --hmacSecret="hubs_…"');
   }
   try {
     new URL(webhook);
@@ -34,7 +44,12 @@ async function main() {
   const firestore = getAdminFirestore();
   if (!firestore) throw new Error("Firebase Admin no configurado.");
 
-  const creds = generateHubCredentials();
+  // Modo RESTAURAR: usa la apiKey/hmacSecret existentes; si no, genera nuevas.
+  const restoring = Boolean(apiKey && hmacSecret);
+  if (apiKey && !hmacSecret) throw new Error("Para restaurar debes pasar TAMBIÉN --hmacSecret.");
+  const creds = restoring
+    ? { apiKey, apiKeyPrefix: apiKey.slice(0, 13), apiKeyHash: hashApiKey(apiKey), hmacSecret }
+    : generateHubCredentials();
   const ref = firestore.collection(HUB_APPS_COLLECTION).doc();
   const app: HubApp = {
     id: ref.id,
@@ -52,7 +67,9 @@ async function main() {
     JSON.stringify(
       {
         success: true,
-        message: "App registrada. Copia estas credenciales, no se vuelven a mostrar.",
+        message: restoring
+          ? "App RESTAURADA con sus credenciales existentes (no cambia nada en la app externa)."
+          : "App registrada. Copia estas credenciales, no se vuelven a mostrar.",
         appId: ref.id,
         name,
         webhookUrl: webhook,

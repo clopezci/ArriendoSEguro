@@ -21,7 +21,12 @@ export function isStandaloneDisplay(): boolean {
 
 export function isIosDevice(): boolean {
   if (typeof window === "undefined") return false;
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const ua = navigator.userAgent;
+  if (/iphone|ipad|ipod/i.test(ua)) return true;
+  // iPadOS 13+ se hace pasar por "Mac" (UA de escritorio) pero es táctil.
+  const nav = navigator as Navigator & { maxTouchPoints?: number };
+  if (/Macintosh/i.test(ua) && (nav.maxTouchPoints ?? 0) > 1) return true;
+  return false;
 }
 
 export function isAndroidDevice(): boolean {
