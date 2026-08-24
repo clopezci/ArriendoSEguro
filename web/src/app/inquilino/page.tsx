@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { FileButton } from "@/components/ui/file-button";
+import { AccountMenu } from "@/components/nuevo/account-menu";
 import { MAINTENANCE_CATEGORY_LABELS } from "@/domain/maintenance/maintenance";
 
 type TenantContract = { contractId: string; address: string; landlordName: string; role: "tenant" | "codebtor" };
@@ -95,9 +96,12 @@ export default function InquilinoPage() {
   return (
     <div className="relative min-h-screen bg-[#F5F3EF] text-[#17151F]">
       <div className="mx-auto max-w-2xl px-6 py-8">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between gap-2">
           <Link href="/nuevo" className="text-sm font-semibold text-[#5646E5] hover:underline">← Inicio</Link>
-          <Link href="/nuevo/contratos" className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-[#5646E5]">Ver como dueño →</Link>
+          <div className="flex items-center gap-2">
+            <Link href="/nuevo/contratos" className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-[#5646E5]">Ver como dueño →</Link>
+            <AccountMenu />
+          </div>
         </div>
         <h1 className="text-3xl font-extrabold tracking-tight">Administra mis arriendos</h1>
         <p className="mt-2 text-slate-500">Estos son los inmuebles que tienes en arriendo. Elige uno y gestiona tus opciones como inquilino.</p>

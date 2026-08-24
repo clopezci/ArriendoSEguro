@@ -41,6 +41,10 @@ type DashboardPayload = {
         pageAbandon: number;
         reasonGiven: number;
         dismissed: number;
+        noReason?: number;
+        returned?: number;
+        abandonUsers?: number;
+        returnedUsers?: number;
         reasons: { key: string; label: string; count: number }[];
         wizard: { index: number; step: string; users: number }[];
         wizardReview: number;
@@ -3446,7 +3450,8 @@ function LeanTab({ s, onReload }: { s?: DashboardPayload["summary"]; onReload: (
                   })()}
                 </div>
                 <p className="mt-2 text-[11px] text-slate-500">
-                  Salidas: {num(lean.abandon.pageAbandon)} · motivos dados: {num(lean.abandon.reasonGiven)} · cerraron sin responder: {num(lean.abandon.dismissed)}.
+                  Salidas: {num(lean.abandon.pageAbandon)} · con motivo: {num(lean.abandon.reasonGiven)} · sin motivo: {num(lean.abandon.noReason ?? null)} · cerraron sin responder: {num(lean.abandon.dismissed)}
+                  {(lean.abandon.abandonUsers ?? 0) > 0 && <> · <b>regresaron: {num(lean.abandon.returnedUsers ?? null)}/{num(lean.abandon.abandonUsers ?? null)}</b></>}
                 </p>
               </>
             )}
