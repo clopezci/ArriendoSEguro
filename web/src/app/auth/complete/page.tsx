@@ -24,12 +24,15 @@ function CompleteInner() {
   const params = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
+  const provider = params.get("provider") === "facebook" ? "facebook" : "google";
+  const providerLabel = provider === "facebook" ? "Facebook" : "Google";
+
   useEffect(() => {
     const next = safeNext(params.get("next"));
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch("/api/auth/google/token", { cache: "no-store" });
+        const res = await fetch(`/api/auth/${provider}/token`, { cache: "no-store" });
         const data = (await res.json()) as { success?: boolean; token?: string };
         if (!data.success || !data.token) throw new Error("sin token");
         const cred = await signInWithCustomToken(getAuthClient(), data.token);
@@ -45,13 +48,13 @@ function CompleteInner() {
         }
         if (!cancelled) router.replace(next);
       } catch {
-        if (!cancelled) setError("No pudimos completar el ingreso con Google. Intenta de nuevo o usa tu correo y contraseña.");
+        if (!cancelled) setError(`No pudimos completar el ingreso con ${providerLabel}. Intenta de nuevo o usa tu correo y contraseña.`);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [params, router]);
+  }, [params, router, provider, providerLabel]);
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-6 text-center">
@@ -65,7 +68,7 @@ function CompleteInner() {
       ) : (
         <>
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-[#5646E5]" />
-          <p className="mt-4 text-sm font-semibold text-slate-700">Entrando con Google…</p>
+          <p className="mt-4 text-sm font-semibold text-slate-700">Entrando con {providerLabel}…</p>
         </>
       )}
     </div>
