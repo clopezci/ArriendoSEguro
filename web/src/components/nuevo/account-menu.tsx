@@ -97,6 +97,9 @@ export function AccountMenu() {
               <Link href="/nuevo/contratos" role="menuitem" onClick={() => setOpen(false)} className={itemCls}>
                 Mis contratos
               </Link>
+              <Link href="/dashboard/reputacion" role="menuitem" onClick={() => setOpen(false)} className={itemCls}>
+                ⭐ Mi reputación
+              </Link>
               <Link href="/dashboard/account" role="menuitem" onClick={() => setOpen(false)} className={itemCls}>
                 Mi cuenta
               </Link>
