@@ -207,17 +207,22 @@ Patrón "pro" y **no intrusivo** para saber *por qué* se va la gente sin actuar
 
 - **Componente global** `components/analytics/exit-intent-survey.tsx`, montado en el
   `layout`. Se **arma solo en rutas del embudo** (`/`, `/nuevo`).
-- **Disparadores**: en escritorio, cuando el cursor sale por el borde superior
-  (va a cerrar/cambiar de pestaña); en cualquier dispositivo, 75 s de inactividad
-  como respaldo suave. Nunca antes de 8 s en la página; no interrumpe si está
-  escribiendo en un campo.
+- **Disparadores** (solo con la página **visible**, para no aparecer "cuando el
+  usuario vuelve de otra app"): en escritorio, el cursor sale por el borde
+  superior; en **móvil y escritorio**, el **botón «Atrás»** (trampa con
+  `history.pushState` + `popstate`) muestra la encuesta al instante en vez de
+  dejarlo salir en silencio. Nunca antes de ~6 s; no interrumpe si escribe.
 - **Anti-cansancio**: máximo **una vez por sesión** y, si la ve, **no vuelve en
   14 días** (`localStorage`). Cierre fácil con la "×".
 - **Una sola pregunta** con chips de motivo (solo mirando / me equivoqué / no es
   lo que buscaba / complicado / precio / falta info / otro→texto). Un toque →
   evento `abandon_reason` con `props.reason`. Cerrar → `abandon_dismissed`.
-- **Pasivo**: al ocultarse la página (`visibilitychange`/`pagehide`) se registra
-  `page_abandon` para tener la **tasa de abandono** aunque no respondan.
+- **Conteo SIEMPRE (aunque no den motivo)**: al ocultarse la página
+  (`visibilitychange`/`pagehide`) se registra `page_abandon`. En el panel:
+  `sin motivo = page_abandon − abandon_reason`.
+- **Retorno** (¿esos casos vuelven?): al volver a estar visible tras irse se
+  registra `app_return` (privado, por `anonId`; **sin GPS**). En el panel/Telegram:
+  "regresaron N/total".
 
 Se ve en `/admin` → Lean → "🚪 Por qué se van" (ranking de motivos) y
 "🧭 Dónde se caen en el asistente" (drop-off por paso, con personas únicas).
@@ -257,6 +262,7 @@ Leyenda: ✅ automático · ⚠️ automático pero aproximado · ❌ falta fuen
 | Embudo encuesta→registro→contrato→firma | derivado | ✅ |
 | North Star (arriendos activos) | `contracts` firmados | ✅ |
 | Abandono + motivos | `analytics_events` (`page_abandon`, `abandon_reason`) | ✅ |
+| Abandono **sin motivo** + **retorno** | `page_abandon` − `abandon_reason`; `app_return` (por `anonId`) | ✅ |
 | Drop-off del asistente | `analytics_events` (`nuevo_step`) | ✅ |
 | Checkout alcanzado → pago | `analytics_events` (`reached_payment`) + pagos | ✅ |
 | Motivos de baja | `analytics_events` (`account_cancel_reason`) | ✅ |

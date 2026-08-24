@@ -12,7 +12,8 @@ export const ANALYTICS_EVENTS_COLLECTION = "analytics_events";
 
 /** Nombres de evento permitidos (evita basura/eventos falsos desde el cliente). */
 export const ALLOWED_EVENTS = new Set<string>([
-  "page_abandon",       // salió de una página del embudo sin actuar
+  "page_abandon",       // salió de una página del embudo sin actuar (aunque no dé motivo)
+  "app_return",         // volvió a la app tras haberse ido (para medir retorno)
   "abandon_reason",     // marcó POR QUÉ se fue (props.reason)
   "abandon_dismissed",  // cerró la micro-encuesta sin responder
   "nuevo_started",      // entró al asistente

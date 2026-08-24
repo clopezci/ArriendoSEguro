@@ -17,8 +17,7 @@ import { track } from "@/lib/analytics/track";
 const ARMED_ROUTES = new Set(["/", "/nuevo"]);
 const SEEN_KEY = "as_exit_survey_seen";
 const COOLDOWN_DAYS = 14;
-const DWELL_MS = 8000; // no molestar en los primeros 8 s
-const IDLE_MS = 75000; // respaldo por inactividad
+const DWELL_MS = 6000; // no molestar en los primeros segundos
 
 const REASONS: { key: string; label: string; emoji: string }[] = [
   { key: "solo_mirando", label: "Solo estaba mirando", emoji: "👀" },
@@ -41,6 +40,7 @@ export function ExitIntentSurvey() {
   const [showOther, setShowOther] = useState(false);
   const mountedAt = useRef(0);
   const abandonLogged = useRef(false);
+  const returnLogged = useRef(false);
 
   const inCooldown = useCallback((): boolean => {
     try {
@@ -59,7 +59,9 @@ export function ExitIntentSurvey() {
     if (shownThisSession || open) return;
     if (Date.now() - mountedAt.current < DWELL_MS) return;
     if (inCooldown()) return;
-    // No interrumpir si está escribiendo en un campo.
+    // Clave: NUNCA mostrar si la página no está visible (evita el "aparece cuando
+    // vuelves de otra app"). Solo se ve estando el usuario en pantalla.
+    if (typeof document !== "undefined" && document.visibilityState !== "visible") return;
     const el = document.activeElement?.tagName;
     if (el === "INPUT" || el === "TEXTAREA" || el === "SELECT") return;
     shownThisSession = true;
@@ -70,36 +72,54 @@ export function ExitIntentSurvey() {
     if (!armed) return;
     mountedAt.current = Date.now();
     abandonLogged.current = false;
+    returnLogged.current = false;
 
-    // Exit-intent de escritorio: el cursor sale por el borde superior.
+    // 1) Escritorio: el cursor sale por el borde superior (va a cerrar/cambiar tab).
     const onMouseOut = (e: MouseEvent) => {
       if (!e.relatedTarget && e.clientY <= 0) trigger();
     };
-    // Registro pasivo de abandono (aunque no responda la encuesta).
+    // 2) Registro PASIVO de abandono al ocultarse (sin UI: la página ya no se ve).
     const onHide = () => {
       if (abandonLogged.current) return;
       abandonLogged.current = true;
       track("page_abandon", { path: pathname });
     };
-    // Respaldo por inactividad.
-    let idleTimer = window.setTimeout(trigger, IDLE_MS);
-    const resetIdle = () => {
-      window.clearTimeout(idleTimer);
-      idleTimer = window.setTimeout(trigger, IDLE_MS);
+    const onVis = () => {
+      if (document.visibilityState === "hidden") { onHide(); return; }
+      // Volvió a la app tras haberse ido → lo contamos como RETORNO (una vez).
+      if (abandonLogged.current && !returnLogged.current) {
+        returnLogged.current = true;
+        track("app_return", { path: pathname });
+      }
     };
 
+    // 3) Móvil (y escritorio): TRAMPA del botón "Atrás". Al presionar atrás, la
+    // página aún está visible → mostramos la encuesta en vez de dejarlo salir en
+    // silencio. Se arma tras el umbral de permanencia y solo si no la ha visto.
+    const armBackGuard = () => {
+      if (shownThisSession || inCooldown()) return;
+      try { history.pushState({ _asExitGuard: true }, ""); } catch { /* noop */ }
+    };
+    const onPop = () => {
+      // Si ya la vio, o no aplica, o entró hace nada → dejar salir normal.
+      if (shownThisSession || inCooldown() || Date.now() - mountedAt.current < DWELL_MS) return;
+      // Re-empujamos el estado para retenerlo un momento y mostramos la encuesta.
+      try { history.pushState({ _asExitGuard: true }, ""); } catch { /* noop */ }
+      trigger();
+    };
+    const armTimer = window.setTimeout(armBackGuard, DWELL_MS);
+
     document.addEventListener("mouseout", onMouseOut);
-    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") onHide(); });
+    document.addEventListener("visibilitychange", onVis);
     window.addEventListener("pagehide", onHide);
-    ["pointerdown", "keydown", "scroll", "touchstart"].forEach((ev) =>
-      window.addEventListener(ev, resetIdle, { passive: true }),
-    );
+    window.addEventListener("popstate", onPop);
 
     return () => {
-      window.clearTimeout(idleTimer);
+      window.clearTimeout(armTimer);
       document.removeEventListener("mouseout", onMouseOut);
+      document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("pagehide", onHide);
-      ["pointerdown", "keydown", "scroll", "touchstart"].forEach((ev) => window.removeEventListener(ev, resetIdle));
+      window.removeEventListener("popstate", onPop);
     };
   }, [armed, pathname, trigger]);
 

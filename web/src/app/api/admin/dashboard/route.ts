@@ -346,6 +346,9 @@ export async function GET(request: Request) {
     let pageAbandon = 0;
     let reasonGiven = 0;
     let dismissed = 0;
+    let appReturns = 0;
+    const abandonUsers = new Set<string>();
+    const returnedUsers = new Set<string>();
     const stepUsers = new Map<number, { step: string; anon: Set<string> }>();
     const reviewUsers = new Set<string>();
     const completedUsers = new Set<string>();
@@ -359,7 +362,8 @@ export async function GET(request: Request) {
         reasonGiven += 1;
         const r = String(props.reason ?? "otro");
         reasonCounts.set(r, (reasonCounts.get(r) ?? 0) + 1);
-      } else if (name === "page_abandon") pageAbandon += 1;
+      } else if (name === "page_abandon") { pageAbandon += 1; if (who) abandonUsers.add(who); }
+      else if (name === "app_return") { appReturns += 1; if (who) returnedUsers.add(who); }
       else if (name === "abandon_dismissed") dismissed += 1;
       else if (name === "nuevo_step") {
         const idx = Number(props.index ?? -1);
@@ -389,6 +393,10 @@ export async function GET(request: Request) {
       pageAbandon,
       reasonGiven,
       dismissed,
+      noReason: Math.max(0, pageAbandon - reasonGiven),
+      returned: appReturns,
+      abandonUsers: abandonUsers.size,
+      returnedUsers: returnedUsers.size,
       reasons: abandonReasons,
       wizard: wizardFunnel,
       wizardReview: reviewUsers.size,

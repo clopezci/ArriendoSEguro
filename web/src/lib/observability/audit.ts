@@ -260,6 +260,11 @@ export type LeanReport = {
   cohortWeek: string | null;
   cohortActivatedPct: number | null;
   cohortTrend: "up" | "flat" | "down" | "na";
+  pageAbandon: number;
+  reasonGiven: number;
+  noReason: number;
+  appReturns: number;
+  topReason: string | null;
 };
 
 export async function summarizeLean(): Promise<LeanReport | null> {
@@ -275,12 +280,30 @@ export async function summarizeLean(): Promise<LeanReport | null> {
     return null;
   };
   try {
-    const [paySnap, entSnap, invSnap, mkDoc] = await Promise.all([
+    const [paySnap, entSnap, invSnap, mkDoc, evSnap] = await Promise.all([
       db.collection("platform_payments").where("status", "==", "APPROVED").limit(2000).get().catch(() => null),
       db.collection("access_entitlements").limit(500).get().catch(() => null),
       db.collection("party_invites").limit(3000).get().catch(() => null),
       db.collection("admin_config").doc("marketing").get().catch(() => null),
+      db.collection("analytics_events").orderBy("at", "desc").limit(4000).get().catch(() => null),
     ]);
+
+    // Abandono: se cuenta SIEMPRE (aunque no den motivo) + retorno de esos casos.
+    const REASON_LBL: Record<string, string> = {
+      solo_mirando: "solo miraba", equivocado: "se equivocó", no_es_lo_que_busco: "no era lo que buscaba",
+      complicado: "complicado", precio: "precio", falta_info: "faltó info", otro: "otro",
+    };
+    let pageAbandon = 0, reasonGiven = 0, appReturns = 0;
+    const reasonCounts = new Map<string, number>();
+    (evSnap?.docs ?? []).forEach((d) => {
+      const e = d.data() as Record<string, unknown>;
+      const n = String(e.name ?? "");
+      if (n === "page_abandon") pageAbandon += 1;
+      else if (n === "app_return") appReturns += 1;
+      else if (n === "abandon_reason") { reasonGiven += 1; const r = String((e.props as Record<string, unknown> | undefined)?.reason ?? "otro"); reasonCounts.set(r, (reasonCounts.get(r) ?? 0) + 1); }
+    });
+    const topReasonKey = [...reasonCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    const topReason = topReasonKey ? (REASON_LBL[topReasonKey] ?? topReasonKey) : null;
 
     let total = 0, r30 = 0, count = 0, count30 = 0;
     const firstPayByEmail = new Map<string, number>();
@@ -358,6 +381,7 @@ export async function summarizeLean(): Promise<LeanReport | null> {
       acceptanceRate: acceptanceRate != null ? Math.round(acceptanceRate * 1000) / 10 : null,
       medianDaysToConvert,
       cohortWeek: last?.week ?? null, cohortActivatedPct: last?.pct ?? null, cohortTrend,
+      pageAbandon, reasonGiven, noReason: Math.max(0, pageAbandon - reasonGiven), appReturns, topReason,
     };
   } catch {
     return null;
@@ -374,6 +398,7 @@ export function leanToText(l: LeanReport | null): string {
     `LTV ${cop(l.ltv)} · CAC ${cop(l.cac)} · LTV/CAC ${l.ltvCac != null ? `${l.ltvCac}×` : "—"}`,
     `k viral ${l.viralK ?? "—"} (aceptación ${l.acceptanceRate != null ? `${l.acceptanceRate}%` : "—"}) · a pagar ${l.medianDaysToConvert != null ? `${l.medianDaysToConvert}d` : "—"}`,
     `Cohorte ${l.cohortWeek ?? "—"}: activación ${l.cohortActivatedPct != null ? `${l.cohortActivatedPct}%` : "—"} ${trend}`,
+    `🚪 Abandonos ${l.pageAbandon} (sin motivo ${l.noReason}) · regresaron ${l.appReturns}${l.topReason ? ` · top: ${l.topReason}` : ""}`,
   ].join("\n");
 }
 
