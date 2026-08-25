@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { canSeeInternalDashboardTools } from "@/lib/dashboard/internal-tools";
 
 /**
  * Menú de cuenta para las pantallas inmersivas de `/nuevo`. El desplegable se
@@ -40,6 +41,7 @@ export function AccountMenu() {
 
   const email = user.email ?? "Mi cuenta";
   const initial = (email.trim()[0] ?? "?").toUpperCase();
+  const isAdmin = canSeeInternalDashboardTools(user.email);
 
   function toggle() {
     if (!open && btnRef.current) {
@@ -91,6 +93,19 @@ export function AccountMenu() {
               <p className="truncate px-3 py-2 text-[11px] text-slate-400" title={email}>
                 {email}
               </p>
+              {isAdmin && (
+                <>
+                  <Link
+                    href="/admin"
+                    role="menuitem"
+                    onClick={() => setOpen(false)}
+                    className="block w-full px-3 py-2 text-left text-sm font-bold text-violet-800 hover:bg-violet-50"
+                  >
+                    🛠️ Panel de administración
+                  </Link>
+                  <div className="my-1 h-px bg-slate-100" aria-hidden="true" />
+                </>
+              )}
               <Link href="/nuevo" role="menuitem" onClick={() => setOpen(false)} className={itemCls}>
                 Inicio
               </Link>
