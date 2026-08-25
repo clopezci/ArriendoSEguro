@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getStorage } from "firebase-admin/storage";
+import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { isPartyRole } from "@/domain/party-invite/partyInvite";
 import { validatePaymentSupportFile, sanitizeSupportFileName } from "@/domain/payments/supportValidation";
@@ -38,6 +39,14 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success || !isPartyRole(parsed.data.role)) {
     return NextResponse.json({ success: false, errors: [{ field: "body", message: "Datos inválidos." }] }, { status: 422 });
+  }
+
+  // Propiedad: solo el dueño del borrador puede subir en nombre de sus partes.
+  const firestore = getAdminFirestore();
+  if (!firestore) return NextResponse.json({ success: false, errors: [{ field: "server", message: "Firestore no configurado." }] }, { status: 503 });
+  const draftSnap = await firestore.collection("contract_drafts").doc(parsed.data.contractDraftId).get();
+  if (!draftSnap.exists || (draftSnap.data() as { ownerUid?: string } | undefined)?.ownerUid !== auth.user.uid) {
+    return NextResponse.json({ success: false, errors: [{ field: "contractDraftId", message: "No autorizado sobre este borrador." }] }, { status: 403 });
   }
 
   const v = validatePaymentSupportFile({ supportFileName: parsed.data.filename, supportFileType: parsed.data.contentType, supportFileSize: parsed.data.sizeBytes });

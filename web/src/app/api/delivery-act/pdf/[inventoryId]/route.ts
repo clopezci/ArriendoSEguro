@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { requireContractParticipant } from "@/lib/auth/serverAuth";
+import { verifyDownloadToken } from "@/lib/security/downloadToken";
 
 export const runtime = "nodejs";
 
-// Ver nota de seguridad en inventory/pdf/[inventoryId]: descarga por enlace, id
-// aleatorio, ruta desde Firestore; protegida por la aleatoriedad del id.
+// Seguridad (igual que inventory/pdf): descarga por enlace → exige token firmado
+// en la URL (`?t=`) o petición autenticada de un participante del contrato.
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ inventoryId: string }> },
 ) {
   try {
@@ -26,7 +28,18 @@ export async function GET(
         { status: 404 },
       );
     }
-    const inv = invSnap.data() as { deliveryActPdfStoragePath?: string } | undefined;
+    const inv = invSnap.data() as { deliveryActPdfStoragePath?: string; contractId?: string; contractVersionId?: string } | undefined;
+    const token = new URL(request.url).searchParams.get("t");
+    if (!verifyDownloadToken(inventoryId, token)) {
+      const contractId = String(inv?.contractId ?? "");
+      const cvid = String(inv?.contractVersionId ?? "");
+      const participant = contractId && cvid
+        ? await requireContractParticipant(request, firestore, contractId, { kind: "by_version", contractVersionId: cvid })
+        : null;
+      if (!participant || !participant.ok) {
+        return NextResponse.json({ success: false, message: "No autorizado." }, { status: 403 });
+      }
+    }
     if (!inv?.deliveryActPdfStoragePath) {
       return NextResponse.json({ success: false, message: "PDF de acta no generado." }, { status: 404 });
     }

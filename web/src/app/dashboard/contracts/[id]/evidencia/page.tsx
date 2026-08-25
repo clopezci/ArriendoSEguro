@@ -151,6 +151,21 @@ export default function EvidenciaExpedientePage() {
     }
   }
 
+  /** Abre un PDF protegido (inventario/acta) con sesión: descarga con auth y abre. */
+  async function openProtectedPdf(url: string) {
+    if (!user) return;
+    try {
+      const res = await fetch(url, { headers: { ...(await buildAuthHeaders(user)) } });
+      if (!res.ok) { setError("No se pudo abrir el PDF (¿tienes permiso sobre este contrato?)."); return; }
+      const blob = await res.blob();
+      const objUrl = URL.createObjectURL(blob);
+      window.open(objUrl, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(objUrl), 60_000);
+    } catch {
+      setError("Error de red al abrir el PDF.");
+    }
+  }
+
   return (
     <main className="mx-auto max-w-2xl space-y-5">
       <ExpedienteNav contractId={id} />
@@ -294,14 +309,13 @@ export default function EvidenciaExpedientePage() {
                 <ul className="mt-3 list-disc space-y-2 pl-5 text-sm">
                   {inventoryId ? (
                     <li>
-                      <a
+                      <button
+                        type="button"
                         className="text-violet-700 underline"
-                        href={`/api/inventory/pdf/${encodeURIComponent(inventoryId)}`}
-                        target="_blank"
-                        rel="noreferrer"
+                        onClick={() => void openProtectedPdf(`/api/inventory/pdf/${encodeURIComponent(inventoryId)}`)}
                       >
                         PDF del inventario inicial
-                      </a>
+                      </button>
                     </li>
                   ) : (
                     <li className="text-slate-600">No hay inventario inicial guardado para esta versión.</li>
