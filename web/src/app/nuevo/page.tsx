@@ -15,6 +15,7 @@ import { AccountMenu } from "@/components/nuevo/account-menu";
 import { buildWhatsAppUrl } from "@/lib/nuevo/whatsapp";
 import { validateStep, type Answers } from "@/lib/nuevo/validation";
 import { track } from "@/lib/analytics/track";
+import { speakGuide } from "@/lib/voice/voiceGuide";
 import { pesosEnLetras } from "@/lib/nuevo/pesos-en-letras";
 import { captureOathEvidence } from "@/lib/nuevo/oath-evidence";
 import { OathEvidenceToast } from "@/components/nuevo/oath-evidence-toast";
@@ -252,9 +253,13 @@ export default function NuevoPage() {
   // Analítica del embudo: registra el paso alcanzado (drop-off), la revisión y el
   // cierre del asistente. Best-effort; no bloquea la UX.
   useEffect(() => {
-    if (mode === "flow") track("nuevo_step", { index: i, step: QUESTIONS[i]?.id ?? "" });
-    else if (mode === "review") track("nuevo_review");
-    else if (mode === "done") track("nuevo_completed");
+    if (mode === "flow") {
+      track("nuevo_step", { index: i, step: QUESTIONS[i]?.id ?? "" });
+      // Guía por voz del paso actual (respeta el silencio global).
+      const q = QUESTIONS[i];
+      if (q) speakGuide(`${q.prompt}. ${q.hint}`);
+    } else if (mode === "review") { track("nuevo_review"); speakGuide("Revisa tus datos antes de generar el contrato. Si todo está bien, continúa."); }
+    else if (mode === "done") { track("nuevo_completed"); speakGuide("¡Listo! Tu contrato quedó creado."); }
   }, [i, mode]);
   // F7 — registro exprés al 50%: cuando alguien sin sesión termina lo básico,
   // pedimos crear cuenta + consentimiento antes de seguir con lo adicional.
