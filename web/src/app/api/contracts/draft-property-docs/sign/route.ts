@@ -36,6 +36,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, errors: [{ field: "body", message: "Datos inválidos." }] }, { status: 422 });
   }
 
+  // Propiedad: solo el dueño del borrador puede firmar una URL de escritura en su carpeta.
+  const draftSnap = await firestore.collection("contract_drafts").doc(parsed.data.contractDraftId).get();
+  if (!draftSnap.exists || (draftSnap.data() as { ownerUid?: string } | undefined)?.ownerUid !== auth.user.uid) {
+    return NextResponse.json({ success: false, errors: [{ field: "contractDraftId", message: "No autorizado sobre este borrador." }] }, { status: 403 });
+  }
+
   const v = validatePaymentSupportFile({ supportFileName: parsed.data.filename, supportFileType: parsed.data.contentType, supportFileSize: parsed.data.sizeBytes });
   if (!v.ok) return NextResponse.json({ success: false, errors: v.errors }, { status: 422 });
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
+import { signDownloadToken } from "@/lib/security/downloadToken";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
@@ -132,7 +133,7 @@ export async function POST(request: Request) {
       await mkdir(localDir, { recursive: true });
       const localPath = path.join(localDir, `delivery-act-${inventory.id}.pdf`);
       await writeFile(localPath, Buffer.from(pdfBytes));
-      pdfUrl = `/api/delivery-act/pdf/${inventory.id}`;
+      pdfUrl = `/api/delivery-act/pdf/${inventory.id}?t=${signDownloadToken(inventory.id) ?? ""}`;
       await firestore.collection("inventories").doc(inventory.id).set(
         { deliveryActPdfStoragePath: localPath },
         { merge: true },
