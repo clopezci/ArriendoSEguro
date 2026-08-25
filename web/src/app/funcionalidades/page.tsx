@@ -6,9 +6,10 @@ import Link from "next/link";
 /** Lista COMPLETA de lo que hace ArriendoSeguro, por secciones. Se muestra y se
  * puede ESCUCHAR (lectura por voz). Pensado para todo público, incluidos usuarios
  * mayores. Mantener actualizada al agregar funciones. */
-const SECTIONS: { title: string; items: string[] }[] = [
+const SECTIONS: { title: string; guide: string; items: string[] }[] = [
   {
     title: "Crear tu contrato",
+    guide: "Toca «Crear mi contrato» y responde una pregunta a la vez. Si quieres, cuéntale tu caso por voz y la IA llena los datos por ti. Al final invitas al inquilino (y codeudor si aplica) por WhatsApp o correo para que completen lo suyo.",
     items: [
       "Crear un contrato de arrendamiento de vivienda urbana con validez legal (Ley 820 de 2003), paso a paso, una pregunta a la vez.",
       "Pre-llenar el contrato con inteligencia artificial: cuéntale tu caso (incluso por voz) y llena los datos por ti.",
@@ -24,6 +25,7 @@ const SECTIONS: { title: string; items: string[] }[] = [
   },
   {
     title: "Validación y documentos",
+    guide: "Eliges qué documentos le pides a cada parte; ellos los suben desde su propio enlace, sin instalar nada. La inteligencia artificial revisa que coincidan con los datos y te avisa en rojo si algo no cuadra (sin bloquearte).",
     items: [
       "Validación de documentos con inteligencia artificial (servicios públicos, soporte de propiedad, cédula) con alerta si no coinciden.",
       "Subir el documento que soporta la propiedad del inmueble, con juramento de facultad y responsabilidad.",
@@ -34,6 +36,7 @@ const SECTIONS: { title: string; items: string[] }[] = [
   },
   {
     title: "Firma y generación",
+    guide: "Cada persona firma su parte con evidencia (fecha, hora y desde dónde). El dueño firma en su sesión; al inquilino y codeudor les llega un enlace con código. Puedes ver el contrato en pantalla gratis y descargarlo en PDF cuando esté pagado.",
     items: [
       "Firma electrónica simple con validez y evidencia (Ley 527 de 1999).",
       "Opción de notaría digital del Estado (Agencia Nacional Digital).",
@@ -44,6 +47,7 @@ const SECTIONS: { title: string; items: string[] }[] = [
   },
   {
     title: "Entrega e inventario",
+    guide: "Recorres el inmueble por zonas tomando fotos y notas por voz. Al terminar, con un botón se genera el acta de entrega (fecha y quién recibe) y se envía por correo a las partes para su aceptación.",
     items: [
       "Inventario guiado del inmueble por zonas, con fotos y notas por voz.",
       "Acta de entrega con fecha, quién recibe y observaciones (obligatoria).",
@@ -53,6 +57,7 @@ const SECTIONS: { title: string; items: string[] }[] = [
   },
   {
     title: "Durante el arriendo",
+    guide: "El inquilino registra cada pago con su comprobante (o por un enlace/QR) y ambos reciben recordatorios. Si hay un daño, el inquilino lo reporta y el dueño acepta o rechaza desde su panel; las novedades quedan en la bitácora.",
     items: [
       "Calendario de pagos ordenado por vencimiento.",
       "Recordatorios de pago por correo y WhatsApp, y registro de pagos con soporte.",
@@ -65,6 +70,7 @@ const SECTIONS: { title: string; items: string[] }[] = [
   },
   {
     title: "Cierre y reputación",
+    guide: "Al terminar el arriendo, renuevas (prórroga y reajuste por IPC) o lo cierras (paz y salvo, acta final). Luego cada parte califica la experiencia —con derecho de réplica— y puedes compartir tu certificado de confianza con enlace o QR.",
     items: [
       "Renovar el contrato (otrosí de prórroga y reajuste por IPC).",
       "Calificar la experiencia y construir reputación, con derecho de réplica.",
@@ -73,6 +79,7 @@ const SECTIONS: { title: string; items: string[] }[] = [
   },
   {
     title: "Herramientas y ayuda",
+    guide: "Cuando lo necesites: pregúntale a la consulta legal con IA (te responde citando la norma), usa las calculadoras (IPC, tope de canon, mora, preaviso) o descarga plantillas gratis. Todo sin crear el contrato completo.",
     items: [
       "Consulta legal con inteligencia artificial que responde citando la norma.",
       "Calculadoras: IPC, tope del canon, intereses de mora y preaviso.",
@@ -83,6 +90,7 @@ const SECTIONS: { title: string; items: string[] }[] = [
   },
   {
     title: "Próximamente: aliados independientes",
+    guide: "Estamos sumando aliados (seguros, jurídica, cobranza, estudio de crédito, asistencia al hogar). Son opcionales, con costo aparte y solo si tú decides tomarlos; nunca obligatorios.",
     items: [
       "Estamos sumando aliados independientes para cubrir todas tus necesidades si decides tomarlos, por un costo adicional y siempre a tu elección.",
       "Aseguradora: respaldo del arriendo y del inmueble.",
@@ -96,6 +104,7 @@ const SECTIONS: { title: string; items: string[] }[] = [
 
 export default function FuncionalidadesPage() {
   const [speaking, setSpeaking] = useState(false);
+  const [openGuide, setOpenGuide] = useState<Record<string, boolean>>({});
   const utterRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   const fullText = useMemo(
@@ -149,7 +158,27 @@ export default function FuncionalidadesPage() {
         <div className="mt-8 space-y-6">
           {SECTIONS.map((s) => (
             <section key={s.title} className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm">
-              <h2 className="text-xl font-extrabold text-[#5646E5]">{s.title}</h2>
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-xl font-extrabold text-[#5646E5]">{s.title}</h2>
+                {/* Ícono de info: al pasar el cursor muestra el tooltip; al tocarlo abre la mini-guía. */}
+                <button
+                  type="button"
+                  onClick={() => setOpenGuide((o) => ({ ...o, [s.title]: !o[s.title] }))}
+                  title="Ábrelo para ver cómo funciona y cómo usarlo"
+                  aria-expanded={Boolean(openGuide[s.title])}
+                  aria-label={`Cómo funciona: ${s.title}`}
+                  className="flex flex-none items-center gap-1.5 rounded-full border border-[#5646E5]/40 bg-[#ECE9FB]/60 px-3 py-1.5 text-xs font-bold text-[#5646E5] transition hover:bg-[#ECE9FB] active:scale-95"
+                >
+                  <span className="grid h-4 w-4 place-items-center rounded-full bg-[#5646E5] text-[10px] font-black text-white">i</span>
+                  {openGuide[s.title] ? "Cerrar" : "¿Cómo funciona?"}
+                </button>
+              </div>
+              {/* Mini-guía de cómo funciona / cómo usar esta parte. */}
+              {openGuide[s.title] && (
+                <div className="mt-3 rounded-2xl border border-[#5646E5]/30 bg-[#F5F3FF] p-3 text-[14px] leading-relaxed text-slate-700">
+                  <span className="font-bold text-[#5646E5]">Cómo funciona: </span>{s.guide}
+                </div>
+              )}
               <ul className="mt-3 space-y-2">
                 {s.items.map((it, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-[15px] leading-relaxed text-slate-700">
