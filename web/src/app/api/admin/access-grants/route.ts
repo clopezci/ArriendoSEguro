@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
-import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
+import { isInternalAdminEmailAsync } from "@/lib/admin/internal-admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import type { Firestore } from "firebase-admin/firestore";
@@ -17,9 +17,9 @@ export const runtime = "nodejs";
 function isInternalEnabled() {
   return process.env.NODE_ENV === "development" || process.env.ADMIN_INTERNAL_ENABLED === "true";
 }
-function isAllowedAdmin(email: string) {
+async function isAllowedAdmin(email: string): Promise<boolean> {
   if (process.env.NODE_ENV === "development") return true;
-  return isInternalAdminEmail(email);
+  return isInternalAdminEmailAsync(email);
 }
 
 async function gate(request: Request): Promise<{ ok: true; firestore: Firestore; admin: string } | { ok: false; response: NextResponse }> {
@@ -28,7 +28,7 @@ async function gate(request: Request): Promise<{ ok: true; firestore: Firestore;
   }
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return { ok: false, response: auth.response };
-  if (!isAllowedAdmin(auth.user.email)) {
+  if (!(await isAllowedAdmin(auth.user.email))) {
     return { ok: false, response: NextResponse.json({ success: false, errors: [{ field: "auth", message: "No autorizado." }] }, { status: 403 }) };
   }
   const firestore = getAdminFirestore();

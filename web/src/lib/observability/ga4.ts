@@ -242,7 +242,35 @@ export type Ga4Diagnostics = {
   activeUsers28d: number | null;
   channelCount: number | null;
   error: string | null;
+  /** El ID que está configurado en GA4_PROPERTY_ID (no es secreto). */
+  configuredPropertyId: string | null;
+  /** Propiedades GA4 a las que la cuenta de servicio SÍ tiene acceso. */
+  accessibleProperties: { id: string; name: string }[];
 };
+
+/** Lista las propiedades GA4 accesibles por la cuenta de servicio (best-effort). */
+async function ga4AccessibleProperties(token: string): Promise<{ id: string; name: string }[]> {
+  try {
+    const res = await fetch("https://analyticsadmin.googleapis.com/v1beta/accountSummaries", {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as {
+      accountSummaries?: { propertySummaries?: { property?: string; displayName?: string }[] }[];
+    };
+    const out: { id: string; name: string }[] = [];
+    for (const acc of data.accountSummaries ?? []) {
+      for (const p of acc.propertySummaries ?? []) {
+        const id = (p.property ?? "").split("/")[1] ?? "";
+        if (id) out.push({ id, name: p.displayName ?? "—" });
+      }
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
 
 export async function ga4Diagnostics(): Promise<Ga4Diagnostics> {
   const propertyId = process.env.GA4_PROPERTY_ID?.trim();
@@ -256,6 +284,8 @@ export async function ga4Diagnostics(): Promise<Ga4Diagnostics> {
     activeUsers28d: null,
     channelCount: null,
     error: null,
+    configuredPropertyId: propertyId ?? null,
+    accessibleProperties: [],
   };
   if (!propertyId) {
     out.error = "Falta GA4_PROPERTY_ID en el servidor (Vercel).";
@@ -275,6 +305,8 @@ export async function ga4Diagnostics(): Promise<Ga4Diagnostics> {
       return out;
     }
     out.tokenOk = true;
+    // Lista qué propiedades ve la cuenta de servicio (para detectar mismatch de ID).
+    out.accessibleProperties = await ga4AccessibleProperties(token);
     const res = await fetch(
       `https://analyticsdata.googleapis.com/v1beta/properties/${encodeURIComponent(propertyId)}:runReport`,
       {
@@ -294,10 +326,14 @@ export async function ga4Diagnostics(): Promise<Ga4Diagnostics> {
       rows?: { metricValues?: { value?: string }[] }[];
     };
     if (!res.ok) {
-      out.error =
-        res.status === 403
-          ? "Permiso denegado (403): la cuenta de servicio no es Lector de esa propiedad, o el GA4_PROPERTY_ID no corresponde."
-          : data?.error?.message?.slice(0, 300) ?? `Error HTTP ${res.status}.`;
+      const googleMsg = data?.error?.message?.slice(0, 400);
+      if (res.status === 403) {
+        out.error =
+          googleMsg ??
+          "Permiso denegado (403): la cuenta de servicio no es Lector de esa propiedad, o el GA4_PROPERTY_ID no corresponde.";
+      } else {
+        out.error = googleMsg ?? `Error HTTP ${res.status}.`;
+      }
       return out;
     }
     const rows = data.rows ?? [];

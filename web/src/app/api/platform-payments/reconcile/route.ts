@@ -5,7 +5,7 @@ import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { wompiApiBaseUrl } from "@/domain/platform-payments/wompi-checkout";
 import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
-import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
+import { isInternalAdminEmailAsync } from "@/lib/admin/internal-admin";
 import { notifyLegalPartnerForPaidClause } from "@/lib/legal/notifySpecialClause";
 import { plusAccessConfirmedEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
     const order = orderSnap.data() as OrderDoc;
 
     const isOwner = order.userId === auth.user.uid;
-    const isAdmin = isInternalAdminEmail(auth.user.email);
+    const isAdmin = await isInternalAdminEmailAsync(auth.user.email);
     if (!isOwner && !isAdmin) {
       return NextResponse.json({ success: false, errors: [{ field: "auth", message: "No autorizado para esta orden." }] }, { status: 403 });
     }

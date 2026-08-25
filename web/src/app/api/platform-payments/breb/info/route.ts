@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { brebLlave, brebMerchantName, brebQrImageUrl, isBrebConfigured } from "@/domain/platform-payments/breb-checkout";
-import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
+import { isInternalAdminEmailAsync } from "@/lib/admin/internal-admin";
 
 export const runtime = "nodejs";
 
@@ -34,6 +34,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: "forbidden" }, { status: 403 });
   }
 
+  // En producción + modo interno, el comercio (admin) puede confirmar "recibí el
+  // pago" — Bre-B interno no tiene webhook que lo apruebe automáticamente.
+  const adminConfirm =
+    process.env.NODE_ENV === "production" &&
+    !isBrebConfigured() &&
+    (await isInternalAdminEmailAsync(auth.user.email));
+
   return NextResponse.json({
     success: true,
     orderId: order.id,
@@ -46,11 +53,6 @@ export async function GET(request: Request) {
     // En modo interno (sin proveedor real), el pago se confirma manualmente / mock.
     internalMode: !isBrebConfigured(),
     devSimulate: process.env.NODE_ENV !== "production",
-    // En producción + modo interno, el comercio (admin) puede confirmar "recibí el
-    // pago" — Bre-B interno no tiene webhook que lo apruebe automáticamente.
-    adminConfirm:
-      process.env.NODE_ENV === "production" &&
-      !isBrebConfigured() &&
-      isInternalAdminEmail(auth.user.email),
+    adminConfirm,
   });
 }

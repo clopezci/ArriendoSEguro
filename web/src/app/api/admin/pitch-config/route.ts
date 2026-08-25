@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
-import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
+import { isInternalAdminEmailAsync } from "@/lib/admin/internal-admin";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 
 export const runtime = "nodejs";
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 async function gate(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return { ok: false as const, response: auth.response };
-  if (!isInternalAdminEmail(auth.user.email)) {
+  if (!(await isInternalAdminEmailAsync(auth.user.email))) {
     return { ok: false as const, response: NextResponse.json({ success: false, error: "forbidden" }, { status: 403 }) };
   }
   const firestore = getAdminFirestore();

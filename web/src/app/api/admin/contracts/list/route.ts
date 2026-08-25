@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
-import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
+import { isInternalAdminEmailAsync } from "@/lib/admin/internal-admin";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 
 export const runtime = "nodejs";
@@ -19,7 +19,7 @@ type DraftPayload = {
 export async function GET(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
-  if (!isInternalAdminEmail(auth.user.email)) {
+  if (!(await isInternalAdminEmailAsync(auth.user.email))) {
     return NextResponse.json({ success: false, error: "forbidden" }, { status: 403 });
   }
   const firestore = getAdminFirestore();

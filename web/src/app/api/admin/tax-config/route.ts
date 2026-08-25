@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
-import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
+import { isInternalAdminEmailAsync } from "@/lib/admin/internal-admin";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getTaxConfig, saveTaxConfig } from "@/lib/tax/serverTaxConfig";
 import { ivaResponsableThresholdCop } from "@/domain/tax/taxConfig";
@@ -17,7 +17,7 @@ function unavailable() {
 export async function GET(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
-  if (!isInternalAdminEmail(auth.user.email)) {
+  if (!(await isInternalAdminEmailAsync(auth.user.email))) {
     return NextResponse.json({ success: false, error: "forbidden" }, { status: 403 });
   }
   const firestore = getAdminFirestore();
@@ -38,7 +38,7 @@ const patchSchema = z.object({
 export async function PUT(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
-  if (!isInternalAdminEmail(auth.user.email)) {
+  if (!(await isInternalAdminEmailAsync(auth.user.email))) {
     return NextResponse.json({ success: false, error: "forbidden" }, { status: 403 });
   }
   const firestore = getAdminFirestore();
