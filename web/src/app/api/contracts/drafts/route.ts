@@ -8,7 +8,7 @@ import {
   parseIncomingDraft,
 } from "@/domain/contracts/contractDraftSync";
 import { isContractStarted } from "@/lib/contracts/lifecycle";
-import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
+import { isInternalAdminEmailAsync } from "@/lib/admin/internal-admin";
 
 export const runtime = "nodejs";
 
@@ -131,7 +131,7 @@ export async function DELETE(request: Request) {
     // Anti-abuso: un contrato ya INICIADO (definitivo) no se puede borrar; solo el
     // admin puede desbloquearlo. Evita "pagar, borrar y rehacer gratis".
     const started = await isContractStarted(firestore, id);
-    if (started && !isInternalAdminEmail(auth.user.email)) {
+    if (started && !(await isInternalAdminEmailAsync(auth.user.email))) {
       return NextResponse.json(
         { success: false, errors: [{ field: "locked", message: "Este contrato ya fue iniciado (definitivo) y no se puede borrar. Escríbenos si necesitas un cambio." }] },
         { status: 409 },

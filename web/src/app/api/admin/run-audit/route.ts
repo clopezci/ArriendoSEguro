@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
-import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
+import { isInternalAdminEmailAsync } from "@/lib/admin/internal-admin";
 import { auditToText, errorSummaryToText, activityToText, leanToText, sendAuditReport } from "@/lib/observability/audit";
 import { ga4VisitsToText } from "@/lib/observability/ga4";
 
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
-  if (!isInternalAdminEmail(auth.user.email)) {
+  if (!(await isInternalAdminEmailAsync(auth.user.email))) {
     return NextResponse.json({ success: false, error: "forbidden" }, { status: 403 });
   }
   const { audit, errors, activity, visits, lean, telegram, telegramSent } = await sendAuditReport();

@@ -45,6 +45,8 @@ type Ga4Diag = {
   activeUsers28d: number | null;
   channelCount: number | null;
   error: string | null;
+  configuredPropertyId: string | null;
+  accessibleProperties: { id: string; name: string }[];
 };
 
 export function UtmBuilder() {
@@ -179,6 +181,42 @@ export function UtmBuilder() {
                   <li>• Token de acceso: {diag.tokenOk ? "✓ ok" : "✗ falla"}</li>
                   {diag.reportStatus != null && <li>• Respuesta de GA4: HTTP {diag.reportStatus}</li>}
                 </ul>
+
+                {diag.tokenOk && (
+                  <div className="mt-3 rounded-lg bg-white/70 p-3">
+                    <p className="text-slate-700">
+                      ID configurado (en Vercel): <code className="font-bold">{diag.configuredPropertyId ?? "—"}</code>
+                    </p>
+                    <p className="mt-2 text-slate-700">Propiedades a las que tu cuenta de servicio SÍ tiene acceso:</p>
+                    {diag.accessibleProperties.length === 0 ? (
+                      <p className="mt-1 text-rose-600">
+                        Ninguna. La cuenta de servicio no es “Lector” de ninguna propiedad GA4 (o el permiso aún no
+                        propaga). Agrégala como Lector en la propiedad correcta.
+                      </p>
+                    ) : (
+                      <ul className="mt-1 space-y-0.5">
+                        {diag.accessibleProperties.map((p) => (
+                          <li
+                            key={p.id}
+                            className={p.id === diag.configuredPropertyId ? "font-bold text-emerald-700" : "text-slate-600"}
+                          >
+                            • <code>{p.id}</code> — {p.name}
+                            {p.id === diag.configuredPropertyId ? " ✓ (coincide)" : ""}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {diag.accessibleProperties.length > 0 &&
+                      !diag.accessibleProperties.some((p) => p.id === diag.configuredPropertyId) && (
+                        <p className="mt-2 rounded bg-amber-100 p-2 text-amber-900">
+                          👉 El ID configurado <code>{diag.configuredPropertyId}</code> NO está en la lista. Solución:
+                          en Vercel cambia <code>GA4_PROPERTY_ID</code> por uno de los IDs de arriba (el de tu propiedad
+                          real) y vuelve a desplegar. Alternativa: agrega la cuenta de servicio como Lector en la
+                          propiedad <code>{diag.configuredPropertyId}</code>.
+                        </p>
+                      )}
+                  </div>
+                )}
               </>
             )}
           </div>

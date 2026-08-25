@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
-import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
+import { isInternalAdminEmailAsync } from "@/lib/admin/internal-admin";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { CONTRACT_LIFECYCLE_COLLECTION } from "@/domain/contracts/contractLifecycle";
 import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
@@ -15,7 +15,7 @@ const schema = z.object({ contractId: z.string().min(3) });
 export async function POST(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
-  if (!isInternalAdminEmail(auth.user.email)) {
+  if (!(await isInternalAdminEmailAsync(auth.user.email))) {
     return NextResponse.json({ success: false, error: "forbidden" }, { status: 403 });
   }
   const firestore = getAdminFirestore();

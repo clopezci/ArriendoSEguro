@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { PitchTab } from "@/components/admin/pitch-tab";
 import { UtmBuilder } from "@/components/admin/utm-builder";
+import { AdminsPanel } from "@/components/admin/admins-panel";
 import { PLAN_PLUS_CUSTOM_COP_LIMITS } from "@/domain/platform-payments/plan-plus-pricing";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -144,6 +145,7 @@ export default function AdminPage() {
     | "campanas"
     | "encuestas"
     | "usuarios"
+    | "admins"
     | "accesos"
     | "pagos"
     | "expedientes"
@@ -3001,6 +3003,7 @@ export default function AdminPage() {
               ["campanas", "🔗 Campañas"],
               ["encuestas", "Encuestas"],
               ["usuarios", "Usuarios"],
+              ["admins", "👥 Admins"],
               ["accesos", "Accesos"],
               ["pagos", "Pagos plataforma"],
               ["expedientes", "Expedientes"],
@@ -3038,6 +3041,7 @@ export default function AdminPage() {
           <Encuestas rows={data.surveys ?? []} onExport={() => void downloadSurveysCsv()} />
         )}
         {data && tab === "usuarios" && <TablaGenerica rows={data.users ?? []} />}
+        {tab === "admins" && <AdminsPanel />}
         {data && tab === "accesos" && <TablaGenerica rows={data.accesses ?? []} />}
         {data && tab === "pagos" && (
           <div className="space-y-6">

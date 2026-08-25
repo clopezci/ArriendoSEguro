@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
-import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
+import { isInternalAdminEmailAsync } from "@/lib/admin/internal-admin";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { ERROR_EVENTS_COLLECTION } from "@/lib/observability/observability";
 import { isBenignClientError } from "@/lib/observability/ignore-noise";
@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
-  if (!isInternalAdminEmail(auth.user.email)) {
+  if (!(await isInternalAdminEmailAsync(auth.user.email))) {
     return NextResponse.json({ success: false, error: "forbidden" }, { status: 403 });
   }
 

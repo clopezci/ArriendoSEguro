@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { isInternalAdminEmail } from "@/lib/admin/internal-admin";
+import { isInternalAdminEmailAsync } from "@/lib/admin/internal-admin";
 import { requireAuthenticatedUser } from "@/lib/auth/serverAuth";
 import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin";
 import { grantManualPlusEntitlement } from "@/domain/platform-payments/manual-grant";
@@ -19,9 +19,9 @@ function isInternalEnabled() {
   return process.env.NODE_ENV === "development" || process.env.ADMIN_INTERNAL_ENABLED === "true";
 }
 
-function isAllowedAdmin(email: string) {
+async function isAllowedAdmin(email: string): Promise<boolean> {
   if (process.env.NODE_ENV === "development") return true;
-  return isInternalAdminEmail(email);
+  return isInternalAdminEmailAsync(email);
 }
 
 export async function POST(request: Request) {
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   const authUser = await requireAuthenticatedUser(request);
   if (!authUser.ok) return authUser.response;
-  if (!isAllowedAdmin(authUser.user.email)) {
+  if (!(await isAllowedAdmin(authUser.user.email))) {
     return NextResponse.json(
       { success: false, errors: [{ field: "auth", message: "No autorizado para operación interna." }] },
       { status: 403 },
