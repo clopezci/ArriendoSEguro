@@ -25,6 +25,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auditEvent } from "@/features/contracts/audit-server";
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { RATE_LIMIT_RULES, checkRateLimit, clientIpFromRequest } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -61,6 +62,12 @@ function pickIp(headers: Headers): string {
 
 export async function POST(request: Request) {
   try {
+    // Endpoint público (los juramentos se capturan durante el asistente y por
+    // partes invitadas sin cuenta): rate-limit por IP para evitar spam/inyección
+    // de evidencia en la colección oath_evidence.
+    const rate = await checkRateLimit(clientIpFromRequest(request), RATE_LIMIT_RULES.clientError);
+    if (!rate.ok) return NextResponse.json({ success: false, error: "rate_limited" }, { status: 429 });
+
     const parsed = requestSchema.safeParse(await request.json().catch(() => ({})));
     if (!parsed.success) {
       return NextResponse.json(

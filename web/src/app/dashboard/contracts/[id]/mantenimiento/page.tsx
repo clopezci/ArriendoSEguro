@@ -149,6 +149,10 @@ export default function MantenimientoPage() {
 
   async function createRequest() {
     if (!user) return;
+    if (!title.trim() || description.trim().length < 5) {
+      setFormMsg("Escribe el título y una descripción de la solicitud.");
+      return;
+    }
     setBusy(true);
     setFormMsg("");
     try {

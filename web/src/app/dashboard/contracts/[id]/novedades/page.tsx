@@ -77,6 +77,10 @@ export default function NovedadesExpedientePage() {
       setFormMsg("Inicia sesión para registrar una novedad.");
       return;
     }
+    if (tipo === "OTRA" && description.trim().length < 10) {
+      setFormMsg("Para 'Otra', escribe una descripción de al menos 10 caracteres.");
+      return;
+    }
     setSubmitBusy(true);
     setFormMsg("");
     try {

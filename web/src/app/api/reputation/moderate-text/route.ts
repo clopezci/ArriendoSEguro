@@ -12,8 +12,14 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   const auth = await requireAuthenticatedUser(request);
   if (!auth.ok) return auth.response;
-  const body = (await request.json().catch(() => null)) as { text?: string } | null;
-  const text = (body?.text ?? "").slice(0, 2000);
-  const mod = await moderateFreeText(text);
-  return NextResponse.json({ success: true, allowed: mod.allowed, reason: mod.reason ?? null });
+  try {
+    const body = (await request.json().catch(() => null)) as { text?: string } | null;
+    const text = (body?.text ?? "").slice(0, 2000);
+    const mod = await moderateFreeText(text);
+    return NextResponse.json({ success: true, allowed: mod.allowed, reason: mod.reason ?? null });
+  } catch {
+    // Si el proveedor de IA falla, no bloqueamos la UX: permitir (fail-open); la
+    // decisión definitiva la revalida el endpoint de réplica.
+    return NextResponse.json({ success: true, allowed: true, reason: null });
+  }
 }

@@ -57,6 +57,9 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
+          // HSTS: fuerza HTTPS por 2 años (incluye subdominios). Producción siempre
+          // es HTTPS en Vercel; los navegadores lo ignoran sobre http (localhost).
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           // microphone=(self): habilita el dictado por voz en el propio sitio
           // (antes estaba en () = deshabilitado para todos, y el navegador nunca
