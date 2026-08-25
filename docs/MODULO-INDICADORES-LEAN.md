@@ -330,3 +330,185 @@ Con 1–5 el tablero queda **100% auto-alimentado** salvo el gasto de marketing
   el embudo desde la visita, y el **semáforo de cohortes** semanal 🟢🟡🔴.
 
 _Referencia viva; actualízalo al evolucionar el módulo._
+
+---
+---
+
+# BLOQUE 2 — ELEVATOR PITCH / PLAN DE NEGOCIO (prototipo)
+
+> Prototipo de "pitch de inversión" de **ArriendoSeguro** (producto de **LOTIC**).
+> Reutilizable: un agente puede tomar esta estructura para armar el pitch de otra
+> app. Las cifras marcadas *(estimado)* deben reemplazarse por las reales de cada
+> negocio. Se conecta con el **tablero de KPIs** del Bloque 1 (la medición del
+> pitch se hace con esos indicadores en vivo).
+
+## 1. Resumen ejecutivo (30 segundos)
+En Colombia **7,2 millones de hogares viven en arriendo** (40,3% del total, DANE
+ECV 2023) y **la mayoría del mercado es informal/directo**, sin inmobiliaria.
+Esos arrendadores y arrendatarios hacen contratos "a mano", sin respaldo legal,
+sin firma válida, sin historial de cumplimiento y con miedo a estafas.
+**ArriendoSeguro es la primera plataforma que digitaliza TODO el ciclo del
+arriendo directo —crear el contrato legal, firmarlo, gestionar pagos, inventario,
+reputación y cierre— en un flujo fácil, guiado por IA, a un costo mínimo
+($49.900 por contrato).** Democratizamos lo que hoy solo tienen las inmobiliarias.
+
+**La app ya está construida y en producción.** No pedimos plata para desarrollar:
+pedimos inversión para **marketing** y para sostener las plataformas mientras
+crecemos.
+
+## 2. El problema (necesidad del mercado)
+- **7,2M hogares en arriendo** en Colombia (DANE 2023); ~**la mitad o más lo hace
+  de forma informal/directa** (baja intermediación inmobiliaria formal, mercado
+  cada vez más informal — estudios BID/prensa).
+- El arriendo directo hoy significa: contratos genéricos bajados de internet (a
+  veces nulos), **sin firma con validez legal**, sin evidencia de pagos, sin
+  forma de conocer la **reputación** de la otra parte, y trámites de cierre
+  (paz y salvo, actas) improvisados.
+- Las **inmobiliarias** cobran ~un mes de canon + mensualidades y no atienden al
+  arrendador pequeño que solo quiere un ingreso complementario.
+- Resultado: **millones de personas sin herramientas**, expuestas a incumplimientos
+  y estafas. Esa es la brecha que cerramos.
+
+## 3. La solución (qué hacemos — extremo a extremo)
+Un solo lugar para **todo el ciclo del arriendo**:
+1. **Crear el contrato** de vivienda urbana conforme a la **Ley 820 de 2003**, con
+   validaciones legales (tope de canon, preavisos, cláusulas).
+2. **Invitar** a inquilino y codeudor (llenan sus datos y suben soportes por enlace).
+3. **Firma electrónica con evidencia** (Ley 527 de 1999): fecha, IP, hash.
+4. **Inventario guiado con fotos + acta de entrega.**
+5. **Pagos**: calendario, recordatorios, comprobantes y escalamiento.
+6. **Novedades, mantenimiento y solicitudes** entre las partes.
+7. **Reputación privada** bidireccional (dueño↔inquilino), con consulta y
+   certificado compartible (QR).
+8. **Cierre**: terminación/no renovación (Ley 820), paz y salvo, custodia o
+   descarga del expediente.
+9. **IA integrada**: asistente para crear el contrato por voz, validación
+   antifraude de documentos (visión), moderación, motor legal.
+
+## 4. Nuestros 3 pilares
+| Pilar | Qué significa | Por qué gana |
+|---|---|---|
+| **1. Todo en uno (extremo a extremo)** | Del contrato al cierre, sin saltar entre apps/abogados/inmobiliarias | Nadie más cubre TODO el ciclo del arriendo directo |
+| **2. Fácil + flujo progresivo + IA** | "Una pregunta a la vez", guiado, con IA y voz; usable por adultos mayores | Elimina la fricción legal/técnica que asusta al usuario informal |
+| **3. Muy bajo costo — democratizar** | $49.900 por contrato (vs. ~1 mes de canon de una inmobiliaria) | Abre el mercado a los millones que hoy quedan por fuera |
+
+## 5. Mercado objetivo y tamaño (TAM / SAM / SOM)
+| Nivel | Definición | Hogares | Base del cálculo |
+|---|---|---|---|
+| **TAM** | Todos los hogares en arriendo en Colombia | **7,2 M** | DANE ECV 2023 (40,3% de 18M) |
+| **SAM** | Arriendo **informal/directo** (sin inmobiliaria) — nuestro foco | **~3,6 M** *(≈ la mitad; probablemente más)* | Estimación conservadora sobre baja intermediación formal |
+| **SOM** | Meta aspiracional de penetración (~30% del SAM en el largo plazo) | **~1,08 M** | Aspiración; hitos cercanos mucho más modestos |
+
+Solo **1% del SAM (~36.000 contratos)** a $49.900 ≈ **$1.795 millones COP** de
+ingresos potenciales; la penetración se construye por fases (ver §10).
+*Nuestro foco NO son las inmobiliarias (la otra mitad); es el arrendador directo.*
+
+## 6. Competencia
+| Competidor | Qué hace | Dónde no llega (nuestra ventaja) |
+|---|---|---|
+| **Inmobiliarias tradicionales** | Administran el arriendo cobrando comisión mensual | Caras; no sirven al arrendador pequeño/directo; poco digitales |
+| **Contract Me / generadores de contratos** | Generan el documento | Solo el contrato; sin firma+pagos+reputación+cierre |
+| **Houm / marketplaces** | Publican y conectan inmuebles | Enfocados en conseguir inquilino, no en gestionar el ciclo |
+| **Plantillas gratis / "a mano"** | Documento genérico | Sin validez, sin evidencia, sin historial |
+
+**Nuestro moat:** (a) **reputación privada** que crece con cada arriendo (efecto
+red y datos propios difíciles de copiar) + (b) **motor legal Ley 820/527** + (c)
+**costo marginal casi cero** por nuestra arquitectura.
+
+## 7. Ventajas y desventajas (honestas)
+**Ventajas:** producto ya construido; costo operativo bajísimo; cobertura E2E
+única; IA que reduce fricción; datos de reputación como activo defendible;
+fundador técnico (dev + mantenimiento sin costo).
+**Desventajas / riesgos:** marca nueva (confianza por construir); marketing
+incipiente; educación de mercado (usuarios informales); dependencia de
+proveedores (pagos, IA, mensajería); marco legal que exige asesoría (mitigado con
+disclaimers y aliados abogados).
+
+## 8. Modelo de negocio e ingresos
+- **Pago por contrato (precio de introducción): $49.900** (incluye firma
+  electrónica con evidencia, inventario/acta, pagos, reputación, cierre).
+- **Contrato gratis por referidos** (invita 3, usan 2) → viralidad.
+- **Plan Plus** por contrato para funciones premium (firma/descarga).
+- **Aliados (terceros):** seguros de arrendamiento, estudio de crédito, notaría,
+  cobranza, abogados → comisión/lead.
+- **Publicidad** (AdSense/house ads) en el plan gratuito.
+- Futuro: **hub de pagos** para cobrar a otras apps (ya construido, apagado).
+
+## 9. Costos y estructura financiera
+**Lo que NO cuesta:** desarrollo (fundador) y mantenimiento (fundador) = **$0**.
+**Costos de plataforma (estimado, etapa inicial):**
+| Servicio | Uso | Costo mensual estimado |
+|---|---|---|
+| Vercel (hosting) | App Next.js | ~US$20 (~$80.000) |
+| Firebase (Firestore/Storage/Auth) | Base de datos y archivos | US$0–25 (empieza en free) |
+| Resend (correo) | Notificaciones | US$0–20 (free hasta 3k/mes) |
+| WhatsApp/Meta | Mensajes por conversación | ~US$0,005–0,05 c/u (variable) |
+| IA (Groq/Gemini gratis → OpenAI pago) | Asistente/validación | US$0–30 |
+| Dominio + varios | | ~US$1–5 |
+| **Total inicial** | | **~US$40–120/mes (~$160k–$500k COP)** *(estimado — ajustar con cifras reales)* |
+
+**Costo variable por contrato** *(estimado)*: ~$3.000–6.000 (mensajería + IA +
+storage + fee de pasarela). → **Margen bruto ~85–90%**.
+
+## 10. Proyecciones financieras (escenarios ilustrativos)
+Precio $49.900; margen bruto ~88%; costos fijos de plataforma ~$300.000/mes *(estimado)*.
+| Escenario | Contratos/mes | Ingreso/mes | Margen bruto/mes | Utilidad tras costos fijos |
+|---|---|---|---|---|
+| Break-even | ~7 | ~$349.000 | ~$307.000 | ~$0 |
+| Conservador | 50 | ~$2,50 M | ~$2,20 M | ~$1,9 M |
+| Base | 200 | ~$9,98 M | ~$8,78 M | ~$8,5 M |
+| Optimista | 800 | ~$39,9 M | ~$35,1 M | ~$34,8 M |
+
+**Punto de equilibrio ~7 contratos/mes** gracias a dev/mantenimiento en $0: el
+riesgo de quema es mínimo; casi todo ingreso adicional es margen para reinvertir
+en adquisición. *(Cifras ilustrativas; validar con datos reales del tablero.)*
+
+## 11. Cómo lo medimos (tablero de KPIs — Bloque 1)
+Todo el pitch se **audita en vivo** con el tablero `/admin → Lean`:
+- **North Star:** arriendos activos gestionados.
+- **AARRR:** adquisición → activación → retención → ingresos → referidos.
+- **Unit economics:** **LTV / CAC** (sano ≥ 3×), ticket, tiempo a convertir.
+- **Motor de crecimiento:** coeficiente viral *k* (referidos), retención (sticky).
+- **Innovación:** semáforo de cohortes 🟢🟡🔴 (¿mejora el motor semana a semana?).
+- **Abandono y drop-off** para saber dónde perdemos usuarios y por qué.
+Esto le da al inversionista **evidencia real y actualizada**, no promesas.
+
+## 12. La inversión que buscamos
+- **Uso de fondos:** (1) **marketing** (pauta, contenido, adquisición) — la palanca
+  que hoy manejamos "tímidamente"; (2) **colchón de costos de plataforma** durante
+  el crecimiento; (3) opcional: alianzas legales y de seguros.
+- **No** para desarrollo ni nómina técnica (cubierto por el fundador).
+- **Retorno:** con margen ~88% y break-even ~7 contratos/mes, cada peso de
+  marketing eficiente se traduce casi directo en margen; el CAC/LTV del tablero
+  guía la reinversión.
+
+## 13. Por qué somos los mejores / por qué ahora
+- **Momento:** el arriendo crece (40,3% y subiendo) y se informaliza → más gente
+  desprotegida que necesita justo esto.
+- **Producto listo y probado**, con IA y flujo para el usuario real (incl. adultos
+  mayores).
+- **Costo estructural imbatible** (dev/mantenimiento propios) → podemos ofrecer el
+  precio más bajo del mercado y aún así tener alto margen.
+- **Datos de reputación** que se vuelven un activo defendible con cada contrato.
+
+## 14. Roadmap (resumen)
+Lanzamiento → tracción por referidos → alianzas (seguros/abogados/notaría) →
+firma certificada del Estado → **hub de pagos** para monetizar otras apps →
+expansión regional (arquitectura ya preparada para otros países/monedas).
+
+---
+
+## NOTA FINAL (para agentes que reutilicen este documento)
+Los **nombres de tablas, colecciones, campos, endpoints, variables y cifras** que
+aparecen en este documento (p. ej. `analytics_events`, `platform_payments`,
+`hub_apps`, `admin_config/marketing`, `$49.900`, costos, DANE 7,2M, etc.) son
+**referencias de lo implementado en ArriendoSeguro**. Si un agente usa este
+documento para construir lo mismo en **otra aplicación**, debe **mapear cada uno a
+lo que exista en SU propia app** (sus colecciones, su modelo de datos, sus
+proveedores, su mercado y sus cifras reales), y **validar los datos de mercado con
+las fuentes oficiales de su país/segmento**. Nada aquí debe copiarse literal sin
+adaptarlo al contexto real de la aplicación destino.
+
+**Fuentes de mercado (Colombia):**
+- DANE — Encuesta Nacional de Calidad de Vida (ECV) 2023: [boletín](https://www.dane.gov.co/files/operaciones/ECV/bol-ECV-2023.pdf) · [nota La República](https://www.larepublica.co/economia/resultados-de-la-encuesta-de-calidad-del-vida-del-dane-en-2023-3847523) · [Infobae](https://www.infobae.com/colombia/2024/04/25/casi-la-mitad-de-los-hogares-en-colombia-viven-en-arriendo-segun-informe-del-dane/)
+- Informalidad / baja intermediación del arriendo: [Estudio BID sobre el mercado de arrendamiento en Colombia](https://publications.iadb.org/publications/spanish/document/Estudio-sobre-el-mercado-de-arrendamiento-de-vivienda-en-Colombia.pdf)
