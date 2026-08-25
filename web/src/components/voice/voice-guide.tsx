@@ -91,12 +91,15 @@ export function VoiceGuide() {
       aria-label={muted ? "Activar guía por voz" : "Silenciar guía por voz"}
       aria-pressed={!muted}
       title={muted ? "Activar la guía hablada" : "Silenciar la guía hablada"}
-      className={`fixed bottom-24 left-4 z-[70] inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold shadow-lg transition active:scale-95 ${
+      // Se ancla arriba de los banners inferiores (instalar app / cookies) para
+      // que NUNCA quede tapado ni pegado a ellos, y respeta el área segura de iOS.
+      style={{ bottom: "calc(9rem + env(safe-area-inset-bottom, 0px))" }}
+      className={`fixed left-4 z-[80] inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold shadow-lg transition active:scale-95 ${
         muted ? "border-2 border-slate-300 bg-white text-slate-600" : "bg-[#5646E5] text-white shadow-violet-500/30"
       }`}
     >
       <span className="text-lg leading-none">{muted ? "🔇" : "🔊"}</span>
-      <span>{muted ? "Escuchar guía" : "Guía activada"}</span>
+      <span>{muted ? "Escuchar guía" : "Silenciar"}</span>
     </button>
   );
 }
