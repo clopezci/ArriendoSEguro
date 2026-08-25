@@ -60,6 +60,8 @@ export function PartyInvitePanel({
   const [phone, setPhone] = useState("");
   const [currentInviteeEmail, setCurrentInviteeEmail] = useState("");
   const [reimported, setReimported] = useState(false);
+  // Último canal por el que se envió, para personalizar el consejo de "avísale".
+  const [lastChannel, setLastChannel] = useState<"email" | "whatsapp" | null>(null);
 
   const refreshStatus = useCallback(async () => {
     if (!user) return;
@@ -157,6 +159,7 @@ export function PartyInvitePanel({
       // El servidor pudo asignar un slot nuevo: lo guardamos para el polling.
       if (typeof j.codebtorSlot === "number") setActiveSlot(j.codebtorSlot);
       setStatus("active");
+      setLastChannel(channel);
       const url = j.invitationUrl ?? "";
       setInviteUrl(url);
       if (channel === "whatsapp") {
@@ -290,7 +293,29 @@ export function PartyInvitePanel({
                 Esta pantalla se actualiza sola. Puedes <b>esperar aquí</b> a que aparezca “✓ completó”, o <b>continuar</b> y
                 volver luego a importar. Aún no podrás finalizar el contrato hasta que estén sus datos.
               </p>
-              <button type="button" onClick={() => void refreshStatus()} className="mt-1 text-xs font-bold text-[#5646E5] underline">
+              <div className="mt-2 rounded-xl border border-amber-300 bg-white/80 p-2.5 text-xs text-amber-950">
+                <p className="font-semibold">💡 Para que sea más rápido</p>
+                <p className="mt-0.5 text-amber-900/90">
+                  Llama o escríbele al {roleLabel.toLowerCase()} y avísale que le enviaste el enlace
+                  {lastChannel === "whatsapp" ? " por WhatsApp" : lastChannel === "email" ? " a su correo" : ""}, para que
+                  lo complete hoy mismo. Muchas veces no revisan el {lastChannel === "email" ? "correo" : "mensaje"} a
+                  tiempo, y así el contrato avanza sin esperas.
+                </p>
+                {phone.length >= 7 && (
+                  <a
+                    href={buildWhatsAppUrl(
+                      phone,
+                      "Hola 👋 Te acabo de enviar el enlace para completar tus datos del contrato de arriendo. ¿Puedes abrirlo cuando tengas un momento? Así avanzamos rápido. ¡Gracias!",
+                    )}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-block rounded-lg bg-[#25D366] px-3 py-1.5 text-xs font-bold text-white transition hover:brightness-105"
+                  >
+                    💬 Avisarle por WhatsApp
+                  </a>
+                )}
+              </div>
+              <button type="button" onClick={() => void refreshStatus()} className="mt-2 text-xs font-bold text-[#5646E5] underline">
                 Actualizar ahora
               </button>
             </div>
