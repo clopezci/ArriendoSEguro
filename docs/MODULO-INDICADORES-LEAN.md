@@ -445,7 +445,8 @@ disclaimers y aliados abogados).
 | WhatsApp/Meta | Mensajes por conversación | ~US$0,005–0,05 c/u (variable) |
 | IA (Groq/Gemini gratis → OpenAI pago) | Asistente/validación | US$0–30 |
 | Dominio + varios | | ~US$1–5 |
-| **Total inicial** | | **~US$40–120/mes (~$160k–$500k COP)** *(estimado — ajustar con cifras reales)* |
+| **Marketing (inversión principal)** | pauta + contenido + adquisición | **~$1.500.000/mes** *(valor medio; escalar con resultados)* |
+| **Total mensual (con marketing)** | | **~$1,7M–$2,2M COP** *(estimado — ajustar con cifras reales)* |
 
 **Costo variable por contrato** *(estimado)*: ~$3.000–6.000 (mensajería + IA +
 storage + fee de pasarela). → **Margen bruto ~85–90%**.

@@ -55,11 +55,12 @@ const DEFAULTS: PitchModel = {
     { label: "Desarrollo y mantenimiento", value: "$0 (fundador)" },
   ],
   platformCosts: [
+    { label: "Marketing (inversión principal)", value: "~$1.500.000" },
     { label: "Vercel (hosting)", value: "~$80.000" },
     { label: "Firebase (DB/Storage/Auth)", value: "$0–100.000" },
     { label: "Resend (correo)", value: "$0–80.000" },
     { label: "WhatsApp/Meta + IA", value: "variable" },
-    { label: "Total inicial", value: "~$160k–$500k" },
+    { label: "Total mensual (con marketing)", value: "~$1,7M–$2,2M" },
   ],
   costsNote: "Estimado — ajustar con cifras reales.",
   finance: { price: 49_900, margin: 0.88, fixed: 300_000 },
@@ -74,6 +75,11 @@ const DEFAULTS: PitchModel = {
 
 function mergeModel(saved: Partial<PitchModel> | null): PitchModel {
   if (!saved) return DEFAULTS;
+  // Migración: garantiza que exista la fila de Marketing (inversión principal).
+  let platformCosts = saved.platformCosts ?? DEFAULTS.platformCosts;
+  if (!platformCosts.some((c) => /marketing/i.test(c.label))) {
+    platformCosts = [{ label: "Marketing (inversión principal)", value: "~$1.500.000" }, ...platformCosts];
+  }
   return {
     headline: saved.headline ?? DEFAULTS.headline,
     subtitle: saved.subtitle ?? DEFAULTS.subtitle,
@@ -83,7 +89,7 @@ function mergeModel(saved: Partial<PitchModel> | null): PitchModel {
     competitors: saved.competitors ?? DEFAULTS.competitors,
     moat: saved.moat ?? DEFAULTS.moat,
     unitEconomics: saved.unitEconomics ?? DEFAULTS.unitEconomics,
-    platformCosts: saved.platformCosts ?? DEFAULTS.platformCosts,
+    platformCosts,
     costsNote: saved.costsNote ?? DEFAULTS.costsNote,
     finance: saved.finance ?? DEFAULTS.finance,
     scenarios: saved.scenarios ?? DEFAULTS.scenarios,
@@ -220,7 +226,7 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
 
       {/* 3 pilares */}
       <div>
-        <p className="mb-2 text-sm font-semibold text-slate-900">Los 3 pilares</p>
+        <p className="mb-2 text-sm font-semibold text-slate-900">Nuestros pilares</p>
         <div className="grid gap-3 sm:grid-cols-3">
           {model.pillars.map((p, i) => (
             <div key={i} className="rounded-xl border border-slate-300 bg-white/95 p-3">
