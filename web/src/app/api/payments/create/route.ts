@@ -132,6 +132,13 @@ export async function POST(request: Request) {
     // SÍ debe adjuntar el comprobante (luego el dueño lo confirma/acepta).
     const isOwner = participant.role === "landlord";
     const hasValidSupport = supportValidation.ok;
+    // Integridad: el inquilino/codeudor no puede reportar un pago de $0 o negativo.
+    if (!isOwner && !(parsed.data.amountPaid > 0)) {
+      return NextResponse.json(
+        { success: false, errors: [{ field: "amountPaid", message: "El valor pagado debe ser mayor a $0." }] },
+        { status: 422 },
+      );
+    }
     if (!isOwner && parsed.data.amountPaid > 0 && !hasValidSupport) {
       return NextResponse.json(
         {

@@ -55,6 +55,8 @@ export default function InquilinoPagosPage() {
   async function register(s: Sched) {
     if (!user || !versionId) return;
     if (!file) { setMsg("Adjunta el comprobante de pago (obligatorio)."); return; }
+    const amt = Number(amount.replace(/\D/g, "")) || 0;
+    if (amt <= 0) { setMsg("Escribe el valor pagado (debe ser mayor a $0)."); return; }
     setBusy(true); setMsg("");
     try {
       const authH = { "content-type": "application/json", ...(await buildAuthHeaders(user)) };
@@ -71,7 +73,7 @@ export default function InquilinoPagosPage() {
         body: JSON.stringify({
           leaseProcessId: id, contractId: id, contractVersionId: versionId,
           periodLabel: s.periodLabel ?? "", dueDate: s.dueDate ?? "", paidDate: paidDate || s.dueDate,
-          amountDue: Number(s.expectedAmount ?? 0), amountPaid: Number(amount.replace(/\D/g, "")) || Number(s.expectedAmount ?? 0),
+          amountDue: Number(s.expectedAmount ?? 0), amountPaid: amt,
           paymentMethod: "transferencia bancaria", scheduledPaymentId: s.id,
           supportFileUrl: upd.storagePath, supportFileName: file.name, supportFileType: file.type || "application/octet-stream", supportFileSize: file.size,
         }),
