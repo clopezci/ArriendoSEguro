@@ -968,6 +968,203 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       ctaIngresar,
     ],
   },
+  {
+    slug: "inquilino-no-paga-arriendo-que-hacer",
+    title: "El inquilino no paga el arriendo: qué hacer paso a paso (Colombia)",
+    description:
+      "Guía práctica y legal cuando el arrendatario se atrasa: requerimiento por escrito, intereses de mora, conciliación y el proceso de restitución del inmueble (CGP art. 384).",
+    datePublished: "2026-08-25",
+    dateModified: "2026-08-25",
+    category: "guia",
+    categoryLabel: BLOG_CATEGORIES.guia.label,
+    featured: true,
+    keywords: [
+      "inquilino no paga arriendo",
+      "qué hacer si no pagan el arriendo",
+      "proceso de restitución del inmueble",
+      "mora en el arriendo Colombia",
+      "desalojo por no pago",
+    ],
+    blocks: [
+      {
+        type: "p",
+        text: "Que el arrendatario se atrase en el pago es una de las mayores preocupaciones al arrendar. La buena noticia es que la ley te da un camino claro. Lo importante es actuar con calma, dejar constancia de todo y respetar el debido proceso: no puedes cambiar las cerraduras, cortar servicios ni sacar a la persona por tu cuenta. El desalojo lo ordena un juez.",
+      },
+      { type: "h2", text: "1. Comunícate por escrito y deja constancia" },
+      {
+        type: "p",
+        text: "Apenas haya mora, envía un requerimiento por escrito (correo, WhatsApp o carta) recordando el valor adeudado, la fecha de vencimiento y solicitando el pago en un plazo corto. Guarda la evidencia: fecha, medio y respuesta. Esa constancia es decisiva si el caso escala.",
+      },
+      { type: "h2", text: "2. Cobra los intereses de mora permitidos" },
+      {
+        type: "p",
+        text: "El atraso puede generar intereses de mora. No inventes cifras: usa el tope legal vigente y déjalo por escrito en tu cobro para que sea transparente y exigible.",
+      },
+      { type: "cta", href: "/calculadoras", label: "Ver calculadoras (mora, canon, preaviso)", description: "Herramientas gratis para calcular con cifras correctas." },
+      { type: "h2", text: "3. Intenta una conciliación" },
+      {
+        type: "p",
+        text: "Antes de un proceso judicial suele ser obligatorio o muy recomendable intentar una conciliación (por ejemplo, en un centro de conciliación o ante autoridad competente). Es más rápido y económico, y muchas veces se llega a un acuerdo de pago.",
+      },
+      { type: "h2", text: "4. Proceso de restitución del inmueble" },
+      {
+        type: "p",
+        text: "Si no hay acuerdo, el arrendador puede iniciar el proceso de restitución del inmueble arrendado por mora (proceso verbal especial, art. 384 del Código General del Proceso). Con la demanda se pueden pedir medidas para agilizar la entrega; la sentencia ordena la restitución y el pago de lo adeudado. Es un trámite judicial: hazlo con un abogado.",
+      },
+      {
+        type: "note",
+        text: "Nunca hagas justicia por tu cuenta (cambiar cerraduras, cortar agua o luz, retener bienes). Eso puede volverse en tu contra. El único camino para el desalojo es el judicial.",
+      },
+      {
+        type: "table",
+        caption: "Ruta cuando el inquilino no paga",
+        headers: ["Paso", "Qué haces", "Constancia que guardas"],
+        rows: [
+          ["1. Requerimiento", "Cobras por escrito y das un plazo", "Correo/WhatsApp con fecha y respuesta"],
+          ["2. Intereses de mora", "Sumas el interés permitido", "Cálculo y cobro escrito"],
+          ["3. Conciliación", "Invitas a un acuerdo de pago", "Acta o constancia de citación"],
+          ["4. Restitución (art. 384 CGP)", "Demandas con abogado", "Contrato, comprobantes y evidencias"],
+        ],
+      },
+      {
+        type: "p",
+        text: "Con ArriendoSeguro llegas mejor preparado a cualquiera de estos pasos: recordatorios de pago automáticos, registro de cada pago con su comprobante, evidencia de las comunicaciones y un expediente listo para exportar si el caso llega a conciliación o a un juzgado.",
+      },
+      ctaIngresar,
+      {
+        type: "sources",
+        items: [
+          { label: "Ley 820 de 2003 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0820_2003.html" },
+          { label: "Código General del Proceso (Ley 1564 de 2012), art. 384 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_1564_2012.html" },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "contrato-arriendo-whatsapp-verbal-validez-colombia",
+    title: "Contrato de arriendo por WhatsApp o verbal: ¿es válido en Colombia?",
+    description:
+      "Un acuerdo de arriendo puede ser verbal o escrito, pero probar lo pactado es otra cosa. Qué dice la Ley 820, por qué conviene el contrato escrito y cómo la firma electrónica también es válida.",
+    datePublished: "2026-08-25",
+    dateModified: "2026-08-25",
+    category: "contrato",
+    categoryLabel: BLOG_CATEGORIES.contrato.label,
+    keywords: [
+      "contrato de arriendo verbal",
+      "contrato de arriendo por WhatsApp",
+      "validez contrato de arrendamiento",
+      "contrato de arriendo escrito Colombia",
+      "Ley 820 contrato",
+    ],
+    blocks: [
+      {
+        type: "p",
+        text: "Es una de las dudas más comunes: acordé el arriendo por WhatsApp o de palabra, ¿vale? En Colombia el contrato de arrendamiento de vivienda urbana puede celebrarse de forma verbal o escrita (Ley 820 de 2003, art. 3). Es decir, el acuerdo puede existir sin papel. El problema no es la validez, sino la PRUEBA: si hay un desacuerdo, ¿cómo demuestras lo que se pactó?",
+      },
+      { type: "h2", text: "Válido no es lo mismo que probable" },
+      {
+        type: "p",
+        text: "Un acuerdo verbal o por chat es válido, pero si el inquilino no paga, hay daños o se discute el canon y las condiciones, tendrás que demostrar qué se acordó. Sin un documento claro, todo queda a interpretación y a tu palabra contra la otra.",
+      },
+      { type: "h2", text: "Por qué conviene el contrato escrito y firmado" },
+      {
+        type: "ul",
+        items: [
+          "Deja por escrito el canon, la duración, el día de pago y las cláusulas.",
+          "Permite validar el tope legal del canon (1 % del valor comercial, Ley 820).",
+          "Fija el preaviso y las causales de terminación, evitando sorpresas.",
+          "Sirve de prueba en una conciliación o ante un juez.",
+        ],
+      },
+      { type: "h2", text: "La firma electrónica también es válida" },
+      {
+        type: "p",
+        text: "No necesitas ir a una notaría para que tenga valor: la firma electrónica tiene validez legal (Ley 527 de 1999 y Decreto 2364 de 2012) por el principio de equivalencia funcional, siempre que quede evidencia de quién firmó, cuándo y desde dónde. Así tu contrato queda firmado y con respaldo probatorio.",
+      },
+      {
+        type: "note",
+        text: "Consejo: puedes acordar rápido por WhatsApp, pero pásalo a un contrato escrito y fírmalo. Toma minutos y te evita problemas grandes después.",
+      },
+      { type: "cta", href: "/ingresar", label: "Crear mi contrato escrito y firmarlo", description: "Genera el contrato conforme a la Ley 820 y fírmalo con validez, en minutos." },
+      {
+        type: "sources",
+        items: [
+          { label: "Ley 820 de 2003, art. 3 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0820_2003.html" },
+          { label: "Ley 527 de 1999 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0527_1999.html" },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "como-saber-si-inquilino-es-confiable-documentos",
+    title: "Cómo saber si un inquilino es confiable: qué documentos pedir",
+    description:
+      "Guía para arrendadores: qué soportes de ingresos pedir, cómo consultar el historial con autorización (Habeas Data) y qué garantías exigir para bajar el riesgo de no pago.",
+    datePublished: "2026-08-25",
+    dateModified: "2026-08-25",
+    category: "guia",
+    categoryLabel: BLOG_CATEGORIES.guia.label,
+    keywords: [
+      "cómo saber si un inquilino es confiable",
+      "documentos para arrendar a un inquilino",
+      "estudio del arrendatario",
+      "soportes de ingresos arriendo",
+      "referencias inquilino Colombia",
+    ],
+    blocks: [
+      {
+        type: "p",
+        text: "Elegir bien al inquilino es la mejor forma de prevenir problemas. No se trata de desconfiar de todos, sino de pedir lo razonable, con su consentimiento, y verificar que pueda pagar. Aquí tienes qué documentos pedir y cómo evaluar sin caer en discriminación ni violar la protección de datos.",
+      },
+      { type: "h2", text: "1. Identidad y capacidad de pago" },
+      {
+        type: "ul",
+        items: [
+          "Documento de identidad (cédula) para confirmar quién es.",
+          "Soportes de ingresos: certificación laboral y colillas de pago, o extractos bancarios si es independiente.",
+          "Regla práctica: los ingresos suelen ser al menos dos o tres veces el canon, para que el pago sea sostenible.",
+        ],
+      },
+      { type: "h2", text: "2. Historial y referencias (con autorización)" },
+      {
+        type: "p",
+        text: "Puedes evaluar el historial crediticio del interesado SIEMPRE con su autorización expresa, respetando el Habeas Data (Ley 1581 de 2012 y Ley 1266 de 2008). También ayudan las referencias de arrendamientos anteriores: pregunta al arrendador previo si pagaba a tiempo y cuidaba el inmueble.",
+      },
+      { type: "h2", text: "3. Garantías: codeudor o póliza" },
+      {
+        type: "p",
+        text: "Para respaldar el pago puedes pedir un codeudor solidario (que responde por la deuda) o aceptar una póliza o seguro de arrendamiento. Elige según tu nivel de riesgo y lo que la otra parte pueda ofrecer.",
+      },
+      {
+        type: "note",
+        text: "Pide siempre con consentimiento y solo lo necesario. No condiciones el arriendo por razones discriminatorias; enfócate en la capacidad de pago y las referencias.",
+      },
+      {
+        type: "table",
+        caption: "Qué pedir y para qué",
+        headers: ["Documento", "Para qué sirve"],
+        rows: [
+          ["Cédula", "Confirmar identidad"],
+          ["Carta laboral / colillas / extractos", "Verificar ingresos y capacidad de pago"],
+          ["Autorización de datos", "Consultar historial sin violar el Habeas Data"],
+          ["Referencias de arriendos previos", "Conocer su comportamiento como inquilino"],
+          ["Codeudor o póliza", "Respaldo si deja de pagar"],
+        ],
+      },
+      {
+        type: "p",
+        text: "En ArriendoSeguro defines qué documentos exiges a cada parte, el inquilino y el codeudor los suben por su propio enlace, y la app valida los datos con inteligencia artificial y te avisa si algo no coincide.",
+      },
+      ctaIngresar,
+      {
+        type: "sources",
+        items: [
+          { label: "Ley 1581 de 2012 (Habeas Data) — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_1581_2012.html" },
+          { label: "Ley 1266 de 2008 (habeas data financiero) — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_1266_2008.html" },
+        ],
+      },
+    ],
+  },
 ];
 
 export function getAllBlogSlugs(): string[] {
