@@ -3,6 +3,7 @@
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { PitchTab } from "@/components/admin/pitch-tab";
+import { UtmBuilder } from "@/components/admin/utm-builder";
 import { PLAN_PLUS_CUSTOM_COP_LIMITS } from "@/domain/platform-payments/plan-plus-pricing";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -140,6 +141,7 @@ export default function AdminPage() {
     | "resumen"
     | "lean"
     | "pitch"
+    | "campanas"
     | "encuestas"
     | "usuarios"
     | "accesos"
@@ -2996,6 +2998,7 @@ export default function AdminPage() {
               ["resumen", "Resumen"],
               ["lean", "📈 Lean"],
               ["pitch", "🚀 Pitch"],
+              ["campanas", "🔗 Campañas"],
               ["encuestas", "Encuestas"],
               ["usuarios", "Usuarios"],
               ["accesos", "Accesos"],
@@ -3030,6 +3033,7 @@ export default function AdminPage() {
         {data && tab === "resumen" && <Resumen s={data.summary} />}
         {data && tab === "lean" && <LeanTab s={data.summary} onReload={() => void load()} />}
         {tab === "pitch" && <PitchTab s={data?.summary} />}
+        {tab === "campanas" && <UtmBuilder />}
         {data && tab === "encuestas" && (
           <Encuestas rows={data.surveys ?? []} onExport={() => void downloadSurveysCsv()} />
         )}
