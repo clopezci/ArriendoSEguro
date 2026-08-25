@@ -225,3 +225,88 @@ export async function summarizeGa4Detail(): Promise<Ga4Detail> {
 
   return { configured: true, daily, channels, devices, topPages };
 }
+
+/**
+ * Diagnóstico EN VIVO de la conexión con GA4, para un botón "Probar conexión" en
+ * el panel admin. A diferencia de `summarizeGa4Detail` (que devuelve arrays
+ * vacíos si el permiso falla, indistinguible de "sin tráfico"), esto reporta el
+ * estado HTTP y el mensaje de error real, para saber si falta config, permiso, o
+ * simplemente aún no hay visitas.
+ */
+export type Ga4Diagnostics = {
+  ok: boolean;
+  propertyIdPresent: boolean;
+  credentialsPresent: boolean;
+  tokenOk: boolean;
+  reportStatus: number | null;
+  activeUsers28d: number | null;
+  channelCount: number | null;
+  error: string | null;
+};
+
+export async function ga4Diagnostics(): Promise<Ga4Diagnostics> {
+  const propertyId = process.env.GA4_PROPERTY_ID?.trim();
+  const creds = serviceAccountCredentials();
+  const out: Ga4Diagnostics = {
+    ok: false,
+    propertyIdPresent: Boolean(propertyId),
+    credentialsPresent: Boolean(creds),
+    tokenOk: false,
+    reportStatus: null,
+    activeUsers28d: null,
+    channelCount: null,
+    error: null,
+  };
+  if (!propertyId) {
+    out.error = "Falta GA4_PROPERTY_ID en el servidor (Vercel).";
+    return out;
+  }
+  if (!creds) {
+    out.error = "Falta la credencial de cuenta de servicio (FIREBASE_SERVICE_ACCOUNT_KEY/_FILE).";
+    return out;
+  }
+  try {
+    const auth = new GoogleAuth({ credentials: creds, scopes: ["https://www.googleapis.com/auth/analytics.readonly"] });
+    const client = await auth.getClient();
+    const tokenRes = await client.getAccessToken();
+    const token = typeof tokenRes === "string" ? tokenRes : tokenRes?.token;
+    if (!token) {
+      out.error = "No se pudo obtener un token de acceso con la cuenta de servicio.";
+      return out;
+    }
+    out.tokenOk = true;
+    const res = await fetch(
+      `https://analyticsdata.googleapis.com/v1beta/properties/${encodeURIComponent(propertyId)}:runReport`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "content-type": "application/json" },
+        body: JSON.stringify({
+          dateRanges: [{ startDate: "28daysAgo", endDate: "today" }],
+          dimensions: [{ name: "sessionDefaultChannelGroup" }],
+          metrics: [{ name: "activeUsers" }],
+        }),
+        cache: "no-store",
+      },
+    );
+    out.reportStatus = res.status;
+    const data = (await res.json().catch(() => ({}))) as {
+      error?: { message?: string };
+      rows?: { metricValues?: { value?: string }[] }[];
+    };
+    if (!res.ok) {
+      out.error =
+        res.status === 403
+          ? "Permiso denegado (403): la cuenta de servicio no es Lector de esa propiedad, o el GA4_PROPERTY_ID no corresponde."
+          : data?.error?.message?.slice(0, 300) ?? `Error HTTP ${res.status}.`;
+      return out;
+    }
+    const rows = data.rows ?? [];
+    out.channelCount = rows.length;
+    out.activeUsers28d = rows.reduce((a, r) => a + Number(r.metricValues?.[0]?.value ?? 0), 0);
+    out.ok = true;
+    return out;
+  } catch (e) {
+    out.error = e instanceof Error ? e.message.slice(0, 200) : "Error desconocido al consultar GA4.";
+    return out;
+  }
+}
