@@ -19,10 +19,9 @@ type PitchModel = {
   marketNote: string;
   competitors: { who: string; does: string; gap: string }[];
   moat: string;
-  unitEconomics: { label: string; value: string }[];
   platformCosts: { label: string; value: string }[];
   costsNote: string;
-  finance: { price: number; margin: number; fixed: number };
+  finance: { price: number; variableCost: number; infraFixed: number; marketing: number };
   scenarios: { k: string; contracts: number; color: string }[];
   ask: string;
 };
@@ -48,29 +47,21 @@ const DEFAULTS: PitchModel = {
     { who: "Plantillas gratis / 'a mano'", does: "Documento genérico", gap: "Sin validez, sin evidencia, sin historial" },
   ],
   moat: "Reputación privada (datos propios) + motor legal Ley 820/527 + costo marginal casi cero.",
-  unitEconomics: [
-    { label: "Precio por contrato", value: "$49.900" },
-    { label: "Costo variable / contrato (est.)", value: "~$3.000–6.000" },
-    { label: "Margen bruto", value: "~88%" },
-    { label: "Desarrollo y mantenimiento", value: "$0 (fundador)" },
-  ],
   platformCosts: [
-    { label: "Marketing (inversión principal)", value: "~$1.500.000" },
-    { label: "Vercel (hosting)", value: "~$80.000" },
-    { label: "Firebase (DB/Storage/Auth)", value: "$0–100.000" },
-    { label: "Resend (correo)", value: "$0–80.000" },
-    { label: "WhatsApp/Meta + IA", value: "variable" },
-    { label: "Total mensual (con marketing)", value: "~$1,7M–$2,2M" },
+    { label: "Marketing (inversión principal)", value: "$1.500.000" },
+    { label: "Vercel — plan base", value: "~$80.000" },
+    { label: "Firebase — base (el uso por contrato va en el costo variable)", value: "$0–100.000" },
+    { label: "Resend — base (el uso por contrato va en el costo variable)", value: "$0–80.000" },
   ],
-  costsNote: "Estimado — ajustar con cifras reales.",
-  finance: { price: 49_900, margin: 0.88, fixed: 300_000 },
+  costsNote: "Los costos que crecen con el uso (Firebase, Resend, Vercel, mensajería, IA) están dentro del costo variable por contrato, así que escalan solos con el volumen. Estas líneas son la base fija mensual, que sube por escalones al cambiar de plan.",
+  finance: { price: 49_900, variableCost: 6_000, infraFixed: 300_000, marketing: 1_500_000 },
   scenarios: [
     { k: "Break-even", contracts: 7, color: "#94a3b8" },
     { k: "Conservador", contracts: 50, color: "#0ea5e9" },
     { k: "Base", contracts: 200, color: "#6366f1" },
     { k: "Optimista", contracts: 800, color: "#10b981" },
   ],
-  ask: "Fondos para marketing (hoy incipiente) + colchón de costos de plataforma durante el crecimiento (opcional: alianzas legales/seguros). No para desarrollo ni nómina técnica. Con margen ~88% y break-even ~7 contratos/mes, cada peso de marketing eficiente se vuelve margen; el LTV/CAC del tablero guía la reinversión.",
+  ask: "Fondos para marketing (hoy incipiente) + colchón de costos de plataforma durante el crecimiento (opcional: alianzas legales/seguros). No para desarrollo ni nómina técnica. Con margen de contribución ~88% y equilibrio ~41 contratos/mes incluyendo marketing, cada peso de marketing eficiente se vuelve margen.",
 };
 
 function mergeModel(saved: Partial<PitchModel> | null): PitchModel {
@@ -78,8 +69,23 @@ function mergeModel(saved: Partial<PitchModel> | null): PitchModel {
   // Migración: garantiza que exista la fila de Marketing (inversión principal).
   let platformCosts = saved.platformCosts ?? DEFAULTS.platformCosts;
   if (!platformCosts.some((c) => /marketing/i.test(c.label))) {
-    platformCosts = [{ label: "Marketing (inversión principal)", value: "~$1.500.000" }, ...platformCosts];
+    platformCosts = [{ label: "Marketing (inversión principal)", value: "$1.500.000" }, ...platformCosts];
   }
+  // Migración de finanzas: del modelo viejo {margin, fixed} al nuevo
+  // {variableCost, infraFixed, marketing}. Si venía margen, derivamos el costo
+  // variable como precio × (1 − margen).
+  const sf = saved.finance as
+    | (Partial<PitchModel["finance"]> & { margin?: number; fixed?: number })
+    | undefined;
+  const price = sf?.price ?? DEFAULTS.finance.price;
+  const finance: PitchModel["finance"] = {
+    price,
+    variableCost:
+      sf?.variableCost ??
+      (typeof sf?.margin === "number" ? Math.round(price * (1 - sf.margin)) : DEFAULTS.finance.variableCost),
+    infraFixed: sf?.infraFixed ?? sf?.fixed ?? DEFAULTS.finance.infraFixed,
+    marketing: sf?.marketing ?? DEFAULTS.finance.marketing,
+  };
   return {
     headline: saved.headline ?? DEFAULTS.headline,
     subtitle: saved.subtitle ?? DEFAULTS.subtitle,
@@ -88,10 +94,9 @@ function mergeModel(saved: Partial<PitchModel> | null): PitchModel {
     marketNote: saved.marketNote ?? DEFAULTS.marketNote,
     competitors: saved.competitors ?? DEFAULTS.competitors,
     moat: saved.moat ?? DEFAULTS.moat,
-    unitEconomics: saved.unitEconomics ?? DEFAULTS.unitEconomics,
     platformCosts,
     costsNote: saved.costsNote ?? DEFAULTS.costsNote,
-    finance: saved.finance ?? DEFAULTS.finance,
+    finance,
     scenarios: saved.scenarios ?? DEFAULTS.scenarios,
     ask: saved.ask ?? DEFAULTS.ask,
   };
@@ -195,12 +200,18 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
   const resetAll = () => { if (confirm("¿Restaurar el pitch a los valores por defecto?")) { setModel(DEFAULTS); persist(DEFAULTS); } };
 
   const maxMarket = Math.max(1, ...model.market.map((m) => m.v));
+  const { price, variableCost, infraFixed, marketing } = model.finance;
+  const contribution = Math.max(0, price - variableCost);
+  const marginPct = price > 0 ? Math.round((contribution / price) * 100) : 0;
+  const beWithout = contribution > 0 ? Math.ceil(infraFixed / contribution) : 0;
+  const beWith = contribution > 0 ? Math.ceil((infraFixed + marketing) / contribution) : 0;
   const rows = model.scenarios.map((sc) => {
-    const ingreso = sc.contracts * model.finance.price;
-    const bruto = Math.round(ingreso * model.finance.margin);
-    return { ...sc, ingreso, bruto, utilidad: bruto - model.finance.fixed };
+    const utilBefore = sc.contracts * contribution - infraFixed;
+    const utilAfter = utilBefore - marketing;
+    const loaded = sc.contracts > 0 ? Math.round(variableCost + (infraFixed + marketing) / sc.contracts) : 0;
+    return { ...sc, utilBefore, utilAfter, loaded };
   });
-  const maxUtil = Math.max(1, ...rows.map((r) => r.utilidad));
+  const maxUtil = Math.max(1, ...rows.map((r) => Math.max(r.utilBefore, r.utilAfter)));
   const bar = (v: number, max: number, color: string) => (
     <div className="h-4 flex-1 overflow-hidden rounded bg-slate-100">
       <div className="h-full rounded" style={{ width: `${Math.max(3, Math.round((v / max) * 100))}%`, background: color }} />
@@ -255,7 +266,7 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
       {/* KPIs en vivo */}
       {lean && (
         <div className="rounded-xl border border-emerald-300 bg-emerald-50/40 p-4">
-          <p className="text-sm font-semibold text-emerald-900">Cómo vamos hoy (en vivo, del tablero)</p>
+          <p className="text-sm font-semibold text-emerald-900">Cómo vamos hoy (en vivo)</p>
           <div className="mt-2 grid gap-3 sm:grid-cols-4">
             {[
               ["North Star (firmados)", String(lean.northStar ?? "—")],
@@ -295,18 +306,21 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
       {/* Unit economics + costos */}
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
-          <p className="text-sm font-semibold text-slate-900">Unit economics</p>
+          <p className="text-sm font-semibold text-slate-900">Por contrato (variable)</p>
           <ul className="mt-2 space-y-1 text-xs text-slate-700">
-            {model.unitEconomics.map((u, i) => (
-              <li key={i} className="flex justify-between gap-2">
-                <span><Editable value={u.label} onCommit={(v) => edit((m) => { m.unitEconomics[i].label = v; })} /></span>
-                <b><Editable value={u.value} onCommit={(v) => edit((m) => { m.unitEconomics[i].value = v; })} /></b>
-              </li>
-            ))}
+            <li className="flex justify-between gap-2"><span>Precio</span><b>$<EditableNum value={price} onCommit={(n) => edit((m) => { m.finance.price = n; })} /></b></li>
+            <li className="flex justify-between gap-2"><span>Costo variable</span><b>$<EditableNum value={variableCost} onCommit={(n) => edit((m) => { m.finance.variableCost = n; })} /></b></li>
+            <li className="flex justify-between gap-2 border-t border-slate-100 pt-1"><span>Contribución</span><b className="text-emerald-700">{cop(contribution)}</b></li>
+            <li className="flex justify-between gap-2"><span>Margen de contribución</span><b>{marginPct}%</b></li>
+            <li className="flex justify-between gap-2"><span>Desarrollo y mantenimiento</span><b>$0 (fundador)</b></li>
           </ul>
+          <p className="mt-2 text-[11px] text-slate-400">
+            El costo variable incluye WhatsApp, SMS, IA y el uso por contrato de Firebase, Resend y Vercel; por eso
+            crece con el volumen (no queda subestimado al escalar).
+          </p>
         </div>
         <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
-          <p className="text-sm font-semibold text-slate-900">Costos de plataforma (est. / mes)</p>
+          <p className="text-sm font-semibold text-slate-900">Costos fijos por mes</p>
           <ul className="mt-2 space-y-1 text-xs text-slate-700">
             {model.platformCosts.map((c, i) => (
               <li key={i} className="flex justify-between gap-2">
@@ -321,23 +335,38 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
 
       {/* Proyección */}
       <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
-        <p className="text-sm font-semibold text-slate-900">Proyección (escenarios ilustrativos)</p>
-        <p className="text-[11px] text-slate-500">
-          Precio $<EditableNum value={model.finance.price} onCommit={(n) => edit((m) => { m.finance.price = n; })} /> ·
-          margen <EditableNum value={Math.round(model.finance.margin * 100)} onCommit={(n) => edit((m) => { m.finance.margin = Math.min(1, Math.max(0, n / 100)); })} />% ·
-          costos fijos $<EditableNum value={model.finance.fixed} onCommit={(n) => edit((m) => { m.finance.fixed = n; })} />/mes.
+        <p className="text-sm font-semibold text-slate-900">Proyección por escenarios</p>
+        <p className="mt-1 text-[11px] text-slate-500">
+          Precio $<EditableNum value={price} onCommit={(n) => edit((m) => { m.finance.price = n; })} /> ·
+          costo variable $<EditableNum value={variableCost} onCommit={(n) => edit((m) => { m.finance.variableCost = n; })} />/contrato ·
+          contribución <b>{cop(contribution)}</b> ({marginPct}%)
+          <br />
+          Infra base $<EditableNum value={infraFixed} onCommit={(n) => edit((m) => { m.finance.infraFixed = n; })} />/mes ·
+          Marketing $<EditableNum value={marketing} onCommit={(n) => edit((m) => { m.finance.marketing = n; })} />/mes
         </p>
-        <div className="mt-3 space-y-2">
+        <p className="mt-2 rounded-lg bg-slate-50 px-2 py-1.5 text-[11px] text-slate-700">
+          ⚖️ Equilibrio: <b>{beWithout}</b> contratos/mes (sin marketing) · <b>{beWith}</b> contratos/mes (con marketing).
+        </p>
+        <div className="mt-3 space-y-2.5">
           {rows.map((r, i) => (
-            <div key={i} className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="w-24 shrink-0 font-semibold text-slate-700"><Editable value={r.k} onCommit={(v) => edit((m) => { m.scenarios[i].k = v; })} /></span>
-              <span className="w-24 shrink-0 tabular-nums text-slate-500"><EditableNum value={r.contracts} onCommit={(n) => edit((m) => { m.scenarios[i].contracts = n; })} />/mes</span>
-              {bar(Math.max(0, r.utilidad), maxUtil, r.color)}
-              <span className="w-28 shrink-0 text-right font-bold tabular-nums">{cop(r.utilidad)}</span>
+            <div key={i} className="rounded-lg border border-slate-100 p-2">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="w-24 shrink-0 font-semibold text-slate-700"><Editable value={r.k} onCommit={(v) => edit((m) => { m.scenarios[i].k = v; })} /></span>
+                <span className="w-20 shrink-0 tabular-nums text-slate-500"><EditableNum value={r.contracts} onCommit={(n) => edit((m) => { m.scenarios[i].contracts = n; })} />/mes</span>
+                {bar(Math.max(0, r.utilAfter), maxUtil, r.color)}
+                <span className={`w-28 shrink-0 text-right font-bold tabular-nums ${r.utilAfter < 0 ? "text-rose-600" : "text-slate-900"}`}>{cop(r.utilAfter)}</span>
+              </div>
+              <p className="mt-1 pl-2 text-[11px] text-slate-500">
+                Antes de marketing: <b className="text-slate-700">{cop(r.utilBefore)}</b> · Costo cargado por contrato: {cop(r.loaded)}
+              </p>
             </div>
           ))}
         </div>
-        <p className="mt-2 text-[11px] text-slate-500">Utilidad = ingreso × margen − costos fijos. Cifras ilustrativas; validar con el tablero.</p>
+        <p className="mt-2 text-[11px] text-slate-500">
+          Después de marketing = contribución × contratos − infra base − marketing. La barra y el número principal son la
+          utilidad <b>después de marketing</b> (en rojo si es negativa). La contribución ya descuenta el costo variable, que
+          incluye el uso por contrato de Firebase, Resend y Vercel — por eso el margen no se infla al crecer.
+        </p>
       </div>
 
       {/* El ask */}
