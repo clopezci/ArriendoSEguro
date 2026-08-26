@@ -30,6 +30,10 @@ type PitchModel = {
     incomeTaxThreshold: number;
     /** Tasa (fracción, ej. 0.35) aplicada a la utilidad anual por encima del umbral. */
     incomeTaxRate: number;
+    /** Costo de RRHH/empleados como fracción del ingreso (ej. 0.10 = 10%). */
+    hrPercent: number;
+    /** Fracción de la empresa cedida al inversionista (ej. 0.20 = 20%). */
+    investorEquityPercent: number;
   };
   scenarios: { k: string; contracts: number; color: string; infra?: number }[];
   faq: { q: string; a: string }[];
@@ -64,7 +68,7 @@ const DEFAULTS: PitchModel = {
     { label: "Resend — base (el uso por contrato va en el costo variable)", value: "$0–80.000" },
   ],
   costsNote: "Los costos que crecen con el uso (Firebase, Resend, Vercel, mensajería, IA) están dentro del costo variable por contrato, así que escalan solos con el volumen. Estas líneas son la base fija mensual, que sube por escalones al cambiar de plan.",
-  finance: { price: 49_900, variableCost: 6_000, infraFixed: 300_000, marketing: 1_500_000, incomeTaxThreshold: 183_000_000, incomeTaxRate: 0.35 },
+  finance: { price: 49_900, variableCost: 6_000, infraFixed: 300_000, marketing: 1_500_000, incomeTaxThreshold: 183_000_000, incomeTaxRate: 0.35, hrPercent: 0, investorEquityPercent: 0 },
   scenarios: [
     { k: "Break-even", contracts: 7, color: "#94a3b8" },
     { k: "Conservador", contracts: 50, color: "#0ea5e9" },
@@ -140,6 +144,8 @@ function mergeModel(saved: Partial<PitchModel> | null): PitchModel {
     marketing: sf?.marketing ?? DEFAULTS.finance.marketing,
     incomeTaxThreshold: sf?.incomeTaxThreshold ?? DEFAULTS.finance.incomeTaxThreshold,
     incomeTaxRate: sf?.incomeTaxRate ?? DEFAULTS.finance.incomeTaxRate,
+    hrPercent: sf?.hrPercent ?? DEFAULTS.finance.hrPercent,
+    investorEquityPercent: sf?.investorEquityPercent ?? DEFAULTS.finance.investorEquityPercent,
   };
   // Migración: asegura el escenario "Escalón de infra" (con infra propia).
   let scenarios = saved.scenarios ?? DEFAULTS.scenarios;
@@ -307,8 +313,12 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
   const { price, variableCost, infraFixed, marketing } = model.finance;
   const contribution = Math.max(0, price - variableCost);
   const marginPct = price > 0 ? Math.round((contribution / price) * 100) : 0;
-  const beWithout = contribution > 0 ? Math.ceil(infraFixed / contribution) : 0;
-  const beWith = contribution > 0 ? Math.ceil((infraFixed + marketing) / contribution) : 0;
+  // RRHH (empleados) como % del ingreso: baja la contribución EFECTIVA por contrato.
+  const hrPercent = model.finance.hrPercent;
+  const hrPerContract = price * hrPercent;
+  const contribNet = Math.max(0, contribution - hrPerContract);
+  const beWithout = contribNet > 0 ? Math.ceil(infraFixed / contribNet) : 0;
+  const beWith = contribNet > 0 ? Math.ceil((infraFixed + marketing) / contribNet) : 0;
   // Vista por período: en "año" multiplicamos los flujos mensuales por 12.
   const factor = period === "año" ? 12 : 1;
   const perLabel = period === "año" ? "año" : "mes";
@@ -317,17 +327,22 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
   const annVariable = annualContracts * variableCost * 12;
   const annInfra = infraFixed * 12;
   const annMkt = marketing * 12;
-  const annUtil = annIngreso - annVariable - annInfra - annMkt;
+  const annHr = annIngreso * hrPercent;
+  const annUtil = annIngreso - annVariable - annInfra - annMkt - annHr;
   // Impuesto de renta estimado: solo sobre la utilidad ANUAL por encima del umbral.
   const taxThreshold = model.finance.incomeTaxThreshold;
   const taxRate = model.finance.incomeTaxRate;
   const annTax = Math.max(0, annUtil - taxThreshold) * taxRate;
   const annUtilAfterTax = annUtil - annTax;
+  // Reparto con el inversionista (equity cedido).
+  const equity = model.finance.investorEquityPercent;
+  const investorShare = annUtilAfterTax * equity;
+  const founderShare = annUtilAfterTax - investorShare;
   const rows = model.scenarios.map((sc) => {
     const infraUsed = typeof sc.infra === "number" ? sc.infra : infraFixed;
-    const utilBefore = sc.contracts * contribution - infraUsed;
+    const utilBefore = sc.contracts * contribNet - infraUsed;
     const utilAfter = utilBefore - marketing;
-    const loaded = sc.contracts > 0 ? Math.round(variableCost + (infraUsed + marketing) / sc.contracts) : 0;
+    const loaded = sc.contracts > 0 ? Math.round(variableCost + hrPerContract + (infraUsed + marketing) / sc.contracts) : 0;
     return { ...sc, infraUsed, utilBefore, utilAfter, loaded };
   });
   const maxUtil = Math.max(1, ...rows.map((r) => Math.max(r.utilBefore, r.utilAfter)));
@@ -457,6 +472,14 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
             <span className="mb-1 block">Marketing / mes</span>
             <NumInput value={marketing} onChange={(n) => edit((m) => { m.finance.marketing = n; })} prefix="$" width="w-full" />
           </label>
+          <label className="text-xs font-medium text-slate-600">
+            <span className="mb-1 block">RRHH (% del ingreso)</span>
+            <span className="inline-flex w-full items-center">
+              <NumInput value={Math.round(hrPercent * 100)} onChange={(n) => edit((m) => { m.finance.hrPercent = Math.min(1, Math.max(0, n / 100)); })} width="w-full" />
+              <span className="ml-1 text-slate-400">%</span>
+            </span>
+            <span className="mt-1 block text-[10px] text-slate-400">Empleados al crecer. Hoy 0.</span>
+          </label>
         </div>
 
         {/* Resultados derivados (en vivo) */}
@@ -540,6 +563,14 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
           <div className="flex justify-between gap-2"><span className="text-slate-600">− Costo variable ({annualContracts * 12} contratos)</span><span className="tabular-nums text-slate-500">−{cop(annVariable)}</span></div>
           <div className="flex justify-between gap-2"><span className="text-slate-600">− Infra base (×12)</span><span className="tabular-nums text-slate-500">−{cop(annInfra)}</span></div>
           <div className="flex justify-between gap-2"><span className="text-slate-600">− Marketing (×12)</span><span className="tabular-nums text-slate-500">−{cop(annMkt)}</span></div>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-slate-600">
+            <span className="flex flex-wrap items-center gap-1">
+              − RRHH (empleados):
+              <NumInput value={Math.round(hrPercent * 100)} onChange={(n) => edit((m) => { m.finance.hrPercent = Math.min(1, Math.max(0, n / 100)); })} width="w-12" />%
+              del ingreso
+            </span>
+            <span className="tabular-nums text-slate-500">−{cop(annHr)}</span>
+          </div>
           <div className="flex items-center justify-between gap-2 border-t border-slate-200 pt-1.5">
             <span className="font-medium text-slate-700">= Utilidad antes de impuestos</span>
             <b className={`tabular-nums ${annUtil < 0 ? "text-rose-600" : "text-slate-800"}`}>{cop(annUtil)}</b>
@@ -554,7 +585,24 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
           </div>
           <div className="mt-1 flex items-center justify-between gap-2 border-t-2 border-slate-200 pt-2">
             <span className="font-semibold text-slate-800">= Utilidad anual DESPUÉS de impuestos</span>
-            <b className={`text-2xl tabular-nums ${annUtilAfterTax < 0 ? "text-rose-600" : "text-emerald-700"}`}>{cop(annUtilAfterTax)}</b>
+            <b className={`text-lg tabular-nums ${annUtilAfterTax < 0 ? "text-rose-600" : "text-slate-800"}`}>{cop(annUtilAfterTax)}</b>
+          </div>
+
+          {/* Reparto con el inversionista */}
+          <div className="mt-2 rounded-lg bg-violet-50/70 p-2.5">
+            <div className="flex flex-wrap items-center gap-1 text-slate-600">
+              Cedes al inversionista:
+              <NumInput value={Math.round(equity * 100)} onChange={(n) => edit((m) => { m.finance.investorEquityPercent = Math.min(1, Math.max(0, n / 100)); })} width="w-12" />%
+              de la empresa
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <span className="font-bold text-slate-800">Tu parte ({Math.round((1 - equity) * 100)}%)</span>
+              <b className={`text-2xl tabular-nums ${founderShare < 0 ? "text-rose-600" : "text-emerald-700"}`}>{cop(founderShare)}</b>
+            </div>
+            <div className="flex items-center justify-between gap-2 text-xs text-slate-500">
+              <span>Del inversionista ({Math.round(equity * 100)}%)</span>
+              <span className="tabular-nums">{cop(investorShare)}</span>
+            </div>
           </div>
         </div>
         <p className="mt-2 text-[11px] text-slate-500">
