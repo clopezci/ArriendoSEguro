@@ -455,7 +455,8 @@ disclaimers y aliados abogados).
 
 **Costo variable por contrato: ~$6.000** (valor conservador). Incluye WhatsApp,
 SMS, IA y el **uso por contrato** de Firebase, Resend y Vercel — por eso escala
-solo con el volumen. → **Contribución por contrato ≈ $43.900 (margen ~88%)**.
+solo con el volumen. **+ Pasarela de pago ~4,9% del precio (~$2.450/contrato).**
+→ **Contribución neta por contrato ≈ $41.450 (margen neto ~83%)**.
 
 ## 10. Proyecciones financieras (escenarios)
 - **Precio** $49.900 · **costo variable** $6.000 → **contribución $43.900 (88%)**.

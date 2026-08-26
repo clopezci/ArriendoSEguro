@@ -32,6 +32,8 @@ type PitchModel = {
     incomeTaxRate: number;
     /** Costo de RRHH/empleados como fracción del ingreso (ej. 0.10 = 10%). */
     hrPercent: number;
+    /** Comisión de la pasarela de pago como fracción del precio (ej. 0.049 = 4,9%). */
+    gatewayPercent: number;
     /** Fracción de la empresa cedida al inversionista (ej. 0.20 = 20%). */
     investorEquityPercent: number;
   };
@@ -68,7 +70,7 @@ const DEFAULTS: PitchModel = {
     { label: "Resend — base (el uso por contrato va en el costo variable)", value: "$0–80.000" },
   ],
   costsNote: "Los costos que crecen con el uso (Firebase, Resend, Vercel, mensajería, IA) están dentro del costo variable por contrato, así que escalan solos con el volumen. Estas líneas son la base fija mensual, que sube por escalones al cambiar de plan.",
-  finance: { price: 49_900, variableCost: 6_000, infraFixed: 300_000, marketing: 1_500_000, incomeTaxThreshold: 183_000_000, incomeTaxRate: 0.35, hrPercent: 0, investorEquityPercent: 0 },
+  finance: { price: 49_900, variableCost: 6_000, infraFixed: 300_000, marketing: 1_500_000, incomeTaxThreshold: 183_000_000, incomeTaxRate: 0.35, hrPercent: 0, gatewayPercent: 0.0491, investorEquityPercent: 0 },
   scenarios: [
     { k: "Break-even", contracts: 7, color: "#94a3b8" },
     { k: "Conservador", contracts: 50, color: "#0ea5e9" },
@@ -145,6 +147,7 @@ function mergeModel(saved: Partial<PitchModel> | null): PitchModel {
     incomeTaxThreshold: sf?.incomeTaxThreshold ?? DEFAULTS.finance.incomeTaxThreshold,
     incomeTaxRate: sf?.incomeTaxRate ?? DEFAULTS.finance.incomeTaxRate,
     hrPercent: sf?.hrPercent ?? DEFAULTS.finance.hrPercent,
+    gatewayPercent: sf?.gatewayPercent ?? DEFAULTS.finance.gatewayPercent,
     investorEquityPercent: sf?.investorEquityPercent ?? DEFAULTS.finance.investorEquityPercent,
   };
   // Migración: asegura el escenario "Escalón de infra" (con infra propia).
@@ -312,11 +315,12 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
   const maxMarket = Math.max(1, ...model.market.map((m) => m.v));
   const { price, variableCost, infraFixed, marketing } = model.finance;
   const contribution = Math.max(0, price - variableCost);
-  const marginPct = price > 0 ? Math.round((contribution / price) * 100) : 0;
-  // RRHH (empleados) como % del ingreso: baja la contribución EFECTIVA por contrato.
+  // RRHH y pasarela de pago como % del precio: bajan la contribución EFECTIVA por contrato.
   const hrPercent = model.finance.hrPercent;
+  const gatewayPercent = model.finance.gatewayPercent;
   const hrPerContract = price * hrPercent;
-  const contribNet = Math.max(0, contribution - hrPerContract);
+  const gatewayPerContract = price * gatewayPercent;
+  const contribNet = Math.max(0, contribution - hrPerContract - gatewayPerContract);
   const beWithout = contribNet > 0 ? Math.ceil(infraFixed / contribNet) : 0;
   const beWith = contribNet > 0 ? Math.ceil((infraFixed + marketing) / contribNet) : 0;
   // Vista por período: en "año" multiplicamos los flujos mensuales por 12.
@@ -328,7 +332,8 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
   const annInfra = infraFixed * 12;
   const annMkt = marketing * 12;
   const annHr = annIngreso * hrPercent;
-  const annUtil = annIngreso - annVariable - annInfra - annMkt - annHr;
+  const annGateway = annIngreso * gatewayPercent;
+  const annUtil = annIngreso - annVariable - annGateway - annInfra - annMkt - annHr;
   // Impuesto de renta estimado: solo sobre la utilidad ANUAL por encima del umbral.
   const taxThreshold = model.finance.incomeTaxThreshold;
   const taxRate = model.finance.incomeTaxRate;
@@ -342,7 +347,7 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
     const infraUsed = typeof sc.infra === "number" ? sc.infra : infraFixed;
     const utilBefore = sc.contracts * contribNet - infraUsed;
     const utilAfter = utilBefore - marketing;
-    const loaded = sc.contracts > 0 ? Math.round(variableCost + hrPerContract + (infraUsed + marketing) / sc.contracts) : 0;
+    const loaded = sc.contracts > 0 ? Math.round(variableCost + hrPerContract + gatewayPerContract + (infraUsed + marketing) / sc.contracts) : 0;
     return { ...sc, infraUsed, utilBefore, utilAfter, loaded };
   });
   const maxUtil = Math.max(1, ...rows.map((r) => Math.max(r.utilBefore, r.utilAfter)));
@@ -480,29 +485,37 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
             </span>
             <span className="mt-1 block text-[10px] text-slate-400">Empleados al crecer. Hoy 0.</span>
           </label>
+          <label className="text-xs font-medium text-slate-600">
+            <span className="mb-1 block">Pasarela de pago (% del precio)</span>
+            <span className="inline-flex w-full items-center">
+              <NumInput value={Number((gatewayPercent * 100).toFixed(1))} onChange={(n) => edit((m) => { m.finance.gatewayPercent = Math.min(1, Math.max(0, n / 100)); })} width="w-full" />
+              <span className="ml-1 text-slate-400">%</span>
+            </span>
+            <span className="mt-1 block text-[10px] text-slate-400">≈ {cop(Math.round(gatewayPerContract))} por contrato.</span>
+          </label>
         </div>
 
         {/* Resultados derivados (en vivo) */}
         <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg bg-emerald-50 p-2.5">
-            <p className="text-slate-500">Contribución / contrato</p>
-            <p className="text-base font-bold text-emerald-700">{cop(contribution)}</p>
-            <p className="text-[11px] text-slate-500">= precio − costo variable</p>
+            <p className="text-slate-500">Contribución neta / contrato</p>
+            <p className="text-base font-bold text-emerald-700">{cop(contribNet)}</p>
+            <p className="text-[11px] text-slate-500">= precio − variable − pasarela − RRHH</p>
           </div>
           <div className="rounded-lg bg-slate-50 p-2.5">
-            <p className="text-slate-500">Margen de contribución</p>
-            <p className="text-base font-bold text-slate-800">{marginPct}%</p>
-            <p className="text-[11px] text-slate-500">= contribución ÷ precio</p>
+            <p className="text-slate-500">Margen neto</p>
+            <p className="text-base font-bold text-slate-800">{price > 0 ? Math.round((contribNet / price) * 100) : 0}%</p>
+            <p className="text-[11px] text-slate-500">= contribución neta ÷ precio</p>
           </div>
           <div className="rounded-lg bg-slate-50 p-2.5">
             <p className="text-slate-500">Equilibrio sin marketing</p>
             <p className="text-base font-bold text-slate-800">{beWithout} <span className="text-xs font-normal">/mes</span></p>
-            <p className="text-[11px] text-slate-500">= infra ÷ contribución</p>
+            <p className="text-[11px] text-slate-500">= infra ÷ contribución neta</p>
           </div>
           <div className="rounded-lg bg-amber-50 p-2.5">
             <p className="text-slate-500">Equilibrio con marketing</p>
             <p className="text-base font-bold text-amber-800">{beWith} <span className="text-xs font-normal">/mes</span></p>
-            <p className="text-[11px] text-slate-500">= (infra + mkt) ÷ contribución</p>
+            <p className="text-[11px] text-slate-500">= (infra + mkt) ÷ contribución neta</p>
           </div>
         </div>
         <p className="mt-2 text-[11px] text-slate-400">
@@ -561,6 +574,14 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
         <div className="mt-3 space-y-1.5 text-sm">
           <div className="flex justify-between gap-2"><span className="text-slate-600">Ingreso anual</span><b className="tabular-nums text-slate-900">{cop(annIngreso)}</b></div>
           <div className="flex justify-between gap-2"><span className="text-slate-600">− Costo variable ({annualContracts * 12} contratos)</span><span className="tabular-nums text-slate-500">−{cop(annVariable)}</span></div>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-slate-600">
+            <span className="flex flex-wrap items-center gap-1">
+              − Pasarela de pago:
+              <NumInput value={Number((gatewayPercent * 100).toFixed(1))} onChange={(n) => edit((m) => { m.finance.gatewayPercent = Math.min(1, Math.max(0, n / 100)); })} width="w-12" />%
+              del ingreso
+            </span>
+            <span className="tabular-nums text-slate-500">−{cop(annGateway)}</span>
+          </div>
           <div className="flex justify-between gap-2"><span className="text-slate-600">− Infra base (×12)</span><span className="tabular-nums text-slate-500">−{cop(annInfra)}</span></div>
           <div className="flex justify-between gap-2"><span className="text-slate-600">− Marketing (×12)</span><span className="tabular-nums text-slate-500">−{cop(annMkt)}</span></div>
           <div className="flex flex-wrap items-center justify-between gap-2 text-slate-600">
