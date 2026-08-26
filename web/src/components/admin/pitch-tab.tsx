@@ -198,6 +198,7 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
   const { user } = useAuth();
   const [model, setModel] = useState<PitchModel>(DEFAULTS);
   const [status, setStatus] = useState<"" | "saving" | "saved" | "error">("");
+  const [period, setPeriod] = useState<"mes" | "año">("mes");
   const saveTimer = useRef<number | null>(null);
   const loadedRef = useRef(false);
   const lean = s?.lean;
@@ -252,6 +253,9 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
   const marginPct = price > 0 ? Math.round((contribution / price) * 100) : 0;
   const beWithout = contribution > 0 ? Math.ceil(infraFixed / contribution) : 0;
   const beWith = contribution > 0 ? Math.ceil((infraFixed + marketing) / contribution) : 0;
+  // Vista por período: en "año" multiplicamos los flujos mensuales por 12.
+  const factor = period === "año" ? 12 : 1;
+  const perLabel = period === "año" ? "año" : "mes";
   const rows = model.scenarios.map((sc) => {
     const infraUsed = typeof sc.infra === "number" ? sc.infra : infraFixed;
     const utilBefore = sc.contracts * contribution - infraUsed;
@@ -353,8 +357,18 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
 
       {/* Calculadora de rentabilidad (campos visibles, recalcula en vivo) */}
       <div className="rounded-xl border-2 border-violet-200 bg-white p-4">
-        <p className="text-sm font-semibold text-slate-900">🧮 Calculadora de rentabilidad</p>
-        <p className="mt-0.5 text-[11px] text-slate-400">Cambia cualquier valor y todo se recalcula al instante.</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-slate-900">🧮 Calculadora de rentabilidad</p>
+          <div className="inline-flex overflow-hidden rounded-lg border border-slate-300 text-xs font-semibold">
+            <button type="button" onClick={() => setPeriod("mes")} className={`px-3 py-1 ${period === "mes" ? "bg-[#5646E5] text-white" : "bg-white text-slate-600"}`}>Por mes</button>
+            <button type="button" onClick={() => setPeriod("año")} className={`px-3 py-1 ${period === "año" ? "bg-[#5646E5] text-white" : "bg-white text-slate-600"}`}>Por año</button>
+          </div>
+        </div>
+        <p className="mt-0.5 text-[11px] text-slate-400">
+          Cada contrato es una venta única de {cop(price)} (arriendo de ~1 año). Los ingresos y utilidades se muestran{" "}
+          <b>por {perLabel}</b>; los costos fijos son mensuales{period === "año" ? " (aquí ×12)" : ""}. Cambia cualquier
+          valor y todo se recalcula al instante.
+        </p>
 
         {/* Entradas */}
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -407,7 +421,7 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
 
       {/* Escenarios (recalculan con los valores de arriba y con cada nº de contratos) */}
       <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
-        <p className="text-sm font-semibold text-slate-900">Utilidad por escenario</p>
+        <p className="text-sm font-semibold text-slate-900">Utilidad por escenario <span className="font-normal text-slate-400">(por {perLabel})</span></p>
         <div className="mt-3 space-y-2.5">
           {rows.map((r, i) => {
             const stepped = r.infraUsed !== infraFixed;
@@ -417,14 +431,14 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
                   <span className="w-24 shrink-0 font-semibold text-slate-700"><Editable value={r.k} onCommit={(v) => edit((m) => { m.scenarios[i].k = v; })} /></span>
                   <span className="flex shrink-0 items-center gap-1 text-slate-500">
                     <NumInput value={r.contracts} onChange={(n) => edit((m) => { m.scenarios[i].contracts = n; })} width="w-16" />
-                    <span>/mes</span>
+                    <span>/mes{period === "año" ? ` (${(r.contracts * 12).toLocaleString("es-CO")}/año)` : ""}</span>
                   </span>
                   {bar(Math.max(0, r.utilAfter), maxUtil, r.color)}
-                  <span className={`w-28 shrink-0 text-right font-bold tabular-nums ${r.utilAfter < 0 ? "text-rose-600" : "text-emerald-700"}`}>{cop(r.utilAfter)}</span>
+                  <span className={`w-32 shrink-0 text-right font-bold tabular-nums ${r.utilAfter < 0 ? "text-rose-600" : "text-emerald-700"}`}>{cop(r.utilAfter * factor)}<span className="ml-0.5 text-[10px] font-normal text-slate-400">/{perLabel}</span></span>
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 pl-2 text-[11px] text-slate-500">
-                  <span>Ingreso: {cop(r.contracts * price)}</span>
-                  <span>· Antes de marketing: <b className="text-slate-700">{cop(r.utilBefore)}</b></span>
+                  <span>Ingreso: {cop(r.contracts * price * factor)}/{perLabel}</span>
+                  <span>· Antes de marketing: <b className="text-slate-700">{cop(r.utilBefore * factor)}</b></span>
                   <span>· Costo cargado/contrato: {cop(r.loaded)}</span>
                   <span className="flex items-center gap-1">
                     · Infra: <NumInput value={r.infraUsed} onChange={(n) => edit((m) => { m.scenarios[i].infra = n; })} width="w-20" prefix="$" />/mes
@@ -436,9 +450,9 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
           })}
         </div>
         <p className="mt-2 text-[11px] text-slate-500">
-          Después de marketing (número grande, rojo si es negativo) = contribución × contratos − infra − marketing.
-          La <b>infra</b> es editable por escenario: súbela para simular el <b>próximo escalón</b> (plan mayor de
-          Vercel/Firebase/Resend) cuando crezcas, y ver si la utilidad sigue sana.
+          Utilidad después de marketing por {perLabel} (rojo si es negativa) = (contribución × contratos − infra − marketing)
+          {period === "año" ? " × 12" : ""}. El costo cargado por contrato es el mismo por mes o por año. La <b>infra</b> es
+          editable por escenario: súbela para simular el <b>próximo escalón</b> de plan y ver si la utilidad sigue sana.
         </p>
       </div>
 
