@@ -537,6 +537,21 @@ export default function NuevoPage() {
     setMode("done");
   }, []);
 
+  // Edición INLINE desde la pantalla de revisión: aplica el cambio a las
+  // respuestas y lo mapea al borrador EXACTAMENTE igual que al avanzar un paso
+  // (persist + saveResume), y lo sube al servidor, para que quede guardado como
+  // si se hubiera escrito en el campo original.
+  function applyReviewEdit(patch: Partial<Answers>) {
+    const na = { ...a, ...patch };
+    setA(na);
+    persist(na);
+    if (draftId) {
+      saveResume(draftId, na, QUESTIONS.length);
+      const d = getDraft(draftId);
+      if (d) void flushDraftToServer(d);
+    }
+  }
+
   // Tras crear cuenta / iniciar sesión en el registro exprés: re-asocia el
   // borrador al usuario real, lo GUARDA en el servidor de inmediato (para que
   // no dependa del debounce y no se pierdan los datos ya diligenciados) y trae
@@ -1174,16 +1189,34 @@ export default function NuevoPage() {
               <h2 className="text-3xl font-extrabold tracking-tight">Revisa antes de continuar</h2>
               <p className="mt-1.5 text-slate-500">Confirma lo esencial. Puedes volver a cualquier paso para corregir.</p>
 
-              <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
+              <p className="mt-1 text-[12px] text-slate-400">Toca el ✏️ para corregir cualquier dato aquí mismo; se guarda de una vez.</p>
+              <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
                 <ReviewItem label="Contrato" value="Vivienda urbana (Ley 820)" />
-                <ReviewItem label="Arrendador" value={`${a.name || "—"} · ${a.docType} ${a.docNumber || ""}`.trim()} />
+                <InlineEdit label="Arrendador" value={a.name} placeholder="Nombre del arrendador"
+                  validate={(v) => validateStep("text", { ...a, name: v })} onSave={(v) => applyReviewEdit({ name: v })} />
+                <InlineEdit label={`Documento (${a.docType})`} value={a.docNumber} placeholder="Número de documento" inputMode="numeric"
+                  validate={(v) => validateStep("doc", { ...a, docNumber: v })} onSave={(v) => applyReviewEdit({ docNumber: v })} />
                 <ReviewItem label="Calidad" value={a.acting === "proxy" ? "Apoderado" : a.acting === "owner" ? "Dueño" : "—"} />
-                {a.propertyAlias.trim() && <ReviewItem label="Nombre de la propiedad" value={a.propertyAlias.trim()} />}
-                <ReviewItem label="Inmueble" value={`${a.propertyType || "—"} · ${a.address || "—"}${a.city ? ", " + a.city : ""}`} />
+                <InlineEdit label="Nombre de la propiedad" value={a.propertyAlias} display={a.propertyAlias.trim() || "—"} placeholder="Opcional (ej. Apto 301)"
+                  onSave={(v) => applyReviewEdit({ propertyAlias: v })} />
+                <ReviewItem label="Tipo de inmueble" value={a.propertyType || "—"} />
+                <InlineEdit label="Dirección" value={a.address} placeholder="Dirección del inmueble"
+                  validate={(v) => validateStep("addr", { ...a, address: v })} onSave={(v) => applyReviewEdit({ address: v })} />
+                <InlineEdit label="Ciudad" value={a.city} placeholder="Ciudad"
+                  validate={(v) => validateStep("addr", { ...a, city: v })} onSave={(v) => applyReviewEdit({ city: v })} />
                 <ReviewItem label="Soporte de propiedad" value={`${a.propertyDocType === "tradicion" ? "Certificado de tradición" : a.propertyDocType === "servicios" ? "Servicios públicos" : a.propertyDocType === "predial" ? "Impuesto predial" : a.propertyDocType === "escritura" ? "Escritura pública" : a.propertyDocType === "otro" ? "Otro documento" : "—"}${a.propertyOath ? " · declaración de facultad aceptada ✓" : ""}`} />
-                <ReviewItem label="Canon" value={a.canon ? `$ ${Number(a.canon.replace(/[^\d]/g, "")).toLocaleString("es-CO")}` : "—"} />
-                <ReviewItem label="Arrendatario" value={a.tenantName ? `${a.tenantName}${a.tenantMode === "invite" ? " (completa por invitación)" : ""}` : "—"} />
-                <ReviewItem label="Términos" value={a.startDate ? `Desde ${a.startDate} · ${a.termMonths} meses · pago día ${a.paymentDay}` : "—"} />
+                <InlineEdit label="Canon" value={(a.canon || "").replace(/[^\d]/g, "")} display={a.canon ? `$ ${Number(a.canon.replace(/[^\d]/g, "")).toLocaleString("es-CO")}` : "—"} inputMode="numeric" placeholder="Valor del canon"
+                  sanitize={(v) => v.replace(/[^\d]/g, "")} validate={(v) => validateStep("canon", { ...a, canon: v })} onSave={(v) => applyReviewEdit({ canon: v })} />
+                {a.tenantMode === "invite"
+                  ? <ReviewItem label="Arrendatario" value={a.tenantName ? `${a.tenantName} (completa por invitación)` : "Completa por invitación"} />
+                  : <InlineEdit label="Arrendatario" value={a.tenantName} display={a.tenantName || "—"} placeholder="Nombre del arrendatario"
+                      validate={(v) => validateStep("tenant", { ...a, tenantName: v })} onSave={(v) => applyReviewEdit({ tenantName: v })} />}
+                <InlineEdit label="Fecha de inicio" value={a.startDate} type="date"
+                  validate={(v) => validateStep("lease", { ...a, startDate: v })} onSave={(v) => applyReviewEdit({ startDate: v })} />
+                <InlineEdit label="Plazo (meses)" value={a.termMonths} display={a.termMonths ? `${a.termMonths} meses` : "—"} inputMode="numeric" placeholder="Meses"
+                  sanitize={(v) => v.replace(/[^\d]/g, "")} validate={(v) => validateStep("lease", { ...a, termMonths: v })} onSave={(v) => applyReviewEdit({ termMonths: v })} />
+                <InlineEdit label="Día de pago" value={a.paymentDay} display={a.paymentDay ? `Día ${a.paymentDay}` : "—"} inputMode="numeric" placeholder="1 a 31"
+                  sanitize={(v) => v.replace(/[^\d]/g, "")} validate={(v) => validateStep("lease", { ...a, paymentDay: v })} onSave={(v) => applyReviewEdit({ paymentDay: v })} />
                 <ReviewItem label="Codeudor" value={a.hasCodebtor === "yes" ? `${a.codebtorName || "Sí"}${a.codebtorMode === "invite" ? " (completa por invitación)" : a.codebtorMode === "tenant" ? " (lo gestiona el inquilino)" : ""}` : "No"} />
                 <ReviewItem label="Servicios públicos" value={a.utilitiesParty === "arrendatario" ? "Los paga el inquilino" : a.utilitiesParty === "arrendador" ? "Los paga el dueño" : a.utilitiesParty === "compartido" ? "Se reparten" : "—"} />
                 <ReviewItem label="Administración" value={a.adminParty === "arrendatario" ? "La paga el inquilino" : a.adminParty === "arrendador" ? "La paga el dueño" : a.adminParty === "no_aplica" ? "No aplica" : "—"} />
@@ -1844,6 +1877,82 @@ function ReviewItem({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
       <p className="mt-0.5 break-words text-[15px] font-medium text-slate-800">{value}</p>
+    </div>
+  );
+}
+
+/**
+ * Campo de la revisión editable EN SITIO: muestra el valor con un lápiz; al
+ * tocarlo aparece un input, se valida (reusando la validación del paso original)
+ * y se guarda con `onSave`. Así se corrige un dato sin volver atrás paso a paso.
+ */
+function InlineEdit({
+  label, value, onSave, display, type = "text", inputMode, placeholder, validate, sanitize,
+}: {
+  label: string;
+  value: string;
+  onSave: (v: string) => void;
+  display?: string;
+  type?: "text" | "date";
+  inputMode?: "text" | "numeric" | "decimal";
+  placeholder?: string;
+  /** Devuelve un mensaje de error (o null si es válido) para el valor propuesto. */
+  validate?: (v: string) => string | null;
+  /** Limpia el texto antes de validar/guardar (p. ej. solo dígitos). */
+  sanitize?: (v: string) => string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => { if (!editing) setDraft(value); }, [value, editing]);
+
+  const commit = () => {
+    const clean = sanitize ? sanitize(draft) : draft.trim();
+    const e = validate ? validate(clean) : null;
+    if (e) { setErr(e); return; }
+    onSave(clean);
+    setErr(null);
+    setEditing(false);
+  };
+  const cancel = () => { setDraft(value); setErr(null); setEditing(false); };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-3.5">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+        {!editing && (
+          <button
+            type="button"
+            onClick={() => { setDraft(value); setErr(null); setEditing(true); }}
+            title={`Editar ${label}`}
+            aria-label={`Editar ${label}`}
+            className="-mt-1 -mr-1 shrink-0 rounded-lg px-2 py-1 text-sm text-slate-400 transition hover:bg-violet-50 hover:text-[#5646E5]"
+          >
+            ✏️
+          </button>
+        )}
+      </div>
+      {editing ? (
+        <div className="mt-1">
+          <input
+            autoFocus
+            type={type}
+            inputMode={inputMode}
+            value={draft}
+            placeholder={placeholder}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") commit(); if (e.key === "Escape") cancel(); }}
+            className="w-full rounded-lg border-2 border-[#5646E5] px-2.5 py-2 text-[15px] outline-none"
+          />
+          {err && <p className="mt-1 text-[11px] font-medium text-rose-600">{err}</p>}
+          <div className="mt-2 flex gap-2">
+            <button type="button" onClick={commit} className="rounded-lg bg-[#5646E5] px-3.5 py-1.5 text-xs font-bold text-white active:scale-95">Guardar</button>
+            <button type="button" onClick={cancel} className="rounded-lg border border-slate-300 px-3.5 py-1.5 text-xs font-semibold text-slate-500">Cancelar</button>
+          </div>
+        </div>
+      ) : (
+        <p className="mt-0.5 break-words text-[15px] font-medium text-slate-800">{(display ?? value) || "—"}</p>
+      )}
     </div>
   );
 }
