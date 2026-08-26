@@ -104,6 +104,10 @@ const nextConfig: NextConfig = {
       })),
     ];
   },
+  /** Digital Asset Links para la app Android (TWA). */
+  async rewrites() {
+    return [{ source: "/.well-known/assetlinks.json", destination: "/api/assetlinks" }];
+  },
 };
 
 export default nextConfig;
