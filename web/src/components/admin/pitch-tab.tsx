@@ -152,16 +152,57 @@ function EditableNum({ value, onCommit, className = "" }: { value: number; onCom
   );
 }
 
+/**
+ * Campo numérico SIEMPRE visible que recalcula en vivo con cada tecla (sin doble
+ * clic). Mantiene un buffer local para poder borrar/escribir con fluidez y
+ * confirma el número al modelo en cada cambio, así todos los resultados
+ * (contribución, equilibrio, utilidad) se actualizan al instante.
+ */
+function NumInput({ value, onChange, width = "w-28", prefix }: {
+  value: number;
+  onChange: (n: number) => void;
+  width?: string;
+  prefix?: string;
+}) {
+  const [buf, setBuf] = useState(String(value));
+  const focused = useRef(false);
+  useEffect(() => { if (!focused.current) setBuf(String(value)); }, [value]);
+  return (
+    <span className="inline-flex items-center rounded border border-slate-300 bg-white focus-within:border-[#5646E5]">
+      {prefix && <span className="pl-2 text-xs text-slate-400">{prefix}</span>}
+      <input
+        type="text"
+        inputMode="numeric"
+        value={buf}
+        onFocus={() => { focused.current = true; }}
+        onBlur={() => { focused.current = false; setBuf(String(value)); }}
+        onChange={(e) => {
+          const raw = e.target.value;
+          setBuf(raw);
+          const n = Number(raw.replace(/[^\d.-]/g, ""));
+          if (Number.isFinite(n)) onChange(n);
+        }}
+        className={`${width} bg-transparent px-2 py-1 text-sm tabular-nums outline-none`}
+      />
+    </span>
+  );
+}
+
 export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
   const { user } = useAuth();
   const [model, setModel] = useState<PitchModel>(DEFAULTS);
   const [status, setStatus] = useState<"" | "saving" | "saved" | "error">("");
   const saveTimer = useRef<number | null>(null);
+  const loadedRef = useRef(false);
   const lean = s?.lean;
   const cop = (v: number | null | undefined) => (v == null ? "—" : `$${Number(v).toLocaleString("es-CO")}`);
 
+  // Carga UNA sola vez (cuando el usuario está disponible). Si `user` cambia de
+  // referencia después (refresco de token, etc.), NO se vuelve a cargar, para no
+  // pisar lo que estás editando en pantalla.
   useEffect(() => {
-    if (!user) return;
+    if (!user || loadedRef.current) return;
+    loadedRef.current = true;
     void (async () => {
       try {
         const res = await fetch("/api/admin/pitch-config", { headers: { ...(await buildAuthHeaders(user)) } });
@@ -303,70 +344,98 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
         <p className="mt-2 text-[11px] text-slate-500"><b>Moat:</b> <Editable multiline value={model.moat} onCommit={(v) => edit((m) => { m.moat = v; })} /></p>
       </div>
 
-      {/* Unit economics + costos */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
-          <p className="text-sm font-semibold text-slate-900">Por contrato (variable)</p>
-          <ul className="mt-2 space-y-1 text-xs text-slate-700">
-            <li className="flex justify-between gap-2"><span>Precio</span><b>$<EditableNum value={price} onCommit={(n) => edit((m) => { m.finance.price = n; })} /></b></li>
-            <li className="flex justify-between gap-2"><span>Costo variable</span><b>$<EditableNum value={variableCost} onCommit={(n) => edit((m) => { m.finance.variableCost = n; })} /></b></li>
-            <li className="flex justify-between gap-2 border-t border-slate-100 pt-1"><span>Contribución</span><b className="text-emerald-700">{cop(contribution)}</b></li>
-            <li className="flex justify-between gap-2"><span>Margen de contribución</span><b>{marginPct}%</b></li>
-            <li className="flex justify-between gap-2"><span>Desarrollo y mantenimiento</span><b>$0 (fundador)</b></li>
-          </ul>
-          <p className="mt-2 text-[11px] text-slate-400">
-            El costo variable incluye WhatsApp, SMS, IA y el uso por contrato de Firebase, Resend y Vercel; por eso
-            crece con el volumen (no queda subestimado al escalar).
-          </p>
+      {/* Calculadora de rentabilidad (campos visibles, recalcula en vivo) */}
+      <div className="rounded-xl border-2 border-violet-200 bg-white p-4">
+        <p className="text-sm font-semibold text-slate-900">🧮 Calculadora de rentabilidad</p>
+        <p className="mt-0.5 text-[11px] text-slate-400">Cambia cualquier valor y todo se recalcula al instante.</p>
+
+        {/* Entradas */}
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="text-xs font-medium text-slate-600">
+            <span className="mb-1 block">Precio por contrato</span>
+            <NumInput value={price} onChange={(n) => edit((m) => { m.finance.price = n; })} prefix="$" width="w-full" />
+          </label>
+          <label className="text-xs font-medium text-slate-600">
+            <span className="mb-1 block">Costo variable / contrato</span>
+            <NumInput value={variableCost} onChange={(n) => edit((m) => { m.finance.variableCost = n; })} prefix="$" width="w-full" />
+          </label>
+          <label className="text-xs font-medium text-slate-600">
+            <span className="mb-1 block">Infra base / mes</span>
+            <NumInput value={infraFixed} onChange={(n) => edit((m) => { m.finance.infraFixed = n; })} prefix="$" width="w-full" />
+          </label>
+          <label className="text-xs font-medium text-slate-600">
+            <span className="mb-1 block">Marketing / mes</span>
+            <NumInput value={marketing} onChange={(n) => edit((m) => { m.finance.marketing = n; })} prefix="$" width="w-full" />
+          </label>
         </div>
-        <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
-          <p className="text-sm font-semibold text-slate-900">Costos fijos por mes</p>
-          <ul className="mt-2 space-y-1 text-xs text-slate-700">
-            {model.platformCosts.map((c, i) => (
-              <li key={i} className="flex justify-between gap-2">
-                <span><Editable value={c.label} onCommit={(v) => edit((m) => { m.platformCosts[i].label = v; })} /></span>
-                <b><Editable value={c.value} onCommit={(v) => edit((m) => { m.platformCosts[i].value = v; })} /></b>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-1 text-[11px] text-slate-400"><Editable value={model.costsNote} onCommit={(v) => edit((m) => { m.costsNote = v; })} /></p>
+
+        {/* Resultados derivados (en vivo) */}
+        <div className="mt-4 grid gap-2 text-xs sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-lg bg-emerald-50 p-2.5">
+            <p className="text-slate-500">Contribución / contrato</p>
+            <p className="text-base font-bold text-emerald-700">{cop(contribution)}</p>
+            <p className="text-[11px] text-slate-500">= precio − costo variable</p>
+          </div>
+          <div className="rounded-lg bg-slate-50 p-2.5">
+            <p className="text-slate-500">Margen de contribución</p>
+            <p className="text-base font-bold text-slate-800">{marginPct}%</p>
+            <p className="text-[11px] text-slate-500">= contribución ÷ precio</p>
+          </div>
+          <div className="rounded-lg bg-slate-50 p-2.5">
+            <p className="text-slate-500">Equilibrio sin marketing</p>
+            <p className="text-base font-bold text-slate-800">{beWithout} <span className="text-xs font-normal">/mes</span></p>
+            <p className="text-[11px] text-slate-500">= infra ÷ contribución</p>
+          </div>
+          <div className="rounded-lg bg-amber-50 p-2.5">
+            <p className="text-slate-500">Equilibrio con marketing</p>
+            <p className="text-base font-bold text-amber-800">{beWith} <span className="text-xs font-normal">/mes</span></p>
+            <p className="text-[11px] text-slate-500">= (infra + mkt) ÷ contribución</p>
+          </div>
         </div>
+        <p className="mt-2 text-[11px] text-slate-400">
+          El costo variable incluye WhatsApp, SMS, IA y el uso por contrato de Firebase, Resend y Vercel; por eso crece
+          con el volumen y el margen no se infla al escalar. Desarrollo y mantenimiento: $0 (fundador).
+        </p>
       </div>
 
-      {/* Proyección */}
+      {/* Escenarios (recalculan con los valores de arriba y con cada nº de contratos) */}
       <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
-        <p className="text-sm font-semibold text-slate-900">Proyección por escenarios</p>
-        <p className="mt-1 text-[11px] text-slate-500">
-          Precio $<EditableNum value={price} onCommit={(n) => edit((m) => { m.finance.price = n; })} /> ·
-          costo variable $<EditableNum value={variableCost} onCommit={(n) => edit((m) => { m.finance.variableCost = n; })} />/contrato ·
-          contribución <b>{cop(contribution)}</b> ({marginPct}%)
-          <br />
-          Infra base $<EditableNum value={infraFixed} onCommit={(n) => edit((m) => { m.finance.infraFixed = n; })} />/mes ·
-          Marketing $<EditableNum value={marketing} onCommit={(n) => edit((m) => { m.finance.marketing = n; })} />/mes
-        </p>
-        <p className="mt-2 rounded-lg bg-slate-50 px-2 py-1.5 text-[11px] text-slate-700">
-          ⚖️ Equilibrio: <b>{beWithout}</b> contratos/mes (sin marketing) · <b>{beWith}</b> contratos/mes (con marketing).
-        </p>
+        <p className="text-sm font-semibold text-slate-900">Utilidad por escenario</p>
         <div className="mt-3 space-y-2.5">
           {rows.map((r, i) => (
-            <div key={i} className="rounded-lg border border-slate-100 p-2">
+            <div key={i} className="rounded-lg border border-slate-100 p-2.5">
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="w-24 shrink-0 font-semibold text-slate-700"><Editable value={r.k} onCommit={(v) => edit((m) => { m.scenarios[i].k = v; })} /></span>
-                <span className="w-20 shrink-0 tabular-nums text-slate-500"><EditableNum value={r.contracts} onCommit={(n) => edit((m) => { m.scenarios[i].contracts = n; })} />/mes</span>
+                <span className="flex shrink-0 items-center gap-1 text-slate-500">
+                  <NumInput value={r.contracts} onChange={(n) => edit((m) => { m.scenarios[i].contracts = n; })} width="w-16" />
+                  <span>/mes</span>
+                </span>
                 {bar(Math.max(0, r.utilAfter), maxUtil, r.color)}
-                <span className={`w-28 shrink-0 text-right font-bold tabular-nums ${r.utilAfter < 0 ? "text-rose-600" : "text-slate-900"}`}>{cop(r.utilAfter)}</span>
+                <span className={`w-28 shrink-0 text-right font-bold tabular-nums ${r.utilAfter < 0 ? "text-rose-600" : "text-emerald-700"}`}>{cop(r.utilAfter)}</span>
               </div>
               <p className="mt-1 pl-2 text-[11px] text-slate-500">
-                Antes de marketing: <b className="text-slate-700">{cop(r.utilBefore)}</b> · Costo cargado por contrato: {cop(r.loaded)}
+                Ingreso: {cop(r.contracts * price)} · Antes de marketing: <b className="text-slate-700">{cop(r.utilBefore)}</b> · Costo cargado/contrato: {cop(r.loaded)}
               </p>
             </div>
           ))}
         </div>
         <p className="mt-2 text-[11px] text-slate-500">
-          Después de marketing = contribución × contratos − infra base − marketing. La barra y el número principal son la
-          utilidad <b>después de marketing</b> (en rojo si es negativa). La contribución ya descuenta el costo variable, que
-          incluye el uso por contrato de Firebase, Resend y Vercel — por eso el margen no se infla al crecer.
+          Después de marketing (número grande, rojo si es negativo) = contribución × contratos − infra − marketing.
         </p>
+      </div>
+
+      {/* Costos de plataforma (referencia editable) */}
+      <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
+        <p className="text-sm font-semibold text-slate-900">Costos fijos por mes (referencia)</p>
+        <ul className="mt-2 space-y-1 text-xs text-slate-700">
+          {model.platformCosts.map((c, i) => (
+            <li key={i} className="flex justify-between gap-2">
+              <span><Editable value={c.label} onCommit={(v) => edit((m) => { m.platformCosts[i].label = v; })} /></span>
+              <b><Editable value={c.value} onCommit={(v) => edit((m) => { m.platformCosts[i].value = v; })} /></b>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-1 text-[11px] text-slate-400"><Editable value={model.costsNote} onCommit={(v) => edit((m) => { m.costsNote = v; })} /></p>
       </div>
 
       {/* El ask */}

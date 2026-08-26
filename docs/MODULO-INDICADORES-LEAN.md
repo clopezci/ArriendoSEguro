@@ -442,27 +442,58 @@ disclaimers y aliados abogados).
 | Vercel (hosting) | App Next.js | ~US$20 (~$80.000) |
 | Firebase (Firestore/Storage/Auth) | Base de datos y archivos | US$0–25 (empieza en free) |
 | Resend (correo) | Notificaciones | US$0–20 (free hasta 3k/mes) |
-| WhatsApp/Meta | Mensajes por conversación | ~US$0,005–0,05 c/u (variable) |
-| IA (Groq/Gemini gratis → OpenAI pago) | Asistente/validación | US$0–30 |
+| WhatsApp/Meta | Mensajes por conversación | por contrato → **costo variable** |
+| IA (Groq/Gemini gratis → OpenAI pago) | Asistente/validación | por contrato → **costo variable** |
 | Dominio + varios | | ~US$1–5 |
-| **Marketing (inversión principal)** | pauta + contenido + adquisición | **~$1.500.000/mes** *(valor medio; escalar con resultados)* |
-| **Total mensual (con marketing)** | | **~$1,7M–$2,2M COP** *(estimado — ajustar con cifras reales)* |
+| **Marketing (inversión principal)** | pauta + contenido + adquisición | **$1.500.000/mes** *(valor medio; escalar con resultados)* |
+| **Total FIJO mensual (infra base + marketing)** | | **~$1,8M COP** |
 
-**Costo variable por contrato** *(estimado)*: ~$3.000–6.000 (mensajería + IA +
-storage + fee de pasarela). → **Margen bruto ~85–90%**.
+> Los servicios que cobran **por uso** (Firebase, Resend, Vercel, WhatsApp, IA)
+> crecen **por contrato**, así que van en el **costo variable** (abajo), no en el
+> fijo. Las líneas de Vercel/Firebase/Resend de arriba son solo su **base mínima
+> mensual**, que sube por **escalones** al cambiar de plan.
 
-## 10. Proyecciones financieras (escenarios ilustrativos)
-Precio $49.900; margen bruto ~88%; costos fijos de plataforma ~$300.000/mes *(estimado)*.
-| Escenario | Contratos/mes | Ingreso/mes | Margen bruto/mes | Utilidad tras costos fijos |
-|---|---|---|---|---|
-| Break-even | ~7 | ~$349.000 | ~$307.000 | ~$0 |
-| Conservador | 50 | ~$2,50 M | ~$2,20 M | ~$1,9 M |
-| Base | 200 | ~$9,98 M | ~$8,78 M | ~$8,5 M |
-| Optimista | 800 | ~$39,9 M | ~$35,1 M | ~$34,8 M |
+**Costo variable por contrato: ~$6.000** (valor conservador). Incluye WhatsApp,
+SMS, IA y el **uso por contrato** de Firebase, Resend y Vercel — por eso escala
+solo con el volumen. → **Contribución por contrato ≈ $43.900 (margen ~88%)**.
 
-**Punto de equilibrio ~7 contratos/mes** gracias a dev/mantenimiento en $0: el
-riesgo de quema es mínimo; casi todo ingreso adicional es margen para reinvertir
-en adquisición. *(Cifras ilustrativas; validar con datos reales del tablero.)*
+## 10. Proyecciones financieras (escenarios)
+- **Precio** $49.900 · **costo variable** $6.000 → **contribución $43.900 (88%)**.
+- **Costos fijos:** infra base ~$300.000/mes + **marketing $1.500.000/mes**.
+- **Dos puntos de equilibrio:** ~**7 contratos/mes** (solo infra) · ~**41 contratos/mes** (incluyendo marketing).
+
+| Escenario | Contratos/mes | Ingreso/mes | Utilidad ANTES de mkt | Utilidad DESPUÉS de mkt | Costo cargado/contrato |
+|---|---|---|---|---|---|
+| Equilibrio (infra) | 7 | ~$349.300 | ~$7.300 | ~−$1,49 M | ~$263.000 |
+| Conservador | 50 | ~$2,50 M | ~$1,90 M | ~$395.000 | ~$42.000 |
+| Base | 200 | ~$9,98 M | ~$8,48 M | ~$6,98 M | ~$15.000 |
+| Optimista | 800 | ~$39,9 M | ~$34,8 M | ~$33,3 M | ~$8.250 |
+
+*(La "utilidad después de marketing" es negativa hasta ~41 contratos/mes: ese es
+el rango de inversión inicial, cubierto por los fondos que buscamos.)*
+
+## 10.1 Economía de escala
+Dos tipos de costo, y crecen distinto:
+
+1. **Costo variable ($6.000/contrato):** los servicios que cobran por uso
+   (Firebase, Resend, Vercel, WhatsApp, IA) están **aquí**, así que **escalan
+   solos**: a 1.000 contratos el modelo ya cuenta $6.000.000. El margen **no se
+   infla** al crecer.
+2. **Costos fijos (infra base + marketing):** no crecen por contrato; se
+   **reparten** entre más contratos. Por eso el **costo cargado por contrato BAJA**
+   al escalar:
+
+| Contratos/mes | Costo cargado por contrato |
+|---|---|
+| 7 | ~$263.000 |
+| 50 | ~$42.000 |
+| 200 | ~$15.000 |
+| 800 | ~$8.250 |
+
+- La **infra base** sube por **escalones** (Vercel Pro, Firebase Blaze, Resend
+  pago), no de forma lineal → se presupuesta el **próximo escalón**, no un aumento
+  suave por contrato.
+- Fórmula operativa: **`Utilidad real = contribución × contratos − infra − marketing`**.
 
 ## 11. Cómo lo medimos (tablero de KPIs — Bloque 1)
 Todo el pitch se **audita en vivo** con el tablero `/admin → Lean`:
@@ -479,9 +510,9 @@ Esto le da al inversionista **evidencia real y actualizada**, no promesas.
   que hoy manejamos "tímidamente"; (2) **colchón de costos de plataforma** durante
   el crecimiento; (3) opcional: alianzas legales y de seguros.
 - **No** para desarrollo ni nómina técnica (cubierto por el fundador).
-- **Retorno:** con margen ~88% y break-even ~7 contratos/mes, cada peso de
-  marketing eficiente se traduce casi directo en margen; el CAC/LTV del tablero
-  guía la reinversión.
+- **Retorno:** con margen de contribución ~88%, equilibrio ~7 contratos/mes sin
+  marketing y ~41 incluyéndolo, cada peso de marketing eficiente se traduce casi
+  directo en margen a partir de ahí.
 
 ## 13. Por qué somos los mejores / por qué ahora
 - **Momento:** el arriendo crece (40,3% y subiendo) y se informaliza → más gente
