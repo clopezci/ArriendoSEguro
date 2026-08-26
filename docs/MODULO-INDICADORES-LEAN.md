@@ -468,9 +468,12 @@ solo con el volumen. → **Contribución por contrato ≈ $43.900 (margen ~88%)*
 | Conservador | 50 | ~$2,50 M | ~$1,90 M | ~$395.000 | ~$42.000 |
 | Base | 200 | ~$9,98 M | ~$8,48 M | ~$6,98 M | ~$15.000 |
 | Optimista | 800 | ~$39,9 M | ~$34,8 M | ~$33,3 M | ~$8.250 |
+| **Escalón de infra** (400 contratos, infra sube a $1,2M) | 400 | ~$19,96 M | ~$16,36 M | ~$14,86 M | ~$12.750 |
 
 *(La "utilidad después de marketing" es negativa hasta ~41 contratos/mes: ese es
-el rango de inversión inicial, cubierto por los fondos que buscamos.)*
+el rango de inversión inicial, cubierto por los fondos que buscamos. El escenario
+"Escalón de infra" muestra que, aun subiendo la infra base 4× por un plan mayor,
+la utilidad sigue muy sana gracias a que el costo variable ya absorbe el uso.)*
 
 ## 10.1 Economía de escala
 Dos tipos de costo, y crecen distinto:
