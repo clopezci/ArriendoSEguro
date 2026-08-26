@@ -21,7 +21,16 @@ type PitchModel = {
   moat: string;
   platformCosts: { label: string; value: string }[];
   costsNote: string;
-  finance: { price: number; variableCost: number; infraFixed: number; marketing: number };
+  finance: {
+    price: number;
+    variableCost: number;
+    infraFixed: number;
+    marketing: number;
+    /** Umbral de utilidad anual a partir del cual se estima impuesto de renta. */
+    incomeTaxThreshold: number;
+    /** Tasa (fracción, ej. 0.35) aplicada a la utilidad anual por encima del umbral. */
+    incomeTaxRate: number;
+  };
   scenarios: { k: string; contracts: number; color: string; infra?: number }[];
   ask: string;
 };
@@ -54,7 +63,7 @@ const DEFAULTS: PitchModel = {
     { label: "Resend — base (el uso por contrato va en el costo variable)", value: "$0–80.000" },
   ],
   costsNote: "Los costos que crecen con el uso (Firebase, Resend, Vercel, mensajería, IA) están dentro del costo variable por contrato, así que escalan solos con el volumen. Estas líneas son la base fija mensual, que sube por escalones al cambiar de plan.",
-  finance: { price: 49_900, variableCost: 6_000, infraFixed: 300_000, marketing: 1_500_000 },
+  finance: { price: 49_900, variableCost: 6_000, infraFixed: 300_000, marketing: 1_500_000, incomeTaxThreshold: 183_000_000, incomeTaxRate: 0.35 },
   scenarios: [
     { k: "Break-even", contracts: 7, color: "#94a3b8" },
     { k: "Conservador", contracts: 50, color: "#0ea5e9" },
@@ -86,6 +95,8 @@ function mergeModel(saved: Partial<PitchModel> | null): PitchModel {
       (typeof sf?.margin === "number" ? Math.round(price * (1 - sf.margin)) : DEFAULTS.finance.variableCost),
     infraFixed: sf?.infraFixed ?? sf?.fixed ?? DEFAULTS.finance.infraFixed,
     marketing: sf?.marketing ?? DEFAULTS.finance.marketing,
+    incomeTaxThreshold: sf?.incomeTaxThreshold ?? DEFAULTS.finance.incomeTaxThreshold,
+    incomeTaxRate: sf?.incomeTaxRate ?? DEFAULTS.finance.incomeTaxRate,
   };
   // Migración: asegura el escenario "Escalón de infra" (con infra propia).
   let scenarios = saved.scenarios ?? DEFAULTS.scenarios;
@@ -263,6 +274,11 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
   const annInfra = infraFixed * 12;
   const annMkt = marketing * 12;
   const annUtil = annIngreso - annVariable - annInfra - annMkt;
+  // Impuesto de renta estimado: solo sobre la utilidad ANUAL por encima del umbral.
+  const taxThreshold = model.finance.incomeTaxThreshold;
+  const taxRate = model.finance.incomeTaxRate;
+  const annTax = Math.max(0, annUtil - taxThreshold) * taxRate;
+  const annUtilAfterTax = annUtil - annTax;
   const rows = model.scenarios.map((sc) => {
     const infraUsed = typeof sc.infra === "number" ? sc.infra : infraFixed;
     const utilBefore = sc.contracts * contribution - infraUsed;
@@ -480,14 +496,32 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
           <div className="flex justify-between gap-2"><span className="text-slate-600">− Costo variable ({annualContracts * 12} contratos)</span><span className="tabular-nums text-slate-500">−{cop(annVariable)}</span></div>
           <div className="flex justify-between gap-2"><span className="text-slate-600">− Infra base (×12)</span><span className="tabular-nums text-slate-500">−{cop(annInfra)}</span></div>
           <div className="flex justify-between gap-2"><span className="text-slate-600">− Marketing (×12)</span><span className="tabular-nums text-slate-500">−{cop(annMkt)}</span></div>
+          <div className="flex items-center justify-between gap-2 border-t border-slate-200 pt-1.5">
+            <span className="font-medium text-slate-700">= Utilidad antes de impuestos</span>
+            <b className={`tabular-nums ${annUtil < 0 ? "text-rose-600" : "text-slate-800"}`}>{cop(annUtil)}</b>
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-2 text-slate-600">
+            <span className="flex flex-wrap items-center gap-1">
+              − Impuesto de renta (est.): <NumInput value={Math.round(taxRate * 100)} onChange={(n) => edit((m) => { m.finance.incomeTaxRate = Math.min(1, Math.max(0, n / 100)); })} width="w-12" />%
+              sobre lo que exceda
+              <NumInput value={taxThreshold} onChange={(n) => edit((m) => { m.finance.incomeTaxThreshold = n; })} width="w-28" prefix="$" />/año
+            </span>
+            <span className="tabular-nums text-slate-500">−{cop(annTax)}</span>
+          </div>
           <div className="mt-1 flex items-center justify-between gap-2 border-t-2 border-slate-200 pt-2">
-            <span className="font-semibold text-slate-800">= Utilidad anual</span>
-            <b className={`text-2xl tabular-nums ${annUtil < 0 ? "text-rose-600" : "text-emerald-700"}`}>{cop(annUtil)}</b>
+            <span className="font-semibold text-slate-800">= Utilidad anual DESPUÉS de impuestos</span>
+            <b className={`text-2xl tabular-nums ${annUtilAfterTax < 0 ? "text-rose-600" : "text-emerald-700"}`}>{cop(annUtilAfterTax)}</b>
           </div>
         </div>
         <p className="mt-2 text-[11px] text-slate-500">
-          Supone {annualContracts} contratos nuevos cada mes durante 12 meses. Cambia el objetivo para ver otro volumen.
-          {annUtil < 0 && " (Negativo: aún por debajo del equilibrio con marketing.)"}
+          Supone {annualContracts} contratos nuevos cada mes durante 12 meses.
+          {annTax === 0 && annUtil > 0 && " Aún sin impuesto: la utilidad no supera el umbral."}
+          {annTax > 0 && " Ya paga impuesto: la utilidad supera el umbral."}
+        </p>
+        <p className="mt-1 rounded-lg bg-amber-50 p-2 text-[11px] text-amber-900">
+          ⚠️ El impuesto es un <b>estimado configurable</b>, no asesoría tributaria. Como <b>persona natural</b> la renta
+          es <b>progresiva por tramos</b> (marginal hasta ~39%), así que la tarifa efectiva suele ser menor al 35% (que
+          es la de una empresa/SAS). <b>Confirma el umbral y la tarifa con tu contador.</b>
         </p>
       </div>
 

@@ -502,6 +502,15 @@ Dos tipos de costo, y crecen distinto:
   suave por contrato.
 - Fórmula operativa: **`Utilidad real = contribución × contratos − infra − marketing`**.
 
+### Impuesto de renta (estimado)
+Mientras la operación sea pequeña (persona natural), no hay renta a pagar. Al
+**superar el umbral** (configurable; hoy asumimos ~$183M de utilidad anual) empieza
+a aplicar impuesto. **Ojo:** como **persona natural** la renta es **progresiva por
+tramos** (marginal hasta ~39%), no un 35% plano —ese 35% es la tarifa de una
+**empresa/SAS**—, así que la tarifa **efectiva** suele ser menor. El tablero lo
+muestra en el **Resumen anual** como "Utilidad después de impuestos", con umbral y
+tasa **editables**. *No es asesoría tributaria: confirmar con contador.*
+
 ## 11. Cómo lo medimos (tablero de KPIs — Bloque 1)
 Todo el pitch se **audita en vivo** con el tablero `/admin → Lean`:
 - **North Star:** arriendos activos gestionados.
