@@ -199,6 +199,7 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
   const [model, setModel] = useState<PitchModel>(DEFAULTS);
   const [status, setStatus] = useState<"" | "saving" | "saved" | "error">("");
   const [period, setPeriod] = useState<"mes" | "año">("mes");
+  const [annualContracts, setAnnualContracts] = useState(200); // "contratos/mes" objetivo para el resumen anual
   const saveTimer = useRef<number | null>(null);
   const loadedRef = useRef(false);
   const lean = s?.lean;
@@ -256,6 +257,12 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
   // Vista por período: en "año" multiplicamos los flujos mensuales por 12.
   const factor = period === "año" ? 12 : 1;
   const perLabel = period === "año" ? "año" : "mes";
+  // Resumen anual (P&L de 12 meses) para el nº de contratos/mes objetivo.
+  const annIngreso = annualContracts * price * 12;
+  const annVariable = annualContracts * variableCost * 12;
+  const annInfra = infraFixed * 12;
+  const annMkt = marketing * 12;
+  const annUtil = annIngreso - annVariable - annInfra - annMkt;
   const rows = model.scenarios.map((sc) => {
     const infraUsed = typeof sc.infra === "number" ? sc.infra : infraFixed;
     const utilBefore = sc.contracts * contribution - infraUsed;
@@ -312,7 +319,9 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
             </div>
           ))}
         </div>
-        <p className="mt-2 text-[11px] text-slate-500"><Editable multiline value={model.marketNote} onCommit={(v) => edit((m) => { m.marketNote = v; })} /></p>
+        <p className="mt-3 rounded-xl border-2 border-emerald-300 bg-emerald-50 p-3 text-center text-base font-bold text-emerald-700 sm:text-lg">
+          <Editable multiline value={model.marketNote} onCommit={(v) => edit((m) => { m.marketNote = v; })} />
+        </p>
       </div>
 
       {/* KPIs en vivo */}
@@ -453,6 +462,32 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
           Utilidad después de marketing por {perLabel} (rojo si es negativa) = (contribución × contratos − infra − marketing)
           {period === "año" ? " × 12" : ""}. El costo cargado por contrato es el mismo por mes o por año. La <b>infra</b> es
           editable por escenario: súbela para simular el <b>próximo escalón</b> de plan y ver si la utilidad sigue sana.
+        </p>
+      </div>
+
+      {/* Resumen anual (P&L de 12 meses) */}
+      <div className="rounded-xl border-2 border-violet-300 bg-gradient-to-br from-violet-50 to-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-slate-900">📅 Resumen anual</p>
+          <span className="flex items-center gap-1 text-xs text-slate-600">
+            Objetivo:
+            <NumInput value={annualContracts} onChange={(n) => setAnnualContracts(n)} width="w-16" />
+            contratos/mes <span className="text-slate-400">({(annualContracts * 12).toLocaleString("es-CO")}/año)</span>
+          </span>
+        </div>
+        <div className="mt-3 space-y-1.5 text-sm">
+          <div className="flex justify-between gap-2"><span className="text-slate-600">Ingreso anual</span><b className="tabular-nums text-slate-900">{cop(annIngreso)}</b></div>
+          <div className="flex justify-between gap-2"><span className="text-slate-600">− Costo variable ({annualContracts * 12} contratos)</span><span className="tabular-nums text-slate-500">−{cop(annVariable)}</span></div>
+          <div className="flex justify-between gap-2"><span className="text-slate-600">− Infra base (×12)</span><span className="tabular-nums text-slate-500">−{cop(annInfra)}</span></div>
+          <div className="flex justify-between gap-2"><span className="text-slate-600">− Marketing (×12)</span><span className="tabular-nums text-slate-500">−{cop(annMkt)}</span></div>
+          <div className="mt-1 flex items-center justify-between gap-2 border-t-2 border-slate-200 pt-2">
+            <span className="font-semibold text-slate-800">= Utilidad anual</span>
+            <b className={`text-2xl tabular-nums ${annUtil < 0 ? "text-rose-600" : "text-emerald-700"}`}>{cop(annUtil)}</b>
+          </div>
+        </div>
+        <p className="mt-2 text-[11px] text-slate-500">
+          Supone {annualContracts} contratos nuevos cada mes durante 12 meses. Cambia el objetivo para ver otro volumen.
+          {annUtil < 0 && " (Negativo: aún por debajo del equilibrio con marketing.)"}
         </p>
       </div>
 
