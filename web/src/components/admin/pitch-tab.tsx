@@ -32,6 +32,7 @@ type PitchModel = {
     incomeTaxRate: number;
   };
   scenarios: { k: string; contracts: number; color: string; infra?: number }[];
+  faq: { q: string; a: string }[];
   ask: string;
 };
 
@@ -70,6 +71,48 @@ const DEFAULTS: PitchModel = {
     { k: "Base", contracts: 200, color: "#6366f1" },
     { k: "Optimista", contracts: 800, color: "#10b981" },
     { k: "Escalón de infra", contracts: 400, color: "#f59e0b", infra: 1_200_000 },
+  ],
+  faq: [
+    {
+      q: "¿Quién es el cliente objetivo (nicho)?",
+      a: "Arrendadores directos —personas naturales con uno o más inmuebles en arriendo— en toda Colombia, de 25 a 70 años. El foco está en 25 a 60 por adopción digital; entre 60 y 70 son menos digitales, y para ellos la app trae guía por voz y un flujo de una pregunta a la vez. La expansión natural es a toda Latinoamérica.",
+    },
+    {
+      q: "¿Cómo se genera el ingreso?",
+      a: "Venta única de $49.900 por contrato (incluye la firma). A eso se suman firma certificada, plan Plus (posventa), aliados (abogados, seguros, cobranza) y publicidad. Hay recurrencia anual por renovaciones.",
+    },
+    {
+      q: "¿Cómo se adquieren clientes y a qué costo?",
+      a: "Marketing digital (Meta/Google), contenido y SEO (blog con leyes reales) y programa de referidos. Todo se mide en el tablero (CAC y LTV/CAC); se escala solo lo que rinde (meta LTV/CAC ≥ 3×).",
+    },
+    {
+      q: "¿Qué los hace defendibles (moat)?",
+      a: "Reputación privada bidireccional (datos propios que nadie más tiene), motor legal (Ley 820 y 527) y costo marginal casi cero. Entre más contratos, más datos y más difícil de replicar.",
+    },
+    {
+      q: "¿Por qué ahora?",
+      a: "El arriendo crece y se informaliza (40,3% de los hogares y subiendo): cada vez más gente sin respaldo legal que necesita justo esto, barato y fácil. El producto ya está construido y probado.",
+    },
+    {
+      q: "¿Cuál es el estado del producto y la tracción?",
+      a: "Producto terminado y en producción de punta a punta: contrato, firma, pagos, inventario, reputación y cierre. Las métricas (visitas, embudo, ingresos) se ven en vivo en el tablero.",
+    },
+    {
+      q: "¿Cuáles son los riesgos y cómo se mitigan?",
+      a: "Adopción de adultos mayores (mitigada con voz, IA y flujo simple), riesgo legal (motor Ley 820 + aliados abogados), pagos (proveedores con firma HMAC y trazabilidad) y dependencia de plataformas (costos por uso, que escalan con el volumen).",
+    },
+    {
+      q: "¿Es escalable a otros países?",
+      a: "Sí. La arquitectura ya contempla multi-país (zonas horarias y textos legales dinámicos). El motor legal se adapta por país; el resto del producto es el mismo.",
+    },
+    {
+      q: "¿Y si una inmobiliaria grande lo copia?",
+      a: "Su negocio es cobrar comisión mensual por administrar; canibalizar eso con un pago único bajo va contra su modelo. Además el moat de reputación se construye con años de datos propios, no se copia con dinero.",
+    },
+    {
+      q: "¿Quién está detrás y en qué se usa la inversión?",
+      a: "El fundador desarrolla y opera (por eso el costo de desarrollo es $0), bajo LOTIC. La inversión va a marketing (adquisición) y a un colchón de costos de plataforma durante el crecimiento; no a desarrollo ni nómina técnica.",
+    },
   ],
   ask: "Fondos para marketing (hoy incipiente) + colchón de costos de plataforma durante el crecimiento (opcional: alianzas legales/seguros). No para desarrollo ni nómina técnica. Con margen de contribución ~88% y equilibrio ~41 contratos/mes incluyendo marketing, cada peso de marketing eficiente se vuelve margen.",
 };
@@ -115,6 +158,7 @@ function mergeModel(saved: Partial<PitchModel> | null): PitchModel {
     costsNote: saved.costsNote ?? DEFAULTS.costsNote,
     finance,
     scenarios,
+    faq: saved.faq ?? DEFAULTS.faq,
     ask: saved.ask ?? DEFAULTS.ask,
   };
 }
@@ -502,7 +546,7 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
           </div>
           <div className="flex flex-wrap items-center justify-between gap-2 text-slate-600">
             <span className="flex flex-wrap items-center gap-1">
-              − Impuesto de renta (est.): <NumInput value={Math.round(taxRate * 100)} onChange={(n) => edit((m) => { m.finance.incomeTaxRate = Math.min(1, Math.max(0, n / 100)); })} width="w-12" />%
+              − Impuesto de renta: <NumInput value={Math.round(taxRate * 100)} onChange={(n) => edit((m) => { m.finance.incomeTaxRate = Math.min(1, Math.max(0, n / 100)); })} width="w-12" />%
               sobre lo que exceda
               <NumInput value={taxThreshold} onChange={(n) => edit((m) => { m.finance.incomeTaxThreshold = n; })} width="w-28" prefix="$" />/año
             </span>
@@ -518,10 +562,9 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
           {annTax === 0 && annUtil > 0 && " Aún sin impuesto: la utilidad no supera el umbral."}
           {annTax > 0 && " Ya paga impuesto: la utilidad supera el umbral."}
         </p>
-        <p className="mt-1 rounded-lg bg-amber-50 p-2 text-[11px] text-amber-900">
-          ⚠️ El impuesto es un <b>estimado configurable</b>, no asesoría tributaria. Como <b>persona natural</b> la renta
-          es <b>progresiva por tramos</b> (marginal hasta ~39%), así que la tarifa efectiva suele ser menor al 35% (que
-          es la de una empresa/SAS). <b>Confirma el umbral y la tarifa con tu contador.</b>
+        <p className="mt-1 text-[11px] text-slate-500">
+          Como <b>persona natural</b> la renta es <b>progresiva por tramos</b> (marginal hasta ~39%), por lo que la
+          tarifa efectiva es menor al 35% de una empresa/SAS. El umbral y la tasa son ajustables arriba.
         </p>
       </div>
 
@@ -537,6 +580,42 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
           ))}
         </ul>
         <p className="mt-1 text-[11px] text-slate-400"><Editable value={model.costsNote} onCommit={(v) => edit((m) => { m.costsNote = v; })} /></p>
+      </div>
+
+      {/* Preguntas frecuentes del inversionista */}
+      <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-semibold text-slate-900">Preguntas frecuentes del inversionista</p>
+          <button
+            type="button"
+            onClick={() => edit((m) => { m.faq.push({ q: "Nueva pregunta", a: "Respuesta." }); })}
+            className="rounded-lg border border-slate-300 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+          >
+            + Agregar pregunta
+          </button>
+        </div>
+        <div className="mt-3 space-y-3">
+          {model.faq.map((f, i) => (
+            <div key={i} className="rounded-lg border border-slate-100 bg-slate-50/50 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-semibold text-slate-800">
+                  <Editable multiline value={f.q} onCommit={(v) => edit((m) => { m.faq[i].q = v; })} />
+                </p>
+                <button
+                  type="button"
+                  onClick={() => edit((m) => { m.faq.splice(i, 1); })}
+                  title="Quitar pregunta"
+                  className="shrink-0 rounded px-1.5 text-xs text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="mt-1 text-xs leading-relaxed text-slate-600">
+                <Editable multiline value={f.a} onCommit={(v) => edit((m) => { m.faq[i].a = v; })} />
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* El ask */}
