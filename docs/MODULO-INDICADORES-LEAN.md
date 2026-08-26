@@ -502,14 +502,13 @@ Dos tipos de costo, y crecen distinto:
   suave por contrato.
 - Fórmula operativa: **`Utilidad real = contribución × contratos − infra − marketing`**.
 
-### Impuesto de renta (estimado)
+### Impuesto de renta
 Mientras la operación sea pequeña (persona natural), no hay renta a pagar. Al
-**superar el umbral** (configurable; hoy asumimos ~$183M de utilidad anual) empieza
-a aplicar impuesto. **Ojo:** como **persona natural** la renta es **progresiva por
-tramos** (marginal hasta ~39%), no un 35% plano —ese 35% es la tarifa de una
-**empresa/SAS**—, así que la tarifa **efectiva** suele ser menor. El tablero lo
-muestra en el **Resumen anual** como "Utilidad después de impuestos", con umbral y
-tasa **editables**. *No es asesoría tributaria: confirmar con contador.*
+**superar el umbral** (~$183M de utilidad anual) empieza a aplicar impuesto. Como
+**persona natural** la renta es **progresiva por tramos** (marginal hasta ~39%), no
+un 35% plano —ese 35% es la tarifa de una **empresa/SAS**—, por lo que la tarifa
+**efectiva** es menor. El tablero lo muestra en el **Resumen anual** como "Utilidad
+después de impuestos", con umbral y tasa **editables**.
 
 ## 11. Cómo lo medimos (tablero de KPIs — Bloque 1)
 Todo el pitch se **audita en vivo** con el tablero `/admin → Lean`:
@@ -538,6 +537,30 @@ Esto le da al inversionista **evidencia real y actualizada**, no promesas.
 - **Costo estructural imbatible** (dev/mantenimiento propios) → podemos ofrecer el
   precio más bajo del mercado y aún así tener alto margen.
 - **Datos de reputación** que se vuelven un activo defendible con cada contrato.
+
+## 13.1 Preguntas frecuentes del inversionista
+- **¿Quién es el cliente objetivo (nicho)?** Arrendadores directos —personas
+  naturales con uno o más inmuebles en arriendo— en toda Colombia, de 25 a 70
+  años. Foco en 25–60 por adopción digital; 60–70 son menos digitales y para ellos
+  la app trae voz y flujo de una pregunta a la vez. Expansión natural a toda
+  Latinoamérica.
+- **¿Cómo se genera el ingreso?** Venta única de $49.900 por contrato (incluye
+  firma), más firma certificada, plan Plus, aliados (abogados/seguros/cobranza) y
+  publicidad; recurrencia anual por renovaciones.
+- **¿Cómo se adquieren clientes y a qué costo?** Marketing digital, contenido/SEO y
+  referidos, medido en el tablero (CAC y LTV/CAC ≥ 3×); se escala solo lo que rinde.
+- **¿Qué los hace defendibles (moat)?** Reputación privada bidireccional (datos
+  propios), motor legal (Ley 820/527) y costo marginal casi cero.
+- **¿Estado y tracción?** Producto terminado y en producción de punta a punta;
+  métricas en vivo.
+- **¿Riesgos y mitigación?** Adopción (voz/IA/flujo simple), legal (motor Ley 820 +
+  aliados), pagos (HMAC + trazabilidad), plataformas (costos por uso, escalables).
+- **¿Escalable a otros países?** Sí; arquitectura multi-país (zonas horarias y
+  textos legales dinámicos), motor legal adaptable por país.
+- **¿Y si una inmobiliaria grande lo copia?** Va contra su modelo de comisión
+  mensual, y el moat de reputación se construye con años de datos propios.
+- **¿Equipo y uso de fondos?** Fundador que desarrolla y opera (dev $0) bajo LOTIC;
+  la inversión va a marketing y colchón de plataforma, no a desarrollo ni nómina.
 
 ## 14. Roadmap (resumen)
 Lanzamiento → tracción por referidos → alianzas (seguros/abogados/notaría) →
