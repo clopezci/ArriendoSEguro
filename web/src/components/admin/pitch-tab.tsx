@@ -22,7 +22,7 @@ type PitchModel = {
   platformCosts: { label: string; value: string }[];
   costsNote: string;
   finance: { price: number; variableCost: number; infraFixed: number; marketing: number };
-  scenarios: { k: string; contracts: number; color: string }[];
+  scenarios: { k: string; contracts: number; color: string; infra?: number }[];
   ask: string;
 };
 
@@ -60,6 +60,7 @@ const DEFAULTS: PitchModel = {
     { k: "Conservador", contracts: 50, color: "#0ea5e9" },
     { k: "Base", contracts: 200, color: "#6366f1" },
     { k: "Optimista", contracts: 800, color: "#10b981" },
+    { k: "Escalón de infra", contracts: 400, color: "#f59e0b", infra: 1_200_000 },
   ],
   ask: "Fondos para marketing (hoy incipiente) + colchón de costos de plataforma durante el crecimiento (opcional: alianzas legales/seguros). No para desarrollo ni nómina técnica. Con margen de contribución ~88% y equilibrio ~41 contratos/mes incluyendo marketing, cada peso de marketing eficiente se vuelve margen.",
 };
@@ -86,6 +87,11 @@ function mergeModel(saved: Partial<PitchModel> | null): PitchModel {
     infraFixed: sf?.infraFixed ?? sf?.fixed ?? DEFAULTS.finance.infraFixed,
     marketing: sf?.marketing ?? DEFAULTS.finance.marketing,
   };
+  // Migración: asegura el escenario "Escalón de infra" (con infra propia).
+  let scenarios = saved.scenarios ?? DEFAULTS.scenarios;
+  if (!scenarios.some((sc) => typeof sc.infra === "number")) {
+    scenarios = [...scenarios, { k: "Escalón de infra", contracts: 400, color: "#f59e0b", infra: 1_200_000 }];
+  }
   return {
     headline: saved.headline ?? DEFAULTS.headline,
     subtitle: saved.subtitle ?? DEFAULTS.subtitle,
@@ -97,7 +103,7 @@ function mergeModel(saved: Partial<PitchModel> | null): PitchModel {
     platformCosts,
     costsNote: saved.costsNote ?? DEFAULTS.costsNote,
     finance,
-    scenarios: saved.scenarios ?? DEFAULTS.scenarios,
+    scenarios,
     ask: saved.ask ?? DEFAULTS.ask,
   };
 }
@@ -247,10 +253,11 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
   const beWithout = contribution > 0 ? Math.ceil(infraFixed / contribution) : 0;
   const beWith = contribution > 0 ? Math.ceil((infraFixed + marketing) / contribution) : 0;
   const rows = model.scenarios.map((sc) => {
-    const utilBefore = sc.contracts * contribution - infraFixed;
+    const infraUsed = typeof sc.infra === "number" ? sc.infra : infraFixed;
+    const utilBefore = sc.contracts * contribution - infraUsed;
     const utilAfter = utilBefore - marketing;
-    const loaded = sc.contracts > 0 ? Math.round(variableCost + (infraFixed + marketing) / sc.contracts) : 0;
-    return { ...sc, utilBefore, utilAfter, loaded };
+    const loaded = sc.contracts > 0 ? Math.round(variableCost + (infraUsed + marketing) / sc.contracts) : 0;
+    return { ...sc, infraUsed, utilBefore, utilAfter, loaded };
   });
   const maxUtil = Math.max(1, ...rows.map((r) => Math.max(r.utilBefore, r.utilAfter)));
   const bar = (v: number, max: number, color: string) => (
@@ -402,25 +409,36 @@ export function PitchTab({ s }: { s?: { lean?: LiveLean } }) {
       <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
         <p className="text-sm font-semibold text-slate-900">Utilidad por escenario</p>
         <div className="mt-3 space-y-2.5">
-          {rows.map((r, i) => (
-            <div key={i} className="rounded-lg border border-slate-100 p-2.5">
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="w-24 shrink-0 font-semibold text-slate-700"><Editable value={r.k} onCommit={(v) => edit((m) => { m.scenarios[i].k = v; })} /></span>
-                <span className="flex shrink-0 items-center gap-1 text-slate-500">
-                  <NumInput value={r.contracts} onChange={(n) => edit((m) => { m.scenarios[i].contracts = n; })} width="w-16" />
-                  <span>/mes</span>
-                </span>
-                {bar(Math.max(0, r.utilAfter), maxUtil, r.color)}
-                <span className={`w-28 shrink-0 text-right font-bold tabular-nums ${r.utilAfter < 0 ? "text-rose-600" : "text-emerald-700"}`}>{cop(r.utilAfter)}</span>
+          {rows.map((r, i) => {
+            const stepped = r.infraUsed !== infraFixed;
+            return (
+              <div key={i} className={`rounded-lg border p-2.5 ${stepped ? "border-amber-200 bg-amber-50/40" : "border-slate-100"}`}>
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <span className="w-24 shrink-0 font-semibold text-slate-700"><Editable value={r.k} onCommit={(v) => edit((m) => { m.scenarios[i].k = v; })} /></span>
+                  <span className="flex shrink-0 items-center gap-1 text-slate-500">
+                    <NumInput value={r.contracts} onChange={(n) => edit((m) => { m.scenarios[i].contracts = n; })} width="w-16" />
+                    <span>/mes</span>
+                  </span>
+                  {bar(Math.max(0, r.utilAfter), maxUtil, r.color)}
+                  <span className={`w-28 shrink-0 text-right font-bold tabular-nums ${r.utilAfter < 0 ? "text-rose-600" : "text-emerald-700"}`}>{cop(r.utilAfter)}</span>
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 pl-2 text-[11px] text-slate-500">
+                  <span>Ingreso: {cop(r.contracts * price)}</span>
+                  <span>· Antes de marketing: <b className="text-slate-700">{cop(r.utilBefore)}</b></span>
+                  <span>· Costo cargado/contrato: {cop(r.loaded)}</span>
+                  <span className="flex items-center gap-1">
+                    · Infra: <NumInput value={r.infraUsed} onChange={(n) => edit((m) => { m.scenarios[i].infra = n; })} width="w-20" prefix="$" />/mes
+                    {stepped && <span className="rounded bg-amber-200 px-1 font-semibold text-amber-900">escalón</span>}
+                  </span>
+                </div>
               </div>
-              <p className="mt-1 pl-2 text-[11px] text-slate-500">
-                Ingreso: {cop(r.contracts * price)} · Antes de marketing: <b className="text-slate-700">{cop(r.utilBefore)}</b> · Costo cargado/contrato: {cop(r.loaded)}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <p className="mt-2 text-[11px] text-slate-500">
           Después de marketing (número grande, rojo si es negativo) = contribución × contratos − infra − marketing.
+          La <b>infra</b> es editable por escenario: súbela para simular el <b>próximo escalón</b> (plan mayor de
+          Vercel/Firebase/Resend) cuando crezcas, y ver si la utilidad sigue sana.
         </p>
       </div>
 
