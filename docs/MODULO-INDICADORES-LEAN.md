@@ -461,6 +461,10 @@ solo con el volumen. → **Contribución por contrato ≈ $43.900 (margen ~88%)*
 - **Precio** $49.900 · **costo variable** $6.000 → **contribución $43.900 (88%)**.
 - **Costos fijos:** infra base ~$300.000/mes + **marketing $1.500.000/mes**.
 - **Dos puntos de equilibrio:** ~**7 contratos/mes** (solo infra) · ~**41 contratos/mes** (incluyendo marketing).
+- **Mensual vs anual:** cada contrato es una **venta única** de $49.900 (arriendo de ~1 año); "contratos/mes"
+  es el ritmo de **firmas nuevas** por mes. La tabla es **mensual**; para la vista **anual** multiplica los
+  ingresos y utilidades por 12 (el costo cargado por contrato es idéntico). El tablero tiene un interruptor
+  **Por mes / Por año**.
 
 | Escenario | Contratos/mes | Ingreso/mes | Utilidad ANTES de mkt | Utilidad DESPUÉS de mkt | Costo cargado/contrato |
 |---|---|---|---|---|---|
