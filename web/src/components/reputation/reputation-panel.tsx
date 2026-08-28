@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { StarRating } from "@/components/reputation/star-rating";
 import { FileButton } from "@/components/ui/file-button";
+import { ReportButton } from "@/components/reports/report-button";
 import {
   REPLICA_REASONS,
   REPLICA_TEXT_MAX,
@@ -436,6 +437,11 @@ export function ReputationPanel({ contractId }: { contractId: string }) {
         </Link>
         . No hay listas negras ni búsqueda por cédula.
       </p>
+
+      <div className="flex items-center justify-between gap-2 border-t border-slate-100 pt-2">
+        <span className="text-[11px] text-slate-400">¿Una calificación te parece injusta o abusiva?</span>
+        <ReportButton area="reputacion" contractId={contractId} />
+      </div>
     </div>
   );
 }
