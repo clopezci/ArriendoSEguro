@@ -8,6 +8,7 @@ import { RequiresSavedContract } from "@/components/contracts/requires-saved-con
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { FileButton } from "@/components/ui/file-button";
+import { ReportButton } from "@/components/reports/report-button";
 import {
   MAINTENANCE_CATEGORIES,
   MAINTENANCE_CATEGORY_LABELS,
@@ -394,6 +395,10 @@ export default function MantenimientoPage() {
                       ))}
                     </ul>
                   )}
+
+                  <div className="mt-2 flex justify-end">
+                    <ReportButton area="mantenimiento" contractId={id} targetId={r.id} />
+                  </div>
 
                   {dispute && (
                     <div className="mt-3 rounded-2xl border-2 border-amber-300 bg-amber-50/70 p-3">
