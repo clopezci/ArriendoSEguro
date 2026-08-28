@@ -20,6 +20,7 @@ export const maxDuration = 60;
  * header `Authorization: Bearer <CRON_SECRET>` de las llamadas de cron.
  */
 const TASKS = [
+  "/api/platform-payments/sweep-pending/send-due", // red de seguridad: reconcilia órdenes "pending" contra Wompi (webhook que no llegó)
   "/api/payments/tenant-reminders/send-due", // recordatorios de pago al inquilino + escalamiento
   "/api/contracts/renewal-reminders/send-due", // vencimiento / renovación (preaviso 3 meses)
   "/api/contracts/delivery-act-reminders/send-due", // acta de entrega y devolución (última semana)
