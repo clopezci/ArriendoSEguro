@@ -401,6 +401,28 @@ export default function AdminPage() {
     }
   }
 
+  // Diagnóstico de la configuración de pagos (Wompi): dice si el webhook y el
+  // events secret están listos. Se consulta con la sesión (no por URL directa).
+  const [payDiagBusy, setPayDiagBusy] = useState(false);
+  const [payDiagOut, setPayDiagOut] = useState("");
+  async function loadPayDiag() {
+    if (!user) return;
+    setPayDiagBusy(true);
+    setPayDiagOut("Consultando configuración de pagos…");
+    try {
+      const res = await fetch("/api/platform-payments/diagnostics", {
+        headers: { ...(await buildAuthHeaders(user)) },
+        cache: "no-store",
+      });
+      const j = await res.json();
+      setPayDiagOut(JSON.stringify(j, null, 2));
+    } catch {
+      setPayDiagOut("No se pudo consultar el diagnóstico.");
+    } finally {
+      setPayDiagBusy(false);
+    }
+  }
+
   const hintSet = useMemo(() => new Set(publicAdminHintEmails()), []);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -2093,6 +2115,27 @@ export default function AdminPage() {
               {sweepOut && (
                 <pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-emerald-100">
                   {sweepOut}
+                </pre>
+              )}
+            </div>
+            <div className="mt-4 border-t border-slate-200 pt-3">
+              <h3 className="text-xs font-semibold text-slate-800">Diagnóstico de pagos (Wompi)</h3>
+              <p className="mt-1 text-[11px] text-slate-600">
+                Revisa si la pasarela está lista. Fíjate en <code>webhookUrl</code> (la que debes registrar en el panel de
+                Wompi), <code>eventsSecretSet</code> (debe ser <code>true</code>) y <code>sandbox</code> (debe ser{" "}
+                <code>false</code> en producción).
+              </p>
+              <button
+                type="button"
+                disabled={payDiagBusy}
+                onClick={() => void loadPayDiag()}
+                className="mt-2 rounded border border-sky-600/60 bg-sky-50 px-3 py-1.5 text-sm font-semibold text-sky-700 hover:bg-sky-100 disabled:opacity-50"
+              >
+                {payDiagBusy ? "Consultando…" : "Ver diagnóstico de pagos"}
+              </button>
+              {payDiagOut && (
+                <pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-sky-100">
+                  {payDiagOut}
                 </pre>
               )}
             </div>
