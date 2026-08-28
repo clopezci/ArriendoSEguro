@@ -1320,6 +1320,60 @@ export default function NuevoPage() {
 
 const inputCls = "w-full rounded-2xl border-2 border-slate-200 bg-white px-[18px] py-4 text-lg outline-none transition focus:border-[#5646E5] focus:ring-4 focus:ring-[#ECE9FB]";
 
+/**
+ * Opción para SOLICITAR el reporte de DataCrédito a la parte invitada (inquilino/
+ * codeudor). Vive en el paso de invitación (donde el dueño envía el enlace). Al
+ * ACTIVARLA, primero pide confirmación con una advertencia: la persona necesita
+ * habilidades digitales (crear cuenta en DataCrédito, consultarlo y compartir el
+ * reporte). Solo si confirma "Sí", se marca `datacredito` como documento requerido
+ * y aparece la casilla en el enlace del invitado. Desactivar no pide confirmación.
+ */
+function DatacreditRequestOption({ active, whoLabel, onChange }: { active: boolean; whoLabel: string; onChange: (next: boolean) => void }) {
+  const [confirming, setConfirming] = useState(false);
+  return (
+    <div className={`rounded-2xl border-2 p-4 transition ${active ? "border-[#5646E5] bg-[#ECE9FB]" : "border-slate-200 bg-white"}`}>
+      <button
+        type="button"
+        onClick={() => { if (active) { onChange(false); setConfirming(false); } else { setConfirming(true); } }}
+        className="flex w-full items-start gap-3.5 text-left"
+      >
+        <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">{active ? "✅" : "📊"}</span>
+        <span>
+          <b className="block text-[15px]">¿Solicitar a {whoLabel} su reporte de DataCrédito?</b>
+          <small className="text-[13px] text-slate-500">Por ley, el historial crediticio solo lo consulta el titular (Ley 1581 de 2012). Al activarlo, se le pedirá que lo consulte y adjunte en su enlace. {active ? "Activado ✓ — toca para quitar." : "Opcional."}</small>
+        </span>
+      </button>
+
+      {confirming && !active && (
+        <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50/80 p-3 text-xs text-amber-950">
+          <p className="font-semibold">⚠️ Antes de solicitarlo, ten en cuenta:</p>
+          <p className="mt-1 leading-relaxed">
+            {whoLabel.charAt(0).toUpperCase() + whoLabel.slice(1)} debe tener <b>habilidades digitales</b>: tendrá que
+            <b> crear una cuenta en DataCrédito</b>, consultar su reporte y compartírtelo adjuntándolo en el enlace. Si no
+            se maneja bien con eso, puede trabarse el proceso. ¿Seguro que quieres solicitárselo?
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => { onChange(true); setConfirming(false); }}
+              className="rounded-xl bg-[#5646E5] px-4 py-2 text-sm font-bold text-white transition hover:brightness-105"
+            >
+              Sí, solicitarlo
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="rounded-xl border-2 border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400"
+            >
+              No, mejor no
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function InputMic({ voice, className, autoFocus, ...props }: { voice: (t: string) => void } & InputHTMLAttributes<HTMLInputElement>) {
   const ref = useRef<HTMLInputElement>(null);
   // En vez del `autoFocus` nativo (que en iOS DESPLAZA la pantalla hacia el input
@@ -1564,10 +1618,17 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
           <OwnerPartyDocSlots contractDraftId={party.draftId} role="tenant" requiredDocs={a.reqDocsTenant} />
         </div>
       ) : (
-        <PartyInvitePanel contractDraftId={party.draftId} role="tenant" roleLabel="Arrendatario (inquilino)" inviterName={party.inviterName}
-          monthlyRent={Number((a.canon || "").replace(/[^\d]/g, "")) || 0}
-          requiredDocs={a.reqDocsTenant} codebtorRequiredDocs={a.reqDocsCodebtor}
-          onImport={(p) => party.onImport("tenant", p)} />
+        <div className="flex flex-col gap-3">
+          <DatacreditRequestOption
+            active={a.reqDocsTenant.includes("datacredito")}
+            whoLabel="el inquilino"
+            onChange={(next) => setA({ ...a, reqDocsTenant: next ? Array.from(new Set([...a.reqDocsTenant, "datacredito"])) : a.reqDocsTenant.filter((k) => k !== "datacredito") })}
+          />
+          <PartyInvitePanel contractDraftId={party.draftId} role="tenant" roleLabel="Arrendatario (inquilino)" inviterName={party.inviterName}
+            monthlyRent={Number((a.canon || "").replace(/[^\d]/g, "")) || 0}
+            requiredDocs={a.reqDocsTenant} codebtorRequiredDocs={a.reqDocsCodebtor}
+            onImport={(p) => party.onImport("tenant", p)} />
+        </div>
       );
     case "lease": {
       const canonN = Number((a.canon || "").replace(/[^\d]/g, "")) || 0;
@@ -1640,10 +1701,17 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
                 <CodebtorViaTenantPanel contractDraftId={party.draftId} tenantInvited={a.tenantMode === "invite"}
                   onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
               ) : (
-                <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
-                  monthlyRent={Number((a.canon || "").replace(/[^\d]/g, "")) || 0}
-                  requiredDocs={a.reqDocsCodebtor}
-                  onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
+                <div className="flex flex-col gap-3">
+                  <DatacreditRequestOption
+                    active={a.reqDocsCodebtor.includes("datacredito")}
+                    whoLabel="el codeudor"
+                    onChange={(next) => setA({ ...a, reqDocsCodebtor: next ? Array.from(new Set([...a.reqDocsCodebtor, "datacredito"])) : a.reqDocsCodebtor.filter((k) => k !== "datacredito") })}
+                  />
+                  <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
+                    monthlyRent={Number((a.canon || "").replace(/[^\d]/g, "")) || 0}
+                    requiredDocs={a.reqDocsCodebtor}
+                    onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
+                </div>
               )}
               {/* El dueño ve los documentos que el codeudor subió por su enlace. */}
               <InviteSupportsOwnerList contractDraftId={party.draftId} role="solidaryCoDebtor" title="Documentos que subió el codeudor" />
@@ -1654,39 +1722,11 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
         </div>
       );
     case "credit": {
-      const toggleKey = (list: string[], k: string): string[] => (list.includes(k) ? list.filter((x) => x !== k) : [...list, k]);
-      const tenantWantsCredit = a.reqDocsTenant.includes("datacredito");
-      const codebtorWantsCredit = a.reqDocsCodebtor.includes("datacredito");
       return (
         <div className="flex flex-col gap-2.5">
-          {/* El dueño NO puede consultar el DataCrédito de otro (Ley 1581): en su lugar,
-              SOLICITA al titular que lo consulte y adjunte el reporte. */}
-          <button
-            type="button"
-            onClick={() => setA({ ...a, reqDocsTenant: toggleKey(a.reqDocsTenant, "datacredito") })}
-            className={`flex items-start gap-3.5 rounded-2xl border-2 p-4 text-left transition ${tenantWantsCredit ? "border-[#5646E5] bg-[#ECE9FB]" : "border-slate-200 bg-white hover:border-[#5646E5]"}`}
-          >
-            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">{tenantWantsCredit ? "✅" : "📊"}</span>
-            <span>
-              <b className="block text-[15px]">Solicitar al inquilino su reporte de DataCrédito</b>
-              <small className="text-[13px] text-slate-500">Por ley, el historial crediticio solo lo consulta el titular. Al activarlo, se le pedirá al inquilino que lo consulte y adjunte el reporte (aparece como documento requerido en su enlace). {tenantWantsCredit ? "Activado ✓" : "Opcional."}</small>
-            </span>
-          </button>
-
-          {a.hasCodebtor === "yes" && (
-            <button
-              type="button"
-              onClick={() => setA({ ...a, reqDocsCodebtor: toggleKey(a.reqDocsCodebtor, "datacredito") })}
-              className={`flex items-start gap-3.5 rounded-2xl border-2 p-4 text-left transition ${codebtorWantsCredit ? "border-[#5646E5] bg-[#ECE9FB]" : "border-slate-200 bg-white hover:border-[#5646E5]"}`}
-            >
-              <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">{codebtorWantsCredit ? "✅" : "📊"}</span>
-              <span>
-                <b className="block text-[15px]">Solicitar al codeudor su reporte de DataCrédito</b>
-                <small className="text-[13px] text-slate-500">Igual que arriba, pero para el codeudor solidario. {codebtorWantsCredit ? "Activado ✓" : "Opcional."}</small>
-              </span>
-            </button>
-          )}
-
+          {/* La SOLICITUD de DataCrédito al inquilino/codeudor se movió al paso de
+              invitación (al enviarle el enlace), con su propia advertencia. Aquí solo
+              queda la consulta que el dueño SÍ puede hacer por su cuenta: BDME. */}
           {/* Deudas con el Estado: esta consulta SÍ la puede hacer el dueño. */}
           <a
             href="https://eris.contaduria.gov.co/BDME/"
@@ -1698,7 +1738,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
             <span><b className="block text-[15px]">Consultar deudas con el Estado (BDME)</b><small className="text-[13px] text-slate-500">Boletín de Deudores Morosos del Estado (Contaduría). Esta consulta sí la puedes hacer tú; úsala solo para evaluar el arriendo.</small></span>
           </a>
 
-          <p className="text-xs text-slate-500">El historial de DataCrédito es <b>personal</b>: solo el titular puede consultarlo (Ley 1581 de 2012). ArriendoSeguro no ejecuta la consulta ni guarda reportes. Es un paso <b>opcional</b>: puedes continuar sin activar nada.</p>
+          <p className="text-xs text-slate-500">El historial de DataCrédito es <b>personal</b>: solo el titular puede consultarlo (Ley 1581 de 2012). Si quieres pedírselo al inquilino, actívalo en el <b>paso de invitación</b>, al enviarle el enlace. ArriendoSeguro no ejecuta la consulta ni guarda reportes.</p>
         </div>
       );
     }
