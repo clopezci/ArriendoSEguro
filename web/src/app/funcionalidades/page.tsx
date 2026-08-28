@@ -6,6 +6,21 @@ import Link from "next/link";
 /** Lista COMPLETA de lo que hace ArriendoSeguro, por secciones. Se muestra y se
  * puede ESCUCHAR (lectura por voz). Pensado para todo público, incluidos usuarios
  * mayores. Mantener actualizada al agregar funciones. */
+/** Beneficios REALES, con el "por qué te conviene" (no solo features). Honestos:
+ * la app no garantiza nada, te deja documentado y respaldado. */
+const BENEFITS: { icon: string; title: string; desc: string }[] = [
+  { icon: "📝", title: "Tu contrato legal en minutos", desc: "Conforme a la Ley 820, con cláusulas especiales y firma electrónica válida (Ley 527) —o firma en la notaría digital del Estado si prefieres—. Sin abogado ni notaría física." },
+  { icon: "🔎", title: "Elige mejor a quién le arriendas", desc: "Valida el comportamiento de la persona (historial crediticio y deudas con el Estado, con su autorización) y pide los soportes que quieras. La IA revisa que los documentos coincidan con los datos y te alerta si algo no cuadra." },
+  { icon: "⏰", title: "Que te paguen a tiempo, sin perseguir a nadie", desc: "Recordatorios automáticos por correo y WhatsApp; si el inquilino no reporta el pago a tiempo, el sistema escala el cobro por ti." },
+  { icon: "📸", title: "Inventario documentado con fotos", desc: "Acta de entrega firmada por las partes: queda constancia del estado real del inmueble al entregarlo." },
+  { icon: "🔁", title: "Renovación con un clic", desc: "Te recuerda cuándo toca y calcula el reajuste por IPC; renuevas sin trámites ni volver a empezar." },
+  { icon: "☁️", title: "Todos tus contratos en un solo lugar", desc: "Documentados, con los soportes que elijas guardados en la nube, accesibles desde tu celular o computador, estés donde estés." },
+  { icon: "⚖️", title: "Documentado por si algo falla", desc: "Cada firma, aceptación y juramento queda con fecha, hora y evidencia. Si hay un pleito, llegas con TODO listo y aumentas tus probabilidades de ganarlo." },
+  { icon: "🤝", title: "Aliados a un clic", desc: "¿Necesitas un abogado que sepa del tema? Accedes a aliados jurídicos a bajo costo sin buscar por tu cuenta. Próximamente: seguros, cobranza y asistencia al hogar." },
+  { icon: "🧠", title: "Fácil de verdad", desc: "Una pregunta a la vez, con IA y guía por voz: hasta un adulto mayor lo hace solo. Y puedes invitar al inquilino y al codeudor para que llenen sus propios datos." },
+  { icon: "💸", title: "A un costo mínimo", desc: "Un pago único de $49.900 por TODO el contrato —no mensual—, en vez de la comisión de una inmobiliaria (que suele ser un mes de canon)." },
+];
+
 const SECTIONS: { title: string; guide: string; items: string[] }[] = [
   {
     title: "Crear tu contrato",
@@ -85,7 +100,7 @@ const SECTIONS: { title: string; guide: string; items: string[] }[] = [
       "Calculadoras: IPC, tope del canon, intereses de mora y preaviso.",
       "Plantillas gratis (preaviso, paz y salvo, acta, autorización de datos).",
       "Blog con guías de arriendo y las leyes citadas.",
-      "Pagos en línea con Wompi.",
+      "Pagos en línea seguros con pasarela de pago.",
     ],
   },
   {
@@ -143,7 +158,20 @@ export default function FuncionalidadesPage() {
         </div>
 
         <h1 className="text-balance text-4xl font-extrabold tracking-tight sm:text-5xl">Todo lo que puedes hacer</h1>
-        <p className="mt-3 text-lg text-slate-500">ArriendoSeguro te acompaña de principio a fin: crear, firmar, entregar, cobrar y administrar tu arriendo — simple y seguro.</p>
+        <p className="mt-3 text-lg text-slate-500">Arrienda directo, sin inmobiliaria, pero con el mismo respaldo: contrato legal en minutos, cobro sin perseguir a nadie y todo documentado por si algo falla. Fácil, guiado y a un costo mínimo.</p>
+
+        {/* Beneficios: el "por qué te conviene" */}
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          {BENEFITS.map((b) => (
+            <div key={b.title} className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+              <p className="flex items-center gap-2 text-[15px] font-extrabold text-[#17151F]">
+                <span className="text-xl leading-none">{b.icon}</span>
+                {b.title}
+              </p>
+              <p className="mt-1.5 text-[14px] leading-relaxed text-slate-600">{b.desc}</p>
+            </div>
+          ))}
+        </div>
 
         {canSpeak && (
           <button
@@ -155,7 +183,10 @@ export default function FuncionalidadesPage() {
           </button>
         )}
 
-        <div className="mt-8 space-y-6">
+        <h2 className="mt-10 text-2xl font-extrabold tracking-tight">Todo en detalle</h2>
+        <p className="mt-1 text-sm text-slate-500">Función por función, de principio a fin. Toca «¿Cómo funciona?» en cada bloque para ver cómo se usa.</p>
+
+        <div className="mt-4 space-y-6">
           {SECTIONS.map((s) => (
             <section key={s.title} className="rounded-3xl border border-slate-200 bg-white/90 p-5 shadow-sm">
               <div className="flex items-start justify-between gap-3">
