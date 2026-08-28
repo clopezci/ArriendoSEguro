@@ -1473,7 +1473,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
           <p className="text-sm font-semibold text-slate-700">{icon} {title}</p>
           <p className="mt-0.5 text-xs text-slate-500">Toca los que exigirás ({list.length} seleccionado{list.length === 1 ? "" : "s"}).</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {requiredDocCatalogForRole(role).map((d) => (
+            {requiredDocCatalogForRole(role).filter((d) => d.key !== "datacredito").map((d) => (
               <button key={d.key} type="button" onClick={() => onToggle(d.key)}
                 className={`rounded-2xl border-2 px-3 py-1.5 text-xs font-medium transition ${list.includes(d.key) ? "border-[#5646E5] bg-[#ECE9FB] text-[#5646E5]" : "border-slate-200 bg-white text-slate-700 hover:border-[#5646E5]"}`}>
                 {list.includes(d.key) ? "✓ " : ""}{d.label}
@@ -1653,22 +1653,55 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
           <AdditionalCodebtorsManager contractId={party.draftId} />
         </div>
       );
-    case "credit":
+    case "credit": {
+      const toggleKey = (list: string[], k: string): string[] => (list.includes(k) ? list.filter((x) => x !== k) : [...list, k]);
+      const tenantWantsCredit = a.reqDocsTenant.includes("datacredito");
+      const codebtorWantsCredit = a.reqDocsCodebtor.includes("datacredito");
       return (
         <div className="flex flex-col gap-2.5">
-          <a href="https://www.midatacredito.com/" target="_blank" rel="noopener noreferrer"
-            className="flex items-start gap-3.5 rounded-2xl border-2 border-slate-200 bg-white p-4 text-left transition hover:border-[#5646E5]">
-            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">📊</span>
-            <span><b className="block text-[15px]">Historial crediticio (MiDataCrédito)</b><small className="text-[13px] text-slate-500">La consulta es personal: la hace el titular (o con su autorización) y te comparte el reporte por un canal privado.</small></span>
-          </a>
-          <a href="https://eris.contaduria.gov.co/BDME/" target="_blank" rel="noopener noreferrer"
-            className="flex items-start gap-3.5 rounded-2xl border-2 border-slate-200 bg-white p-4 text-left transition hover:border-[#5646E5]">
+          {/* El dueño NO puede consultar el DataCrédito de otro (Ley 1581): en su lugar,
+              SOLICITA al titular que lo consulte y adjunte el reporte. */}
+          <button
+            type="button"
+            onClick={() => setA({ ...a, reqDocsTenant: toggleKey(a.reqDocsTenant, "datacredito") })}
+            className={`flex items-start gap-3.5 rounded-2xl border-2 p-4 text-left transition ${tenantWantsCredit ? "border-[#5646E5] bg-[#ECE9FB]" : "border-slate-200 bg-white hover:border-[#5646E5]"}`}
+          >
+            <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">{tenantWantsCredit ? "✅" : "📊"}</span>
+            <span>
+              <b className="block text-[15px]">Solicitar al inquilino su reporte de DataCrédito</b>
+              <small className="text-[13px] text-slate-500">Por ley, el historial crediticio solo lo consulta el titular. Al activarlo, se le pedirá al inquilino que lo consulte y adjunte el reporte (aparece como documento requerido en su enlace). {tenantWantsCredit ? "Activado ✓" : "Opcional."}</small>
+            </span>
+          </button>
+
+          {a.hasCodebtor === "yes" && (
+            <button
+              type="button"
+              onClick={() => setA({ ...a, reqDocsCodebtor: toggleKey(a.reqDocsCodebtor, "datacredito") })}
+              className={`flex items-start gap-3.5 rounded-2xl border-2 p-4 text-left transition ${codebtorWantsCredit ? "border-[#5646E5] bg-[#ECE9FB]" : "border-slate-200 bg-white hover:border-[#5646E5]"}`}
+            >
+              <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">{codebtorWantsCredit ? "✅" : "📊"}</span>
+              <span>
+                <b className="block text-[15px]">Solicitar al codeudor su reporte de DataCrédito</b>
+                <small className="text-[13px] text-slate-500">Igual que arriba, pero para el codeudor solidario. {codebtorWantsCredit ? "Activado ✓" : "Opcional."}</small>
+              </span>
+            </button>
+          )}
+
+          {/* Deudas con el Estado: esta consulta SÍ la puede hacer el dueño. */}
+          <a
+            href="https://eris.contaduria.gov.co/BDME/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-start gap-3.5 rounded-2xl border-2 border-slate-200 bg-white p-4 text-left transition hover:border-[#5646E5]"
+          >
             <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">🏛️</span>
-            <span><b className="block text-[15px]">Deudas con el Estado (BDME)</b><small className="text-[13px] text-slate-500">Boletín de Deudores Morosos del Estado (Contaduría). Úsalo solo para evaluar el arriendo.</small></span>
+            <span><b className="block text-[15px]">Consultar deudas con el Estado (BDME)</b><small className="text-[13px] text-slate-500">Boletín de Deudores Morosos del Estado (Contaduría). Esta consulta sí la puedes hacer tú; úsala solo para evaluar el arriendo.</small></span>
           </a>
-          <p className="text-xs text-slate-500">ArriendoSeguro no ejecuta la consulta ni guarda reportes: son herramientas de terceros. Trata cualquier dato con confidencialidad (Ley 1581). Es un paso <b>opcional</b>: puedes continuar.</p>
+
+          <p className="text-xs text-slate-500">El historial de DataCrédito es <b>personal</b>: solo el titular puede consultarlo (Ley 1581 de 2012). ArriendoSeguro no ejecuta la consulta ni guarda reportes. Es un paso <b>opcional</b>: puedes continuar sin activar nada.</p>
         </div>
       );
+    }
     case "utils":
       return (
         <div className="flex flex-col gap-4">
