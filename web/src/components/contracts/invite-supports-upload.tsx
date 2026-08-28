@@ -26,6 +26,7 @@ export function InviteSupportsUpload({
   const [supports, setSupports] = useState<InviteSupportRow[]>([]);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
+  const [showCreditHelp, setShowCreditHelp] = useState(false);
   const extraRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
@@ -120,6 +121,23 @@ export function InviteSupportsUpload({
                   </span>
                   {done && <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">Subido</span>}
                 </div>
+                {key === "datacredito" && !done && (
+                  <div className="mt-1.5 rounded-lg border border-rose-200 bg-rose-50/70 p-2 text-[11px]">
+                    <p className="font-semibold text-rose-700">⚠️ El dueño te pide adjuntar tu reporte de DataCrédito. No te bloquea, pero es un requisito que él solicitó.</p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <a href="https://www.midatacredito.com/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg bg-[#5646E5] px-2.5 py-1 text-[11px] font-bold text-white hover:brightness-105">📊 Consultar mi DataCrédito</a>
+                      <button type="button" onClick={() => setShowCreditHelp((v) => !v)} className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600 hover:border-[#5646E5]">ⓘ ¿Cómo lo hago?</button>
+                    </div>
+                    {showCreditHelp && (
+                      <ol className="mt-2 list-decimal space-y-0.5 pl-4 text-slate-600">
+                        <li>Entra a MiDataCrédito y crea tu cuenta (si no la tienes) con tu cédula y correo.</li>
+                        <li>Verifica tu identidad y abre tu reporte o puntaje.</li>
+                        <li>Toma una foto clara (o descarga el PDF) del reporte.</li>
+                        <li>Súbelo aquí abajo con «Elegir documento».</li>
+                      </ol>
+                    )}
+                  </div>
+                )}
                 {done ? (
                   <div className="mt-1 flex items-center justify-between gap-2">
                     <p className="truncate text-[11px] text-slate-500">{done.fileName}</p>
