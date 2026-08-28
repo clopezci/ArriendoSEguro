@@ -165,6 +165,35 @@ export default function PrivacidadPage() {
         </p>
       </section>
 
+      <section id="eliminar" className="space-y-3">
+        <h2 className="text-lg font-semibold text-slate-900">11.1 Eliminación de cuenta y datos</h2>
+        <p>
+          Puede solicitar la eliminación de su cuenta de <strong>ArriendoSeguro</strong> (operada por LOTIC) y de los
+          datos asociados en cualquier momento, siguiendo estos pasos:
+        </p>
+        <ol className="list-decimal space-y-1 pl-5">
+          <li>Inicie sesión en la aplicación con su cuenta.</li>
+          <li>
+            Vaya a su menú de cuenta y abra <strong>«Mi cuenta»</strong> →{" "}
+            <a href="/dashboard/cuenta/eliminar" className="text-violet-700 underline">Eliminar mi cuenta</a>.
+          </li>
+          <li>Confirme la solicitud. También puede escribirnos a <strong>contacto@arriendoseguro.app</strong> desde el
+          correo con el que se registró.</li>
+        </ol>
+        <p>
+          Si solo desea eliminar o corregir <strong>una parte</strong> de sus datos sin borrar la cuenta, use la sección{" "}
+          <a href="/dashboard/cuenta/mis-datos" className="text-violet-700 underline">«Mis datos» (Habeas Data)</a> o el
+          mismo correo de contacto.
+        </p>
+        <p>
+          <strong>Qué se elimina:</strong> sus datos personales de la cuenta (nombre, correo, teléfono, documento),
+          soportes, fotografías y archivos que haya cargado. <strong>Qué se conserva y por cuánto tiempo:</strong> por
+          deber legal (Ley 1581 de 2012, obligaciones tributarias y probatorias) se conservan el documento del contrato y
+          los registros contables por los plazos legales aplicables; la calificación de reputación caduca a los cuatro (4)
+          años. Ver el detalle en la sección «11. Conservación».
+        </p>
+      </section>
+
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-900">12. Seguridad</h2>
         <p>
