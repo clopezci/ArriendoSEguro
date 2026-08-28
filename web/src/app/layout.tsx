@@ -28,6 +28,16 @@ import "./globals.css";
  */
 const TRANSLATE_DOM_GUARD = `(function(){try{var N=typeof Node==='function'&&Node.prototype;if(!N)return;var r=N.removeChild;N.removeChild=function(c){if(c&&c.parentNode!==this){return c;}return r.apply(this,arguments);};var i=N.insertBefore;N.insertBefore=function(n,ref){if(ref&&ref.parentNode!==this){return n;}return i.apply(this,arguments);};}catch(e){}})();`;
 
+/**
+ * Recuperación automática de "Loading chunk … failed" (ChunkLoadError). Tras un
+ * despliegue, los .js cambian de hash; un navegador con la página vieja abierta
+ * pide un chunk que ya no existe (o se demora → "timeout") y la navegación se
+ * rompe. Este guard detecta ese error y recarga la página UNA sola vez para
+ * traer el HTML nuevo con los hashes correctos. Tope de 2 recargas por sesión y
+ * throttle de 20 s para no entrar en bucle si un chunk quedara realmente 404.
+ */
+const CHUNK_RELOAD_GUARD = `(function(){try{var K='__as_chunk_reload__';function chunkErr(m){return typeof m==='string'&&(/Loading chunk[^]*failed/i.test(m)||/Loading CSS chunk/i.test(m)||/ChunkLoadError/i.test(m)||/error loading dynamically imported module/i.test(m)||/Failed to fetch dynamically imported module/i.test(m));}function reload(){try{var raw=(sessionStorage.getItem(K)||'0:0').split(':');var n=parseInt(raw[0],10)||0;var t=parseInt(raw[1],10)||0;var now=Date.now();if(now-t<20000)return;if(n>=2)return;sessionStorage.setItem(K,(n+1)+':'+now);}catch(e){}try{location.reload();}catch(e){}}window.addEventListener('error',function(e){try{var name=e&&e.error&&e.error.name;var msg=(e&&(e.message||(e.error&&e.error.message)))||'';if(name==='ChunkLoadError'||chunkErr(msg))reload();}catch(_){}} ,true);window.addEventListener('unhandledrejection',function(e){try{var r=e&&e.reason;var name=r&&r.name;var msg=r&&(r.message||String(r))||'';if(name==='ChunkLoadError'||chunkErr(msg))reload();}catch(_){}} );}catch(e){}})();`;
+
 const googleSiteVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim();
 
 export const viewport: Viewport = {
@@ -74,6 +84,7 @@ export default function RootLayout({
     <html lang="es" className="scroll-smooth">
       <body className="bg-slate-50 font-sans text-slate-900 antialiased">
         <Script id="translate-dom-guard" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: TRANSLATE_DOM_GUARD }} />
+        <Script id="chunk-reload-guard" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: CHUNK_RELOAD_GUARD }} />
         <ConsentMode />
         <GoogleAnalytics />
         <AdSense />

@@ -378,6 +378,29 @@ export default function AdminPage() {
     }
   }
 
+  // Barrido automático de TODAS las órdenes "pending": le pregunta a Wompi por la
+  // referencia de cada una y activa las que estén aprobadas. Recupera pagos sin
+  // tener que buscar el id de transacción a mano.
+  const [sweepBusy, setSweepBusy] = useState(false);
+  const [sweepOut, setSweepOut] = useState("");
+  async function sweepPending() {
+    if (!user) return;
+    setSweepBusy(true);
+    setSweepOut("Barriendo órdenes pendientes contra Wompi…");
+    try {
+      const res = await fetch("/api/platform-payments/sweep-pending/send-due", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+      });
+      const j = await res.json();
+      setSweepOut(JSON.stringify(j, null, 2));
+    } catch {
+      setSweepOut("No se pudo ejecutar el barrido.");
+    } finally {
+      setSweepBusy(false);
+    }
+  }
+
   const hintSet = useMemo(() => new Set(publicAdminHintEmails()), []);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -2052,6 +2075,27 @@ export default function AdminPage() {
                 {recOut}
               </pre>
             )}
+            <div className="mt-4 border-t border-slate-200 pt-3">
+              <h3 className="text-xs font-semibold text-slate-800">Barrer órdenes pendientes (automático)</h3>
+              <p className="mt-1 text-[11px] text-slate-600">
+                Revisa TODAS las órdenes en <code>pending</code> y le pregunta a Wompi por su referencia. Activa las que
+                estén aprobadas (idempotente) <strong>sin que tengas que buscar el id de transacción</strong>. Es lo mismo
+                que corre solo cada día; púlsalo para recuperar un pago al instante.
+              </p>
+              <button
+                type="button"
+                disabled={sweepBusy}
+                onClick={() => void sweepPending()}
+                className="mt-2 rounded border border-emerald-600/60 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
+              >
+                {sweepBusy ? "Barriendo…" : "Barrer y activar pendientes"}
+              </button>
+              {sweepOut && (
+                <pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-emerald-100">
+                  {sweepOut}
+                </pre>
+              )}
+            </div>
             <div className="mt-4 border-t border-slate-200 pt-3">
               <h3 className="text-xs font-semibold text-slate-800">Desbloquear contrato iniciado</h3>
               <p className="mt-1 text-[11px] text-slate-600">Un contrato ya iniciado (definitivo) no lo puede borrar/editar el usuario. Aquí lo desbloqueas por su id.</p>
