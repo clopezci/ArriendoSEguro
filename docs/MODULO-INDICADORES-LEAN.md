@@ -8,8 +8,15 @@ la segunda es la arquitectura técnica portable; la tercera, el checklist de
 implementación por app.
 
 > En ArriendoSeguro este módulo vive en `/admin` (pestaña **Lean**), se alimenta
-> de Firestore + Google Analytics 4 (GA4 Data API) y se resume cada día por
+> de Firestore + Google Analytics 4 (GA4 Data API) + un **contador de visitas
+> propio sin cookies** (independiente del consentimiento) y se resume cada día por
 > Telegram. Ver también `docs/GA4-VISITAS-TELEGRAM.md`.
+>
+> **Última actualización (2026-08-29):** se añadió el contador de visitas propio
+> sin cookies (§4.3), se reforzó la fiabilidad de la medición de **ingresos**
+> (reconciliación de pagos, §Ingresos/§8) y el modelo financiero para
+> inversionistas incorpora **% RRHH**, **comisión de pasarela**, **impuesto de
+> renta** y **reparto con el inversionista** (Bloque 2, §9–§10.1).
 
 ---
 
@@ -82,7 +89,11 @@ Marcados: **[base]** = con datos que ya existen; **[evt]** = requiere instrument
 eventos; **[cfg]** = requiere un dato de configuración (p. ej. costo de marketing).
 
 ### Adquisición
-- **[base]** Visitas por día (usuarios GA4) + serie 14/30 días.
+- **[base]** Visitas por día (usuarios GA4) + serie 14/30 días. *(Depende del
+  consentimiento de cookies; ver §4.1.)*
+- **[base]** **Visitas propias SIN cookies** (contador interno): visitantes únicos
+  y vistas por día, **independientes del consentimiento**. En el panel:
+  "Propias 7d (sin cookies)" y "Propias hoy". Ver §4.3.
 - **[base]** De dónde llegan (canal GA4: directo, orgánico, redes, referral).
 - **[base]** Registros (Auth) y su tendencia semanal.
 - **[cfg]** **CAC** = gasto de marketing del periodo ÷ nuevos clientes pagos.
@@ -99,11 +110,23 @@ eventos; **[cfg]** = requiere un dato de configuración (p. ej. costo de marketi
 - **[base]** **Churn** aproximado = 1 − retención de la cohorte.
 
 ### Ingresos
-- **[base]** **Ingresos $** (suma de pagos aprobados) total / 30 días / hoy.
+- **[base]** **Ingresos $** (suma de pagos **aprobados**) total / 30 días / hoy.
 - **[base]** **Ticket promedio** = ingresos ÷ nº de pagos.
 - **[base]** **ARPU** = ingresos ÷ usuarios activos.
 - **[base]** Conversión **contrato → pago**.
 - **[cfg]** **LTV** ≈ ticket × nº medio de contratos por cliente (× margen).
+
+> **Fiabilidad de la medición de ingresos (importante):** el ingreso solo cuenta
+> pagos **APROBADOS**, no órdenes. Una orden puede quedar en `pending` si la
+> pasarela confirmó el pago pero el **webhook** no llegó o el usuario no volvió a
+> la página de retorno. Para que **ningún pago se pierda** ni se subcuente, hay
+> **tres capas de conciliación**: (1) **webhook** de la pasarela; (2)
+> **reconciliación en la página de retorno** (consulta directa a la pasarela con el
+> id de transacción); (3) **barrido diario** (cron) que revisa las órdenes
+> `pending` y las concilia contra la pasarela por su referencia (idempotente), más
+> un botón manual en `/admin`. Así el indicador de ingresos refleja el dinero real
+> aunque falle una vía. En ArriendoSeguro: colección `platform_orders` (espejo) vs.
+> `platform_payments` (dinero real); `lib/observability`/`domain/platform-payments`.
 
 ### Referidos (motor viral)
 - **[base]** Invitaciones a la contraparte enviadas / aceptadas.
@@ -128,6 +151,12 @@ Dos fuentes complementarias:
   propiedad GA4). Es **gratis**. Ver `lib/observability/ga4.ts` como referencia
   (`ga4Access()` + `ga4RunReport()` genéricos, reutilizables).
 - Da: usuarios/sesiones/vistas por día, canal, dispositivo, país/ciudad, páginas.
+- **Ojo (importante):** GA4 se rige por el **consentimiento de cookies**
+  (**Consent Mode v2**, con analítica **denegada por defecto**, privacy-first). Si
+  el visitante **no acepta** el banner, GA4 **no lo cuenta** en los informes → en
+  fases tempranas "Visitas 7d (GA4)" puede salir en **0** aunque sí haya tráfico
+  (súmale el retraso de procesamiento de 24–48 h). Por eso se complementa con el
+  **contador propio sin cookies** (§4.3), que no depende del consentimiento.
 
 ### 4.2 Embudo propio y dinero → **Firestore**
 Dos estrategias, se pueden combinar:
@@ -156,9 +185,38 @@ UX). Se instrumentan SOLO los hitos que no se pueden derivar: pasos del asistent
 (drop-off), "llegó a pagar", etc. **Regla de oro:** nombres de evento estables y
 en `snake_case`; nunca meter PII en `props`.
 
-> **Reutilización:** el par GA4 (`ga4.ts`) + `analytics_events` + el cálculo AARRR
-> es idéntico en cualquier app Next.js + Firebase. Cambian solo (1) qué colecciones
-> se derivan y (2) qué eventos se instrumentan. Copia `lib/observability/ga4.ts`,
+### 4.3 Contador de visitas propio (SIN cookies) → Firestore
+
+Medición de tráfico **anónima, sin cookies y sin consentimiento** (estilo
+Plausible/Fathom), que da un número real aunque GA4 salga en 0 por el banner.
+**No guarda datos personales.**
+
+- **Beacon del cliente** `components/analytics/pageview-beacon.tsx`, montado en el
+  `layout`. En cada cambio de ruta manda `navigator.sendBeacon` (respaldo `fetch`
+  con `keepalive`) a `POST /api/metrics/pageview` con solo la ruta. No usa cookies
+  ni identificadores persistentes.
+- **Servidor** `lib/observability/pageviews.ts` (Admin SDK): agrega en un doc por
+  día `analytics_pageviews/{YYYY-MM-DD}` = `{ date, views, visitors }`. Para no
+  contar dos veces al mismo visitante **en el mismo día**, crea un subdoc con un
+  **hash salado y rotado por día** de `(ip + user-agent + fecha)` (SHA-256, sin
+  guardar la IP). Como el hash **incluye la fecha**, no es enlazable entre días →
+  **no permite rastrear a una persona** en el tiempo. Filtra bots comunes y rutas
+  internas (`/api`, `/_next`, `/admin`, assets).
+- **Privacidad/legal:** al no almacenar datos personales ni usar cookies, **no
+  requiere consentimiento**. Documentado en el aviso de privacidad y la política de
+  cookies del sitio.
+- **Limpieza:** una tarea diaria del cron (`/api/metrics/pageview/purge/send-due`)
+  borra los subdocs de hash de días pasados (solo sirven para deduplicar su propio
+  día); los agregados por día se conservan. Env opcional `ANALYTICS_SALT`.
+- **En el panel:** el `GET /api/admin/dashboard` expone `acquisition.ownVisitors7d`
+  / `ownViews7d` / `ownVisitorsToday`; la tarjeta Adquisición muestra "Propias 7d
+  (sin cookies)" y "Propias hoy" junto al dato de GA4.
+
+> **Reutilización:** el trío GA4 (`ga4.ts`, consent-gated) + **contador propio sin
+> cookies** (`pageviews.ts` + `PageviewBeacon` + `/api/metrics/pageview`) +
+> `analytics_events` + el cálculo AARRR es idéntico en cualquier app Next.js +
+> Firebase. Cambian solo (1) qué colecciones se derivan y (2) qué eventos se
+> instrumentan. Copia `lib/observability/{ga4,pageviews}.ts`, el beacon,
 > `lib/analytics/*` y la sección Lean del panel; ajusta el mapa de etapas.
 
 ---
@@ -258,7 +316,9 @@ Leyenda: ✅ automático · ⚠️ automático pero aproximado · ❌ falta fuen
 | Contratos creados / versiones / firmados | `contracts`, `contract_versions` | ✅ |
 | Pagos aprobados / Ingresos $ / ticket | `platform_payments` (APPROVED, COP) | ✅ |
 | ARPU | ingresos ÷ registrados | ✅ |
-| Visitas / canal / dispositivo / páginas | GA4 Data API | ✅ (requiere `GA4_PROPERTY_ID`) |
+| Visitas / canal / dispositivo / páginas | GA4 Data API | ✅ (requiere `GA4_PROPERTY_ID`; sujeto a consentimiento de cookies) |
+| **Visitas propias (sin cookies)** | `analytics_pageviews` (beacon propio) | ✅ (independiente del consentimiento) |
+| Ingresos $ **conciliados** (webhook + retorno + barrido) | `platform_payments` APPROVED | ✅ (3 capas anti-pérdida) |
 | Embudo encuesta→registro→contrato→firma | derivado | ✅ |
 | North Star (arriendos activos) | `contracts` firmados | ✅ |
 | Abandono + motivos | `analytics_events` (`page_abandon`, `abandon_reason`) | ✅ |
@@ -318,6 +378,9 @@ Con 1–5 el tablero queda **100% auto-alimentado** salvo el gasto de marketing
 - **Hecho**: visitas GA4 (panel + Telegram), embudo derivado
   (Encuestas→Registrados→Contratos→Firmados), compras (Plan Plus), corrección del
   conteo de pagos (`APPROVED`).
+- **Hecho (2026-08-29)**: **contador de visitas propio sin cookies** (§4.3) en la
+  tarjeta Adquisición; **conciliación de ingresos** en 3 capas (webhook + retorno +
+  barrido diario) para que ningún pago quede sin contar.
 - **Pestaña Lean**: tarjetas AARRR, **ingresos $** (total / 30 días / ticket /
   ARPU), motores de crecimiento (viral/sticky/pagado), North Star y **bar chart
   race** semanal.
@@ -458,6 +521,19 @@ SMS, IA y el **uso por contrato** de Firebase, Resend y Vercel — por eso escal
 solo con el volumen. **+ Pasarela de pago ~4,9% del precio (~$2.450/contrato).**
 → **Contribución neta por contrato ≈ $41.450 (margen neto ~83%)**.
 
+**Palancas adicionales del modelo (editables en la calculadora en vivo):**
+- **% RRHH (empleados):** cuando haya nómina, se modela como un **% del ingreso**
+  (benchmark de referencia ~**20–30%** en SaaS/servicios; se arranca en **0%** hoy,
+  que el fundador opera sin nómina). Baja la contribución efectiva por contrato.
+- **Comisión de pasarela:** **~4,9%** del precio (editable) ≈ **$2.450/contrato**.
+- **Contribución EFECTIVA por contrato = precio − variable − pasarela − RRHH.**
+
+> La pestaña **Pitch** de `/admin` tiene una **calculadora en vivo** donde TODOS
+> estos valores son editables (precio, costo variable, infra fija, marketing,
+> **% RRHH**, **% pasarela**, **umbral y % de impuesto de renta**, **% de equity
+> cedido al inversionista**) y un interruptor **Por mes / Por año**; todo recalcula
+> al instante y alimenta el **Resumen anual** (P&L) de abajo.
+
 ## 10. Proyecciones financieras (escenarios)
 - **Precio** $49.900 · **costo variable** $6.000 → **contribución $43.900 (88%)**.
 - **Costos fijos:** infra base ~$300.000/mes + **marketing $1.500.000/mes**.
@@ -511,10 +587,28 @@ un 35% plano —ese 35% es la tarifa de una **empresa/SAS**—, por lo que la ta
 **efectiva** es menor. El tablero lo muestra en el **Resumen anual** como "Utilidad
 después de impuestos", con umbral y tasa **editables**.
 
+### Reparto con el inversionista (equity)
+El **Resumen anual** modela cuánto del beneficio queda para el fundador vs. el
+inversionista según el **% de la empresa cedido** (equity, editable). Sobre la
+**utilidad anual después de impuestos** se aplica: **Del inversionista = utilidad ×
+equity%** y **Tu parte = utilidad × (1 − equity%)**. Sirve para simular en vivo
+"¿cuánto me queda si cedo X%?".
+
+### Estructura del Resumen anual (P&L de 12 meses)
+Para un ritmo objetivo de contratos/mes, la tarjeta anual encadena:
+**Ingreso anual** (contratos/mes × 12 × precio) **− costo variable − pasarela −
+RRHH − infra − marketing = utilidad operativa anual**; **− impuesto de renta
+(si supera el umbral) = utilidad después de impuestos**; **→ reparto Tu parte /
+Del inversionista**. Incluye la cifra destacada de mercado: *"Solo 1% del SAM
+(~36.000 contratos) × $49.900 ≈ $1.795 M COP (DANE ECV 2023)"*.
+
 ## 11. Cómo lo medimos (tablero de KPIs — Bloque 1)
 Todo el pitch se **audita en vivo** con el tablero `/admin → Lean`:
 - **North Star:** arriendos activos gestionados.
 - **AARRR:** adquisición → activación → retención → ingresos → referidos.
+- **Tráfico:** visitas GA4 (con consentimiento) **+ visitas propias sin cookies**
+  (independientes del consentimiento) → número real desde el día 1.
+- **Ingresos conciliados:** solo pagos aprobados, con 3 capas anti-pérdida.
 - **Unit economics:** **LTV / CAC** (sano ≥ 3×), ticket, tiempo a convertir.
 - **Motor de crecimiento:** coeficiente viral *k* (referidos), retención (sticky).
 - **Innovación:** semáforo de cohortes 🟢🟡🔴 (¿mejora el motor semana a semana?).
@@ -572,9 +666,10 @@ expansión regional (arquitectura ya preparada para otros países/monedas).
 
 ## NOTA FINAL (para agentes que reutilicen este documento)
 Los **nombres de tablas, colecciones, campos, endpoints, variables y cifras** que
-aparecen en este documento (p. ej. `analytics_events`, `platform_payments`,
-`hub_apps`, `admin_config/marketing`, `$49.900`, costos, DANE 7,2M, etc.) son
-**referencias de lo implementado en ArriendoSeguro**. Si un agente usa este
+aparecen en este documento (p. ej. `analytics_events`, `analytics_pageviews`,
+`platform_payments`, `platform_orders`, `/api/metrics/pageview`,
+`/api/admin/dashboard`, `hub_apps`, `admin_config/marketing`, `$49.900`, costos,
+DANE 7,2M, etc.) son **referencias de lo implementado en ArriendoSeguro**. Si un agente usa este
 documento para construir lo mismo en **otra aplicación**, debe **mapear cada uno a
 lo que exista en SU propia app** (sus colecciones, su modelo de datos, sus
 proveedores, su mercado y sus cifras reales), y **validar los datos de mercado con
