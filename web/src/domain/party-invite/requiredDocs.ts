@@ -34,8 +34,12 @@ export const REQUIRED_DOC_CATALOG: RequiredDocDef[] = [
   { key: "certificado_libertad", label: "Certificado de tradición y libertad (propiedad)", roles: ["tenant", "codebtor"] },
   { key: "referencia_comercial", label: "Referencia comercial o personal", roles: ["tenant", "codebtor"] },
   // Lo consulta y adjunta el TITULAR (la persona), nunca el dueño (Ley 1581).
-  // Se solicita desde el paso de verificación, no desde la lista manual.
+  // Se solicita desde el paso de INVITACIÓN, no desde la lista manual.
   { key: "datacredito", label: "Reporte de DataCrédito (lo aporta el titular)", roles: ["tenant", "codebtor"] },
+  // La firma/autenticación la hace la PERSONA en la Agencia Nacional Digital
+  // (gratis, del Estado) y sube la copia ya autenticada. También desde el paso
+  // de invitación, no desde la lista manual.
+  { key: "notaria_digital", label: "Contrato firmado/autenticado en notaría digital (Estado)", roles: ["tenant", "codebtor"] },
   { key: "declaracion_renta_codeudor", label: "Declaración de renta del codeudor", roles: ["codebtor"] },
   { key: "otro_1", label: "Otro documento 1", roles: ["tenant", "codebtor"] },
   { key: "otro_2", label: "Otro documento 2", roles: ["tenant", "codebtor"] },

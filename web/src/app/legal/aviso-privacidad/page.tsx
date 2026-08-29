@@ -180,6 +180,12 @@ export default function AvisoPrivacidadPage() {
           </Link>
           .
         </p>
+        <p>
+          Adicionalmente, medimos el número de visitas de forma <strong>anónima y sin cookies</strong>, solo para saber
+          cuánta gente usa el sitio. No guardamos tu dirección IP ni datos que te identifiquen: únicamente sumamos
+          conteos por día y usamos un código temporal que cambia cada día para no contar dos veces la misma visita. Como
+          no almacena información personal ni te rastrea entre días, esta medición <strong>no requiere consentimiento</strong>.
+        </p>
       </section>
 
       <section className="rounded-lg border border-violet-200 bg-violet-50/60 p-4">

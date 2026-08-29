@@ -1321,14 +1321,28 @@ export default function NuevoPage() {
 const inputCls = "w-full rounded-2xl border-2 border-slate-200 bg-white px-[18px] py-4 text-lg outline-none transition focus:border-[#5646E5] focus:ring-4 focus:ring-[#ECE9FB]";
 
 /**
- * Opción para SOLICITAR el reporte de DataCrédito a la parte invitada (inquilino/
- * codeudor). Vive en el paso de invitación (donde el dueño envía el enlace). Al
- * ACTIVARLA, primero pide confirmación con una advertencia: la persona necesita
- * habilidades digitales (crear cuenta en DataCrédito, consultarlo y compartir el
- * reporte). Solo si confirma "Sí", se marca `datacredito` como documento requerido
- * y aparece la casilla en el enlace del invitado. Desactivar no pide confirmación.
+ * Opción genérica para SOLICITAR algo a la parte invitada (inquilino/codeudor)
+ * desde el paso de invitación (donde el dueño envía el enlace). Al ACTIVARLA,
+ * pide confirmación con una advertencia (la persona necesita habilidades
+ * digitales). Solo si confirma "Sí" se marca el documento requerido y aparece la
+ * casilla correspondiente en el enlace del invitado. Desactivar no confirma.
+ * Se usa hoy para DataCrédito y para la firma en notaría digital (Estado).
  */
-function DatacreditRequestOption({ active, whoLabel, onChange }: { active: boolean; whoLabel: string; onChange: (next: boolean) => void }) {
+function RequestToInviteeOption({
+  active,
+  onChange,
+  icon,
+  title,
+  subtitle,
+  warningBody,
+}: {
+  active: boolean;
+  onChange: (next: boolean) => void;
+  icon: string;
+  title: string;
+  subtitle: string;
+  warningBody: string;
+}) {
   const [confirming, setConfirming] = useState(false);
   return (
     <div className={`rounded-2xl border-2 p-4 transition ${active ? "border-[#5646E5] bg-[#ECE9FB]" : "border-slate-200 bg-white"}`}>
@@ -1337,21 +1351,17 @@ function DatacreditRequestOption({ active, whoLabel, onChange }: { active: boole
         onClick={() => { if (active) { onChange(false); setConfirming(false); } else { setConfirming(true); } }}
         className="flex w-full items-start gap-3.5 text-left"
       >
-        <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">{active ? "✅" : "📊"}</span>
+        <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-[#ECE9FB] text-xl">{active ? "✅" : icon}</span>
         <span>
-          <b className="block text-[15px]">¿Solicitar a {whoLabel} su reporte de DataCrédito?</b>
-          <small className="text-[13px] text-slate-500">Por ley, el historial crediticio solo lo consulta el titular (Ley 1581 de 2012). Al activarlo, se le pedirá que lo consulte y adjunte en su enlace. {active ? "Activado ✓ — toca para quitar." : "Opcional."}</small>
+          <b className="block text-[15px]">{title}</b>
+          <small className="text-[13px] text-slate-500">{subtitle} {active ? "Activado ✓ — toca para quitar." : "Opcional."}</small>
         </span>
       </button>
 
       {confirming && !active && (
         <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50/80 p-3 text-xs text-amber-950">
           <p className="font-semibold">⚠️ Antes de solicitarlo, ten en cuenta:</p>
-          <p className="mt-1 leading-relaxed">
-            {whoLabel.charAt(0).toUpperCase() + whoLabel.slice(1)} debe tener <b>habilidades digitales</b>: tendrá que
-            <b> crear una cuenta en DataCrédito</b>, consultar su reporte y compartírtelo adjuntándolo en el enlace. Si no
-            se maneja bien con eso, puede trabarse el proceso. ¿Seguro que quieres solicitárselo?
-          </p>
+          <p className="mt-1 leading-relaxed">{warningBody}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
@@ -1527,7 +1537,7 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
           <p className="text-sm font-semibold text-slate-700">{icon} {title}</p>
           <p className="mt-0.5 text-xs text-slate-500">Toca los que exigirás ({list.length} seleccionado{list.length === 1 ? "" : "s"}).</p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {requiredDocCatalogForRole(role).filter((d) => d.key !== "datacredito").map((d) => (
+            {requiredDocCatalogForRole(role).filter((d) => d.key !== "datacredito" && d.key !== "notaria_digital").map((d) => (
               <button key={d.key} type="button" onClick={() => onToggle(d.key)}
                 className={`rounded-2xl border-2 px-3 py-1.5 text-xs font-medium transition ${list.includes(d.key) ? "border-[#5646E5] bg-[#ECE9FB] text-[#5646E5]" : "border-slate-200 bg-white text-slate-700 hover:border-[#5646E5]"}`}>
                 {list.includes(d.key) ? "✓ " : ""}{d.label}
@@ -1619,10 +1629,21 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          <DatacreditRequestOption
+          <RequestToInviteeOption
             active={a.reqDocsTenant.includes("datacredito")}
-            whoLabel="el inquilino"
+            icon="📊"
+            title="¿Solicitar al inquilino su reporte de DataCrédito?"
+            subtitle="Por ley, el historial crediticio solo lo consulta el titular (Ley 1581 de 2012). Al activarlo, se le pedirá que lo consulte y adjunte en su enlace."
+            warningBody="El inquilino debe tener habilidades digitales: tendrá que crear una cuenta en DataCrédito, consultar su reporte y compartírtelo adjuntándolo en el enlace. Si no se maneja bien con eso, puede trabarse el proceso. ¿Seguro que quieres solicitárselo?"
             onChange={(next) => setA({ ...a, reqDocsTenant: next ? Array.from(new Set([...a.reqDocsTenant, "datacredito"])) : a.reqDocsTenant.filter((k) => k !== "datacredito") })}
+          />
+          <RequestToInviteeOption
+            active={a.reqDocsTenant.includes("notaria_digital")}
+            icon="🖊️"
+            title="¿Pedir al inquilino que firme en notaría digital?"
+            subtitle="Firma y autenticación GRATIS del Estado (Agencia Nacional Digital). Al activarlo, se le pedirá firmar el contrato y subir la copia ya autenticada que descarga."
+            warningBody="El inquilino debe tener habilidades digitales: tendrá que entrar a la Agencia Nacional Digital (del Estado), registrarse, firmar/autenticar el contrato con un código (OTP) que llega a su correo, descargar la copia ya autenticada y subirla en su enlace. Si no se maneja bien con eso, puede trabarse el proceso. ¿Seguro que quieres solicitárselo?"
+            onChange={(next) => setA({ ...a, reqDocsTenant: next ? Array.from(new Set([...a.reqDocsTenant, "notaria_digital"])) : a.reqDocsTenant.filter((k) => k !== "notaria_digital") })}
           />
           <PartyInvitePanel contractDraftId={party.draftId} role="tenant" roleLabel="Arrendatario (inquilino)" inviterName={party.inviterName}
             monthlyRent={Number((a.canon || "").replace(/[^\d]/g, "")) || 0}
@@ -1702,10 +1723,21 @@ function Field({ q, a, setA, clausePriceCop, docs, party }: { q: Q; a: Answers; 
                   onImport={(p) => party.onImport("solidaryCoDebtor", p)} />
               ) : (
                 <div className="flex flex-col gap-3">
-                  <DatacreditRequestOption
+                  <RequestToInviteeOption
                     active={a.reqDocsCodebtor.includes("datacredito")}
-                    whoLabel="el codeudor"
+                    icon="📊"
+                    title="¿Solicitar al codeudor su reporte de DataCrédito?"
+                    subtitle="Por ley, el historial crediticio solo lo consulta el titular (Ley 1581 de 2012). Al activarlo, se le pedirá que lo consulte y adjunte en su enlace."
+                    warningBody="El codeudor debe tener habilidades digitales: tendrá que crear una cuenta en DataCrédito, consultar su reporte y compartírtelo adjuntándolo en el enlace. Si no se maneja bien con eso, puede trabarse el proceso. ¿Seguro que quieres solicitárselo?"
                     onChange={(next) => setA({ ...a, reqDocsCodebtor: next ? Array.from(new Set([...a.reqDocsCodebtor, "datacredito"])) : a.reqDocsCodebtor.filter((k) => k !== "datacredito") })}
+                  />
+                  <RequestToInviteeOption
+                    active={a.reqDocsCodebtor.includes("notaria_digital")}
+                    icon="🖊️"
+                    title="¿Pedir al codeudor que firme en notaría digital?"
+                    subtitle="Firma y autenticación GRATIS del Estado (Agencia Nacional Digital). Al activarlo, se le pedirá firmar el contrato y subir la copia ya autenticada que descarga."
+                    warningBody="El codeudor debe tener habilidades digitales: tendrá que entrar a la Agencia Nacional Digital (del Estado), registrarse, firmar/autenticar el contrato con un código (OTP) que llega a su correo, descargar la copia ya autenticada y subirla en su enlace. Si no se maneja bien con eso, puede trabarse el proceso. ¿Seguro que quieres solicitárselo?"
+                    onChange={(next) => setA({ ...a, reqDocsCodebtor: next ? Array.from(new Set([...a.reqDocsCodebtor, "notaria_digital"])) : a.reqDocsCodebtor.filter((k) => k !== "notaria_digital") })}
                   />
                   <PartyInvitePanel contractDraftId={party.draftId} role="solidaryCoDebtor" roleLabel="Codeudor solidario" inviterName={party.inviterName}
                     monthlyRent={Number((a.canon || "").replace(/[^\d]/g, "")) || 0}
