@@ -4,6 +4,7 @@ import { AdSense } from "@/components/analytics/adsense";
 import { ConsentMode } from "@/components/consent/consent-mode";
 import { CookieConsentBanner } from "@/components/consent/cookie-consent-banner";
 import { ClientErrorReporter } from "@/components/observability/client-error-reporter";
+import { PageviewBeacon } from "@/components/analytics/pageview-beacon";
 import { LegalFooter } from "@/components/layout/legal-footer";
 import { PwaInstallSiteBanner } from "@/components/pwa/pwa-install-site-banner";
 import { PwaRegister } from "@/components/pwa-register";
@@ -89,6 +90,7 @@ export default function RootLayout({
         <GoogleAnalytics />
         <AdSense />
         <ClientErrorReporter />
+        <PageviewBeacon />
         <PwaRegister />
         <a href="#contenido" className="skip-link">
           Saltar al contenido

@@ -56,7 +56,7 @@ type DashboardPayload = {
         cancelReasons: { key: string; label: string; count: number }[];
         hasData: boolean;
       };
-      acquisition: { visitors7d: number | null; signups: number | null; surveys: number | null };
+      acquisition: { visitors7d: number | null; signups: number | null; surveys: number | null; ownVisitors7d?: number | null; ownViews7d?: number | null; ownVisitorsToday?: number | null };
       activation: { contractsCreated: number | null; contractsGenerated: number | null; rate: number | null };
       retention: { repeatUsers: number | null; reviews: number | null; repeatRate: number | null };
       revenue: { total: number; last30: number; count: number; ticket: number | null; arpu: number | null; payers: number; ltv?: number | null };
@@ -3405,7 +3405,9 @@ function LeanTab({ s, onReload }: { s?: DashboardPayload["summary"]; onReload: (
         <p className="mb-2 text-sm font-semibold text-slate-900">Métricas AARRR (embudo pirata)</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <Card title="Adquisición" color="#6366f1">
-            <Row l="Visitas 7d" v={num(lean.acquisition.visitors7d)} />
+            <Row l="Visitas 7d (GA4)" v={num(lean.acquisition.visitors7d)} />
+            <Row l="Propias 7d (sin cookies)" v={num(lean.acquisition.ownVisitors7d ?? null)} />
+            <Row l="Propias hoy" v={num(lean.acquisition.ownVisitorsToday ?? null)} />
             <Row l="Registros" v={num(lean.acquisition.signups)} />
             <Row l="Encuestas" v={num(lean.acquisition.surveys)} />
           </Card>

@@ -34,6 +34,7 @@ const TASKS = [
   "/api/observability/audit-report/send-due",
   "/api/tax/iva-threshold-check/send-due", // impuestos: auto-activa IVA al llegar al tope + alerta
   "/api/reputation/retention/purge", // caducidad: borra reputación > 4 años + limpia certificados
+  "/api/metrics/pageview/purge/send-due", // limpieza de hashes efímeros del contador de visitas propio
 ] as const;
 
 export async function GET(request: Request) {
