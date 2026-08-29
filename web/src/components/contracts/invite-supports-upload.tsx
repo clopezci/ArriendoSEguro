@@ -27,6 +27,7 @@ export function InviteSupportsUpload({
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
   const [showCreditHelp, setShowCreditHelp] = useState(false);
+  const [showNotaryHelp, setShowNotaryHelp] = useState(false);
   const extraRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
@@ -134,6 +135,23 @@ export function InviteSupportsUpload({
                         <li>Verifica tu identidad y abre tu reporte o puntaje.</li>
                         <li>Toma una foto clara (o descarga el PDF) del reporte.</li>
                         <li>Súbelo aquí abajo con «Elegir documento».</li>
+                      </ol>
+                    )}
+                  </div>
+                )}
+                {key === "notaria_digital" && !done && (
+                  <div className="mt-1.5 rounded-lg border border-rose-200 bg-rose-50/70 p-2 text-[11px]">
+                    <p className="font-semibold text-rose-700">⚠️ El dueño te pide firmar y autenticar el contrato en notaría digital (gratis, del Estado) y subir aquí la copia ya autenticada.</p>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                      <a href="https://firmaautenticaciondigital.and.gov.co/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 rounded-lg bg-[#5646E5] px-2.5 py-1 text-[11px] font-bold text-white hover:brightness-105">🖊️ Ir a Firma Digital del Estado</a>
+                      <button type="button" onClick={() => setShowNotaryHelp((v) => !v)} className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600 hover:border-[#5646E5]">ⓘ ¿Cómo lo hago?</button>
+                    </div>
+                    {showNotaryHelp && (
+                      <ol className="mt-2 list-decimal space-y-0.5 pl-4 text-slate-600">
+                        <li>Consigue el <b>PDF del contrato</b> (te lo comparte el dueño).</li>
+                        <li>Entra a la Agencia Nacional Digital (Estado), regístrate y sube el PDF.</li>
+                        <li>Firma/autentica con el <b>código (OTP)</b> que llega a tu correo y descarga la copia ya autenticada.</li>
+                        <li>Súbela aquí abajo con «Elegir documento».</li>
                       </ol>
                     )}
                   </div>

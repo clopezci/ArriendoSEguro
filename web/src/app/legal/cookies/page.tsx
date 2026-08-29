@@ -97,6 +97,18 @@ export default function CookiesPolicyPage() {
         </section>
 
         <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
+          <h2 className="text-xl font-semibold">Medición de visitas sin cookies</h2>
+          <p className="mt-2 text-sm text-slate-700">
+            Además de la analítica con cookies (que solo se activa si la aceptas), medimos el número
+            de visitas de forma <strong>anónima y sin cookies</strong>, únicamente para saber cuánta
+            gente usa el sitio. <strong>No guardamos tu dirección IP</strong> ni datos que te
+            identifiquen: solo sumamos conteos por día y usamos un código temporal (que cambia cada
+            día) para no contar dos veces la misma visita. Como no almacena información personal ni te
+            rastrea entre días, esta medición <strong>no requiere tu consentimiento</strong>.
+          </p>
+        </section>
+
+        <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
           <h2 className="text-xl font-semibold">Terceros</h2>
           <p className="mt-2 text-sm text-slate-700">
             Cuando los autorizas, pueden instalarse cookies de Google (Analytics y, en el futuro,
