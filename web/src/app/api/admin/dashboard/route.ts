@@ -5,6 +5,7 @@ import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin";
 import { requireInternalAdmin } from "@/lib/admin/internal-admin";
 import { buildAdminSurveyRow } from "@/lib/validations/lead-form-export-labels";
 import { summarizeGa4Detail } from "@/lib/observability/ga4";
+import { summarizeOwnPageviews } from "@/lib/observability/pageviews";
 
 export const runtime = "nodejs";
 
@@ -127,6 +128,10 @@ export async function GET(request: Request) {
     // Visitas GA4 (serie por día + desgloses). Best-effort: si no está configurado
     // o falla, viene con configured:false y el panel muestra la ayuda de setup.
     const ga4 = await summarizeGa4Detail().catch(() => null);
+
+    // Contador de visitas PROPIO (sin cookies): número real de tráfico que no
+    // depende del consentimiento de GA4. Best-effort.
+    const ownPv = await summarizeOwnPageviews(firestore, Date.now()).catch(() => null);
 
     // ————————————————————————————————————————————————————————————————
     // Indicadores LEAN (AARRR + ingresos + motores de crecimiento + serie
@@ -413,6 +418,10 @@ export async function GET(request: Request) {
         visitors7d: ga4?.configured ? (ga4.daily.slice(-7).reduce((a, b) => a + b.users, 0)) : null,
         signups: usersRegistered,
         surveys: surveysCount,
+        // Contador propio sin cookies (no depende del consentimiento de GA4).
+        ownVisitors7d: ownPv ? ownPv.last7d.visitors : null,
+        ownViews7d: ownPv ? ownPv.last7d.views : null,
+        ownVisitorsToday: ownPv ? ownPv.today.visitors : null,
       },
       activation: {
         contractsCreated: contractsCount,
