@@ -80,7 +80,7 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
     financiero y no garantiza el pago del canon.
   </p>
 
-  <h2>QUINTA. DURACIÓN Y PRÓRROGAS</h2>
+  <h2>QUINTA. DURACIÓN, PRÓRROGA Y NO RENOVACIÓN</h2>
   <p>
     El término de duración del presente contrato será de [DURACION_MESES] meses, contados a partir del día
     [FECHA_INICIO] y hasta el día [FECHA_FIN].
@@ -89,6 +89,14 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
     Si las partes desean renovar o prorrogar el contrato, podrán hacerlo conforme a la ley y dejando constancia
     escrita o electrónica de las condiciones aplicables. La sola continuidad de la ocupación, sin oposición, podrá
     interpretarse de acuerdo con las reglas legales sobre prórroga automática en vivienda urbana.
+  </p>
+  <p>
+    La duración, la prórroga, la no renovación y la terminación se rigen por la <strong>Ley 820 de 2003 (arts. 5, 6 y
+    21 a 25)</strong> y las <strong>normas que la modifiquen, adicionen o sustituyan</strong>. Todo aviso de no
+    renovación o de terminación deberá darse <strong>por escrito, con la antelación que la ley exija</strong>
+    (actualmente no menor a tres (3) meses) y por un <strong>medio que permita acreditar su envío y su recibo</strong>.
+    A falta de constancia escrita del preaviso, el contrato se entenderá <strong>renovado automáticamente</strong> por
+    un término igual al inicialmente pactado, conforme a la ley.
   </p>
 
   <h2>SEXTA. REAJUSTE DEL CANON</h2>
@@ -184,6 +192,16 @@ export const CONTRACT_TEMPLATE_V2026_2 = `
     <li>Causales previstas en la normatividad colombiana aplicable.</li>
     <li>Demás causales reconocidas por la ley.</li>
   </ol>
+  <p>
+    La terminación unilateral, sus <strong>causales, preavisos, indemnizaciones, cauciones y procedimientos</strong> se
+    sujetan a lo dispuesto en la <strong>Ley 820 de 2003 (arts. 21 a 25)</strong> y las normas que la modifiquen,
+    adicionen o sustituyan, según corresponda a cada caso. Las partes reconocen que <strong>ArriendoSeguro únicamente
+    registra el aviso, deja constancia con fecha y evidencia (Ley 527 de 1999) y lo notifica</strong> a la otra parte, y
+    que la <strong>confirmación de la contraparte en la plataforma constituye prueba de su recibido</strong>, sin
+    perjuicio de otros medios trazables que las partes empleen. ArriendoSeguro <strong>no fija, calcula con carácter
+    vinculante, recauda ni administra</strong> indemnización o suma alguna: el monto y el procedimiento exactos se rigen
+    por la ley y por la asesoría legal de las partes, quienes los pagan y gestionan directamente entre sí.
+  </p>
 
   <h2>DÉCIMA QUINTA. RESTITUCIÓN DEL INMUEBLE</h2>
   <p>

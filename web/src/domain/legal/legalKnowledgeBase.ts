@@ -130,7 +130,7 @@ export const LEGAL_KB: LegalEntry[] = [
     ref: "Art. 24",
     title: "Terminación por parte del arrendatario",
     summary:
-      "El arrendatario puede terminar unilateralmente el contrato dentro del término inicial o en las prórrogas, avisando con la antelación que fije la ley y pagando la indemnización correspondiente (equivalente a determinados cánones, según el momento), salvo acuerdo distinto. También puede terminar por incumplimiento del arrendador (por ejemplo, falta de reparaciones necesarias o perturbación del goce).",
+      "El arrendatario puede terminar unilateralmente el contrato dentro del término inicial o en las prórrogas, avisando por escrito con la antelación que fije la ley (preaviso) y pagando la indemnización que la ley señale, salvo acuerdo distinto. También puede terminar por incumplimiento del arrendador (por ejemplo, suspensión de servicios a su cargo, perturbación grave del goce o desconocimiento de sus derechos), caso en el cual la ley no contempla indemnización a su cargo. Los montos y el procedimiento exactos se rigen por la Ley 820 de 2003 y sus modificatorias.",
     keywords: ["terminacion", "arrendatario", "inquilino", "entregar antes", "preaviso", "indemnizacion", "irme", "desocupar"],
     url: `${SS}/ley_0820_2003.html`,
   },

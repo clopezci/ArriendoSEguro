@@ -152,7 +152,7 @@ export default function TerminacionPage() {
           {n && (
             <section className={`rounded-3xl border-2 p-5 ${n.status === "accepted" ? "border-emerald-400 bg-emerald-50" : n.status === "rejected" ? "border-rose-300 bg-rose-50" : "border-amber-300 bg-amber-50"}`}>
               <p className="text-lg font-bold text-slate-900">{terminationTypeLabel(n.type)} registrado</p>
-              <p className="mt-1 text-sm text-slate-700">Por: <b>{roleLabel(n.byRole)}</b>. {n.penaltyMonths > 0 ? `Indemnización estimada: $${n.penaltyAmount.toLocaleString("es-CO")} (${n.penaltyMonths} meses de canon).` : "Sin indemnización (no renovación en término)."}</p>
+              <p className="mt-1 text-sm text-slate-700">Por: <b>{roleLabel(n.byRole)}</b>. {n.penaltyMonths > 0 ? `Orientación ilustrativa (no vinculante): ~$${n.penaltyAmount.toLocaleString("es-CO")} (~${n.penaltyMonths} meses de canon, Ley 820). El monto exacto lo definen la ley y las partes.` : "Sin indemnización (no renovación en término, Ley 820)."}</p>
               {n.observation && <p className="mt-1 text-sm text-slate-700"><b>Observación:</b> {n.observation}</p>}
               <p className="mt-1 text-sm font-semibold">
                 Estado: {n.status === "accepted" ? "✓ Aceptado por la otra parte" : n.status === "rejected" ? "✗ No aceptado por la otra parte" : "Esperando respuesta de la otra parte"}
@@ -249,7 +249,7 @@ export default function TerminacionPage() {
               {/* Terminación anticipada */}
               <section className="rounded-3xl border-2 border-rose-200 bg-rose-50/50 p-5 shadow-sm">
                 <h2 className="text-lg font-bold text-rose-900">Terminación anticipada (antes del vencimiento)</h2>
-                <p className="mt-1 text-xs text-slate-600">Elige la etapa del contrato para calcular la penalización (Ley 820 de 2003):</p>
+                <p className="mt-1 text-xs text-slate-600">Elige la etapa del contrato (orientación según la Ley 820 de 2003):</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button type="button" onClick={() => setPhase("initial")} className={`rounded-xl border-2 px-3 py-1.5 text-xs font-bold ${phase === "initial" ? "border-[#5646E5] bg-[#ECE9FB]/60 text-[#5646E5]" : "border-slate-200 text-slate-700"}`}>Vigencia inicial</button>
                   <button type="button" onClick={() => setPhase("renewal")} className={`rounded-xl border-2 px-3 py-1.5 text-xs font-bold ${phase === "renewal" ? "border-[#5646E5] bg-[#ECE9FB]/60 text-[#5646E5]" : "border-slate-200 text-slate-700"}`}>Durante una prórroga</button>
@@ -258,14 +258,15 @@ export default function TerminacionPage() {
                   {terminationLegalText({ type: "early", byRole: ctx.viewerRole, phase, monthlyRent: ctx.canon, penaltyMonths: earlyMonths }).map((l, i) => <li key={i}>{l}</li>)}
                 </ul>
                 <div className="mt-3 rounded-2xl border-2 border-rose-300 bg-white p-3">
-                  <p className="text-sm font-bold text-rose-900">Indemnización estimada: ${earlyAmount.toLocaleString("es-CO")} ({earlyMonths} meses de canon)</p>
+                  <p className="text-sm font-bold text-rose-900">Orientación ilustrativa (no vinculante): ~${earlyAmount.toLocaleString("es-CO")} (~{earlyMonths} meses de canon)</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500">Referencial (Ley 820, art. 24 §4 / art. 22 §7). El monto y el trámite exactos dependen del caso y de tu asesoría legal. Si terminas por <b>incumplimiento</b> de la otra parte, la ley no contempla indemnización a tu cargo.</p>
                   <label className="mt-2 flex items-start gap-2 text-xs text-slate-800">
                     <input type="checkbox" checked={acc1} onChange={(e) => setAcc1(e.target.checked)} className="mt-0.5 h-4 w-4 accent-rose-600" />
-                    <span>Reconozco que la terminación anticipada genera una <b>indemnización de ${earlyAmount.toLocaleString("es-CO")}</b> ({earlyMonths} meses de canon).</span>
+                    <span>Reconozco que la terminación o no renovación y sus efectos se rigen por la <b>Ley 820 de 2003</b> y sus modificatorias; que la orientación de la plataforma es <b>ilustrativa y no vinculante</b>; y que el monto y el trámite exactos dependen del caso y de mi asesoría legal.</span>
                   </label>
                   <label className="mt-2 flex items-start gap-2 text-xs text-slate-800">
                     <input type="checkbox" checked={acc2} onChange={(e) => setAcc2(e.target.checked)} className="mt-0.5 h-4 w-4 accent-rose-600" />
-                    <span>Entiendo que debo dar el <b>preaviso de {NOTICE_MONTHS} meses</b> y que ArriendoSeguro solo deja constancia; no sustituye asesoría legal.</span>
+                    <span>Entiendo que debo dar el aviso <b>por escrito y por un medio trazable con prueba de recibido</b> (no menor a {NOTICE_MONTHS} meses cuando la ley lo exija), y que ArriendoSeguro deja constancia (<b>Ley 527 de 1999</b>) y notifica; no recauda ni administra indemnizaciones ni sustituye asesoría legal.</span>
                   </label>
                 </div>
                 <textarea value={obs} onChange={(e) => setObs(e.target.value)} rows={2} placeholder="Observación para la otra parte (opcional)" className="mt-3 w-full rounded-xl border-2 border-slate-200 p-2 text-sm outline-none focus:border-[#5646E5]" />
