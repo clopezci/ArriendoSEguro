@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { chatWithFallback, hasAnyAiProvider } from "@/lib/ai/providerChain";
+import { withLegalDisclaimer } from "@/lib/ai/legalDisclaimer";
 
 export const runtime = "nodejs";
 
@@ -142,5 +143,6 @@ export async function POST(request: Request) {
     const data = JSON.parse(extractJsonBlock(result.content)) as Record<string, unknown>;
     return NextResponse.json({ success: true, available: true, data, provider: result.providerId });
   }
-  return NextResponse.json({ success: true, available: true, answer: result.content.trim(), provider: result.providerId });
+  // Cierre legal obligatorio: la respuesta puede tocar cláusulas/temas de la Ley 820.
+  return NextResponse.json({ success: true, available: true, answer: withLegalDisclaimer(result.content, ["Ley 820 de 2003"]), provider: result.providerId });
 }
