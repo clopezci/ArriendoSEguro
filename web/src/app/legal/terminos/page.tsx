@@ -162,10 +162,14 @@ export default function TerminosPage() {
         <h2 className="text-lg font-semibold text-slate-900">8B. Avisos de terminación / no renovación y pagos entre las partes</h2>
         <p>
           La plataforma permite a cada parte <strong>registrar y notificar</strong> avisos de no renovación o de
-          terminación anticipada, calcular de forma orientativa la indemnización según la Ley 820 de 2003, y dejar
-          <strong> constancia con fecha, IP y dispositivo</strong> de lo que cada parte aceptó (incluidas las
-          declaraciones y el formulario de aceptación de la contraparte). Esta evidencia queda disponible en el
-          expediente digital y en el paquete de evidencia descargable.
+          terminación anticipada, mostrar una <strong>orientación ilustrativa y no vinculante</strong> según la
+          <strong> Ley 820 de 2003</strong> (y las normas que la modifiquen), y dejar <strong>constancia con fecha, IP y
+          dispositivo</strong> (Ley 527 de 1999) de lo que cada parte aceptó (incluidas las declaraciones y el formulario
+          de aceptación de la contraparte). El aviso debe darse <strong>por escrito y por un medio trazable con prueba de
+          recibido</strong>; la <strong>confirmación de la contraparte en la plataforma sirve como prueba de recibido</strong>,
+          sin perjuicio de otros medios trazables (p. ej. servicio postal autorizado, WhatsApp con confirmación de
+          lectura o correo con acuse). Esta evidencia queda disponible en el expediente digital y en el paquete de
+          evidencia descargable.
         </p>
         <p>
           El papel de {appConfig.name} <strong>llega hasta el envío de la comunicación y la conservación de la

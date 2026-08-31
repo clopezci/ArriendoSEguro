@@ -101,7 +101,7 @@ export async function POST(request: Request) {
       const tpl = terminationNoticeEmail({ recipientName: counterName, byLabel, typeLabel, detailLines, observation, link });
       await sendEmail({ to: counterEmail, subject: tpl.subject, html: tpl.html, text: tpl.text, templateCode: "terminationNoticeEmail", relatedEntityType: "contract", relatedEntityId: contractId });
     }
-    const waPenalty = penaltyMonths > 0 ? ` Indemnización estimada: $${penaltyAmount.toLocaleString("es-CO")} (${penaltyMonths} meses de canon).` : "";
+    const waPenalty = penaltyMonths > 0 ? ` Orientación ilustrativa (no vinculante): ~$${penaltyAmount.toLocaleString("es-CO")} (~${penaltyMonths} meses de canon, Ley 820).` : "";
     await sendPhoneNotice({
       to: counterPhone,
       message: `${byLabel} registró un ${typeLabel.toLowerCase()} de tu contrato de arriendo.${waPenalty} Revisa y responde (aceptar o no) aquí: ${link}`,
