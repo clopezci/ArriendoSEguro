@@ -15,6 +15,7 @@ const LEGAL_LINKS = [
   { href: "/legal/aviso-privacidad", label: "Aviso de privacidad" },
   { href: "/legal/cookies", label: "Cookies" },
   { href: "/legal/firma-electronica", label: "Firma electrónica" },
+  { href: "/legal/fuentes", label: "Fuentes oficiales" },
   { href: "/legal/demo", label: "Demo" },
   { href: "/legal/evaluacion", label: "Política de evaluación de reputación" },
 ] as const;
@@ -35,7 +36,13 @@ export function LegalFooter() {
           ))}
           <CookiePreferencesLink />
         </nav>
-        <p className="mt-5 flex flex-wrap items-center justify-center gap-1.5 text-center text-xs text-slate-500">
+        <p className="mx-auto mt-5 max-w-3xl text-center text-[11px] leading-relaxed text-slate-500">
+          ArriendoSeguro es una aplicación privada de LOTIC. <strong>No representa ni está afiliada a ninguna entidad
+          gubernamental</strong> ni presta servicios oficiales del Estado. La información legal es orientativa, no
+          sustituye la asesoría jurídica y cita sus{" "}
+          <Link href="/legal/fuentes" className="underline hover:text-violet-700">fuentes oficiales</Link>.
+        </p>
+        <p className="mt-3 flex flex-wrap items-center justify-center gap-1.5 text-center text-xs text-slate-500">
           © {new Date().getFullYear()} ArriendoSeguro ·{" "}
           <LoticBadge className="text-xs" />
         </p>
