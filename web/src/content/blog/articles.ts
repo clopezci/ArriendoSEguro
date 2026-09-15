@@ -425,7 +425,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
         type: "sources",
         items: [
           { label: "Ley 820 de 2003, arts. 15 y 16 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
-          { label: "Ley 820 de 2003 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0820_2003.html" },
+          { label: "Ley 820 de 2003 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
         ],
       },
       ctaIngresar,
@@ -475,7 +475,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
         type: "sources",
         items: [
           { label: "Ley 820 de 2003, arts. 22 a 25 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
-          { label: "Ley 820 de 2003 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0820_2003.html" },
+          { label: "Ley 820 de 2003 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
         ],
       },
       ctaIngresar,
@@ -530,7 +530,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
         items: [
           { label: "Ley 820 de 2003, art. 15 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
           { label: "Decreto 3130 de 2003 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=10482" },
-          { label: "Ley 142 de 1994 (servicios públicos) — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0142_1994.html" },
+          { label: "Ley 142 de 1994 (servicios públicos) — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/" },
         ],
       },
       ctaIngresar,
@@ -751,7 +751,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       {
         type: "sources",
         items: [
-          { label: "Código Civil colombiano (obligaciones solidarias, art. 1568) — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/codigo_civil.html" },
+          { label: "Código Civil colombiano (obligaciones solidarias, art. 1568) — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/" },
           { label: "Ley 820 de 2003, art. 16 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
         ],
       },
@@ -798,7 +798,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       {
         type: "sources",
         items: [
-          { label: "Código General del Proceso (Ley 1564 de 2012), art. 384 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_1564_2012.html" },
+          { label: "Código General del Proceso (Ley 1564 de 2012), art. 384 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425" },
           { label: "Ley 1564 de 2012 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425" },
         ],
       },
@@ -850,7 +850,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
         type: "sources",
         items: [
           { label: "Ley 820 de 2003 (texto completo) — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
-          { label: "Ley 820 de 2003 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0820_2003.html" },
+          { label: "Ley 820 de 2003 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
         ],
       },
       ctaIngresar,
@@ -904,7 +904,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
         type: "sources",
         items: [
           { label: "Ley 820 de 2003, art. 17 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
-          { label: "Ley 820 de 2003 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0820_2003.html" },
+          { label: "Ley 820 de 2003 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
         ],
       },
       ctaIngresar,
@@ -962,7 +962,7 @@ export const BLOG_ARTICLES: BlogArticle[] = [
         type: "sources",
         items: [
           { label: "Ley 820 de 2003, arts. 9 y 22 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
-          { label: "Código Civil colombiano (arrendamiento, reparaciones) — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/codigo_civil.html" },
+          { label: "Código Civil colombiano (arrendamiento, reparaciones) — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/" },
         ],
       },
       ctaIngresar,
@@ -1034,8 +1034,8 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       {
         type: "sources",
         items: [
-          { label: "Ley 820 de 2003 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0820_2003.html" },
-          { label: "Código General del Proceso (Ley 1564 de 2012), art. 384 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_1564_2012.html" },
+          { label: "Ley 820 de 2003 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
+          { label: "Código General del Proceso (Ley 1564 de 2012), art. 384 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425" },
         ],
       },
     ],
@@ -1089,8 +1089,8 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       {
         type: "sources",
         items: [
-          { label: "Ley 820 de 2003, art. 3 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0820_2003.html" },
-          { label: "Ley 527 de 1999 — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0527_1999.html" },
+          { label: "Ley 820 de 2003, art. 3 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
+          { label: "Ley 527 de 1999 — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=4276" },
         ],
       },
     ],
@@ -1159,8 +1159,8 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       {
         type: "sources",
         items: [
-          { label: "Ley 1581 de 2012 (Habeas Data) — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_1581_2012.html" },
-          { label: "Ley 1266 de 2008 (habeas data financiero) — Secretaría del Senado", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_1266_2008.html" },
+          { label: "Ley 1581 de 2012 (Habeas Data) — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=49981" },
+          { label: "Ley 1266 de 2008 (habeas data financiero) — Función Pública", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=34488" },
         ],
       },
     ],

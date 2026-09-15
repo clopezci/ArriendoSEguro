@@ -4,25 +4,19 @@ import { TopBackNav } from "@/components/nav/top-back-nav";
 export const metadata: Metadata = {
   title: "Fuentes oficiales y aviso",
   description:
-    "ArriendoSeguro es una app privada de LOTIC, no representa a ninguna entidad gubernamental. Enlaces a las fuentes oficiales (.gov.co) de toda la información normativa citada.",
+    "ArriendoSeguro es una app privada de LOTIC, no representa a ninguna entidad gubernamental. Enlaces a la fuente oficial del Estado (Gestor Normativo de Función Pública) de toda la normativa citada.",
   alternates: { canonical: "/legal/fuentes" },
 };
 
-/** Portales OFICIALES del Estado que contienen TODA la normativa colombiana. */
-const MASTER: { name: string; what: string; href: string }[] = [
-  {
-    name: "SUIN-Juriscol (Ministerio de Justicia y del Derecho)",
-    what: "Sistema Único de Información Normativa del Estado colombiano: contiene el texto vigente de CUALQUIER ley, decreto o norma citada en la app.",
-    href: "https://www.suin-juriscol.gov.co",
-  },
-  {
-    name: "Gestor Normativo (Departamento Administrativo de la Función Pública)",
-    what: "Buscador oficial de normas con su texto y estado de vigencia.",
-    href: "https://www.funcionpublica.gov.co/eva/gestornormativo/",
-  },
-];
+/**
+ * Todas las fuentes apuntan al Gestor Normativo de la Función Pública
+ * (funcionpublica.gov.co), la fuente oficial del Estado colombiano, accesible de
+ * forma estable desde cualquier país. Se evitan a propósito otros dominios .gov.co
+ * (SUIN, Secretaría del Senado, DANE, DIAN, SIC) porque geobloquean o fallan para
+ * verificadores externos.
+ */
+const PORTAL = "https://www.funcionpublica.gov.co/eva/gestornormativo/";
 
-/** Normas específicas más citadas (enlace directo a su fuente oficial). */
 const NORMS: { law: string; what: string; href: string }[] = [
   { law: "Ley 820 de 2003", what: "Régimen de arrendamiento de vivienda urbana (contrato, canon, reajuste, prórroga, terminación).", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
   { law: "Ley 527 de 1999", what: "Comercio electrónico, mensajes de datos y firma electrónica.", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=4276" },
@@ -32,31 +26,8 @@ const NORMS: { law: string; what: string; href: string }[] = [
   { law: "Ley 1266 de 2008", what: "Habeas Data financiero (reportes de crédito).", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=34488" },
   { law: "Ley 1564 de 2012 (Código General del Proceso)", what: "Proceso de restitución del inmueble arrendado.", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=48425" },
   { law: "Decreto 620 de 2020", what: "Servicios ciudadanos digitales (firma y autenticación del Estado).", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=153053" },
-  { law: "Decreto 3130 de 2003", what: "Reglamenta servicios públicos en el arrendamiento.", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=10482" },
-  { law: "Ley 142 de 1994", what: "Régimen de los servicios públicos domiciliarios.", href: "http://www.secretariasenado.gov.co/senado/basedoc/ley_0142_1994.html" },
-  { law: "Código Civil colombiano", what: "Arrendamiento, obligaciones y obligaciones solidarias (codeudor).", href: "http://www.secretariasenado.gov.co/senado/basedoc/codigo_civil.html" },
+  { law: "Decreto 3130 de 2003", what: "Servicios públicos en el arrendamiento.", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=10482" },
 ];
-
-/** Datos y servicios oficiales del Estado (no son normas). */
-const SERVICES: { name: string; what: string; href: string }[] = [
-  { name: "DANE", what: "Índice de Precios al Consumidor (IPC), base del tope del reajuste anual del canon.", href: "https://www.dane.gov.co" },
-  { name: "Superintendencia de Industria y Comercio (SIC)", what: "Autoridad de protección de datos personales.", href: "https://www.sic.gov.co/proteccion-de-datos-personales" },
-  { name: "DIAN", what: "Unidad de Valor Tributario (UVT) e información de impuestos.", href: "https://www.dian.gov.co" },
-  { name: "Agencia Nacional Digital (AND)", what: "Firma y autenticación digital gratuita del Estado.", href: "https://firmaautenticaciondigital.and.gov.co/" },
-  { name: "Contaduría General de la Nación (BDME)", what: "Boletín de Deudores Morosos del Estado.", href: "https://eris.contaduria.gov.co/BDME/" },
-];
-
-function SourceItem({ title, what, href }: { title: string; what: string; href: string }) {
-  return (
-    <li className="rounded-xl border border-slate-200 bg-white p-3">
-      <p className="text-sm font-semibold text-slate-900">{title}</p>
-      <p className="mt-0.5 text-xs text-slate-600">{what}</p>
-      <a href={href} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block break-all text-sm text-violet-700 underline">
-        {href}
-      </a>
-    </li>
-  );
-}
 
 export default function FuentesOficialesPage() {
   return (
@@ -71,46 +42,63 @@ export default function FuentesOficialesPage() {
               <strong>ArriendoSeguro</strong> es una <strong>aplicación privada</strong> desarrollada por{" "}
               <strong>LOTIC</strong>. <strong>No es una entidad gubernamental</strong>, no representa ni está afiliada a
               ningún organismo público del Estado colombiano, y no presta servicios oficiales del gobierno. La información
-              sobre normas y trámites que aparece en la app es <strong>orientativa e ilustrativa</strong> y{" "}
-              <strong>no sustituye la asesoría jurídica</strong>. Verifica siempre el texto vigente en las fuentes
-              oficiales enlazadas abajo.
+              sobre normas que aparece en la app es <strong>orientativa e ilustrativa</strong> y{" "}
+              <strong>no sustituye la asesoría jurídica</strong>. Verifica siempre el texto vigente en la fuente oficial
+              enlazada abajo.
             </p>
           </div>
         </header>
 
         <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
-          <h2 className="text-xl font-semibold">Portales oficiales del Estado (cubren TODA la normativa)</h2>
+          <h2 className="text-xl font-semibold">Fuente oficial del Estado</h2>
           <p className="mt-2 text-sm text-slate-700">
-            Cualquier ley, decreto o norma colombiana que la app mencione se puede consultar, en su texto oficial y
-            vigente, en estos portales del Estado (dominios <code>.gov.co</code>):
+            Toda la normativa colombiana que la app menciona se puede consultar, en su texto oficial y vigente, en el{" "}
+            <strong>Gestor Normativo del Departamento Administrativo de la Función Pública</strong>, el buscador oficial de
+            normas del Estado colombiano (dominio <code>.gov.co</code>):
           </p>
-          <ul className="mt-4 space-y-3">
-            {MASTER.map((s) => (
-              <SourceItem key={s.href} title={s.name} what={s.what} href={s.href} />
-            ))}
-          </ul>
+          <a
+            href={PORTAL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-block break-all rounded-lg bg-[#5646E5] px-3 py-2 text-sm font-semibold text-white hover:brightness-105"
+          >
+            {PORTAL}
+          </a>
+          <p className="mt-2 text-xs text-slate-500">
+            Allí puedes buscar cualquier ley o decreto por número y año, incluidas las que la app cita y no aparezcan en la
+            lista de abajo.
+          </p>
         </section>
 
         <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
-          <h2 className="text-xl font-semibold">Normas más citadas (enlace directo)</h2>
+          <h2 className="text-xl font-semibold">Normas citadas (enlace directo)</h2>
           <p className="mt-2 text-sm text-slate-700">
-            La app no genera esta información: remite a su fuente oficial para que la verifiques. Cualquier otra norma no
-            listada aquí también está en los portales oficiales de arriba.
+            La app no genera esta información: remite a su fuente oficial para que la verifiques.
           </p>
           <ul className="mt-4 space-y-3">
             {NORMS.map((s) => (
-              <SourceItem key={s.law} title={s.law} what={s.what} href={s.href} />
+              <li key={s.law} className="rounded-xl border border-slate-200 bg-white p-3">
+                <p className="text-sm font-semibold text-slate-900">{s.law}</p>
+                <p className="mt-0.5 text-xs text-slate-600">{s.what}</p>
+                <a href={s.href} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block break-all text-sm text-violet-700 underline">
+                  {s.href}
+                </a>
+              </li>
             ))}
           </ul>
         </section>
 
         <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 shadow-[0_10px_24px_rgba(139,92,246,0.18)]">
-          <h2 className="text-xl font-semibold">Datos y servicios oficiales del Estado</h2>
-          <ul className="mt-4 space-y-3">
-            {SERVICES.map((s) => (
-              <SourceItem key={s.href} title={s.name} what={s.what} href={s.href} />
-            ))}
-          </ul>
+          <h2 className="text-xl font-semibold">Datos y entidades del Estado que se mencionan</h2>
+          <p className="mt-2 text-sm text-slate-700">
+            La app puede mencionar datos o servicios de entidades públicas —por ejemplo, el <strong>IPC del DANE</strong>{" "}
+            (base del reajuste anual del canon), la <strong>UVT de la DIAN</strong> (referencia tributaria), la{" "}
+            <strong>firma digital gratuita de la Agencia Nacional Digital</strong> y la autoridad de datos personales
+            (<strong>SIC</strong>). Su <strong>marco normativo</strong> es el de las leyes y decretos enlazados arriba
+            (por ejemplo, el reajuste del canon se rige por la Ley 820 de 2003 y la firma digital por la Ley 527 de 1999 y
+            el Decreto 620 de 2020). ArriendoSeguro solo referencia estos datos; no los produce ni representa a esas
+            entidades.
+          </p>
         </section>
       </main>
     </div>
