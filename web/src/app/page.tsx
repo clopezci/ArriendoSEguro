@@ -1,6 +1,7 @@
 import { LandingPublicHeader } from "@/components/landing/landing-public-header";
 import { LandingInstallApp } from "@/components/landing/landing-install-app";
 import Link from "next/link";
+import { TrackedCtaLink } from "@/components/analytics/tracked-cta-link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -84,18 +85,20 @@ export default function Home() {
 
           {/* CTAs */}
           <div className="mx-auto flex w-full max-w-md flex-col gap-2.5">
-            <Link
+            <TrackedCtaLink
               href="/nuevo"
+              cta="home_crear_contrato"
               className="inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-[#FF6B4A] px-6 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95"
             >
               Crear mi contrato →
-            </Link>
-            <Link
+            </TrackedCtaLink>
+            <TrackedCtaLink
               href="/ingresar?redirect=%2Fnuevo%3Fmenu%3D1"
+              cta="home_ya_tengo_cuenta"
               className="inline-flex min-h-[52px] items-center justify-center rounded-2xl border-2 border-slate-200 bg-white/80 px-6 text-base font-bold text-slate-700 transition hover:border-[#5646E5]"
             >
               Ya tengo cuenta
-            </Link>
+            </TrackedCtaLink>
             <Link
               href="/funcionalidades"
               className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border-2 border-[#5646E5] bg-[#ECE9FB]/50 px-6 text-base font-bold text-[#5646E5] transition hover:bg-[#ECE9FB]"

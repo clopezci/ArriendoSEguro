@@ -50,9 +50,11 @@ type DashboardPayload = {
         returnedUsers?: number;
         reasons: { key: string; label: string; count: number }[];
         wizard: { index: number; step: string; users: number }[];
+        wizardStarted?: number;
         wizardReview: number;
         wizardCompleted: number;
         reachedPayment: number;
+        ctaClicks?: { key: string; count: number }[];
         cancelReasons: { key: string; label: string; count: number }[];
         hasData: boolean;
       };
@@ -3560,6 +3562,16 @@ function LeanTab({ s, onReload }: { s?: DashboardPayload["summary"]; onReload: (
 
           <div className="rounded-xl border border-slate-300 bg-white/95 p-4">
             <p className="text-sm font-semibold text-slate-900">🧭 Dónde se caen en el asistente</p>
+            {(() => {
+              const cta = lean.abandon.ctaClicks ?? [];
+              const ctaTotal = cta.reduce((s, c) => s + c.count, 0);
+              const started = lean.abandon.wizardStarted ?? 0;
+              return ctaTotal > 0 || started > 0 ? (
+                <p className="mt-1 text-[11px] text-slate-600">
+                  🏁 Tope del embudo — Clic en CTA de la home: <b>{num(ctaTotal)}</b> · Entraron al asistente (/nuevo): <b>{num(started)}</b>.
+                </p>
+              ) : null;
+            })()}
             {(lean.abandon.wizard?.length ?? 0) === 0 ? (
               <p className="mt-2 text-xs text-slate-500">Aún sin datos de pasos. Se registran a medida que la gente avanza en /nuevo.</p>
             ) : (
