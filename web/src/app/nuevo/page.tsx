@@ -250,6 +250,12 @@ export default function NuevoPage() {
   const [a, setARaw] = useState<Answers>(EMPTY);
   const [error, setError] = useState<string | null>(null);
 
+  // Tope del embudo: marca UNA sola vez que la persona entró al asistente (llegó
+  // a /nuevo), para medir cuántos de los que llegan realmente arrancan.
+  useEffect(() => {
+    track("nuevo_started");
+  }, []);
+
   // Analítica del embudo: registra el paso alcanzado (drop-off), la revisión y el
   // cierre del asistente. Best-effort; no bloquea la UX.
   useEffect(() => {

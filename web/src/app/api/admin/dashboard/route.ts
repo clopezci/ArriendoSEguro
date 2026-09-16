@@ -358,6 +358,8 @@ export async function GET(request: Request) {
     const reviewUsers = new Set<string>();
     const completedUsers = new Set<string>();
     const reachedPaymentUsers = new Set<string>();
+    const startedUsers = new Set<string>();
+    const ctaCounts = new Map<string, number>();
     const cancelCounts = new Map<string, number>();
     for (const e of evDocs) {
       const name = String(e.name ?? "");
@@ -377,9 +379,11 @@ export async function GET(request: Request) {
           if (who) cur.anon.add(who);
           stepUsers.set(idx, cur);
         }
-      } else if (name === "nuevo_review") { if (who) reviewUsers.add(who); }
+      } else if (name === "nuevo_started") { if (who) startedUsers.add(who); }
+      else if (name === "nuevo_review") { if (who) reviewUsers.add(who); }
       else if (name === "nuevo_completed") { if (who) completedUsers.add(who); }
       else if (name === "reached_payment") { if (who) reachedPaymentUsers.add(who); }
+      else if (name === "cta_click") { const c = String(props.cta ?? "otro"); ctaCounts.set(c, (ctaCounts.get(c) ?? 0) + 1); }
       else if (name === "account_cancel_reason") {
         const r = String(props.reason ?? "otro");
         cancelCounts.set(r, (cancelCounts.get(r) ?? 0) + 1);
@@ -404,9 +408,11 @@ export async function GET(request: Request) {
       returnedUsers: returnedUsers.size,
       reasons: abandonReasons,
       wizard: wizardFunnel,
+      wizardStarted: startedUsers.size,
       wizardReview: reviewUsers.size,
       wizardCompleted: completedUsers.size,
       reachedPayment: reachedPaymentUsers.size,
+      ctaClicks: [...ctaCounts.entries()].map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count),
       cancelReasons,
       hasData: evDocs.length > 0,
     };
