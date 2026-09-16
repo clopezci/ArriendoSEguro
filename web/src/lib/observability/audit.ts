@@ -7,6 +7,7 @@ import { ERROR_EVENTS_COLLECTION } from "@/lib/observability/observability";
 import { isBenignClientError } from "@/lib/observability/ignore-noise";
 import { recordObservabilityRun } from "@/lib/observability/runlog";
 import { summarizeGa4Visits, ga4VisitsToText, type Ga4Visits } from "@/lib/observability/ga4";
+import { summarizeOwnPageviews } from "@/lib/observability/pageviews";
 import { formatAppDateTime } from "@/lib/datetime/appTime";
 import { appConfig } from "@/lib/config";
 
@@ -403,6 +404,87 @@ export function leanToText(l: LeanReport | null): string {
 }
 
 /**
+ * Embudo de conversión (últimos `days` días) desde `analytics_events` + el
+ * contador de visitas propio (sin cookies): de quienes llegan, cuántos arrancan
+ * el asistente, lo terminan y llegan a pagar, y en qué paso se cae más gente.
+ * Best-effort: si falla una consulta, ese dato va null/0.
+ */
+export type FunnelReport = {
+  visits: number | null;
+  ctaClicks: number;
+  started: number;
+  completed: number;
+  reachedPayment: number;
+  worstDrop: { from: string; fromN: number; toN: number } | null;
+  days: number;
+  hasData: boolean;
+};
+
+export async function summarizeFunnel(days = 7): Promise<FunnelReport | null> {
+  const firestore = getAdminFirestore();
+  if (!firestore) return null;
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  let docs: Record<string, unknown>[] = [];
+  try {
+    const snap = await firestore.collection("analytics_events").where("day", ">=", cutoff).limit(5000).get();
+    docs = snap.docs.map((d) => d.data() as Record<string, unknown>);
+  } catch {
+    docs = [];
+  }
+  let ctaClicks = 0;
+  const started = new Set<string>();
+  const completed = new Set<string>();
+  const reachedPayment = new Set<string>();
+  const stepUsers = new Map<number, { step: string; anon: Set<string> }>();
+  for (const e of docs) {
+    const name = String(e.name ?? "");
+    const props = (e.props ?? {}) as Record<string, unknown>;
+    const who = String(e.anonId ?? e.uid ?? "");
+    if (name === "cta_click") ctaClicks += 1;
+    else if (name === "nuevo_started") { if (who) started.add(who); }
+    else if (name === "nuevo_completed") { if (who) completed.add(who); }
+    else if (name === "reached_payment") { if (who) reachedPayment.add(who); }
+    else if (name === "nuevo_step") {
+      const idx = Number(props.index ?? -1);
+      if (idx >= 0) {
+        const cur = stepUsers.get(idx) ?? { step: String(props.step ?? idx), anon: new Set<string>() };
+        if (who) cur.anon.add(who);
+        stepUsers.set(idx, cur);
+      }
+    }
+  }
+  const steps = [...stepUsers.entries()].sort((a, b) => a[0] - b[0]).map(([, v]) => ({ step: v.step, users: v.anon.size }));
+  let worstDrop: FunnelReport["worstDrop"] = null;
+  for (let k = 1; k < steps.length; k++) {
+    const drop = steps[k - 1].users - steps[k].users;
+    if (drop > 0 && (!worstDrop || drop > worstDrop.fromN - worstDrop.toN)) {
+      worstDrop = { from: steps[k].step, fromN: steps[k - 1].users, toN: steps[k].users };
+    }
+  }
+  let visits: number | null = null;
+  try {
+    const pv = await summarizeOwnPageviews(firestore, Date.now(), Math.max(days, 7));
+    visits = pv.last7d.visitors;
+  } catch {
+    visits = null;
+  }
+  const hasData = docs.length > 0 || (visits ?? 0) > 0;
+  return { visits, ctaClicks, started: started.size, completed: completed.size, reachedPayment: reachedPayment.size, worstDrop, days, hasData };
+}
+
+export function funnelToText(f: FunnelReport | null): string {
+  if (!f) return "🧭 *Embudo:* sin acceso a la base.";
+  if (!f.hasData) return "🧭 *Embudo (7 días):* aún sin datos (se llena con el tráfico).";
+  const n = (v: number | null) => (v === null ? "—" : String(v));
+  const lines = [
+    "🧭 *Embudo (últimos 7 días)*",
+    `Visitas: ${n(f.visits)} · Clic empezar: ${f.ctaClicks} · Entraron al asistente: ${f.started} · Terminaron: ${f.completed} · Pasarela: ${f.reachedPayment}`,
+  ];
+  if (f.worstDrop) lines.push(`Mayor caída: paso «${f.worstDrop.from}» (${f.worstDrop.fromN}→${f.worstDrop.toN})`);
+  return lines.join("\n");
+}
+
+/**
  * Corre la auditoría de POSTURA + ACTIVIDAD + resumen de ERRORES y manda el
  * reporte completo por Telegram. Nunca lanza. Lleva fecha (hora Colombia) para
  * que se vea cuándo se generó y confirmar que el cron sigue vivo.
@@ -417,13 +499,15 @@ export async function sendAuditReport(source = "manual_admin"): Promise<{
   telegramSent: number;
 }> {
   const audit = runPostureAudit();
-  const [errors, activity, visits, lean] = await Promise.all([summarizeErrors(), summarizeActivity(), summarizeGa4Visits(), summarizeLean()]);
+  const [errors, activity, visits, lean, funnel] = await Promise.all([summarizeErrors(), summarizeActivity(), summarizeGa4Visits(), summarizeLean(), summarizeFunnel()]);
   const text = [
     auditToText(audit),
     "",
     ga4VisitsToText(visits),
     "",
     activityToText(activity),
+    "",
+    funnelToText(funnel),
     "",
     leanToText(lean),
     "",
