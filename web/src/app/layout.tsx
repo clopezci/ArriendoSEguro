@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(appConfig.publicUrl),
   manifest: "/manifest.webmanifest",
   title: {
-    default: `${appConfig.name} | Arriendo entre personas en Colombia`,
+    default: `Contrato de arrendamiento en Colombia, fácil y legal | ${appConfig.name}`,
     template: `%s | ${appConfig.name}`,
   },
   description: appConfig.seoDescription,

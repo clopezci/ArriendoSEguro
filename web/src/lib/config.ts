@@ -9,7 +9,7 @@ export const appConfig = {
     "¿Necesitas arrendar tu propiedad? Te lo hacemos fácil, seguro y asequible.",
   /** Resumen breve para meta tags y previsualizaciones */
   seoDescription:
-    "Formaliza contratos de arrendamiento entre personas en Colombia: contrato, inventario, firma y registro de pagos.",
+    "Haz tu contrato de arrendamiento en Colombia en minutos: legal (Ley 820), firmado, con inventario, recordatorios de pago y verificación del inquilino. Primer contrato $49.900.",
   publicUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
 } as const;
 
