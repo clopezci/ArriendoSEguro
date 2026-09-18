@@ -481,6 +481,11 @@ export function funnelToText(f: FunnelReport | null): string {
     `Visitas: ${n(f.visits)} · Clic empezar: ${f.ctaClicks} · Entraron al asistente: ${f.started} · Terminaron: ${f.completed} · Pasarela: ${f.reachedPayment}`,
   ];
   if (f.worstDrop) lines.push(`Mayor caída: paso «${f.worstDrop.from}» (${f.worstDrop.fromN}→${f.worstDrop.toN})`);
+  // Conversión: qué % del tráfico arranca y qué % llega a pagar.
+  if (f.visits && f.visits > 0) {
+    const pct = (part: number) => `${Math.round((part / f.visits!) * 1000) / 10}%`;
+    lines.push(`Conversión: ${pct(f.started)} arrancó · ${pct(f.reachedPayment)} llegó a pagar`);
+  }
   return lines.join("\n");
 }
 
