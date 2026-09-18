@@ -5,6 +5,7 @@ import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { PitchTab } from "@/components/admin/pitch-tab";
 import { UtmBuilder } from "@/components/admin/utm-builder";
 import { AdminsPanel } from "@/components/admin/admins-panel";
+import { AgenciasPanel } from "@/components/admin/agencies-panel";
 import { PLAN_PLUS_CUSTOM_COP_LIMITS } from "@/domain/platform-payments/plan-plus-pricing";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -148,6 +149,7 @@ export default function AdminPage() {
     | "encuestas"
     | "usuarios"
     | "admins"
+    | "agencias"
     | "accesos"
     | "pagos"
     | "expedientes"
@@ -3093,6 +3095,7 @@ export default function AdminPage() {
               ["encuestas", "Encuestas"],
               ["usuarios", "Usuarios"],
               ["admins", "👥 Admins"],
+              ["agencias", "🏢 Agencias"],
               ["accesos", "Accesos"],
               ["pagos", "Pagos plataforma"],
               ["expedientes", "Expedientes"],
@@ -3131,6 +3134,7 @@ export default function AdminPage() {
         )}
         {data && tab === "usuarios" && <TablaGenerica rows={data.users ?? []} />}
         {tab === "admins" && <AdminsPanel />}
+        {tab === "agencias" && <AgenciasPanel />}
         {data && tab === "accesos" && <TablaGenerica rows={data.accesses ?? []} />}
         {data && tab === "pagos" && (
           <div className="space-y-6">
