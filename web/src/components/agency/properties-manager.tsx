@@ -7,6 +7,8 @@ import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 type Property = {
   id: string;
   agencyId: string;
+  landlordId?: string;
+  externalId?: string;
   alias?: string;
   address: string;
   city: string;
@@ -18,7 +20,11 @@ type Property = {
   defaultRent?: number;
 };
 
+type Landlord = { id: string; party: { fullName: string } };
+
 type FormState = {
+  landlordId: string;
+  externalId: string;
   alias: string;
   address: string;
   city: string;
@@ -29,14 +35,16 @@ type FormState = {
   defaultRent: string;
 };
 
-const EMPTY: FormState = { alias: "", address: "", city: "", department: "", type: "Apartamento", registryNumber: "", commercialValue: "", defaultRent: "" };
+const EMPTY: FormState = { landlordId: "", externalId: "", alias: "", address: "", city: "", department: "", type: "Apartamento", registryNumber: "", commercialValue: "", defaultRent: "" };
 
 export function PropertiesManager({ agencyId }: { agencyId: string }) {
   const { user } = useAuth();
   const [rows, setRows] = useState<Property[]>([]);
+  const [landlords, setLandlords] = useState<Landlord[]>([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -45,13 +53,23 @@ export function PropertiesManager({ agencyId }: { agencyId: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(base, { headers: { ...(await buildAuthHeaders(user)) } });
-      const json = (await res.json()) as { success?: boolean; properties?: Property[] };
-      if (json?.success) setRows(json.properties ?? []);
+      const [pRes, lRes] = await Promise.all([
+        fetch(base, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json()),
+        fetch(`/api/agency/${agencyId}/landlords`, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json()),
+      ]);
+      if (pRes?.success) setRows(pRes.properties ?? []);
+      if (lRes?.success) setLandlords(lRes.landlords ?? []);
     } finally {
       setLoading(false);
     }
-  }, [base, user]);
+  }, [base, agencyId, user]);
+
+  const landlordName = (id?: string) => landlords.find((l) => l.id === id)?.party.fullName ?? "—";
+  const filtered = rows.filter((p) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return [p.alias, p.address, p.city, p.externalId, p.id].some((v) => String(v ?? "").toLowerCase().includes(q));
+  });
 
   useEffect(() => {
     void load();
@@ -67,6 +85,8 @@ export function PropertiesManager({ agencyId }: { agencyId: string }) {
     setLoading(true);
     try {
       const payload: Record<string, unknown> = {
+        landlordId: form.landlordId || undefined,
+        externalId: form.externalId.trim() || undefined,
         alias: form.alias.trim() || undefined,
         address: form.address.trim(),
         city: form.city.trim(),
@@ -114,6 +134,11 @@ export function PropertiesManager({ agencyId }: { agencyId: string }) {
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
         <span className="text-xs font-semibold text-slate-500">{editingId ? "Editar inmueble" : "Nuevo inmueble"}</span>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <select className={input} value={form.landlordId} onChange={(e) => set("landlordId", e.target.value)}>
+            <option value="">— Dueño (arrendador) —</option>
+            {landlords.map((l) => <option key={l.id} value={l.id}>{l.party.fullName}</option>)}
+          </select>
+          <input className={input} placeholder="Tu código de inmueble (opcional)" value={form.externalId} onChange={(e) => set("externalId", e.target.value)} />
           <input className={input} placeholder="Alias interno (ej. Apto 302 Laureles)" value={form.alias} onChange={(e) => set("alias", e.target.value)} />
           <input className={input} placeholder="Tipo (Apartamento, Casa…)" value={form.type} onChange={(e) => set("type", e.target.value)} />
           <input className={input} placeholder="Dirección" value={form.address} onChange={(e) => set("address", e.target.value)} />
@@ -138,13 +163,16 @@ export function PropertiesManager({ agencyId }: { agencyId: string }) {
       </div>
 
       <div className="space-y-2">
-        <h4 className="text-xs font-bold uppercase text-slate-500">Inmuebles ({rows.length})</h4>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h4 className="text-xs font-bold uppercase text-slate-500">Inmuebles ({filtered.length}/{rows.length})</h4>
+          <input className={`${input} w-56`} placeholder="Buscar por dirección, alias o código" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
         {rows.length === 0 && <p className="text-xs text-slate-400">Aún no hay inmuebles. Cárgalos una vez y reúsalos en los contratos.</p>}
-        {rows.map((p) => (
+        {filtered.map((p) => (
           <div key={p.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
             <div>
               <span className="font-semibold text-slate-800">{p.alias || p.address}</span>
-              <span className="ml-2 text-xs text-slate-400">{p.type} · {p.address}, {p.city}</span>
+              <span className="ml-2 text-xs text-slate-400">{p.type} · {p.address}, {p.city} · Dueño: {landlordName(p.landlordId)}{p.externalId ? ` · Cód: ${p.externalId}` : ""}</span>
             </div>
             <div className="flex gap-2">
               <button
@@ -152,6 +180,8 @@ export function PropertiesManager({ agencyId }: { agencyId: string }) {
                 onClick={() => {
                   setEditingId(p.id);
                   setForm({
+                    landlordId: p.landlordId ?? "",
+                    externalId: p.externalId ?? "",
                     alias: p.alias ?? "",
                     address: p.address,
                     city: p.city,

@@ -122,6 +122,10 @@ export interface AgencyLandlord {
 export interface AgencyProperty {
   id: string;
   agencyId: string;
+  /** Dueño (arrendador) al que pertenece el inmueble. Al elegir el inmueble, el dueño viene solo. */
+  landlordId?: string;
+  /** Código propio de la agencia para este inmueble (si maneja los suyos). */
+  externalId?: string;
   /** Alias interno para reconocer el inmueble ("Apto 302 Laureles"). */
   alias?: string;
   address: string;
