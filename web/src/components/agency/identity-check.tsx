@@ -87,7 +87,11 @@ export function IdentityCheck({ agencyId }: { agencyId?: string }) {
       const [foto, self] = await Promise.all([fileToDataUrl(fotoCedula), fileToDataUrl(selfie)]);
       // Si se eligió un contrato, se usa el endpoint de agencia que GUARDA el
       // resultado en el contrato (y así bloquea el envío a firma si reprueba).
-      const url = agencyId && contractId ? `/api/agency/${agencyId}/contracts/${contractId}/verify-identity` : "/api/identity/verify";
+      const url = agencyId
+        ? contractId
+          ? `/api/agency/${agencyId}/contracts/${contractId}/verify-identity`
+          : `/api/agency/${agencyId}/verify-identity`
+        : "/api/identity/verify";
       const res = await fetch(url, {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },

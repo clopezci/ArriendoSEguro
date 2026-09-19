@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getAgency } from "@/lib/agencies/agencyStore";
+import { isIdentityEnabledForAgency } from "@/domain/agencies/types";
 import { createOrUpdateSubmission } from "@/lib/agencies/intakeStore";
 import { verifyIdentity, isIdentityConfigured } from "@/lib/identity/hubClient";
 import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequest } from "@/lib/security/rate-limit";
@@ -62,8 +63,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
 
   // Identidad opcional.
   let identity;
-  if (d.fotoCedula && d.selfie && isIdentityConfigured()) {
-    const r = await verifyIdentity({ cedula: d.documentNumber.replace(/\D/g, ""), fotoCedula: d.fotoCedula, selfie: d.selfie, nivel: "alto" });
+  if (d.fotoCedula && d.selfie && isIdentityConfigured() && isIdentityEnabledForAgency(agency)) {
+    const r = await verifyIdentity({
+      cedula: d.documentNumber.replace(/\D/g, ""),
+      fotoCedula: d.fotoCedula,
+      selfie: d.selfie,
+      nivel: "alto",
+      subCuenta: { id: agencyId, nombre: agency.name, escalamientoEmail: agency.escalationEmail },
+    });
     if (r.available) {
       identity = {
         approved: r.approved,

@@ -41,6 +41,11 @@ export interface VerifyIdentityInput {
   selfie?: string;
   nivel?: IdentityLevel;
   accion?: string;
+  /**
+   * Agencia responsable + su correo de escalamiento (PQR/fraude). El hub enruta
+   * ahí los casos de suplantación; no lo almacena.
+   */
+  subCuenta?: { id: string; nombre: string; escalamientoEmail?: string };
 }
 
 function apiKey(): string | undefined {
@@ -67,6 +72,7 @@ export async function verifyIdentity(input: VerifyIdentityInput): Promise<Identi
         ...(input.selfie ? { selfie: input.selfie } : {}),
         nivel: input.nivel ?? "alto",
         accion: input.accion ?? "kyc",
+        ...(input.subCuenta ? { subCuenta: input.subCuenta } : {}),
       }),
       // Evita cuelgues largos del flujo de agencia.
       signal: AbortSignal.timeout(30_000),

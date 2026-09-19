@@ -25,6 +25,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ agen
         nit: agency.nit ?? null,
         contactEmail: agency.contactEmail,
         status: agency.status,
+        identityEnabled: agency.identityEnabled !== false,
       },
       credits: credits.balance,
       counts: { landlords: landlords.length, properties: properties.length },

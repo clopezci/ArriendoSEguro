@@ -31,6 +31,19 @@ export interface Agency {
   logoUrl?: string;
   /** Correos con acceso a la agencia (en minúscula). Fase 1 = membresía plana. */
   memberEmails: string[];
+  /**
+   * Correo de ESCALAMIENTO/PQR de la agencia (obligatorio). El hub de identidad
+   * enruta ahí los casos de fraude/suplantación. Sin él, esos casos quedan en el
+   * limbo, por eso es requerido al crear la agencia.
+   */
+  escalationEmail?: string;
+  /**
+   * ¿La agencia usa el módulo de validación de identidad? Por defecto true. El
+   * admin puede apagarlo si la agencia no lo quiere.
+   */
+  identityEnabled?: boolean;
+  /** Número de WhatsApp de captura de la agencia (informativo/enrutamiento). */
+  whatsappNumber?: string;
   /** Uid del usuario que creó/administra la agencia. */
   ownerUid: string;
   status: AgencyStatus;
@@ -92,6 +105,11 @@ export interface AgencyCredits {
 
 export function normalizeAgencyEmail(email: string | null | undefined): string {
   return (email ?? "").trim().toLowerCase();
+}
+
+/** ¿La agencia tiene activo el módulo de identidad? (por defecto sí). */
+export function isIdentityEnabledForAgency(agency: Pick<Agency, "identityEnabled">): boolean {
+  return agency.identityEnabled !== false;
 }
 
 /** ¿El correo pertenece a la agencia (miembro)? No incluye admin interno. */

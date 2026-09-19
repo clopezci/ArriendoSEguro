@@ -13,7 +13,7 @@ import { IdentityCheck } from "@/components/agency/identity-check";
 import { SubmissionsManager } from "@/components/agency/submissions-manager";
 
 type Summary = {
-  agency: { id: string; name: string; nit: string | null; contactEmail: string; status: string };
+  agency: { id: string; name: string; nit: string | null; contactEmail: string; status: string; identityEnabled: boolean };
   credits: number;
   counts: { landlords: number; properties: number };
 };
@@ -74,7 +74,7 @@ export default function AgencyDashboardPage() {
     ["arrendadores", "Arrendadores"],
     ["inmuebles", "Inmuebles"],
     ["generar", "Generar en lote"],
-    ["identidad", "Identidad"],
+    ...((summary?.agency.identityEnabled ?? true) ? ([["identidad", "Identidad"]] as [Tab, string][]) : []),
   ];
 
   return (
@@ -126,7 +126,7 @@ export default function AgencyDashboardPage() {
         {tab === "arrendadores" && <LandlordsManager agencyId={agencyId} />}
         {tab === "inmuebles" && <PropertiesManager agencyId={agencyId} />}
         {tab === "generar" && <BulkGenerator agencyId={agencyId} onGenerated={() => void load()} />}
-        {tab === "identidad" && <IdentityCheck agencyId={agencyId} />}
+        {tab === "identidad" && (summary?.agency.identityEnabled ?? true) && <IdentityCheck agencyId={agencyId} />}
       </div>
     </main>
   );

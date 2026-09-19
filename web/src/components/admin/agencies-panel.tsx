@@ -10,6 +10,9 @@ type AgencyRow = {
   nit?: string;
   contactEmail: string;
   contactPhone?: string;
+  escalationEmail?: string;
+  identityEnabled?: boolean;
+  whatsappNumber?: string;
   memberEmails: string[];
   status: "active" | "suspended";
   credits: number;
@@ -26,6 +29,7 @@ export function AgenciasPanel() {
   // Formulario de creación.
   const [name, setName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
+  const [escalationEmail, setEscalationEmail] = useState("");
   const [nit, setNit] = useState("");
   const [contactPhone, setContactPhone] = useState("");
 
@@ -51,8 +55,8 @@ export function AgenciasPanel() {
   async function createAgency() {
     setMsg(null);
     setErr(null);
-    if (!name.trim() || !contactEmail.trim()) {
-      setErr("Nombre y correo de contacto son obligatorios.");
+    if (!name.trim() || !contactEmail.trim() || !escalationEmail.trim()) {
+      setErr("Nombre, correo de contacto y correo de escalamiento son obligatorios.");
       return;
     }
     setLoading(true);
@@ -63,6 +67,7 @@ export function AgenciasPanel() {
         body: JSON.stringify({
           name: name.trim(),
           contactEmail: contactEmail.trim(),
+          escalationEmail: escalationEmail.trim(),
           nit: nit.trim() || undefined,
           contactPhone: contactPhone.trim() || undefined,
         }),
@@ -74,6 +79,7 @@ export function AgenciasPanel() {
         setMsg(`✅ Agencia "${name.trim()}" creada.`);
         setName("");
         setContactEmail("");
+        setEscalationEmail("");
         setNit("");
         setContactPhone("");
         await load();
@@ -124,6 +130,7 @@ export function AgenciasPanel() {
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre de la agencia" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="Correo de contacto (será miembro)" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+          <input type="email" value={escalationEmail} onChange={(e) => setEscalationEmail(e.target.value)} placeholder="Correo de escalamiento/PQR (fraude) *" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <input value={nit} onChange={(e) => setNit(e.target.value)} placeholder="NIT (opcional)" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           <input value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="Teléfono (opcional)" className="rounded-lg border border-slate-300 px-3 py-2 text-sm" />
         </div>
@@ -182,6 +189,11 @@ function AgencyCard({
         </span>
       </div>
       <p className="mt-1 text-xs text-slate-500">{agency.contactEmail}{agency.contactPhone ? ` · ${agency.contactPhone}` : ""}</p>
+      <p className="mt-1 text-[11px] text-slate-400">
+        Escalamiento/PQR: {agency.escalationEmail ? <span className="text-slate-600">{agency.escalationEmail}</span> : <span className="text-rose-500">falta (obligatorio)</span>}
+        {" · "}Identidad:{" "}
+        <span className={agency.identityEnabled === false ? "text-slate-500" : "text-emerald-600"}>{agency.identityEnabled === false ? "apagada" : "activa"}</span>
+      </p>
       <p className="mt-1 text-[11px] text-slate-400">Miembros: {agency.memberEmails.join(", ") || "—"}</p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -227,6 +239,21 @@ function AgencyCard({
           className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
         >
           Agregar miembro
+        </button>
+
+        <button
+          type="button"
+          disabled={loading}
+          onClick={() =>
+            void onPatch(
+              agency.id,
+              { identityEnabled: agency.identityEnabled === false },
+              `Identidad ${agency.identityEnabled === false ? "activada" : "apagada"} para ${agency.name}.`,
+            )
+          }
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+        >
+          {agency.identityEnabled === false ? "Activar identidad" : "Apagar identidad"}
         </button>
 
         <button

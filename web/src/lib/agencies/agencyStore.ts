@@ -50,6 +50,8 @@ export type CreateAgencyParams = {
   nit?: string;
   contactEmail: string;
   contactPhone?: string;
+  /** Correo de escalamiento/PQR (obligatorio para casos de fraude). */
+  escalationEmail: string;
   ownerUid: string;
   /** Correos miembros (se normalizan). Se incluye el contactEmail por defecto. */
   memberEmails?: string[];
@@ -66,6 +68,8 @@ export async function createAgency(firestore: Firestore, params: CreateAgencyPar
     ...(params.nit ? { nit: params.nit.trim() } : {}),
     contactEmail: normalizeAgencyEmail(params.contactEmail),
     ...(params.contactPhone ? { contactPhone: params.contactPhone.trim() } : {}),
+    escalationEmail: normalizeAgencyEmail(params.escalationEmail),
+    identityEnabled: true,
     memberEmails: Array.from(members),
     ownerUid: params.ownerUid,
     status: "active",
@@ -84,13 +88,16 @@ export async function createAgency(firestore: Firestore, params: CreateAgencyPar
 export async function updateAgency(
   firestore: Firestore,
   agencyId: string,
-  patch: Partial<Pick<Agency, "name" | "nit" | "contactEmail" | "contactPhone" | "logoUrl" | "memberEmails" | "status">>,
+  patch: Partial<Pick<Agency, "name" | "nit" | "contactEmail" | "contactPhone" | "escalationEmail" | "identityEnabled" | "whatsappNumber" | "logoUrl" | "memberEmails" | "status">>,
 ): Promise<void> {
   const clean: Record<string, unknown> = { updatedAt: nowIso() };
   if (typeof patch.name === "string") clean.name = patch.name.trim();
   if (typeof patch.nit === "string") clean.nit = patch.nit.trim();
   if (typeof patch.contactEmail === "string") clean.contactEmail = normalizeAgencyEmail(patch.contactEmail);
   if (typeof patch.contactPhone === "string") clean.contactPhone = patch.contactPhone.trim();
+  if (typeof patch.escalationEmail === "string") clean.escalationEmail = normalizeAgencyEmail(patch.escalationEmail);
+  if (typeof patch.identityEnabled === "boolean") clean.identityEnabled = patch.identityEnabled;
+  if (typeof patch.whatsappNumber === "string") clean.whatsappNumber = patch.whatsappNumber.replace(/[^\d+]/g, "");
   if (typeof patch.logoUrl === "string") clean.logoUrl = patch.logoUrl.trim();
   if (patch.status) clean.status = patch.status;
   if (Array.isArray(patch.memberEmails)) {
