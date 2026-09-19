@@ -13,6 +13,8 @@ import {
 export const runtime = "nodejs";
 
 const propertySchema = z.object({
+  landlordId: z.string().trim().max(60).optional(),
+  externalId: z.string().trim().max(60).optional(),
   alias: z.string().trim().max(80).optional(),
   address: z.string().trim().min(3, "Dirección requerida.").max(200),
   city: z.string().trim().min(2).max(80),
@@ -26,6 +28,8 @@ const propertySchema = z.object({
 
 function toInput(input: z.infer<typeof propertySchema>): PropertyInput {
   return {
+    ...(input.landlordId ? { landlordId: input.landlordId } : {}),
+    ...(input.externalId ? { externalId: input.externalId } : {}),
     ...(input.alias ? { alias: input.alias } : {}),
     address: input.address,
     city: input.city,
