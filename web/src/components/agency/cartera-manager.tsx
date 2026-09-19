@@ -33,6 +33,9 @@ export function CarteraManager({ agencyId }: { agencyId: string }) {
   const [loading, setLoading] = useState(false);
   const [viewHtml, setViewHtml] = useState<string | null>(null);
   const [viewTitle, setViewTitle] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendMsg, setSendMsg] = useState<string | null>(null);
+  const [sendErr, setSendErr] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -61,6 +64,33 @@ export function CarteraManager({ agencyId }: { agencyId: string }) {
     }
   }
 
+  async function sendSignatures(contractIds: string[]) {
+    if (contractIds.length === 0) return;
+    setSending(true);
+    setSendMsg(null);
+    setSendErr(null);
+    try {
+      const res = await fetch(`/api/agency/${agencyId}/send-signatures`, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ contractIds }),
+      });
+      const json = (await res.json()) as { success?: boolean; sentContracts?: number; noCredits?: boolean; credits?: number; errors?: { message?: string }[] };
+      if (!res.ok || !json.success) {
+        setSendErr(json.errors?.[0]?.message ?? "No se pudo enviar a firma.");
+      } else {
+        let m = `✅ ${json.sentContracts ?? 0} contrato(s) enviado(s) a firma.`;
+        if (json.noCredits) m += ` Te quedaste sin créditos (saldo: ${json.credits ?? 0}). Recarga para enviar el resto.`;
+        setSendMsg(m);
+        await load();
+      }
+    } catch {
+      setSendErr("Error de red al enviar.");
+    } finally {
+      setSending(false);
+    }
+  }
+
   const counts = {
     draft: rows.filter((r) => r.agencyStatus === "draft").length,
     sent: rows.filter((r) => r.agencyStatus === "sent").length,
@@ -74,6 +104,22 @@ export function CarteraManager({ agencyId }: { agencyId: string }) {
         <div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs text-slate-500">Enviados</p><p className="text-xl font-bold text-amber-700">{counts.sent}</p></div>
         <div className="rounded-xl border border-slate-200 bg-white p-3"><p className="text-xs text-slate-500">Firmados</p><p className="text-xl font-bold text-emerald-700">{counts.signed}</p></div>
       </div>
+
+      {counts.draft > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-violet-200 bg-violet-50/40 p-3">
+          <button
+            type="button"
+            disabled={sending}
+            onClick={() => void sendSignatures(rows.filter((r) => r.agencyStatus === "draft").map((r) => r.contractId))}
+            className="rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+          >
+            {sending ? "Enviando…" : `Enviar ${counts.draft} borrador(es) a firma`}
+          </button>
+          <span className="text-[11px] text-slate-500">Cada contrato enviado consume 1 crédito.</span>
+        </div>
+      )}
+      {sendMsg && <p className="text-xs font-semibold text-emerald-700">{sendMsg}</p>}
+      {sendErr && <p className="text-xs text-rose-600">{sendErr}</p>}
 
       {loading && <p className="text-sm text-slate-500">Cargando cartera…</p>}
       {!loading && rows.length === 0 && <p className="text-xs text-slate-400">Aún no hay contratos. Genera un lote en la pestaña “Generar en lote”.</p>}
@@ -102,7 +148,12 @@ export function CarteraManager({ agencyId }: { agencyId: string }) {
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${STATUS[c.agencyStatus].cls}`}>{STATUS[c.agencyStatus].label}</span>
                   </td>
                   <td className="px-3 py-2">
-                    <button type="button" onClick={() => void view(c)} className="rounded-md border border-slate-300 px-3 py-1 text-xs text-slate-600 hover:bg-slate-50">Ver</button>
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => void view(c)} className="rounded-md border border-slate-300 px-3 py-1 text-xs text-slate-600 hover:bg-slate-50">Ver</button>
+                      {c.agencyStatus === "draft" && (
+                        <button type="button" disabled={sending} onClick={() => void sendSignatures([c.contractId])} className="rounded-md border border-violet-300 px-3 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-40">Enviar a firma</button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
