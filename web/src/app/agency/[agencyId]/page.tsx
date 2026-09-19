@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { LandlordsManager } from "@/components/agency/landlords-manager";
 import { PropertiesManager } from "@/components/agency/properties-manager";
+import { BulkGenerator } from "@/components/agency/bulk-generator";
 
 type Summary = {
   agency: { id: string; name: string; nit: string | null; contactEmail: string; status: string };
@@ -14,7 +15,7 @@ type Summary = {
   counts: { landlords: number; properties: number };
 };
 
-type Tab = "resumen" | "arrendadores" | "inmuebles";
+type Tab = "resumen" | "arrendadores" | "inmuebles" | "generar";
 
 export default function AgencyDashboardPage() {
   const params = useParams<{ agencyId: string }>();
@@ -67,6 +68,7 @@ export default function AgencyDashboardPage() {
     ["resumen", "Resumen"],
     ["arrendadores", "Arrendadores"],
     ["inmuebles", "Inmuebles"],
+    ["generar", "Generar en lote"],
   ];
 
   return (
@@ -115,6 +117,7 @@ export default function AgencyDashboardPage() {
         )}
         {tab === "arrendadores" && <LandlordsManager agencyId={agencyId} />}
         {tab === "inmuebles" && <PropertiesManager agencyId={agencyId} />}
+        {tab === "generar" && <BulkGenerator agencyId={agencyId} onGenerated={() => void load()} />}
       </div>
     </main>
   );
