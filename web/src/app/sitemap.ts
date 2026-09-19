@@ -13,6 +13,7 @@ const STATIC_PATHS = [
   "/entiendelo-facil",
   "/herramientas",
   "/plantillas",
+  "/agencias",
   "/acerca-de",
   "/contacto",
   "/reportar",
