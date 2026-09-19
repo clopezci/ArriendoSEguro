@@ -169,6 +169,8 @@ export interface AgencyContractSummary {
   agencyStatus: AgencyContractStatus;
   contractStatus: string;
   createdAtIso: string;
+  /** Resultado de identidad: true=aprobado, false=reprobado, null=sin verificar. */
+  identityApproved: boolean | null;
 }
 
 /** Lista los contratos de una agencia (cartera), más recientes primero. */
@@ -176,6 +178,7 @@ export async function listAgencyContracts(firestore: Firestore, agencyId: string
   const snap = await firestore.collection(CONTRACTS_COLLECTION).where("agencyId", "==", agencyId).limit(1000).get();
   const rows = snap.docs.map((doc) => {
     const d = doc.data() as Record<string, unknown>;
+    const idCheck = d.identityCheck as { approved?: boolean } | undefined;
     return {
       contractId: doc.id,
       currentVersionId: (d.currentVersionId as string) ?? null,
@@ -188,6 +191,7 @@ export async function listAgencyContracts(firestore: Firestore, agencyId: string
       agencyStatus: ((d.agencyStatus as AgencyContractStatus) ?? "draft"),
       contractStatus: (d.status as string) ?? "draft",
       createdAtIso: (d.createdAtIso as string) ?? "",
+      identityApproved: idCheck && typeof idCheck.approved === "boolean" ? idCheck.approved : null,
     } satisfies AgencyContractSummary;
   });
   rows.sort((a, b) => (a.createdAtIso < b.createdAtIso ? 1 : -1));

@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+
+type ContractLite = { contractId: string; tenantName: string; agencyStatus: string; contractStatus: string };
 
 type Factor = { clave: string; nombre: string; estado: string; detalle?: string };
 type Result = {
@@ -47,7 +49,7 @@ async function fileToDataUrl(file: File, maxDim = 1000, quality = 0.82): Promise
   }
 }
 
-export function IdentityCheck() {
+export function IdentityCheck({ agencyId }: { agencyId?: string }) {
   const { user } = useAuth();
   const [cedula, setCedula] = useState("");
   const [fotoCedula, setFotoCedula] = useState<File | null>(null);
@@ -55,6 +57,23 @@ export function IdentityCheck() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [contracts, setContracts] = useState<ContractLite[]>([]);
+  const [contractId, setContractId] = useState("");
+
+  const loadContracts = useCallback(async () => {
+    if (!agencyId) return;
+    try {
+      const res = await fetch(`/api/agency/${agencyId}/contracts`, { headers: { ...(await buildAuthHeaders(user)) } });
+      const json = (await res.json()) as { success?: boolean; contracts?: ContractLite[] };
+      if (json?.success) setContracts((json.contracts ?? []).filter((c) => c.contractStatus !== "signed"));
+    } catch {
+      /* noop */
+    }
+  }, [agencyId, user]);
+
+  useEffect(() => {
+    void loadContracts();
+  }, [loadContracts]);
 
   async function run() {
     setErr(null);
@@ -66,7 +85,10 @@ export function IdentityCheck() {
     setLoading(true);
     try {
       const [foto, self] = await Promise.all([fileToDataUrl(fotoCedula), fileToDataUrl(selfie)]);
-      const res = await fetch("/api/identity/verify", {
+      // Si se eligió un contrato, se usa el endpoint de agencia que GUARDA el
+      // resultado en el contrato (y así bloquea el envío a firma si reprueba).
+      const url = agencyId && contractId ? `/api/agency/${agencyId}/contracts/${contractId}/verify-identity` : "/api/identity/verify";
+      const res = await fetch(url, {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
         body: JSON.stringify({ cedula: cedula.replace(/\D/g, ""), fotoCedula: foto, selfie: self, nivel: "alto" }),
@@ -91,6 +113,17 @@ export function IdentityCheck() {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
+        {agencyId && (
+          <label className="block text-xs text-slate-500">
+            Asociar a un contrato (opcional, para que bloquee la firma si reprueba)
+            <select value={contractId} onChange={(e) => setContractId(e.target.value)} className={`${input} mt-1 w-full`}>
+              <option value="">— Solo verificar (sin asociar) —</option>
+              {contracts.map((c) => (
+                <option key={c.contractId} value={c.contractId}>{c.tenantName}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <input className={`${input} w-full`} placeholder="Número de cédula" value={cedula} onChange={(e) => setCedula(e.target.value)} />
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-xs text-slate-500">

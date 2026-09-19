@@ -123,7 +123,7 @@ export default function AgencyDashboardPage() {
         {tab === "arrendadores" && <LandlordsManager agencyId={agencyId} />}
         {tab === "inmuebles" && <PropertiesManager agencyId={agencyId} />}
         {tab === "generar" && <BulkGenerator agencyId={agencyId} onGenerated={() => void load()} />}
-        {tab === "identidad" && <IdentityCheck />}
+        {tab === "identidad" && <IdentityCheck agencyId={agencyId} />}
       </div>
     </main>
   );
