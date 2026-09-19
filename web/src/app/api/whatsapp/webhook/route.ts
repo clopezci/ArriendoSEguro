@@ -27,7 +27,9 @@ export const dynamic = "force-dynamic";
  */
 
 const DEFAULT_AUTO_REPLY =
-  "Este es un canal automático. Para atención escríbenos al 304 474 5676.";
+  "¡Hola! Este es un canal automático de ArriendoSeguro. Te puedo ayudar con:\n" +
+  "📄 Hacer tu contrato de arriendo tú mismo: https://arriendoseguro.app\n" +
+  "🧑‍💼 Atención personal: escríbenos al 304 474 5676.";
 
 /** Una sola auto-respuesta por número cada 4 h (evita responder a cada mensaje). */
 const THROTTLE_MS = 4 * 60 * 60 * 1000;

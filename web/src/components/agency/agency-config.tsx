@@ -12,6 +12,11 @@ export function AgencyConfig({ agencyId }: { agencyId: string }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedOur, setCopiedOur] = useState(false);
+
+  // Número de WhatsApp de ArriendoSeguro (incluido para todas las agencias).
+  const OUR_WA = (process.env.NEXT_PUBLIC_WHATSAPP_INTAKE_NUMBER || "573145721407").replace(/[^\d]/g, "");
+  const ourFunnel = `https://wa.me/${OUR_WA}?text=${encodeURIComponent(`AG-${agencyId} Quiero arrendar`)}`;
 
   const load = useCallback(async () => {
     try {
@@ -67,6 +72,21 @@ export function AgencyConfig({ agencyId }: { agencyId: string }) {
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logoUrl} alt="Vista previa del logo" className="mt-2 h-12 w-auto max-w-[160px] object-contain" />
         )}
+      </div>
+
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4">
+        <p className="text-sm font-bold text-emerald-900">WhatsApp de ArriendoSeguro (incluido) ✅</p>
+        <p className="mt-1 text-xs text-slate-600">No necesitas número propio. Comparte este enlace: tu cliente escribe a nuestro WhatsApp y recibe <strong>tu</strong> formulario automáticamente (con tu logo).</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <code className="flex-1 truncate rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">{ourFunnel}</code>
+          <button
+            type="button"
+            onClick={() => { try { void navigator.clipboard.writeText(ourFunnel); setCopiedOur(true); setTimeout(() => setCopiedOur(false), 1500); } catch { /* noop */ } }}
+            className="rounded-lg bg-[#5646E5] px-3 py-2 text-xs font-bold text-white"
+          >
+            {copiedOur ? "¡Copiado!" : "Copiar enlace"}
+          </button>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
