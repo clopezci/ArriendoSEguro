@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { AgencyPlansEditor } from "@/components/admin/agency-plans-editor";
 
 type AgencyRow = {
   id: string;
@@ -123,6 +124,8 @@ export function AgenciasPanel() {
           usuarios (por correo) y asígnale créditos prepago. Cada agencia entra a su panel en <code>/agency</code>.
         </p>
       </div>
+
+      <AgencyPlansEditor />
 
       {/* Crear agencia */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
