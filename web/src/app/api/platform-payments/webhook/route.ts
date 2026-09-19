@@ -9,6 +9,7 @@ import { processCustodyWompiEvent, CUSTODY_REFERENCE_PREFIX } from "@/features/c
 import { plusAccessConfirmedEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
 import { notifyLegalPartnerForPaidClause } from "@/lib/legal/notifySpecialClause";
+import { recordSaleFromPayment } from "@/lib/sales/salesLedger";
 import { logServerError } from "@/lib/observability/observability";
 
 export const runtime = "nodejs";
@@ -205,6 +206,18 @@ export async function POST(request: Request) {
         approvedAt: now,
         createdAt: now,
         createdAtServer: FieldValue.serverTimestamp(),
+      });
+      // Libro de ventas interno (numeración propia). Best-effort.
+      await recordSaleFromPayment(firestore, {
+        paymentId: payRef.id,
+        buyerEmail: order.userEmail,
+        amountCop: amount,
+        currency: "COP",
+        provider: "wompi",
+        providerPaymentId: providerPaymentId || payRef.id,
+        orderId: order.id,
+        leaseProcessId: order.leaseProcessId ?? null,
+        approvedAtIso: now,
       });
       const entitlementRef = firestore.collection("access_entitlements").doc();
       await entitlementRef.set({

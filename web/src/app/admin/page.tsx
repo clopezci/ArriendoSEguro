@@ -6,6 +6,7 @@ import { PitchTab } from "@/components/admin/pitch-tab";
 import { UtmBuilder } from "@/components/admin/utm-builder";
 import { AdminsPanel } from "@/components/admin/admins-panel";
 import { AgenciasPanel } from "@/components/admin/agencies-panel";
+import { SalesPanel } from "@/components/admin/sales-panel";
 import { PLAN_PLUS_CUSTOM_COP_LIMITS } from "@/domain/platform-payments/plan-plus-pricing";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -152,6 +153,7 @@ export default function AdminPage() {
     | "agencias"
     | "accesos"
     | "pagos"
+    | "ventas"
     | "expedientes"
     | "auditoria"
     | "reportes"
@@ -3098,6 +3100,7 @@ export default function AdminPage() {
               ["agencias", "🏢 Agencias"],
               ["accesos", "Accesos"],
               ["pagos", "Pagos plataforma"],
+              ["ventas", "🧾 Ventas"],
               ["expedientes", "Expedientes"],
               ["auditoria", "Auditoría"],
               [
@@ -3144,6 +3147,7 @@ export default function AdminPage() {
             <TablaGenerica rows={data.platformPayments ?? []} />
           </div>
         )}
+        {tab === "ventas" && <SalesPanel />}
         {data && tab === "expedientes" && <TablaGenerica rows={data.expedientes ?? []} />}
         {data && tab === "auditoria" && <TablaGenerica rows={data.audit ?? []} />}
         {tab === "reportes" && (
