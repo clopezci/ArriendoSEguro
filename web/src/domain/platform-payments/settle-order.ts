@@ -6,6 +6,7 @@ import type { PlatformProvider } from "./types";
 import { sendEmail } from "@/services/email/sendEmail";
 import { plusAccessConfirmedEmail } from "@/services/email/emailTemplates";
 import { notifyLegalPartnerForPaidClause } from "@/lib/legal/notifySpecialClause";
+import { recordSaleFromPayment } from "@/lib/sales/salesLedger";
 
 /**
  * Liquida una orden de plataforma (Plan Plus) **aprobada** de forma idempotente:
@@ -123,6 +124,19 @@ export async function settleApprovedPlatformOrder(
   });
 
   await notifyLegalPartnerForPaidClause(firestore, order.leaseProcessId ?? null).catch(() => {});
+
+  // Libro de ventas interno (numeración propia). Best-effort: no afecta el pago.
+  await recordSaleFromPayment(firestore, {
+    paymentId: payRef.id,
+    buyerEmail: order.userEmail,
+    amountCop: order.amount,
+    currency: params.currency || order.currency,
+    provider: params.provider,
+    providerPaymentId: params.providerPaymentId || payRef.id,
+    orderId: order.id,
+    leaseProcessId: order.leaseProcessId ?? null,
+    approvedAtIso: now,
+  });
 
   return { httpStatus: 200, body: { success: true, status: "approved" } };
 }
