@@ -11,6 +11,7 @@ import {
 } from "@/lib/agencies/agencyContracts";
 import { validateContractData } from "@/domain/contracts/validateContractData";
 import { renderResidentialLeaseDispatch } from "@/domain/contracts/renderResidentialLeaseDispatch";
+import { effectiveAgencyDefaults } from "@/domain/agencies/types";
 
 export const runtime = "nodejs";
 
@@ -125,7 +126,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     },
   };
 
-  const payload = buildLeasePayloadFromRow(landlord.party, row);
+  const payload = buildLeasePayloadFromRow(landlord.party, row, effectiveAgencyDefaults(gate.agency));
   const validation = validateContractData(payload);
   if (!validation.ok) {
     return NextResponse.json({ success: false, errors: validation.issues }, { status: 422 });

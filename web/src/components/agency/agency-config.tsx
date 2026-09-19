@@ -8,6 +8,12 @@ export function AgencyConfig({ agencyId }: { agencyId: string }) {
   const { user } = useAuth();
   const [logoUrl, setLogoUrl] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
+  const [defaults, setDefaults] = useState({
+    paymentSupportPolicy: "notifications",
+    utilitiesResponsible: "Arrendatario",
+    utilitiesDetails: "",
+    adminFeesDetails: "",
+  });
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -21,10 +27,11 @@ export function AgencyConfig({ agencyId }: { agencyId: string }) {
   const load = useCallback(async () => {
     try {
       const res = await fetch(`/api/agency/${agencyId}/settings`, { headers: { ...(await buildAuthHeaders(user)) } });
-      const json = (await res.json()) as { success?: boolean; logoUrl?: string; whatsappNumber?: string };
+      const json = (await res.json()) as { success?: boolean; logoUrl?: string; whatsappNumber?: string; defaults?: typeof defaults };
       if (json?.success) {
         setLogoUrl(json.logoUrl ?? "");
         setWhatsappNumber(json.whatsappNumber ?? "");
+        if (json.defaults) setDefaults(json.defaults);
       }
     } catch {
       /* noop */
@@ -43,7 +50,7 @@ export function AgencyConfig({ agencyId }: { agencyId: string }) {
       const res = await fetch(`/api/agency/${agencyId}/settings`, {
         method: "PATCH",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ logoUrl: logoUrl.trim(), whatsappNumber: whatsappNumber.trim() }),
+        body: JSON.stringify({ logoUrl: logoUrl.trim(), whatsappNumber: whatsappNumber.trim(), defaults }),
       });
       const json = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!res.ok || !json.success) setErr(json.errors?.[0]?.message ?? "No se pudo guardar.");
@@ -105,6 +112,24 @@ export function AgencyConfig({ agencyId }: { agencyId: string }) {
             </button>
           </div>
         )}
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <p className="text-sm font-bold text-slate-800">Valores por defecto de los contratos</p>
+        <p className="mt-1 text-xs text-slate-500">Se aplican a todos los contratos que generes (los puedes ajustar por contrato después).</p>
+        <div className="mt-3 space-y-2">
+          <label className="block text-xs text-slate-500">
+            Recordatorios de pago
+            <select className={`${input} mt-1`} value={defaults.paymentSupportPolicy} onChange={(e) => setDefaults((d) => ({ ...d, paymentSupportPolicy: e.target.value }))}>
+              <option value="notifications">Recordatorios de pago activados</option>
+              <option value="notifications_and_upload">Recordatorios + el inquilino sube el comprobante</option>
+              <option value="none">Sin recordatorios</option>
+            </select>
+          </label>
+          <input className={`${input} w-full`} placeholder="Responsable de servicios públicos (ej. Arrendatario)" value={defaults.utilitiesResponsible} onChange={(e) => setDefaults((d) => ({ ...d, utilitiesResponsible: e.target.value }))} />
+          <input className={`${input} w-full`} placeholder="Detalle de servicios públicos" value={defaults.utilitiesDetails} onChange={(e) => setDefaults((d) => ({ ...d, utilitiesDetails: e.target.value }))} />
+          <input className={`${input} w-full`} placeholder="Detalle de administración/expensas" value={defaults.adminFeesDetails} onChange={(e) => setDefaults((d) => ({ ...d, adminFeesDetails: e.target.value }))} />
+        </div>
       </div>
 
       <button type="button" onClick={() => void save()} disabled={loading} className="rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-bold text-white disabled:opacity-40">

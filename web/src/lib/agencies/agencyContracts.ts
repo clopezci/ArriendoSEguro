@@ -4,6 +4,7 @@ import type { Firestore } from "firebase-admin/firestore";
 import type { PersonParty, ResidentialLeaseContractInput } from "@/domain/contracts/types";
 import { getDefaultLeaseContractVersion } from "@/domain/contracts/leaseTemplateFlags";
 import { pesosEnLetras } from "@/lib/nuevo/pesos-en-letras";
+import { DEFAULT_AGENCY_CONTRACT_DEFAULTS, type AgencyContractDefaults } from "@/domain/agencies/types";
 
 export const CONTRACTS_COLLECTION = "contracts";
 export const CONTRACT_VERSIONS_COLLECTION = "contract_versions";
@@ -50,7 +51,11 @@ function addMonthsIso(startIso: string, months: number): string {
  * y el canon en letras. Si no hay valor comercial, marca `commercialValueUnknown`
  * + `noCapAcknowledgement` (la agencia asume la responsabilidad del tope).
  */
-export function buildLeasePayloadFromRow(landlord: PersonParty, row: BulkContractRow): ResidentialLeaseContractInput {
+export function buildLeasePayloadFromRow(
+  landlord: PersonParty,
+  row: BulkContractRow,
+  defaults: AgencyContractDefaults = DEFAULT_AGENCY_CONTRACT_DEFAULTS,
+): ResidentialLeaseContractInput {
   const generatedAt = new Date().toISOString();
   const endDate = row.lease.endDate?.trim() || addMonthsIso(row.lease.startDate, row.lease.termMonths);
   const hasCommercialValue = typeof row.property.commercialValue === "number" && row.property.commercialValue > 0;
@@ -80,13 +85,14 @@ export function buildLeasePayloadFromRow(landlord: PersonParty, row: BulkContrac
       latePaymentMonthsThreshold: row.lease.latePaymentMonthsThreshold ?? 2,
     },
     utilities: {
-      responsibleParty: "Arrendatario",
-      details: "Los servicios públicos domiciliarios están a cargo del arrendatario.",
-      adminFeesDetails: "La cuota de administración/expensas está a cargo del arrendatario cuando aplique.",
+      responsibleParty: defaults.utilitiesResponsible,
+      details: defaults.utilitiesDetails,
+      adminFeesDetails: defaults.adminFeesDetails,
     },
     hasSolidaryCoDebtor: false,
     contractVersion: getDefaultLeaseContractVersion(),
     generatedAt,
+    paymentSupportPolicy: defaults.paymentSupportPolicy,
   };
 }
 
