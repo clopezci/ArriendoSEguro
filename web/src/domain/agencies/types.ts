@@ -20,6 +20,54 @@ export const AGENCY_CREDITS_COLLECTION = "agency_credits";
 
 export type AgencyStatus = "active" | "suspended";
 
+export type IntakeFieldType = "text" | "number" | "bool" | "select";
+
+/** Campo personalizado que la agencia agrega a su formulario de captura. */
+export interface IntakeFieldDef {
+  /** Clave estable (slug) para guardar el valor. */
+  key: string;
+  label: string;
+  type: IntakeFieldType;
+  /** Opciones para type "select". */
+  options?: string[];
+  required?: boolean;
+}
+
+function slugifyFieldKey(label: string): string {
+  return label
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40) || "campo";
+}
+
+/** Normaliza y acota los campos personalizados (máx 12, claves únicas). */
+export function sanitizeIntakeFields(input: unknown): IntakeFieldDef[] {
+  if (!Array.isArray(input)) return [];
+  const out: IntakeFieldDef[] = [];
+  const used = new Set<string>();
+  for (const raw of input.slice(0, 12)) {
+    if (!raw || typeof raw !== "object") continue;
+    const r = raw as Record<string, unknown>;
+    const label = typeof r.label === "string" ? r.label.trim().slice(0, 80) : "";
+    if (!label) continue;
+    const type: IntakeFieldType = (["text", "number", "bool", "select"] as const).includes(r.type as IntakeFieldType)
+      ? (r.type as IntakeFieldType)
+      : "text";
+    let key = typeof r.key === "string" && r.key.trim() ? slugifyFieldKey(r.key) : slugifyFieldKey(label);
+    while (used.has(key)) key = `${key}_2`;
+    used.add(key);
+    const options =
+      type === "select" && Array.isArray(r.options)
+        ? r.options.filter((o): o is string => typeof o === "string" && o.trim() !== "").map((o) => o.trim().slice(0, 60)).slice(0, 20)
+        : undefined;
+    out.push({ key, label, type, required: r.required === true, ...(options && options.length ? { options } : {}) });
+  }
+  return out;
+}
+
 export interface Agency {
   id: string;
   name: string;
@@ -44,6 +92,8 @@ export interface Agency {
   identityEnabled?: boolean;
   /** Número de WhatsApp de captura de la agencia (informativo/enrutamiento). */
   whatsappNumber?: string;
+  /** Campos personalizados que la agencia agrega a su formulario de captura. */
+  intakeFields?: IntakeFieldDef[];
   /** Uid del usuario que creó/administra la agencia. */
   ownerUid: string;
   status: AgencyStatus;

@@ -7,6 +7,7 @@ import {
   AGENCY_LANDLORDS_COLLECTION,
   AGENCY_PROPERTIES_COLLECTION,
   normalizeAgencyEmail,
+  sanitizeIntakeFields,
   type Agency,
   type AgencyCredits,
   type AgencyLandlord,
@@ -88,7 +89,7 @@ export async function createAgency(firestore: Firestore, params: CreateAgencyPar
 export async function updateAgency(
   firestore: Firestore,
   agencyId: string,
-  patch: Partial<Pick<Agency, "name" | "nit" | "contactEmail" | "contactPhone" | "escalationEmail" | "identityEnabled" | "whatsappNumber" | "logoUrl" | "memberEmails" | "status">>,
+  patch: Partial<Pick<Agency, "name" | "nit" | "contactEmail" | "contactPhone" | "escalationEmail" | "identityEnabled" | "whatsappNumber" | "intakeFields" | "logoUrl" | "memberEmails" | "status">>,
 ): Promise<void> {
   const clean: Record<string, unknown> = { updatedAt: nowIso() };
   if (typeof patch.name === "string") clean.name = patch.name.trim();
@@ -98,6 +99,7 @@ export async function updateAgency(
   if (typeof patch.escalationEmail === "string") clean.escalationEmail = normalizeAgencyEmail(patch.escalationEmail);
   if (typeof patch.identityEnabled === "boolean") clean.identityEnabled = patch.identityEnabled;
   if (typeof patch.whatsappNumber === "string") clean.whatsappNumber = patch.whatsappNumber.replace(/[^\d+]/g, "");
+  if (patch.intakeFields !== undefined) clean.intakeFields = sanitizeIntakeFields(patch.intakeFields);
   if (typeof patch.logoUrl === "string") clean.logoUrl = patch.logoUrl.trim();
   if (patch.status) clean.status = patch.status;
   if (Array.isArray(patch.memberEmails)) {

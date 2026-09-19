@@ -3,6 +3,8 @@
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+type IntakeField = { key: string; label: string; type: "text" | "number" | "bool" | "select"; options?: string[]; required?: boolean };
+
 async function fileToDataUrl(file: File, maxDim = 1000, quality = 0.82): Promise<string> {
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const fr = new FileReader();
@@ -41,6 +43,8 @@ export default function IntakePage() {
   const [err, setErr] = useState<string | null>(null);
 
   const [form, setForm] = useState({ fullName: "", documentType: "CC", documentNumber: "", city: "", email: "", phone: "", propertyHint: "", note: "" });
+  const [fields, setFields] = useState<IntakeField[]>([]);
+  const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [fotoCedula, setFotoCedula] = useState<File | null>(null);
   const [selfie, setSelfie] = useState<File | null>(null);
 
@@ -48,10 +52,11 @@ export default function IntakePage() {
     try {
       const res = await fetch(`/api/public/agency/${agencyId}`);
       if (!res.ok) { setNotFound(true); return; }
-      const json = (await res.json()) as { success?: boolean; name?: string; identityEnabled?: boolean };
+      const json = (await res.json()) as { success?: boolean; name?: string; identityEnabled?: boolean; intakeFields?: IntakeField[] };
       if (json?.success) {
         setAgencyName(json.name ?? "la agencia");
         setIdentityEnabled(json.identityEnabled !== false);
+        setFields(json.intakeFields ?? []);
       } else setNotFound(true);
     } catch {
       setNotFound(true);
@@ -72,9 +77,15 @@ export default function IntakePage() {
       setErr("Completa nombre, documento, ciudad, correo y teléfono.");
       return;
     }
+    for (const f of fields) {
+      if (f.required && !(customValues[f.key] ?? "").toString().trim()) {
+        setErr(`Completa "${f.label}".`);
+        return;
+      }
+    }
     setLoading(true);
     try {
-      const payload: Record<string, unknown> = { ...form };
+      const payload: Record<string, unknown> = { ...form, custom: customValues };
       if (fotoCedula && selfie) {
         const [foto, self] = await Promise.all([fileToDataUrl(fotoCedula), fileToDataUrl(selfie)]);
         payload.fotoCedula = foto;
@@ -132,6 +143,30 @@ export default function IntakePage() {
         <input className={input} placeholder="Celular (WhatsApp)" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
         <input className={input} placeholder="¿Qué inmueble te interesa? (opcional)" value={form.propertyHint} onChange={(e) => set("propertyHint", e.target.value)} />
         <textarea className={input} rows={2} placeholder="Mensaje (opcional)" value={form.note} onChange={(e) => set("note", e.target.value)} />
+
+        {fields.map((f) => {
+          const val = customValues[f.key] ?? "";
+          const setVal = (v: string) => setCustomValues((c) => ({ ...c, [f.key]: v }));
+          return (
+            <label key={f.key} className="block text-xs text-slate-500">
+              {f.label}{f.required ? " *" : ""}
+              {f.type === "select" ? (
+                <select className={`${input} mt-1`} value={val} onChange={(e) => setVal(e.target.value)}>
+                  <option value="">— Selecciona —</option>
+                  {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              ) : f.type === "bool" ? (
+                <select className={`${input} mt-1`} value={val} onChange={(e) => setVal(e.target.value)}>
+                  <option value="">— Selecciona —</option>
+                  <option value="Sí">Sí</option>
+                  <option value="No">No</option>
+                </select>
+              ) : (
+                <input className={`${input} mt-1`} type={f.type === "number" ? "number" : "text"} value={val} onChange={(e) => setVal(e.target.value)} />
+              )}
+            </label>
+          );
+        })}
 
         {identityEnabled && (
         <div className="rounded-xl border border-dashed border-slate-300 p-3">

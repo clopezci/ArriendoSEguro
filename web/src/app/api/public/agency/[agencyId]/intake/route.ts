@@ -19,6 +19,8 @@ const schema = z.object({
   phone: z.string().trim().min(7, "Teléfono requerido.").max(20),
   propertyHint: z.string().trim().max(200).optional(),
   note: z.string().trim().max(500).optional(),
+  /** Respuestas a los campos personalizados de la agencia (key → valor). */
+  custom: z.record(z.string(), z.string().max(500)).optional(),
   // Identidad opcional (si el solicitante sube fotos).
   fotoCedula: z.string().min(10).optional(),
   selfie: z.string().min(10).optional(),
@@ -61,6 +63,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   }
   const d = parsed.data;
 
+  // Campos personalizados: solo se guardan los definidos por la agencia; se
+  // valida que los obligatorios vengan con valor.
+  const defs = agency.intakeFields ?? [];
+  const custom: Record<string, string> = {};
+  for (const f of defs) {
+    const val = (d.custom?.[f.key] ?? "").toString().trim();
+    if (val) custom[f.key] = val.slice(0, 500);
+    else if (f.required) {
+      return NextResponse.json({ success: false, errors: [{ field: `custom.${f.key}`, message: `El campo "${f.label}" es obligatorio.` }] }, { status: 422 });
+    }
+  }
+
   // Identidad opcional.
   let identity;
   if (d.fotoCedula && d.selfie && isIdentityConfigured() && isIdentityEnabledForAgency(agency)) {
@@ -92,6 +106,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     },
     propertyHint: d.propertyHint,
     note: d.note,
+    custom: Object.keys(custom).length ? custom : undefined,
     identity,
     source: "web",
   });

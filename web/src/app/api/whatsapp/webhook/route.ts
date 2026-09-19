@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { sendWhatsAppText } from "@/services/whatsapp/sendWhatsApp";
+import { getAgency } from "@/lib/agencies/agencyStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,7 +58,13 @@ function signatureOk(raw: string, header: string | null): boolean {
   }
 }
 
-type InboundMessage = { from?: string; type?: string };
+type InboundMessage = { from?: string; type?: string; text?: { body?: string } };
+
+/** Detecta un código de agencia "AG-<id>" en el texto (embudo de captura). */
+function agencyCodeFrom(text: string): string | null {
+  const m = /AG[-_ ]?([A-Za-z0-9]{16,40})/i.exec(text ?? "");
+  return m ? m[1] : null;
+}
 type WebhookPayload = {
   entry?: Array<{ changes?: Array<{ value?: { messages?: InboundMessage[] } }> }>;
 };
@@ -90,6 +97,27 @@ export async function POST(request: Request) {
         for (const msg of change.value?.messages ?? []) {
           const from = String(msg.from ?? "").trim();
           if (!from) continue; // "statuses" (entregado/leído) no traen `from`: se ignoran
+
+          // Embudo de captura de agencias: si el mensaje trae "AG-<agencia>", en
+          // vez de la auto-respuesta genérica le mandamos el link del formulario
+          // de esa agencia (reutiliza /intake). Best-effort; sujeto a throttle.
+          const code = agencyCodeFrom(msg.text?.body ?? "");
+          if (code && firestore) {
+            const agency = await getAgency(firestore, code).catch(() => null);
+            if (agency && agency.status === "active") {
+              const ref = firestore.collection("whatsapp_autoreply").doc(from);
+              const snap = await ref.get().catch(() => null);
+              const last = snap?.exists ? Date.parse((snap.data() as { lastAt?: string }).lastAt ?? "") : 0;
+              if (Number.isFinite(last) && Date.now() - last < THROTTLE_MS) continue;
+              await ref.set({ lastAt: new Date().toISOString() }, { merge: true }).catch(() => {});
+              const link = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://arriendoseguro.app"}/intake/${agency.id}`;
+              await sendWhatsAppText(
+                from,
+                `¡Hola! Para tu arriendo con ${agency.name}, completa tus datos aquí (2 minutos): ${link}`,
+              ).catch(() => {});
+              continue;
+            }
+          }
 
           // Throttle por número para no responder a cada mensaje de una ráfaga.
           if (firestore) {
