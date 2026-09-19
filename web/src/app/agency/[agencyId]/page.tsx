@@ -10,6 +10,7 @@ import { PropertiesManager } from "@/components/agency/properties-manager";
 import { BulkGenerator } from "@/components/agency/bulk-generator";
 import { CarteraManager } from "@/components/agency/cartera-manager";
 import { IdentityCheck } from "@/components/agency/identity-check";
+import { SubmissionsManager } from "@/components/agency/submissions-manager";
 
 type Summary = {
   agency: { id: string; name: string; nit: string | null; contactEmail: string; status: string };
@@ -17,7 +18,7 @@ type Summary = {
   counts: { landlords: number; properties: number };
 };
 
-type Tab = "resumen" | "cartera" | "arrendadores" | "inmuebles" | "generar" | "identidad";
+type Tab = "resumen" | "solicitudes" | "cartera" | "arrendadores" | "inmuebles" | "generar" | "identidad";
 
 export default function AgencyDashboardPage() {
   const params = useParams<{ agencyId: string }>();
@@ -68,6 +69,7 @@ export default function AgencyDashboardPage() {
 
   const tabs: [Tab, string][] = [
     ["resumen", "Resumen"],
+    ["solicitudes", "Solicitudes"],
     ["cartera", "Cartera"],
     ["arrendadores", "Arrendadores"],
     ["inmuebles", "Inmuebles"],
@@ -119,6 +121,7 @@ export default function AgencyDashboardPage() {
             </div>
           </div>
         )}
+        {tab === "solicitudes" && <SubmissionsManager agencyId={agencyId} onGenerated={() => void load()} />}
         {tab === "cartera" && <CarteraManager agencyId={agencyId} />}
         {tab === "arrendadores" && <LandlordsManager agencyId={agencyId} />}
         {tab === "inmuebles" && <PropertiesManager agencyId={agencyId} />}
