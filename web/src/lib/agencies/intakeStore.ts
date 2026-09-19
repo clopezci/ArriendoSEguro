@@ -30,6 +30,8 @@ export interface IntakeSubmission {
   propertyHint?: string;
   /** Mensaje libre opcional del solicitante. */
   note?: string;
+  /** Respuestas a los campos personalizados de la agencia (key → valor). */
+  custom?: Record<string, string>;
   identity?: IntakeIdentity;
   status: IntakeStatus;
   contractId?: string;
@@ -46,6 +48,7 @@ export type CreateSubmissionInput = {
   tenant: IntakeTenant;
   propertyHint?: string;
   note?: string;
+  custom?: Record<string, string>;
   identity?: IntakeIdentity;
   source?: "web" | "whatsapp";
 };
@@ -75,6 +78,7 @@ export async function createOrUpdateSubmission(
     tenant: input.tenant,
     ...(input.propertyHint ? { propertyHint: input.propertyHint } : {}),
     ...(input.note ? { note: input.note } : {}),
+    ...(input.custom && Object.keys(input.custom).length ? { custom: input.custom } : {}),
     ...(input.identity ? { identity: input.identity } : {}),
     source: input.source ?? "web",
     status: "pending" as IntakeStatus,

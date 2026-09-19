@@ -1,14 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import QRCode from "qrcode";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
+import { IntakeFieldsManager } from "@/components/agency/intake-fields-manager";
 
 type Submission = {
   id: string;
   tenant: { fullName: string; documentType: string; documentNumber: string; city: string; email: string; phone: string };
   propertyHint?: string;
   note?: string;
+  custom?: Record<string, string>;
   identity?: { approved: boolean; confianza: number | null; nombreRegistrado: string | null };
   createdAtIso: string;
 };
@@ -24,8 +27,21 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [qr, setQr] = useState<string | null>(null);
 
   const intakeUrl = typeof window !== "undefined" ? `${window.location.origin}/intake/${agencyId}` : `/intake/${agencyId}`;
+
+  useEffect(() => {
+    QRCode.toDataURL(intakeUrl, { width: 220, margin: 1 }).then(setQr).catch(() => setQr(null));
+  }, [intakeUrl]);
+
+  function downloadQr() {
+    if (!qr) return;
+    const a = document.createElement("a");
+    a.href = qr;
+    a.download = "qr-arriendoseguro.png";
+    a.click();
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -74,7 +90,21 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
           <button type="button" onClick={copyLink} className="rounded-lg bg-[#5646E5] px-3 py-2 text-xs font-bold text-white">{copied ? "¡Copiado!" : "Copiar"}</button>
           <a href={`https://wa.me/?text=${encodeURIComponent("Llena tus datos para tu arriendo aquí: " + intakeUrl)}`} target="_blank" rel="noreferrer" className="rounded-lg border border-emerald-300 px-3 py-2 text-xs font-semibold text-emerald-700">Compartir por WhatsApp</a>
         </div>
+        {qr && (
+          <div className="mt-3 flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={qr} alt="Código QR del formulario" className="h-28 w-28 rounded-lg border border-slate-200 bg-white p-1" />
+            <div className="text-xs text-slate-500">
+              <p className="font-semibold text-slate-700">Código QR</p>
+              <p className="mt-0.5">Imprímelo o pégalo en tus avisos y en la puerta del inmueble. Quien lo escanee llega a tu formulario.</p>
+              <button type="button" onClick={downloadQr} className="mt-1 rounded-lg border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50">Descargar QR</button>
+            </div>
+          </div>
+        )}
       </div>
+
+      <IntakeFieldsManager agencyId={agencyId} />
+
 
       {msg && <p className="text-xs font-semibold text-emerald-700">{msg}</p>}
       {err && <p className="text-xs text-rose-600">{err}</p>}
@@ -101,6 +131,13 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
           </div>
           <p className="mt-1 text-xs text-slate-500">{s.tenant.email} · {s.tenant.phone}{s.propertyHint ? ` · Interés: ${s.propertyHint}` : ""}</p>
           {s.note && <p className="mt-1 text-xs italic text-slate-400">“{s.note}”</p>}
+          {s.custom && Object.keys(s.custom).length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {Object.entries(s.custom).map(([k, v]) => (
+                <span key={k} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600">{k}: {v}</span>
+              ))}
+            </div>
+          )}
 
           {openId === s.id && (
             <GenerateForm

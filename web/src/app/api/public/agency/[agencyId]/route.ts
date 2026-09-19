@@ -14,5 +14,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ age
   if (!agency || agency.status !== "active") {
     return NextResponse.json({ success: false }, { status: 404 });
   }
-  return NextResponse.json({ success: true, name: agency.name, identityEnabled: isIdentityEnabledForAgency(agency) });
+  return NextResponse.json({
+    success: true,
+    name: agency.name,
+    identityEnabled: isIdentityEnabledForAgency(agency),
+    intakeFields: agency.intakeFields ?? [],
+  });
 }
