@@ -21,6 +21,11 @@ const schema = z.object({
   note: z.string().trim().max(500).optional(),
   /** Respuestas a los campos personalizados de la agencia (key → valor). */
   custom: z.record(z.string(), z.string().max(500)).optional(),
+  /** Datos de estudio (opcionales). */
+  income: z.number().int().min(0).max(1_000_000_000).optional(),
+  contractType: z.string().trim().max(60).optional(),
+  hasCodebtor: z.boolean().optional(),
+  canonReference: z.number().int().min(0).max(1_000_000_000).optional(),
   // Identidad opcional (si el solicitante sube fotos).
   fotoCedula: z.string().min(10).optional(),
   selfie: z.string().min(10).optional(),
@@ -107,6 +112,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     propertyHint: d.propertyHint,
     note: d.note,
     custom: Object.keys(custom).length ? custom : undefined,
+    study: {
+      ...(typeof d.income === "number" ? { income: d.income } : {}),
+      ...(d.contractType ? { contractType: d.contractType } : {}),
+      ...(typeof d.hasCodebtor === "boolean" ? { hasCodebtor: d.hasCodebtor } : {}),
+      ...(typeof d.canonReference === "number" ? { canonReference: d.canonReference } : {}),
+    },
     identity,
     source: "web",
   });

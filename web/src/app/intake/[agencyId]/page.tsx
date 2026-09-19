@@ -38,6 +38,8 @@ export default function IntakePage() {
   const [agencyName, setAgencyName] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [identityEnabled, setIdentityEnabled] = useState(true);
+  const [studyEnabled, setStudyEnabled] = useState(false);
+  const [study, setStudy] = useState({ income: "", contractType: "", hasCodebtor: "", canonReference: "" });
   const [notFound, setNotFound] = useState(false);
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -53,12 +55,13 @@ export default function IntakePage() {
     try {
       const res = await fetch(`/api/public/agency/${agencyId}`);
       if (!res.ok) { setNotFound(true); return; }
-      const json = (await res.json()) as { success?: boolean; name?: string; logoUrl?: string | null; identityEnabled?: boolean; intakeFields?: IntakeField[] };
+      const json = (await res.json()) as { success?: boolean; name?: string; logoUrl?: string | null; identityEnabled?: boolean; intakeFields?: IntakeField[]; studyEnabled?: boolean };
       if (json?.success) {
         setAgencyName(json.name ?? "la agencia");
         setLogoUrl(json.logoUrl ?? null);
         setIdentityEnabled(json.identityEnabled !== false);
         setFields(json.intakeFields ?? []);
+        setStudyEnabled(json.studyEnabled === true);
       } else setNotFound(true);
     } catch {
       setNotFound(true);
@@ -88,6 +91,12 @@ export default function IntakePage() {
     setLoading(true);
     try {
       const payload: Record<string, unknown> = { ...form, custom: customValues };
+      if (studyEnabled) {
+        if (study.income) payload.income = Math.floor(Number(study.income.replace(/[^\d]/g, "")));
+        if (study.contractType) payload.contractType = study.contractType;
+        if (study.hasCodebtor) payload.hasCodebtor = study.hasCodebtor === "Sí";
+        if (study.canonReference) payload.canonReference = Math.floor(Number(study.canonReference.replace(/[^\d]/g, "")));
+      }
       if (fotoCedula && selfie) {
         const [foto, self] = await Promise.all([fileToDataUrl(fotoCedula), fileToDataUrl(selfie)]);
         payload.fotoCedula = foto;
@@ -173,6 +182,28 @@ export default function IntakePage() {
             </label>
           );
         })}
+
+        {studyEnabled && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+            <p className="text-xs font-semibold text-slate-500">Datos para el estudio (agilizan tu aprobación)</p>
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <input className={input} type="number" placeholder="Ingresos mensuales" value={study.income} onChange={(e) => setStudy((s) => ({ ...s, income: e.target.value }))} />
+              <input className={input} type="number" placeholder="Canon del inmueble que te interesa" value={study.canonReference} onChange={(e) => setStudy((s) => ({ ...s, canonReference: e.target.value }))} />
+              <select className={input} value={study.contractType} onChange={(e) => setStudy((s) => ({ ...s, contractType: e.target.value }))}>
+                <option value="">Tipo de contrato laboral</option>
+                <option value="indefinido">Término indefinido</option>
+                <option value="fijo">Término fijo</option>
+                <option value="prestacion">Prestación de servicios</option>
+                <option value="independiente">Independiente</option>
+              </select>
+              <select className={input} value={study.hasCodebtor} onChange={(e) => setStudy((s) => ({ ...s, hasCodebtor: e.target.value }))}>
+                <option value="">¿Tienes codeudor?</option>
+                <option value="Sí">Sí</option>
+                <option value="No">No</option>
+              </select>
+            </div>
+          </div>
+        )}
 
         {identityEnabled && (
         <div className="rounded-xl border border-dashed border-slate-300 p-3">

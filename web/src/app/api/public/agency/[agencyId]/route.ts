@@ -20,5 +20,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ age
     logoUrl: agency.logoUrl ?? null,
     identityEnabled: isIdentityEnabledForAgency(agency),
     intakeFields: agency.intakeFields ?? [],
+    studyEnabled: (agency.studyRules ?? []).length > 0,
   });
 }
