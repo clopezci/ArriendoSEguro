@@ -10,6 +10,12 @@ export function LandingPublicHeader() {
         </Link>
         <div className="flex items-center justify-end gap-2">
           <Link
+            href="/agencias"
+            className="rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-500 transition hover:text-[#5646E5]"
+          >
+            🏢 Soy agencia
+          </Link>
+          <Link
             href="/ingresar?redirect=/nuevo"
             className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:text-[#5646E5]"
           >
