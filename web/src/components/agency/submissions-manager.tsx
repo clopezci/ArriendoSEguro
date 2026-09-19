@@ -17,6 +17,7 @@ type Submission = {
 };
 
 type Landlord = { id: string; party: { fullName: string } };
+type Property = { id: string; alias?: string; address: string; city?: string; externalId?: string; defaultRent?: number; landlordId?: string };
 
 export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string; onGenerated?: () => void }) {
   const { user } = useAuth();
@@ -174,7 +175,10 @@ function GenerateForm({
 }) {
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
+  const [props, setProps] = useState<Property[]>([]);
+  const [manual, setManual] = useState(false);
   const [f, setF] = useState({
+    propertyId: "",
     landlordId: "",
     address: submission.propertyHint ?? "",
     city: submission.tenant.city ?? "",
@@ -188,38 +192,64 @@ function GenerateForm({
     termMonths: "12",
   });
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`/api/agency/${agencyId}/properties`, { headers: { ...(await buildAuthHeaders(user)) } });
+        const json = (await res.json()) as { success?: boolean; properties?: Property[] };
+        if (json?.success) setProps(json.properties ?? []);
+      } catch {
+        /* noop */
+      }
+    })();
+  }, [agencyId, user]);
+
   function set<K extends keyof typeof f>(k: K, v: string) {
     setF((p) => ({ ...p, [k]: v }));
   }
 
+  function pickProperty(id: string) {
+    const p = props.find((x) => x.id === id);
+    setF((s) => ({ ...s, propertyId: id, monthlyRent: p?.defaultRent != null ? String(p.defaultRent) : s.monthlyRent }));
+  }
+
   async function generate() {
     onError("");
-    if (!f.landlordId || !f.address.trim() || !f.city.trim() || !f.department.trim() || !f.monthlyRent || !f.startDate) {
-      onError("Completa arrendador, inmueble (dirección/ciudad/departamento), canon y fecha de inicio.");
+    if (!f.startDate) {
+      onError("Falta la fecha de inicio.");
+      return;
+    }
+    const usingProperty = !manual && f.propertyId;
+    if (!usingProperty && (!f.landlordId || !f.address.trim() || !f.city.trim() || !f.department.trim() || !f.monthlyRent)) {
+      onError("Elige un inmueble, o completa arrendador, inmueble y canon.");
       return;
     }
     setBusy(true);
     try {
+      const lease = {
+        monthlyRent: f.monthlyRent ? Math.floor(Number(f.monthlyRent)) : undefined,
+        paymentDueDay: Math.floor(Number(f.paymentDueDay)) || 1,
+        startDate: f.startDate,
+        termMonths: Math.floor(Number(f.termMonths)) || 12,
+      };
+      const body = usingProperty
+        ? { propertyId: f.propertyId, lease }
+        : {
+            landlordId: f.landlordId,
+            property: {
+              address: f.address.trim(),
+              city: f.city.trim(),
+              department: f.department.trim(),
+              type: f.type.trim(),
+              registryNumber: f.registryNumber.trim() || undefined,
+              commercialValue: f.commercialValue ? Math.floor(Number(f.commercialValue)) : undefined,
+            },
+            lease,
+          };
       const res = await fetch(`/api/agency/${agencyId}/submissions/${submission.id}/generate`, {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({
-          landlordId: f.landlordId,
-          property: {
-            address: f.address.trim(),
-            city: f.city.trim(),
-            department: f.department.trim(),
-            type: f.type.trim(),
-            registryNumber: f.registryNumber.trim() || undefined,
-            commercialValue: f.commercialValue ? Math.floor(Number(f.commercialValue)) : undefined,
-          },
-          lease: {
-            monthlyRent: Math.floor(Number(f.monthlyRent)),
-            paymentDueDay: Math.floor(Number(f.paymentDueDay)) || 1,
-            startDate: f.startDate,
-            termMonths: Math.floor(Number(f.termMonths)) || 12,
-          },
-        }),
+        body: JSON.stringify(body),
       });
       const json = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
       if (!res.ok || !json.success) onError(json.errors?.[0]?.message ?? "No se pudo generar.");
@@ -232,28 +262,51 @@ function GenerateForm({
   }
 
   const input = "rounded-lg border border-slate-300 px-3 py-2 text-sm";
+  const useProperty = !manual && props.length > 0;
 
   return (
     <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
       <p className="text-xs font-semibold text-slate-500">Completa lo que falta para generar el contrato</p>
+
+      {props.length > 0 && (
+        <label className="mt-2 block text-xs text-slate-500">
+          Inmueble (trae el dueño y el canon)
+          <div className="mt-1 flex items-center gap-2">
+            <select className={`${input} flex-1`} value={f.propertyId} onChange={(e) => pickProperty(e.target.value)} disabled={manual}>
+              <option value="">— Elige un inmueble —</option>
+              {props.map((p) => <option key={p.id} value={p.id}>{p.alias || p.address}{p.externalId ? ` (${p.externalId})` : ""}</option>)}
+            </select>
+            <label className="flex items-center gap-1 text-[11px] text-slate-500">
+              <input type="checkbox" checked={manual} onChange={(e) => setManual(e.target.checked)} /> Manual
+            </label>
+          </div>
+        </label>
+      )}
+
+      {(manual || props.length === 0) && (
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          <select className={input} value={f.landlordId} onChange={(e) => set("landlordId", e.target.value)}>
+            <option value="">— Arrendador —</option>
+            {landlords.map((l) => <option key={l.id} value={l.id}>{l.party.fullName}</option>)}
+          </select>
+          <input className={input} placeholder="Tipo (Apartamento…)" value={f.type} onChange={(e) => set("type", e.target.value)} />
+          <input className={input} placeholder="Dirección del inmueble" value={f.address} onChange={(e) => set("address", e.target.value)} />
+          <input className={input} placeholder="Ciudad" value={f.city} onChange={(e) => set("city", e.target.value)} />
+          <input className={input} placeholder="Departamento" value={f.department} onChange={(e) => set("department", e.target.value)} />
+          <input className={input} placeholder="Matrícula (opcional)" value={f.registryNumber} onChange={(e) => set("registryNumber", e.target.value)} />
+          <input className={input} type="number" placeholder="Valor comercial (opcional)" value={f.commercialValue} onChange={(e) => set("commercialValue", e.target.value)} />
+        </div>
+      )}
+
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
-        <select className={input} value={f.landlordId} onChange={(e) => set("landlordId", e.target.value)}>
-          <option value="">— Arrendador —</option>
-          {landlords.map((l) => <option key={l.id} value={l.id}>{l.party.fullName}</option>)}
-        </select>
-        <input className={input} placeholder="Tipo (Apartamento…)" value={f.type} onChange={(e) => set("type", e.target.value)} />
-        <input className={input} placeholder="Dirección del inmueble" value={f.address} onChange={(e) => set("address", e.target.value)} />
-        <input className={input} placeholder="Ciudad" value={f.city} onChange={(e) => set("city", e.target.value)} />
-        <input className={input} placeholder="Departamento" value={f.department} onChange={(e) => set("department", e.target.value)} />
-        <input className={input} placeholder="Matrícula (opcional)" value={f.registryNumber} onChange={(e) => set("registryNumber", e.target.value)} />
-        <input className={input} type="number" placeholder="Valor comercial (opcional)" value={f.commercialValue} onChange={(e) => set("commercialValue", e.target.value)} />
         <input className={input} type="number" placeholder="Canon mensual" value={f.monthlyRent} onChange={(e) => set("monthlyRent", e.target.value)} />
         <input className={input} type="number" placeholder="Día de pago (1-31)" value={f.paymentDueDay} onChange={(e) => set("paymentDueDay", e.target.value)} />
         <input className={input} type="date" value={f.startDate} onChange={(e) => set("startDate", e.target.value)} />
         <input className={input} type="number" placeholder="Meses" value={f.termMonths} onChange={(e) => set("termMonths", e.target.value)} />
       </div>
+
       <button type="button" onClick={() => void generate()} disabled={busy} className="mt-3 rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-bold text-white disabled:opacity-40">
-        {busy ? "Generando…" : "Generar contrato"}
+        {busy ? "Generando…" : useProperty && f.propertyId ? "Generar contrato (inmueble elegido)" : "Generar contrato"}
       </button>
     </div>
   );

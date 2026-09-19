@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAgencyMember } from "@/lib/auth/requireAgencyMember";
-import { getLandlord } from "@/lib/agencies/agencyStore";
+import { getLandlord, getProperty } from "@/lib/agencies/agencyStore";
 import { getSubmission, setSubmissionStatus } from "@/lib/agencies/intakeStore";
 import {
   buildLeasePayloadFromRow,
@@ -15,17 +15,22 @@ import { renderResidentialLeaseDispatch } from "@/domain/contracts/renderResiden
 export const runtime = "nodejs";
 
 const schema = z.object({
-  landlordId: z.string().trim().min(1),
-  property: z.object({
-    address: z.string().trim().min(3),
-    city: z.string().trim().min(2),
-    department: z.string().trim().min(2),
-    type: z.string().trim().min(2),
-    registryNumber: z.string().trim().optional(),
-    commercialValue: z.number().int().min(0).optional(),
-  }),
+  /** Inmueble existente (preferido): trae dueño + datos + canon por defecto. */
+  propertyId: z.string().trim().optional(),
+  /** Alternativa manual (si no se elige un inmueble existente). */
+  landlordId: z.string().trim().optional(),
+  property: z
+    .object({
+      address: z.string().trim().min(3),
+      city: z.string().trim().min(2),
+      department: z.string().trim().min(2),
+      type: z.string().trim().min(2),
+      registryNumber: z.string().trim().optional(),
+      commercialValue: z.number().int().min(0).optional(),
+    })
+    .optional(),
   lease: z.object({
-    monthlyRent: z.number().int().min(1),
+    monthlyRent: z.number().int().min(1).optional(),
     paymentDueDay: z.number().int().min(1).max(31),
     paymentMethod: z.string().trim().optional(),
     startDate: z.string().trim().min(1),
@@ -64,23 +69,55 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     return NextResponse.json({ success: false, errors: parsed.error.issues.map((i) => ({ field: i.path.join("."), message: i.message })) }, { status: 422 });
   }
 
-  const landlord = await getLandlord(firestore, parsed.data.landlordId);
+  // Resolver inmueble + dueño: preferimos un inmueble EXISTENTE (trae dueño,
+  // datos y canon por defecto). Si no, datos manuales (fallback).
+  let landlordId: string | undefined;
+  let propertyId: string | undefined;
+  let propertyFields: BulkContractRow["property"] | undefined;
+  let defaultRent: number | undefined;
+
+  if (parsed.data.propertyId) {
+    const prop = await getProperty(firestore, parsed.data.propertyId);
+    if (!prop || prop.agencyId !== agencyId) {
+      return NextResponse.json({ success: false, errors: [{ field: "propertyId", message: "Inmueble no encontrado." }] }, { status: 404 });
+    }
+    propertyId = prop.id;
+    landlordId = prop.landlordId ?? parsed.data.landlordId;
+    defaultRent = prop.defaultRent;
+    propertyFields = {
+      address: prop.address,
+      city: prop.city,
+      department: prop.department,
+      type: prop.type,
+      registryNumber: prop.registryNumber,
+      commercialValue: prop.commercialValue,
+    };
+  } else if (parsed.data.property) {
+    landlordId = parsed.data.landlordId;
+    propertyFields = { ...parsed.data.property };
+  }
+
+  if (!landlordId) {
+    return NextResponse.json({ success: false, errors: [{ field: "landlordId", message: "Falta el dueño (asígnalo al inmueble o elígelo)." }] }, { status: 422 });
+  }
+  if (!propertyFields) {
+    return NextResponse.json({ success: false, errors: [{ field: "property", message: "Falta el inmueble." }] }, { status: 422 });
+  }
+  const monthlyRent = parsed.data.lease.monthlyRent ?? defaultRent;
+  if (!monthlyRent || monthlyRent <= 0) {
+    return NextResponse.json({ success: false, errors: [{ field: "lease.monthlyRent", message: "Falta el canon (ponlo o define el canon del inmueble)." }] }, { status: 422 });
+  }
+
+  const landlord = await getLandlord(firestore, landlordId);
   if (!landlord || landlord.agencyId !== agencyId) {
     return NextResponse.json({ success: false, errors: [{ field: "landlordId", message: "Arrendador no encontrado." }] }, { status: 404 });
   }
 
   const row: BulkContractRow = {
     tenant: { ...sub.tenant, notificationAddress: "" },
-    property: {
-      address: parsed.data.property.address,
-      city: parsed.data.property.city,
-      department: parsed.data.property.department,
-      type: parsed.data.property.type,
-      registryNumber: parsed.data.property.registryNumber,
-      commercialValue: parsed.data.property.commercialValue,
-    },
+    property: propertyFields,
     lease: {
-      monthlyRent: parsed.data.lease.monthlyRent,
+      monthlyRent,
       paymentDueDay: parsed.data.lease.paymentDueDay,
       paymentMethod: parsed.data.lease.paymentMethod,
       startDate: parsed.data.lease.startDate,
@@ -99,6 +136,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     const created = await createAgencyContract(firestore, {
       agencyId,
       landlordId: landlord.id,
+      propertyId,
       payload: { ...payload, generatedAt: rendered.generatedAt },
       html: rendered.html,
       documentHash: rendered.documentHash,
