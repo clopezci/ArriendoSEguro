@@ -9,6 +9,7 @@ import { LandlordsManager } from "@/components/agency/landlords-manager";
 import { PropertiesManager } from "@/components/agency/properties-manager";
 import { BulkGenerator } from "@/components/agency/bulk-generator";
 import { CarteraManager } from "@/components/agency/cartera-manager";
+import { IdentityCheck } from "@/components/agency/identity-check";
 
 type Summary = {
   agency: { id: string; name: string; nit: string | null; contactEmail: string; status: string };
@@ -16,7 +17,7 @@ type Summary = {
   counts: { landlords: number; properties: number };
 };
 
-type Tab = "resumen" | "cartera" | "arrendadores" | "inmuebles" | "generar";
+type Tab = "resumen" | "cartera" | "arrendadores" | "inmuebles" | "generar" | "identidad";
 
 export default function AgencyDashboardPage() {
   const params = useParams<{ agencyId: string }>();
@@ -71,6 +72,7 @@ export default function AgencyDashboardPage() {
     ["arrendadores", "Arrendadores"],
     ["inmuebles", "Inmuebles"],
     ["generar", "Generar en lote"],
+    ["identidad", "Identidad"],
   ];
 
   return (
@@ -121,6 +123,7 @@ export default function AgencyDashboardPage() {
         {tab === "arrendadores" && <LandlordsManager agencyId={agencyId} />}
         {tab === "inmuebles" && <PropertiesManager agencyId={agencyId} />}
         {tab === "generar" && <BulkGenerator agencyId={agencyId} onGenerated={() => void load()} />}
+        {tab === "identidad" && <IdentityCheck />}
       </div>
     </main>
   );
