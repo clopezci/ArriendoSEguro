@@ -20,6 +20,25 @@ export const AGENCY_CREDITS_COLLECTION = "agency_credits";
 
 export type AgencyStatus = "active" | "suspended";
 
+/** Valores por defecto que la agencia aplica a todos sus contratos. */
+export interface AgencyContractDefaults {
+  /** Política de comprobante/recordatorios de pago (recordatorios ON por defecto). */
+  paymentSupportPolicy: "none" | "notifications" | "notifications_and_upload";
+  /** Responsable de servicios públicos. */
+  utilitiesResponsible: string;
+  /** Detalle de servicios públicos. */
+  utilitiesDetails: string;
+  /** Detalle de administración/expensas. */
+  adminFeesDetails: string;
+}
+
+export const DEFAULT_AGENCY_CONTRACT_DEFAULTS: AgencyContractDefaults = {
+  paymentSupportPolicy: "notifications",
+  utilitiesResponsible: "Arrendatario",
+  utilitiesDetails: "Los servicios públicos domiciliarios están a cargo del arrendatario.",
+  adminFeesDetails: "La cuota de administración/expensas está a cargo del arrendatario cuando aplique.",
+};
+
 export type IntakeFieldType = "text" | "number" | "bool" | "select";
 
 /** Campo personalizado que la agencia agrega a su formulario de captura. */
@@ -94,6 +113,8 @@ export interface Agency {
   whatsappNumber?: string;
   /** Campos personalizados que la agencia agrega a su formulario de captura. */
   intakeFields?: IntakeFieldDef[];
+  /** Valores por defecto para los contratos de la agencia. */
+  defaults?: Partial<AgencyContractDefaults>;
   /** Uid del usuario que creó/administra la agencia. */
   ownerUid: string;
   status: AgencyStatus;
@@ -159,6 +180,17 @@ export interface AgencyCredits {
 
 export function normalizeAgencyEmail(email: string | null | undefined): string {
   return (email ?? "").trim().toLowerCase();
+}
+
+/** Defaults efectivos de contrato de la agencia (con fallback a los del sistema). */
+export function effectiveAgencyDefaults(agency: Pick<Agency, "defaults">): AgencyContractDefaults {
+  const d = agency.defaults ?? {};
+  return {
+    paymentSupportPolicy: d.paymentSupportPolicy ?? DEFAULT_AGENCY_CONTRACT_DEFAULTS.paymentSupportPolicy,
+    utilitiesResponsible: (d.utilitiesResponsible ?? "").trim() || DEFAULT_AGENCY_CONTRACT_DEFAULTS.utilitiesResponsible,
+    utilitiesDetails: (d.utilitiesDetails ?? "").trim() || DEFAULT_AGENCY_CONTRACT_DEFAULTS.utilitiesDetails,
+    adminFeesDetails: (d.adminFeesDetails ?? "").trim() || DEFAULT_AGENCY_CONTRACT_DEFAULTS.adminFeesDetails,
+  };
 }
 
 /** ¿La agencia tiene activo el módulo de identidad? (por defecto sí). */

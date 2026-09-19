@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAgencyMember } from "@/lib/auth/requireAgencyMember";
 import { updateAgency } from "@/lib/agencies/agencyStore";
+import { effectiveAgencyDefaults } from "@/domain/agencies/types";
 
 export const runtime = "nodejs";
 
@@ -15,12 +16,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ agen
     logoUrl: gate.agency.logoUrl ?? "",
     whatsappNumber: gate.agency.whatsappNumber ?? "",
     name: gate.agency.name,
+    defaults: effectiveAgencyDefaults(gate.agency),
   });
 }
 
 const schema = z.object({
   logoUrl: z.string().trim().max(500).url("URL de logo inválida.").optional().or(z.literal("")),
   whatsappNumber: z.string().trim().max(30).optional().or(z.literal("")),
+  defaults: z
+    .object({
+      paymentSupportPolicy: z.enum(["none", "notifications", "notifications_and_upload"]).optional(),
+      utilitiesResponsible: z.string().trim().max(80).optional(),
+      utilitiesDetails: z.string().trim().max(300).optional(),
+      adminFeesDetails: z.string().trim().max(300).optional(),
+    })
+    .optional(),
 });
 
 /** PATCH — actualiza logo y/o número de WhatsApp propio. */
@@ -40,9 +50,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ag
     return NextResponse.json({ success: false, errors: parsed.error.issues.map((i) => ({ field: i.path.join("."), message: i.message })) }, { status: 422 });
   }
 
-  const patch: { logoUrl?: string; whatsappNumber?: string } = {};
+  const patch: { logoUrl?: string; whatsappNumber?: string; defaults?: typeof parsed.data.defaults } = {};
   if (parsed.data.logoUrl !== undefined) patch.logoUrl = parsed.data.logoUrl;
   if (parsed.data.whatsappNumber !== undefined) patch.whatsappNumber = parsed.data.whatsappNumber;
+  if (parsed.data.defaults !== undefined) patch.defaults = parsed.data.defaults;
   await updateAgency(gate.firestore, agencyId, patch);
   return NextResponse.json({ success: true });
 }

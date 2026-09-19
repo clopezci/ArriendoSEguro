@@ -9,6 +9,7 @@ import {
 } from "@/lib/agencies/agencyContracts";
 import { validateContractData } from "@/domain/contracts/validateContractData";
 import { renderResidentialLeaseDispatch } from "@/domain/contracts/renderResidentialLeaseDispatch";
+import { effectiveAgencyDefaults } from "@/domain/agencies/types";
 
 export const runtime = "nodejs";
 const MAX_ROWS = 100;
@@ -86,10 +87,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     errors?: { field: string; message: string }[];
   }[] = [];
 
+  const defaults = effectiveAgencyDefaults(gate.agency);
   for (let i = 0; i < parsed.data.rows.length; i++) {
     const row = parsed.data.rows[i] as BulkContractRow;
     try {
-      const payload = buildLeasePayloadFromRow(landlord.party, row);
+      const payload = buildLeasePayloadFromRow(landlord.party, row, defaults);
       const validation = validateContractData(payload);
       if (!validation.ok) {
         results.push({ index: i, ok: false, tenantName: row.tenant.fullName, errors: validation.issues });

@@ -89,7 +89,7 @@ export async function createAgency(firestore: Firestore, params: CreateAgencyPar
 export async function updateAgency(
   firestore: Firestore,
   agencyId: string,
-  patch: Partial<Pick<Agency, "name" | "nit" | "contactEmail" | "contactPhone" | "escalationEmail" | "identityEnabled" | "whatsappNumber" | "intakeFields" | "logoUrl" | "memberEmails" | "status">>,
+  patch: Partial<Pick<Agency, "name" | "nit" | "contactEmail" | "contactPhone" | "escalationEmail" | "identityEnabled" | "whatsappNumber" | "intakeFields" | "defaults" | "logoUrl" | "memberEmails" | "status">>,
 ): Promise<void> {
   const clean: Record<string, unknown> = { updatedAt: nowIso() };
   if (typeof patch.name === "string") clean.name = patch.name.trim();
@@ -100,6 +100,16 @@ export async function updateAgency(
   if (typeof patch.identityEnabled === "boolean") clean.identityEnabled = patch.identityEnabled;
   if (typeof patch.whatsappNumber === "string") clean.whatsappNumber = patch.whatsappNumber.replace(/[^\d+]/g, "");
   if (patch.intakeFields !== undefined) clean.intakeFields = sanitizeIntakeFields(patch.intakeFields);
+  if (patch.defaults !== undefined) {
+    const d = patch.defaults ?? {};
+    const policy = d.paymentSupportPolicy;
+    clean.defaults = {
+      paymentSupportPolicy: policy === "none" || policy === "notifications" || policy === "notifications_and_upload" ? policy : "notifications",
+      utilitiesResponsible: String(d.utilitiesResponsible ?? "").slice(0, 80),
+      utilitiesDetails: String(d.utilitiesDetails ?? "").slice(0, 300),
+      adminFeesDetails: String(d.adminFeesDetails ?? "").slice(0, 300),
+    };
+  }
   if (typeof patch.logoUrl === "string") clean.logoUrl = patch.logoUrl.trim();
   if (patch.status) clean.status = patch.status;
   if (Array.isArray(patch.memberEmails)) {
