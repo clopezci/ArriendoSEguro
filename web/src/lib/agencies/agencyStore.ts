@@ -14,6 +14,7 @@ import {
   type AgencyProperty,
 } from "@/domain/agencies/types";
 import type { PersonParty } from "@/domain/contracts/types";
+import { sanitizeStudyRules } from "@/domain/agencies/studyRules";
 
 const nowIso = () => new Date().toISOString();
 
@@ -89,7 +90,7 @@ export async function createAgency(firestore: Firestore, params: CreateAgencyPar
 export async function updateAgency(
   firestore: Firestore,
   agencyId: string,
-  patch: Partial<Pick<Agency, "name" | "nit" | "contactEmail" | "contactPhone" | "escalationEmail" | "identityEnabled" | "whatsappNumber" | "intakeFields" | "defaults" | "logoUrl" | "memberEmails" | "status">>,
+  patch: Partial<Pick<Agency, "name" | "nit" | "contactEmail" | "contactPhone" | "escalationEmail" | "identityEnabled" | "whatsappNumber" | "intakeFields" | "defaults" | "studyRules" | "logoUrl" | "memberEmails" | "status">>,
 ): Promise<void> {
   const clean: Record<string, unknown> = { updatedAt: nowIso() };
   if (typeof patch.name === "string") clean.name = patch.name.trim();
@@ -100,6 +101,7 @@ export async function updateAgency(
   if (typeof patch.identityEnabled === "boolean") clean.identityEnabled = patch.identityEnabled;
   if (typeof patch.whatsappNumber === "string") clean.whatsappNumber = patch.whatsappNumber.replace(/[^\d+]/g, "");
   if (patch.intakeFields !== undefined) clean.intakeFields = sanitizeIntakeFields(patch.intakeFields);
+  if (patch.studyRules !== undefined) clean.studyRules = sanitizeStudyRules(patch.studyRules);
   if (patch.defaults !== undefined) {
     const d = patch.defaults ?? {};
     const policy = d.paymentSupportPolicy;

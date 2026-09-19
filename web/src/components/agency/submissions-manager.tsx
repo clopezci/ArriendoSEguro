@@ -5,6 +5,8 @@ import QRCode from "qrcode";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { IntakeFieldsManager } from "@/components/agency/intake-fields-manager";
+import { StudyRulesManager } from "@/components/agency/study-rules-manager";
+import { evaluateStudy, type StudyRule } from "@/domain/agencies/studyRules";
 
 type Submission = {
   id: string;
@@ -12,6 +14,7 @@ type Submission = {
   propertyHint?: string;
   note?: string;
   custom?: Record<string, string>;
+  study?: { income?: number; contractType?: string; hasCodebtor?: boolean; canonReference?: number };
   identity?: { approved: boolean; confianza: number | null; nombreRegistrado: string | null };
   createdAtIso: string;
 };
@@ -23,8 +26,10 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
   const { user } = useAuth();
   const [rows, setRows] = useState<Submission[]>([]);
   const [landlords, setLandlords] = useState<Landlord[]>([]);
+  const [studyRules, setStudyRules] = useState<StudyRule[]>([]);
   const [loading, setLoading] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [diagId, setDiagId] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -47,12 +52,14 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, l] = await Promise.all([
+      const [s, l, sr] = await Promise.all([
         fetch(`/api/agency/${agencyId}/submissions?status=pending`, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json()),
         fetch(`/api/agency/${agencyId}/landlords`, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json()),
+        fetch(`/api/agency/${agencyId}/study-rules`, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json()),
       ]);
       if (s?.success) setRows(s.submissions ?? []);
       if (l?.success) setLandlords(l.landlords ?? []);
+      if (sr?.success) setStudyRules(sr.rules ?? []);
     } finally {
       setLoading(false);
     }
@@ -105,6 +112,7 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
       </div>
 
       <IntakeFieldsManager agencyId={agencyId} />
+      <StudyRulesManager agencyId={agencyId} />
 
 
       {msg && <p className="text-xs font-semibold text-emerald-700">{msg}</p>}
@@ -114,7 +122,25 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
       {loading && <p className="text-sm text-slate-500">Cargando…</p>}
       {!loading && rows.length === 0 && <p className="text-xs text-slate-400">Aún no hay solicitudes. Comparte tu enlace para empezar a recibirlas.</p>}
 
-      {rows.map((s) => (
+      {rows.map((s) => {
+        const diag = studyRules.length
+          ? evaluateStudy(studyRules, {
+              income: s.study?.income,
+              contractType: s.study?.contractType,
+              hasCodebtor: s.study?.hasCodebtor,
+              canonReference: s.study?.canonReference,
+              custom: s.custom,
+            })
+          : null;
+        const badge =
+          diag?.status === "approved"
+            ? { t: "Aprobado", c: "bg-emerald-100 text-emerald-700" }
+            : diag?.status === "rejected"
+              ? { t: "Rechazado", c: "bg-rose-100 text-rose-700" }
+              : diag?.status === "review"
+                ? { t: "Revisar", c: "bg-amber-100 text-amber-700" }
+                : null;
+        return (
         <div key={s.id} className="rounded-2xl border border-slate-200 bg-white p-4 text-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
@@ -122,6 +148,11 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
               <span className="ml-2 text-xs text-slate-400">{s.tenant.documentType} {s.tenant.documentNumber} · {s.tenant.city}</span>
               {s.identity?.approved === true && <span className="ml-2 text-[11px] font-semibold text-emerald-600">✓ ID</span>}
               {s.identity?.approved === false && <span className="ml-2 text-[11px] font-semibold text-rose-600">⛔ ID</span>}
+              {badge && (
+                <button type="button" onClick={() => setDiagId(diagId === s.id ? null : s.id)} className={`ml-2 rounded-full px-2 py-0.5 text-[11px] font-semibold ${badge.c}`}>
+                  {badge.t} ⓘ
+                </button>
+              )}
             </div>
             <div className="flex gap-2">
               <button type="button" onClick={() => setOpenId(openId === s.id ? null : s.id)} className="rounded-md border border-violet-300 px-3 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-50">
@@ -131,6 +162,18 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
             </div>
           </div>
           <p className="mt-1 text-xs text-slate-500">{s.tenant.email} · {s.tenant.phone}{s.propertyHint ? ` · Interés: ${s.propertyHint}` : ""}</p>
+          {diag && diagId === s.id && (
+            <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50/60 p-2 text-xs">
+              <p className="font-semibold text-slate-600">Diagnóstico del estudio:</p>
+              <ul className="mt-1 space-y-0.5">
+                {diag.results.map((r) => (
+                  <li key={r.id} className={r.ok ? "text-emerald-700" : r.required ? "text-rose-600" : "text-amber-600"}>
+                    {r.ok ? "✓" : "✕"} {r.label}{!r.ok ? ` (${r.detail})` : ""}{r.required ? "" : " · opcional"}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {s.note && <p className="mt-1 text-xs italic text-slate-400">“{s.note}”</p>}
           {s.custom && Object.keys(s.custom).length > 0 && (
             <div className="mt-1 flex flex-wrap gap-1.5">
@@ -155,7 +198,8 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
             />
           )}
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

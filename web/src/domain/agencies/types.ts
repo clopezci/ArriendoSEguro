@@ -1,4 +1,5 @@
 import type { PersonParty } from "@/domain/contracts/types";
+import type { StudyRule } from "@/domain/agencies/studyRules";
 
 /**
  * Módulo Agencias — modelo de datos.
@@ -115,6 +116,8 @@ export interface Agency {
   intakeFields?: IntakeFieldDef[];
   /** Valores por defecto para los contratos de la agencia. */
   defaults?: Partial<AgencyContractDefaults>;
+  /** Reglas de estudio del inquilino/codeudor configuradas por la agencia. */
+  studyRules?: StudyRule[];
   /** Uid del usuario que creó/administra la agencia. */
   ownerUid: string;
   status: AgencyStatus;

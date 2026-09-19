@@ -32,6 +32,8 @@ export interface IntakeSubmission {
   note?: string;
   /** Respuestas a los campos personalizados de la agencia (key → valor). */
   custom?: Record<string, string>;
+  /** Datos para el estudio de arrendamiento. */
+  study?: { income?: number; contractType?: string; hasCodebtor?: boolean; canonReference?: number };
   identity?: IntakeIdentity;
   status: IntakeStatus;
   contractId?: string;
@@ -49,6 +51,7 @@ export type CreateSubmissionInput = {
   propertyHint?: string;
   note?: string;
   custom?: Record<string, string>;
+  study?: { income?: number; contractType?: string; hasCodebtor?: boolean; canonReference?: number };
   identity?: IntakeIdentity;
   source?: "web" | "whatsapp";
 };
@@ -79,6 +82,7 @@ export async function createOrUpdateSubmission(
     ...(input.propertyHint ? { propertyHint: input.propertyHint } : {}),
     ...(input.note ? { note: input.note } : {}),
     ...(input.custom && Object.keys(input.custom).length ? { custom: input.custom } : {}),
+    ...(input.study && Object.keys(input.study).length ? { study: input.study } : {}),
     ...(input.identity ? { identity: input.identity } : {}),
     source: input.source ?? "web",
     status: "pending" as IntakeStatus,
