@@ -7,6 +7,7 @@ import { sendEmail } from "@/services/email/sendEmail";
 import { plusAccessConfirmedEmail } from "@/services/email/emailTemplates";
 import { notifyLegalPartnerForPaidClause } from "@/lib/legal/notifySpecialClause";
 import { recordSaleFromPayment } from "@/lib/sales/salesLedger";
+import { addCredits } from "@/lib/agencies/agencyStore";
 
 /**
  * Liquida una orden de plataforma (Plan Plus) **aprobada** de forma idempotente:
@@ -43,6 +44,9 @@ export async function settleApprovedPlatformOrder(
     amount: number;
     currency: string;
     leaseProcessId?: string | null;
+    orderKind?: string;
+    agencyId?: string;
+    credits?: number;
   };
 
   // Idempotencia.
@@ -84,46 +88,57 @@ export async function settleApprovedPlatformOrder(
     createdAtServer: FieldValue.serverTimestamp(),
   });
 
-  const entRef = firestore.collection("access_entitlements").doc();
-  await entRef.set({
-    id: entRef.id,
-    userId: order.userId,
-    userEmail: order.userEmail,
-    leaseProcessId: order.leaseProcessId ?? null,
-    planCode: "plus",
-    accessType: "plus_paid",
-    status: "active",
-    maxContractsAllowed: 1,
-    contractsUsed: 0,
-    validUntil: null,
-    createdAt: now,
-    updatedAt: now,
-    createdAtServer: FieldValue.serverTimestamp(),
-    updatedAtServer: FieldValue.serverTimestamp(),
-  });
-
   await auditPlatformPaymentEvent(firestore, "platform_payment_approved", {
     orderId: order.id,
     paymentId: payRef.id,
     provider: params.provider,
   });
-  await auditPlatformPaymentEvent(firestore, "access_entitlement_created", {
-    entitlementId: entRef.id,
-    orderId: order.id,
-  });
 
-  const tpl = plusAccessConfirmedEmail({ userEmail: order.userEmail, source: "payment" });
-  await sendEmail({
-    to: order.userEmail,
-    subject: tpl.subject,
-    html: tpl.html,
-    text: tpl.text,
-    templateCode: "plusAccessConfirmedEmail",
-    relatedEntityType: "platform_order",
-    relatedEntityId: order.id,
-  });
+  if (order.orderKind === "agency_credits" && order.agencyId) {
+    // Compra de créditos de agencia: recarga automática del saldo. No crea acceso
+    // Plus ni notifica al aliado jurídico.
+    await addCredits(firestore, order.agencyId, Number(order.credits ?? 0));
+    await auditPlatformPaymentEvent(firestore, "agency_credits_added", {
+      agencyId: order.agencyId,
+      credits: order.credits ?? 0,
+      orderId: order.id,
+    });
+  } else {
+    const entRef = firestore.collection("access_entitlements").doc();
+    await entRef.set({
+      id: entRef.id,
+      userId: order.userId,
+      userEmail: order.userEmail,
+      leaseProcessId: order.leaseProcessId ?? null,
+      planCode: "plus",
+      accessType: "plus_paid",
+      status: "active",
+      maxContractsAllowed: 1,
+      contractsUsed: 0,
+      validUntil: null,
+      createdAt: now,
+      updatedAt: now,
+      createdAtServer: FieldValue.serverTimestamp(),
+      updatedAtServer: FieldValue.serverTimestamp(),
+    });
+    await auditPlatformPaymentEvent(firestore, "access_entitlement_created", {
+      entitlementId: entRef.id,
+      orderId: order.id,
+    });
 
-  await notifyLegalPartnerForPaidClause(firestore, order.leaseProcessId ?? null).catch(() => {});
+    const tpl = plusAccessConfirmedEmail({ userEmail: order.userEmail, source: "payment" });
+    await sendEmail({
+      to: order.userEmail,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      templateCode: "plusAccessConfirmedEmail",
+      relatedEntityType: "platform_order",
+      relatedEntityId: order.id,
+    });
+
+    await notifyLegalPartnerForPaidClause(firestore, order.leaseProcessId ?? null).catch(() => {});
+  }
 
   // Libro de ventas interno (numeración propia). Best-effort: no afecta el pago.
   await recordSaleFromPayment(firestore, {

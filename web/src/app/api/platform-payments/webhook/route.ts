@@ -10,6 +10,7 @@ import { plusAccessConfirmedEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
 import { notifyLegalPartnerForPaidClause } from "@/lib/legal/notifySpecialClause";
 import { recordSaleFromPayment } from "@/lib/sales/salesLedger";
+import { addCredits } from "@/lib/agencies/agencyStore";
 import { logServerError } from "@/lib/observability/observability";
 
 export const runtime = "nodejs";
@@ -119,6 +120,9 @@ export async function POST(request: Request) {
       status: string;
       planCode?: string;
       amount?: number;
+      orderKind?: string;
+      agencyId?: string;
+      credits?: number;
     }) ?? {
       id: "",
       userId: "",
@@ -219,6 +223,23 @@ export async function POST(request: Request) {
         leaseProcessId: order.leaseProcessId ?? null,
         approvedAtIso: now,
       });
+      await auditPlatformPaymentEvent(firestore, "platform_payment_approved", {
+        orderId: order.id,
+        paymentId: payRef.id,
+        providerPaymentId,
+      });
+
+      if (order.orderKind === "agency_credits" && order.agencyId) {
+        // Compra de créditos de agencia: recarga automática del saldo.
+        await addCredits(firestore, order.agencyId, Number(order.credits ?? 0));
+        await auditPlatformPaymentEvent(firestore, "agency_credits_added", {
+          agencyId: order.agencyId,
+          credits: order.credits ?? 0,
+          orderId: order.id,
+        });
+        return NextResponse.json({ success: true, status: "approved" });
+      }
+
       const entitlementRef = firestore.collection("access_entitlements").doc();
       await entitlementRef.set({
         id: entitlementRef.id,
@@ -235,11 +256,6 @@ export async function POST(request: Request) {
         updatedAt: now,
         createdAtServer: FieldValue.serverTimestamp(),
         updatedAtServer: FieldValue.serverTimestamp(),
-      });
-      await auditPlatformPaymentEvent(firestore, "platform_payment_approved", {
-        orderId: order.id,
-        paymentId: payRef.id,
-        providerPaymentId,
       });
       await auditPlatformPaymentEvent(firestore, "access_entitlement_created", {
         entitlementId: entitlementRef.id,
