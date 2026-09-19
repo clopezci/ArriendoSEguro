@@ -62,6 +62,11 @@ export async function sendAgencySignaturesForContract(
     if (!contract || contract.agencyId !== agencyId) return { contractId, ok: false, error: "not_found" };
     if (contract.status === "signed") return { contractId, ok: false, error: "already_signed" };
 
+    // Identidad: si se corrió una verificación y quedó REPROBADA, no se envía a
+    // firma (protección antifraude). Si no hay verificación, no bloquea (Fase 1).
+    const idCheck = contract.identityCheck as { approved?: boolean } | undefined;
+    if (idCheck && idCheck.approved === false) return { contractId, ok: false, error: "identity_failed" };
+
     const versionId = (contract.currentVersionId as string) ?? "";
     const versionRef = firestore.collection(CONTRACT_VERSIONS_COLLECTION).doc(versionId);
     const versionSnap = await versionRef.get();

@@ -15,6 +15,7 @@ type Contract = {
   agencyStatus: "draft" | "sent" | "signed";
   contractStatus: string;
   createdAtIso: string;
+  identityApproved: boolean | null;
 };
 
 const STATUS: Record<Contract["agencyStatus"], { label: string; cls: string }> = {
@@ -81,11 +82,12 @@ export function CarteraManager({ agencyId }: { agencyId: string }) {
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
         body: JSON.stringify({ contractIds }),
       });
-      const json = (await res.json()) as { success?: boolean; sentContracts?: number; noCredits?: boolean; credits?: number; errors?: { message?: string }[] };
+      const json = (await res.json()) as { success?: boolean; sentContracts?: number; noCredits?: boolean; blockedIdentity?: number; credits?: number; errors?: { message?: string }[] };
       if (!res.ok || !json.success) {
         setSendErr(json.errors?.[0]?.message ?? "No se pudo enviar a firma.");
       } else {
         let m = `✅ ${json.sentContracts ?? 0} contrato(s) enviado(s) a firma.`;
+        if (json.blockedIdentity) m += ` ${json.blockedIdentity} bloqueado(s) por identidad reprobada.`;
         if (json.noCredits) m += ` Te quedaste sin créditos (saldo: ${json.credits ?? 0}). Recarga para enviar el resto.`;
         setSendMsg(m);
         await load();
@@ -175,7 +177,11 @@ export function CarteraManager({ agencyId }: { agencyId: string }) {
             <tbody>
               {rows.map((c) => (
                 <tr key={c.contractId} className="border-t border-slate-100">
-                  <td className="px-3 py-2 font-medium text-slate-800">{c.tenantName}</td>
+                  <td className="px-3 py-2 font-medium text-slate-800">
+                    {c.tenantName}
+                    {c.identityApproved === true && <span className="ml-2 text-[11px] font-semibold text-emerald-600" title="Identidad aprobada">✓ ID</span>}
+                    {c.identityApproved === false && <span className="ml-2 text-[11px] font-semibold text-rose-600" title="Identidad reprobada">⛔ ID</span>}
+                  </td>
                   <td className="px-3 py-2 text-slate-600">{c.propertyLabel}</td>
                   <td className="px-3 py-2 text-slate-600">{money(c.monthlyRent)}</td>
                   <td className="px-3 py-2 text-xs text-slate-500">{c.startDate} → {c.endDate}</td>

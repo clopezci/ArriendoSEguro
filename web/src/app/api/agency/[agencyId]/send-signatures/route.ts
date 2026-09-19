@@ -46,6 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     }
   }
 
+  const blockedIdentity = results.filter((r) => r.error === "identity_failed").length;
   const credits = (await getCredits(gate.firestore, agencyId)).balance;
-  return NextResponse.json({ success: true, sentContracts, noCredits, credits, results });
+  return NextResponse.json({ success: true, sentContracts, noCredits, blockedIdentity, credits, results });
 }
