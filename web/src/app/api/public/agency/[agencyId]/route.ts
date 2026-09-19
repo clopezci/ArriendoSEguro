@@ -17,6 +17,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ age
   return NextResponse.json({
     success: true,
     name: agency.name,
+    logoUrl: agency.logoUrl ?? null,
     identityEnabled: isIdentityEnabledForAgency(agency),
     intakeFields: agency.intakeFields ?? [],
   });

@@ -36,6 +36,7 @@ export default function IntakePage() {
   const params = useParams<{ agencyId: string }>();
   const agencyId = params.agencyId;
   const [agencyName, setAgencyName] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [identityEnabled, setIdentityEnabled] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [done, setDone] = useState(false);
@@ -52,9 +53,10 @@ export default function IntakePage() {
     try {
       const res = await fetch(`/api/public/agency/${agencyId}`);
       if (!res.ok) { setNotFound(true); return; }
-      const json = (await res.json()) as { success?: boolean; name?: string; identityEnabled?: boolean; intakeFields?: IntakeField[] };
+      const json = (await res.json()) as { success?: boolean; name?: string; logoUrl?: string | null; identityEnabled?: boolean; intakeFields?: IntakeField[] };
       if (json?.success) {
         setAgencyName(json.name ?? "la agencia");
+        setLogoUrl(json.logoUrl ?? null);
         setIdentityEnabled(json.identityEnabled !== false);
         setFields(json.intakeFields ?? []);
       } else setNotFound(true);
@@ -124,6 +126,10 @@ export default function IntakePage() {
 
   return (
     <main className="mx-auto max-w-lg px-4 py-8">
+      {logoUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={logoUrl} alt={agencyName ?? "Logo"} className="mb-3 h-14 w-auto max-w-[180px] object-contain" />
+      )}
       <p className="text-xs uppercase tracking-wide text-violet-600">Solicitud de arrendamiento</p>
       <h1 className="text-xl font-bold text-slate-900">{agencyName ?? "…"}</h1>
       <p className="mt-1 text-sm text-slate-600">Completa tus datos para agilizar tu contrato de arriendo. Solo toma un minuto.</p>
