@@ -34,6 +34,7 @@ export default function IntakePage() {
   const params = useParams<{ agencyId: string }>();
   const agencyId = params.agencyId;
   const [agencyName, setAgencyName] = useState<string | null>(null);
+  const [identityEnabled, setIdentityEnabled] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -47,9 +48,11 @@ export default function IntakePage() {
     try {
       const res = await fetch(`/api/public/agency/${agencyId}`);
       if (!res.ok) { setNotFound(true); return; }
-      const json = (await res.json()) as { success?: boolean; name?: string };
-      if (json?.success) setAgencyName(json.name ?? "la agencia");
-      else setNotFound(true);
+      const json = (await res.json()) as { success?: boolean; name?: string; identityEnabled?: boolean };
+      if (json?.success) {
+        setAgencyName(json.name ?? "la agencia");
+        setIdentityEnabled(json.identityEnabled !== false);
+      } else setNotFound(true);
     } catch {
       setNotFound(true);
     }
@@ -130,6 +133,7 @@ export default function IntakePage() {
         <input className={input} placeholder="¿Qué inmueble te interesa? (opcional)" value={form.propertyHint} onChange={(e) => set("propertyHint", e.target.value)} />
         <textarea className={input} rows={2} placeholder="Mensaje (opcional)" value={form.note} onChange={(e) => set("note", e.target.value)} />
 
+        {identityEnabled && (
         <div className="rounded-xl border border-dashed border-slate-300 p-3">
           <p className="text-xs font-semibold text-slate-500">Verificación (opcional, agiliza tu aprobación)</p>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -141,6 +145,7 @@ export default function IntakePage() {
             </label>
           </div>
         </div>
+        )}
 
         <button type="button" onClick={() => void submit()} disabled={loading} className="w-full rounded-lg bg-[#5646E5] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40">
           {loading ? "Enviando…" : "Enviar mis datos"}

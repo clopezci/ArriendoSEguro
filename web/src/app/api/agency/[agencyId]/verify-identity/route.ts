@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { FieldValue } from "firebase-admin/firestore";
 import { requireAgencyMember } from "@/lib/auth/requireAgencyMember";
 import { verifyIdentity, isIdentityConfigured } from "@/lib/identity/hubClient";
 import { isIdentityEnabledForAgency } from "@/domain/agencies/types";
-import { CONTRACTS_COLLECTION } from "@/lib/agencies/agencyContracts";
 
 export const runtime = "nodejs";
 const MAX_JSON_BYTES = 12_000_000;
@@ -17,12 +15,12 @@ const schema = z.object({
 });
 
 /**
- * POST /api/agency/[agencyId]/contracts/[contractId]/verify-identity
- * Verifica identidad y GUARDA el resultado en el contrato (`identityCheck`).
- * Ese resultado es el que consulta el envío a firma para bloquear reprobados.
+ * POST /api/agency/[agencyId]/verify-identity — verificación SIN asociar a
+ * contrato (solo consultar), pero dentro del contexto de la agencia: pasa la
+ * subCuenta (con el correo de escalamiento) y respeta el interruptor.
  */
-export async function POST(request: Request, { params }: { params: Promise<{ agencyId: string; contractId: string }> }) {
-  const { agencyId, contractId } = await params;
+export async function POST(request: Request, { params }: { params: Promise<{ agencyId: string }> }) {
+  const { agencyId } = await params;
   const gate = await requireAgencyMember(request, agencyId);
   if (!gate.ok) return gate.response;
   if (!isIdentityConfigured()) {
@@ -30,12 +28,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   }
   if (!isIdentityEnabledForAgency(gate.agency)) {
     return NextResponse.json({ success: false, errors: [{ field: "identity", message: "La agencia tiene desactivado el módulo de identidad." }] }, { status: 409 });
-  }
-
-  const contractRef = gate.firestore.collection(CONTRACTS_COLLECTION).doc(contractId);
-  const snap = await contractRef.get();
-  if (!snap.exists || (snap.data() as Record<string, unknown>).agencyId !== agencyId) {
-    return NextResponse.json({ success: false, errors: [{ field: "contractId", message: "Contrato no encontrado." }] }, { status: 404 });
   }
 
   const raw = await request.text();
@@ -60,24 +52,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   if (!result.available) {
     return NextResponse.json({ success: false, result, errors: [{ field: "identity", message: "No se pudo consultar el servicio de identidad." }] }, { status: 502 });
   }
-
-  // Persistimos un resumen del resultado en el contrato (no las fotos).
-  await contractRef.set(
-    {
-      identityCheck: {
-        approved: result.approved,
-        confianza: result.confianza ?? null,
-        nombreRegistrado: result.nombreRegistrado ?? null,
-        cedulaVigente: result.cedulaVigente ?? null,
-        faceMatch: result.faceMatch ?? null,
-        liveness: result.liveness ?? null,
-        checkedAt: new Date().toISOString(),
-        byUid: gate.user.uid,
-      },
-      updatedAt: FieldValue.serverTimestamp(),
-    },
-    { merge: true },
-  );
-
   return NextResponse.json({ success: true, result });
 }

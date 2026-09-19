@@ -44,6 +44,7 @@ const createSchema = z.object({
   nit: z.string().trim().max(40).optional(),
   contactEmail: z.string().trim().email("Correo inválido."),
   contactPhone: z.string().trim().max(30).optional(),
+  escalationEmail: z.string().trim().email("Correo de escalamiento inválido."),
   memberEmails: z.array(z.string().trim().email()).max(50).optional(),
 });
 
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
       nit: parsed.data.nit,
       contactEmail: parsed.data.contactEmail,
       contactPhone: parsed.data.contactPhone,
+      escalationEmail: parsed.data.escalationEmail,
       memberEmails: parsed.data.memberEmails,
       ownerUid: gate.user.uid,
     });
@@ -87,6 +89,9 @@ const patchSchema = z.object({
   nit: z.string().trim().max(40).optional(),
   contactEmail: z.string().trim().email().optional(),
   contactPhone: z.string().trim().max(30).optional(),
+  escalationEmail: z.string().trim().email().optional(),
+  identityEnabled: z.boolean().optional(),
+  whatsappNumber: z.string().trim().max(30).optional(),
   memberEmails: z.array(z.string().trim().email()).max(50).optional(),
   status: z.enum(["active", "suspended"]).optional(),
   /** Créditos a sumar al saldo (paquete asignado manualmente por admin). */
