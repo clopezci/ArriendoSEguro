@@ -19,3 +19,6 @@ Thumbs.db
 # Otros
 *.log
 npm-debug.log*
+
+# Fotos personales del proyecto (no versionar)
+FotosProyectoPersonal/
