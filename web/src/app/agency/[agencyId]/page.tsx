@@ -13,6 +13,7 @@ import { IdentityCheck } from "@/components/agency/identity-check";
 import { SubmissionsManager } from "@/components/agency/submissions-manager";
 import { AgencyConfig } from "@/components/agency/agency-config";
 import { BuyCredits } from "@/components/agency/buy-credits";
+import { AutomationPanel } from "@/components/agency/automation-panel";
 
 type Summary = {
   agency: { id: string; name: string; nit: string | null; contactEmail: string; status: string; identityEnabled: boolean };
@@ -20,7 +21,7 @@ type Summary = {
   counts: { landlords: number; properties: number };
 };
 
-type Tab = "resumen" | "solicitudes" | "cartera" | "arrendadores" | "inmuebles" | "generar" | "creditos" | "identidad" | "config";
+type Tab = "resumen" | "solicitudes" | "cartera" | "arrendadores" | "inmuebles" | "generar" | "creditos" | "identidad" | "automatizaciones" | "config";
 
 export default function AgencyDashboardPage() {
   const params = useParams<{ agencyId: string }>();
@@ -78,6 +79,7 @@ export default function AgencyDashboardPage() {
     ["generar", "Generar en lote"],
     ["creditos", "Créditos"],
     ...((summary?.agency.identityEnabled ?? true) ? ([["identidad", "Identidad"]] as [Tab, string][]) : []),
+    ["automatizaciones", "Automatizaciones"],
     ["config", "Configuración"],
   ];
 
@@ -132,6 +134,7 @@ export default function AgencyDashboardPage() {
         {tab === "generar" && <BulkGenerator agencyId={agencyId} onGenerated={() => void load()} />}
         {tab === "identidad" && (summary?.agency.identityEnabled ?? true) && <IdentityCheck agencyId={agencyId} />}
         {tab === "creditos" && <BuyCredits agencyId={agencyId} />}
+        {tab === "automatizaciones" && <AutomationPanel agencyId={agencyId} />}
         {tab === "config" && <AgencyConfig agencyId={agencyId} />}
       </div>
     </main>
