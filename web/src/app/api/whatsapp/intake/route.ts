@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getAgency } from "@/lib/agencies/agencyStore";
 import { createOrUpdateSubmission } from "@/lib/agencies/intakeStore";
+import { emitAgencyEvent } from "@/lib/agencies/automation";
 import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequest } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: "agency_unavailable" }, { status: 404 });
   }
 
-  const { deduped } = await createOrUpdateSubmission(firestore, d.agencyId, {
+  const { submission, deduped } = await createOrUpdateSubmission(firestore, d.agencyId, {
     tenant: {
       fullName: d.fullName,
       documentType: d.documentType ?? "CC",
@@ -94,6 +95,14 @@ export async function POST(request: Request) {
     propertyHint: d.propertyHint,
     note: d.note,
     source: "whatsapp",
+  });
+
+  await emitAgencyEvent(firestore, d.agencyId, "submission.created", {
+    submissionId: submission.id,
+    tenant: submission.tenant,
+    propertyHint: submission.propertyHint ?? null,
+    source: "whatsapp",
+    deduped,
   });
 
   return NextResponse.json({ success: true, deduped });

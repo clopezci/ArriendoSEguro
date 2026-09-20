@@ -4,6 +4,7 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getAgency } from "@/lib/agencies/agencyStore";
 import { isIdentityEnabledForAgency } from "@/domain/agencies/types";
 import { createOrUpdateSubmission } from "@/lib/agencies/intakeStore";
+import { emitAgencyEvent } from "@/lib/agencies/automation";
 import { verifyIdentity, isIdentityConfigured } from "@/lib/identity/hubClient";
 import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequest } from "@/lib/security/rate-limit";
 
@@ -100,7 +101,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     }
   }
 
-  const { deduped } = await createOrUpdateSubmission(firestore, agencyId, {
+  const { submission, deduped } = await createOrUpdateSubmission(firestore, agencyId, {
     tenant: {
       fullName: d.fullName,
       documentType: d.documentType ?? "CC",
@@ -120,6 +121,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     },
     identity,
     source: "web",
+  });
+
+  // Automatización: emite la solicitud al webhook de la agencia (n8n/Zapier/CRM).
+  await emitAgencyEvent(firestore, agencyId, "submission.created", {
+    submissionId: submission.id,
+    tenant: submission.tenant,
+    propertyHint: submission.propertyHint ?? null,
+    study: submission.study ?? null,
+    identityApproved: submission.identity?.approved ?? null,
+    deduped,
   });
 
   return NextResponse.json({ success: true, deduped });
