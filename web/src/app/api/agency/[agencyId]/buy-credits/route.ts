@@ -1,12 +1,8 @@
-import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { FieldValue } from "firebase-admin/firestore";
 import { requireAgencyMember } from "@/lib/auth/requireAgencyMember";
 import { getAgencyPlan, getAgencyPlans } from "@/domain/agencies/plans";
-import { getPaymentProvider } from "@/domain/platform-payments/provider-factory";
-import { auditPlatformPaymentEvent } from "@/domain/platform-payments/audit";
-import type { PlatformOrder } from "@/domain/platform-payments/types";
+import { createAgencyCreditOrder } from "@/lib/agencies/creditOrders";
 
 export const runtime = "nodejs";
 
@@ -52,60 +48,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   }
 
   try {
-    const now = new Date().toISOString();
-    const orderRef = firestore.collection("platform_orders").doc();
-    const providerReference = `AS_AGCRED_${Date.now()}_${randomUUID().slice(0, 8)}`;
-    const selected = getPaymentProvider(parsed.data.paymentProvider);
-
-    // Objeto tipado que entiende el proveedor (planCode "plus" solo para armar el
-    // link de pago; el tipo real de la orden se guarda aparte en Firestore).
-    const checkoutOrder: PlatformOrder = {
-      id: orderRef.id,
+    const created = await createAgencyCreditOrder(firestore, {
+      agencyId,
+      plan,
       userId: gate.user.uid,
       userEmail: gate.user.email,
-      leaseProcessId: null,
-      planCode: "plus",
-      amount: plan.priceCop,
-      currency: "COP",
-      status: "created",
-      paymentProvider: selected.providerCode,
-      providerReference,
-      checkoutUrl: "",
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    const checkout = await selected.provider.createCheckout(checkoutOrder);
-    await orderRef.set({
-      ...checkoutOrder,
-      providerReference: checkout.providerReference,
-      checkoutUrl: checkout.checkoutUrl,
-      status: "pending",
-      // --- Datos reales de la compra de créditos de agencia ---
-      orderKind: "agency_credits",
-      agencyId,
-      credits: plan.credits,
-      planName: plan.name,
-      planCodeAgency: plan.code,
-      createdAtServer: FieldValue.serverTimestamp(),
-      updatedAtServer: FieldValue.serverTimestamp(),
+      provider: parsed.data.paymentProvider,
     });
-
-    await auditPlatformPaymentEvent(firestore, "platform_order_created", {
-      orderId: orderRef.id,
-      agencyId,
-      planCode: plan.code,
-      credits: plan.credits,
-      amount: plan.priceCop,
-      provider: selected.providerCode,
-      kind: "agency_credits",
-    });
-
     return NextResponse.json({
       success: true,
-      orderId: orderRef.id,
-      checkoutUrl: checkout.checkoutUrl,
-      providerCode: selected.providerCode,
+      orderId: created.orderId,
+      checkoutUrl: created.checkoutUrl,
+      providerCode: created.providerCode,
       amount: plan.priceCop,
       credits: plan.credits,
     });

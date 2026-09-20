@@ -118,6 +118,12 @@ export interface Agency {
   defaults?: Partial<AgencyContractDefaults>;
   /** Reglas de estudio del inquilino/codeudor configuradas por la agencia. */
   studyRules?: StudyRule[];
+  /**
+   * Auto-recarga (plan Ilimitado): cuando el saldo baja del umbral, se genera
+   * automáticamente una orden del plan elegido y se avisa a la agencia para
+   * pagarla (prepago asistido). `pendingOrderId` evita órdenes duplicadas.
+   */
+  autoRecharge?: { enabled: boolean; planCode: string; thresholdCredits: number; pendingOrderId?: string | null };
   /** Uid del usuario que creó/administra la agencia. */
   ownerUid: string;
   status: AgencyStatus;

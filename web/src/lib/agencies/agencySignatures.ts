@@ -10,6 +10,7 @@ import { getContractLifecycle } from "@/lib/contracts/lifecycle";
 import { CONTRACT_LIFECYCLE_COLLECTION } from "@/domain/contracts/contractLifecycle";
 import { consumeCredit } from "@/lib/agencies/agencyStore";
 import { CONTRACTS_COLLECTION, CONTRACT_VERSIONS_COLLECTION } from "@/lib/agencies/agencyContracts";
+import { triggerAutoRechargeIfNeeded } from "@/lib/agencies/autoRecharge";
 
 type PartyPerson = { fullName: string; email: string; documentType: string; documentNumber: string; phone?: string };
 type Payload = {
@@ -186,6 +187,10 @@ export async function sendAgencySignaturesForContract(
       contractRef.set({ status: "signature_in_progress", agencyStatus: "sent", updatedAt: FieldValue.serverTimestamp() }, { merge: true }),
       versionRef.set({ status: "ready_for_signature", signingRoundStartedAt: now.toISOString(), signingSnapshotDocumentHash: version.documentHash, updatedAt: FieldValue.serverTimestamp() }, { merge: true }),
     ]);
+
+    // Plan Ilimitado: si el saldo bajó del umbral tras consumir este crédito,
+    // dispara la auto-recarga asistida (genera orden + avisa). Best-effort.
+    if (creditConsumed) await triggerAutoRechargeIfNeeded(firestore, agencyId, actorUid);
 
     return { contractId, ok: true, sent, creditConsumed };
   } catch (err) {

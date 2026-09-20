@@ -90,7 +90,7 @@ export async function createAgency(firestore: Firestore, params: CreateAgencyPar
 export async function updateAgency(
   firestore: Firestore,
   agencyId: string,
-  patch: Partial<Pick<Agency, "name" | "nit" | "contactEmail" | "contactPhone" | "escalationEmail" | "identityEnabled" | "whatsappNumber" | "intakeFields" | "defaults" | "studyRules" | "logoUrl" | "memberEmails" | "status">>,
+  patch: Partial<Pick<Agency, "name" | "nit" | "contactEmail" | "contactPhone" | "escalationEmail" | "identityEnabled" | "whatsappNumber" | "intakeFields" | "defaults" | "studyRules" | "autoRecharge" | "logoUrl" | "memberEmails" | "status">>,
 ): Promise<void> {
   const clean: Record<string, unknown> = { updatedAt: nowIso() };
   if (typeof patch.name === "string") clean.name = patch.name.trim();
@@ -102,6 +102,17 @@ export async function updateAgency(
   if (typeof patch.whatsappNumber === "string") clean.whatsappNumber = patch.whatsappNumber.replace(/[^\d+]/g, "");
   if (patch.intakeFields !== undefined) clean.intakeFields = sanitizeIntakeFields(patch.intakeFields);
   if (patch.studyRules !== undefined) clean.studyRules = sanitizeStudyRules(patch.studyRules);
+  if (patch.autoRecharge !== undefined) {
+    const a = patch.autoRecharge;
+    clean.autoRecharge = a
+      ? {
+          enabled: a.enabled === true,
+          planCode: String(a.planCode ?? "").slice(0, 40),
+          thresholdCredits: Math.max(0, Math.floor(Number(a.thresholdCredits ?? 0))),
+          ...(a.pendingOrderId !== undefined ? { pendingOrderId: a.pendingOrderId } : {}),
+        }
+      : null;
+  }
   if (patch.defaults !== undefined) {
     const d = patch.defaults ?? {};
     const policy = d.paymentSupportPolicy;
