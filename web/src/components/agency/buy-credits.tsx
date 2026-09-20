@@ -17,16 +17,48 @@ export function BuyCredits({ agencyId }: { agencyId: string }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  // Auto-recarga (plan Ilimitado)
+  const [ar, setAr] = useState<{ enabled: boolean; planCode: string; thresholdCredits: number }>({ enabled: false, planCode: "", thresholdCredits: 3 });
+  const [arBusy, setArBusy] = useState(false);
+  const [arMsg, setArMsg] = useState<string | null>(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/agency/${agencyId}/buy-credits`, { headers: { ...(await buildAuthHeaders(user)) } });
-      const json = (await res.json()) as { success?: boolean; plans?: Plan[] };
-      if (json?.success) setPlans(json.plans ?? []);
+      const [pRes, arRes] = await Promise.all([
+        fetch(`/api/agency/${agencyId}/buy-credits`, { headers: { ...(await buildAuthHeaders(user)) } }),
+        fetch(`/api/agency/${agencyId}/auto-recharge`, { headers: { ...(await buildAuthHeaders(user)) } }),
+      ]);
+      const pJson = (await pRes.json()) as { success?: boolean; plans?: Plan[] };
+      if (pJson?.success) setPlans(pJson.plans ?? []);
+      const arJson = (await arRes.json()) as { success?: boolean; autoRecharge?: { enabled: boolean; planCode: string; thresholdCredits: number } };
+      if (arJson?.success && arJson.autoRecharge) setAr(arJson.autoRecharge);
     } finally {
       setLoading(false);
     }
   }, [agencyId, user]);
+
+  async function saveAutoRecharge() {
+    setArMsg(null);
+    if (ar.enabled && !ar.planCode) {
+      setArMsg("Elige un plan para la auto-recarga.");
+      return;
+    }
+    setArBusy(true);
+    try {
+      const res = await fetch(`/api/agency/${agencyId}/auto-recharge`, {
+        method: "PUT",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify(ar),
+      });
+      const json = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      setArMsg(res.ok && json.success ? "Guardado ✅" : json.errors?.[0]?.message ?? "No se pudo guardar.");
+    } catch {
+      setArMsg("Error de red al guardar.");
+    } finally {
+      setArBusy(false);
+    }
+  }
 
   useEffect(() => {
     void load();
@@ -79,6 +111,62 @@ export function BuyCredits({ agencyId }: { agencyId: string }) {
         ))}
       </div>
       {err && <p className="text-xs text-rose-600">{err}</p>}
+
+      <div className="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
+        <label className="flex items-center gap-2 text-sm font-bold text-amber-900">
+          <input
+            type="checkbox"
+            checked={ar.enabled}
+            onChange={(e) => setAr((s) => ({ ...s, enabled: e.target.checked }))}
+            className="h-4 w-4"
+          />
+          ♾️ Auto-recarga (plan Ilimitado)
+        </label>
+        <p className="mt-1 text-xs text-slate-600">
+          Cuando tu saldo baje del umbral, generamos la orden del plan elegido y te enviamos el link de pago por correo, para que nunca frenes tus contratos.
+        </p>
+        {ar.enabled && (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <label className="text-xs font-semibold text-slate-700">
+              Plan a recargar
+              <select
+                value={ar.planCode}
+                onChange={(e) => setAr((s) => ({ ...s, planCode: e.target.value }))}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              >
+                <option value="">Elige un plan…</option>
+                {plans.map((p) => (
+                  <option key={p.code} value={p.code}>
+                    {p.name} · {p.credits} créditos · {money(p.priceCop)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-semibold text-slate-700">
+              Recargar cuando el saldo sea ≤
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={ar.thresholdCredits}
+                onChange={(e) => setAr((s) => ({ ...s, thresholdCredits: Math.max(0, Math.floor(Number(e.target.value) || 0)) }))}
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+        )}
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => void saveAutoRecharge()}
+            disabled={arBusy}
+            className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+          >
+            {arBusy ? "Guardando…" : "Guardar auto-recarga"}
+          </button>
+          {arMsg && <span className="text-xs text-slate-600">{arMsg}</span>}
+        </div>
+      </div>
     </div>
   );
 }
