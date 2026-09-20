@@ -27,16 +27,49 @@ export function StudyRulesManager({ agencyId }: { agencyId: string }) {
   const [rules, setRules] = useState<Rule[]>([]);
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  // Estudio externo (DataCrédito / agregador / proxy propio).
+  const [ext, setExt] = useState({ endpoint: "", scorePath: "score" });
+  const [extApiKey, setExtApiKey] = useState("");
+  const [extHasKey, setExtHasKey] = useState(false);
+  const [extSecrets, setExtSecrets] = useState(true);
+  const [extMsg, setExtMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch(`/api/agency/${agencyId}/study-rules`, { headers: { ...(await buildAuthHeaders(user)) } });
-      const json = (await res.json()) as { success?: boolean; rules?: Rule[] };
-      if (json?.success) setRules(json.rules ?? []);
+      const [rRes, eRes] = await Promise.all([
+        fetch(`/api/agency/${agencyId}/study-rules`, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json()),
+        fetch(`/api/agency/${agencyId}/external-study`, { headers: { ...(await buildAuthHeaders(user)) } }).then((r) => r.json()),
+      ]);
+      if (rRes?.success) setRules(rRes.rules ?? []);
+      if (eRes?.success && eRes.config) {
+        setExt({ endpoint: eRes.config.endpoint ?? "", scorePath: eRes.config.scorePath ?? "score" });
+        setExtHasKey(Boolean(eRes.config.hasKey));
+        setExtSecrets(eRes.config.secretsAvailable !== false);
+      }
     } catch {
       /* noop */
     }
   }, [agencyId, user]);
+
+  async function saveExt() {
+    setExtMsg(null);
+    try {
+      const res = await fetch(`/api/agency/${agencyId}/external-study`, {
+        method: "PUT",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ endpoint: ext.endpoint.trim(), scorePath: ext.scorePath.trim() || "score", ...(extApiKey.trim() ? { apiKey: extApiKey.trim() } : {}) }),
+      });
+      const json = (await res.json()) as { success?: boolean; config?: { hasKey?: boolean }; errors?: { message?: string }[] };
+      if (!res.ok || !json.success) setExtMsg(json.errors?.[0]?.message ?? "No se pudo guardar.");
+      else {
+        setExtMsg("✅ Estudio externo guardado.");
+        setExtApiKey("");
+        setExtHasKey(Boolean(json.config?.hasKey));
+      }
+    } catch {
+      setExtMsg("Error de red.");
+    }
+  }
 
   useEffect(() => {
     void load();
@@ -120,6 +153,22 @@ export function StudyRulesManager({ agencyId }: { agencyId: string }) {
             <button type="button" onClick={() => void save()} disabled={loading} className="rounded-lg bg-[#5646E5] px-4 py-1.5 text-xs font-bold text-white disabled:opacity-40">{loading ? "…" : "Guardar reglas"}</button>
           </div>
           {msg && <p className="text-xs font-semibold text-emerald-700">{msg}</p>}
+
+          <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+            <p className="text-xs font-bold text-slate-700">Estudio externo (DataCrédito / agregador / proxy propio)</p>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Pon el endpoint de tu proveedor (o tu propio proxy) y tu API key. La llave se guarda <strong>cifrada</strong>, nunca se muestra ni se registra. Con el botón “Estudio” en cada solicitud se consulta y trae el score.
+            </p>
+            {!extSecrets && <p className="mt-1 text-[11px] text-amber-600">⚠ Falta configurar el cifrado del servidor (AGENCY_SECRETS_KEY) para poder guardar llaves.</p>}
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <input className={`${input} sm:col-span-2`} placeholder="Endpoint (https://…)" value={ext.endpoint} onChange={(e) => setExt((s) => ({ ...s, endpoint: e.target.value }))} />
+              <input className={input} placeholder="Ruta del score en la respuesta (ej. score)" value={ext.scorePath} onChange={(e) => setExt((s) => ({ ...s, scorePath: e.target.value }))} />
+              <input className={input} type="password" placeholder={extHasKey ? "API key (guardada — escribe para reemplazar)" : "API key"} value={extApiKey} onChange={(e) => setExtApiKey(e.target.value)} />
+            </div>
+            <button type="button" onClick={() => void saveExt()} className="mt-2 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50">Guardar estudio externo</button>
+            {extHasKey && <span className="ml-2 text-[11px] text-emerald-600">✓ llave configurada</span>}
+            {extMsg && <p className="mt-1 text-xs font-semibold text-emerald-700">{extMsg}</p>}
+          </div>
         </div>
       )}
     </div>

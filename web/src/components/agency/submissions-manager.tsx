@@ -14,7 +14,7 @@ type Submission = {
   propertyHint?: string;
   note?: string;
   custom?: Record<string, string>;
-  study?: { income?: number; contractType?: string; hasCodebtor?: boolean; canonReference?: number };
+  study?: { income?: number; contractType?: string; hasCodebtor?: boolean; canonReference?: number; score?: number };
   identity?: { approved: boolean; confianza: number | null; nombreRegistrado: string | null };
   createdAtIso: string;
 };
@@ -78,6 +78,22 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
     await load();
   }
 
+  async function runStudy(id: string) {
+    setMsg(null);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/agency/${agencyId}/submissions/${id}/run-study`, { method: "POST", headers: { ...(await buildAuthHeaders(user)) } });
+      const json = (await res.json()) as { success?: boolean; score?: number | null; errors?: { message?: string }[] };
+      if (!res.ok || !json.success) setErr(json.errors?.[0]?.message ?? "No se pudo correr el estudio externo.");
+      else {
+        setMsg(`✅ Estudio externo corrido${json.score != null ? ` (score: ${json.score})` : ""}.`);
+        await load();
+      }
+    } catch {
+      setErr("Error de red al correr el estudio.");
+    }
+  }
+
   function copyLink() {
     try {
       void navigator.clipboard.writeText(intakeUrl);
@@ -129,6 +145,7 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
               contractType: s.study?.contractType,
               hasCodebtor: s.study?.hasCodebtor,
               canonReference: s.study?.canonReference,
+              score: s.study?.score,
               custom: s.custom,
             })
           : null;
@@ -155,6 +172,7 @@ export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string
               )}
             </div>
             <div className="flex gap-2">
+              <button type="button" onClick={() => void runStudy(s.id)} className="rounded-md border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50">Estudio</button>
               <button type="button" onClick={() => setOpenId(openId === s.id ? null : s.id)} className="rounded-md border border-violet-300 px-3 py-1 text-xs font-semibold text-violet-700 hover:bg-violet-50">
                 {openId === s.id ? "Cerrar" : "Generar contrato"}
               </button>
