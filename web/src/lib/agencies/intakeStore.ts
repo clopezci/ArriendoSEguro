@@ -33,7 +33,7 @@ export interface IntakeSubmission {
   /** Respuestas a los campos personalizados de la agencia (key → valor). */
   custom?: Record<string, string>;
   /** Datos para el estudio de arrendamiento. */
-  study?: { income?: number; contractType?: string; hasCodebtor?: boolean; canonReference?: number };
+  study?: { income?: number; contractType?: string; hasCodebtor?: boolean; canonReference?: number; score?: number };
   identity?: IntakeIdentity;
   status: IntakeStatus;
   contractId?: string;
@@ -115,6 +115,20 @@ export async function listSubmissions(firestore: Firestore, agencyId: string, st
 export async function getSubmission(firestore: Firestore, id: string): Promise<IntakeSubmission | null> {
   const snap = await firestore.collection(INTAKE_SUBMISSIONS_COLLECTION).doc(id).get();
   return snap.exists ? ({ ...(snap.data() as IntakeSubmission), id: snap.id }) : null;
+}
+
+/** Actualiza el score externo (u otros campos de estudio) de una solicitud. */
+export async function updateSubmissionStudy(
+  firestore: Firestore,
+  id: string,
+  studyPatch: { score?: number },
+): Promise<void> {
+  const snap = await firestore.collection(INTAKE_SUBMISSIONS_COLLECTION).doc(id).get();
+  const cur = snap.exists ? ((snap.data() as IntakeSubmission).study ?? {}) : {};
+  await firestore.collection(INTAKE_SUBMISSIONS_COLLECTION).doc(id).set(
+    { study: { ...cur, ...studyPatch }, updatedAtIso: new Date().toISOString() },
+    { merge: true },
+  );
 }
 
 export async function setSubmissionStatus(
