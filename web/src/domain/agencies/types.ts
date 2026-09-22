@@ -19,7 +19,13 @@ export const AGENCY_LANDLORDS_COLLECTION = "agency_landlords";
 export const AGENCY_PROPERTIES_COLLECTION = "agency_properties";
 export const AGENCY_CREDITS_COLLECTION = "agency_credits";
 
+/** Créditos gratuitos que recibe una agencia al registrarse sola (prueba). */
+export const AGENCY_TRIAL_CREDITS = 3;
+
 export type AgencyStatus = "active" | "suspended";
+
+/** Cómo se dio de alta la agencia: manual (admin) o auto-registro público. */
+export type AgencyOrigin = "admin" | "self_signup";
 
 /** Valores por defecto que la agencia aplica a todos sus contratos. */
 export interface AgencyContractDefaults {
@@ -124,6 +130,16 @@ export interface Agency {
    * pagarla (prepago asistido). `pendingOrderId` evita órdenes duplicadas.
    */
   autoRecharge?: { enabled: boolean; planCode: string; thresholdCredits: number; pendingOrderId?: string | null };
+  /** Cómo se dio de alta (manual admin vs auto-registro). Por defecto "admin". */
+  origin?: AgencyOrigin;
+  /**
+   * Prueba gratuita (auto-registro): la agencia arranca con créditos de cortesía.
+   * El admin puede revocar la prueba (suspender) desde el panel.
+   */
+  trial?: { active: boolean; startedAt: string; creditsGranted: number };
+  /** Mensaje que se le mostró/envió a la agencia al revocar (auditoría). */
+  suspendedMessage?: string;
+  suspendedAt?: string;
   /** Uid del usuario que creó/administra la agencia. */
   ownerUid: string;
   status: AgencyStatus;

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { LandingPublicHeader } from "@/components/landing/landing-public-header";
+import { AGENCY_TRIAL_CREDITS } from "@/domain/agencies/types";
 
 export const metadata: Metadata = {
   title: "ArriendoSeguro para agencias e inmobiliarias | Contratos en volumen",
@@ -60,11 +61,11 @@ export default function AgenciasLanding() {
               Un solo enlace para que tus inquilinos se registren solos, generación de contratos en lote, verificación de identidad, firmas masivas y tu cartera en un lugar. Legal (Ley 820) y con precio por volumen.
             </p>
             <div className="mx-auto mt-5 flex w-full max-w-md flex-col gap-2.5">
-              <Link href="/agency" className="inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-[#FF6B4A] px-6 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95">
-                Entrar a mi panel →
+              <Link href="/agencias/registro" className="inline-flex min-h-[52px] items-center justify-center rounded-2xl bg-[#FF6B4A] px-6 text-base font-bold text-white shadow-lg shadow-orange-500/30 transition hover:brightness-105 active:scale-95">
+                Empezar prueba gratis →
               </Link>
-              <Link href="/contacto?motivo=agencia" className="inline-flex min-h-[52px] items-center justify-center rounded-2xl border-2 border-[#5646E5] bg-[#ECE9FB]/50 px-6 text-base font-bold text-[#5646E5] transition hover:bg-[#ECE9FB]">
-                Quiero activar mi agencia
+              <Link href="/agency" className="inline-flex min-h-[52px] items-center justify-center rounded-2xl border-2 border-[#5646E5] bg-[#ECE9FB]/50 px-6 text-base font-bold text-[#5646E5] transition hover:bg-[#ECE9FB]">
+                Ya tengo cuenta — entrar
               </Link>
             </div>
           </section>
@@ -99,9 +100,9 @@ export default function AgenciasLanding() {
           {/* CTA final */}
           <section className="mt-10 rounded-3xl bg-gradient-to-r from-[#5646E5] to-[#8B6BFF] p-6 text-center text-white">
             <h2 className="text-xl font-black">¿Manejas varios arriendos?</h2>
-            <p className="mx-auto mt-1 max-w-xl text-sm text-white/85">Te activamos tu agencia con precio por volumen y te ayudamos a montar tus primeros contratos.</p>
+            <p className="mx-auto mt-1 max-w-xl text-sm text-white/85">Crea tu agencia y arranca con {`${AGENCY_TRIAL_CREDITS}`} contratos gratis. Sin tarjeta, sin esperas.</p>
             <div className="mx-auto mt-4 flex w-full max-w-md flex-col gap-2.5 sm:flex-row sm:justify-center">
-              <Link href="/agency" className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-white px-6 text-sm font-bold text-[#5646E5] transition hover:brightness-95">Entrar a mi panel</Link>
+              <Link href="/agencias/registro" className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-white px-6 text-sm font-bold text-[#5646E5] transition hover:brightness-95">Empezar prueba gratis</Link>
               <Link href="/contacto?motivo=agencia" className="inline-flex min-h-[48px] items-center justify-center rounded-2xl border-2 border-white/70 px-6 text-sm font-bold text-white transition hover:bg-white/10">Hablar con nosotros</Link>
             </div>
           </section>

@@ -38,7 +38,10 @@ export type EmailTemplateCode =
   | "terminationResponseEmail"
   | "deliveryActReminderEmail"
   | "paymentEscalationEmail"
-  | "agencyAutoRechargeEmail";
+  | "agencyAutoRechargeEmail"
+  | "agencyTrialWelcomeEmail"
+  | "agencyTrialAdminEmail"
+  | "agencyTrialRevokedEmail";
 
 export type CompiledEmailTemplate = {
   subject: string;

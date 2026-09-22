@@ -18,6 +18,9 @@ type AgencyRow = {
   status: "active" | "suspended";
   credits: number;
   createdAt: string;
+  origin?: "admin" | "self_signup";
+  trial?: { active: boolean; startedAt: string; creditsGranted: number };
+  suspendedMessage?: string;
 };
 
 export function AgenciasPanel() {
@@ -26,6 +29,8 @@ export function AgenciasPanel() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  const [onlyTrial, setOnlyTrial] = useState(false);
 
   // Formulario de creación.
   const [name, setName] = useState("");
@@ -151,9 +156,17 @@ export function AgenciasPanel() {
 
       {/* Lista */}
       <div className="space-y-3">
-        <h4 className="text-xs font-bold uppercase text-slate-500">Agencias ({rows.length})</h4>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h4 className="text-xs font-bold uppercase text-slate-500">
+            Agencias ({rows.length}) · en prueba: {rows.filter((r) => r.trial?.active).length}
+          </h4>
+          <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+            <input type="checkbox" checked={onlyTrial} onChange={(e) => setOnlyTrial(e.target.checked)} className="h-3.5 w-3.5" />
+            Ver solo en prueba
+          </label>
+        </div>
         {rows.length === 0 && <p className="text-xs text-slate-400">Aún no hay agencias.</p>}
-        {rows.map((a) => (
+        {(onlyTrial ? rows.filter((r) => r.trial?.active) : rows).map((a) => (
           <AgencyCard key={a.id} agency={a} loading={loading} onPatch={patchAgency} />
         ))}
       </div>
@@ -172,6 +185,7 @@ function AgencyCard({
 }) {
   const [creditsToAdd, setCreditsToAdd] = useState("");
   const [newMember, setNewMember] = useState("");
+  const [revokeMsg, setRevokeMsg] = useState("");
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm">
@@ -186,6 +200,12 @@ function AgencyCard({
           >
             {agency.status === "active" ? "activa" : "suspendida"}
           </span>
+          {agency.trial?.active && (
+            <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">en prueba</span>
+          )}
+          {agency.origin === "self_signup" && (
+            <span className="ml-2 rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-700">auto-registro</span>
+          )}
         </div>
         <span className="rounded-lg bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
           {agency.credits} créditos
@@ -259,21 +279,50 @@ function AgencyCard({
           {agency.identityEnabled === false ? "Activar identidad" : "Apagar identidad"}
         </button>
 
-        <button
-          type="button"
-          disabled={loading}
-          onClick={() =>
-            void onPatch(
-              agency.id,
-              { status: agency.status === "active" ? "suspended" : "active" },
-              `Agencia ${agency.status === "active" ? "suspendida" : "reactivada"}.`,
-            )
-          }
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-40"
-        >
-          {agency.status === "active" ? "Suspender" : "Reactivar"}
-        </button>
+        {agency.status !== "active" && (
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => void onPatch(agency.id, { status: "active" }, `Agencia ${agency.name} reactivada.`)}
+            className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-40"
+          >
+            Reactivar
+          </button>
+        )}
       </div>
+
+      {/* Revocar / suspender con mensaje que le llega a la agencia por correo. */}
+      {agency.status === "active" && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-rose-100 bg-rose-50/40 p-2.5">
+          <input
+            type="text"
+            value={revokeMsg}
+            onChange={(e) => setRevokeMsg(e.target.value)}
+            placeholder="Mensaje para la agencia (opcional)"
+            maxLength={500}
+            className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-sm"
+          />
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => {
+              const note = revokeMsg.trim();
+              void onPatch(
+                agency.id,
+                { status: "suspended", ...(note ? { notifyMessage: note } : {}) },
+                `Prueba de ${agency.name} revocada${note ? " (se le envió el mensaje)" : ""}.`,
+              );
+              setRevokeMsg("");
+            }}
+            className="rounded-lg border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-40"
+          >
+            Revocar prueba
+          </button>
+        </div>
+      )}
+      {agency.status !== "active" && agency.suspendedMessage && (
+        <p className="mt-2 text-[11px] text-slate-400">Mensaje enviado: “{agency.suspendedMessage}”</p>
+      )}
     </div>
   );
 }

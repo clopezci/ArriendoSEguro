@@ -22,6 +22,39 @@ export function BuyCredits({ agencyId }: { agencyId: string }) {
   const [arBusy, setArBusy] = useState(false);
   const [arMsg, setArMsg] = useState<string | null>(null);
 
+  // Dudas / solicitudes (llegan al equipo por correo + Telegram)
+  const [inq, setInq] = useState("");
+  const [inqTopic, setInqTopic] = useState<"plan" | "duda" | "soporte" | "otro">("plan");
+  const [inqBusy, setInqBusy] = useState(false);
+  const [inqMsg, setInqMsg] = useState<string | null>(null);
+
+  async function sendInquiry() {
+    setInqMsg(null);
+    if (inq.trim().length < 3) {
+      setInqMsg("Escribe tu mensaje.");
+      return;
+    }
+    setInqBusy(true);
+    try {
+      const res = await fetch(`/api/agency/${agencyId}/inquiry`, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
+        body: JSON.stringify({ topic: inqTopic, message: inq.trim() }),
+      });
+      const json = (await res.json()) as { success?: boolean; errors?: { message?: string }[] };
+      if (res.ok && json.success) {
+        setInqMsg("¡Enviado! Te responderemos pronto.");
+        setInq("");
+      } else {
+        setInqMsg(json.errors?.[0]?.message ?? "No se pudo enviar.");
+      }
+    } catch {
+      setInqMsg("Error de red al enviar.");
+    } finally {
+      setInqBusy(false);
+    }
+  }
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -165,6 +198,42 @@ export function BuyCredits({ agencyId }: { agencyId: string }) {
             {arBusy ? "Guardando…" : "Guardar auto-recarga"}
           </button>
           {arMsg && <span className="text-xs text-slate-600">{arMsg}</span>}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <p className="text-sm font-bold text-slate-800">💬 ¿Dudas o quieres un plan a tu medida?</p>
+        <p className="mt-1 text-xs text-slate-600">Escríbenos y te respondemos pronto. Útil si se te acabaron los créditos o necesitas un volumen mayor.</p>
+        <div className="mt-3 flex flex-col gap-2">
+          <select
+            value={inqTopic}
+            onChange={(e) => setInqTopic(e.target.value as typeof inqTopic)}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm sm:w-56"
+          >
+            <option value="plan">Quiero un plan / más créditos</option>
+            <option value="duda">Tengo una duda</option>
+            <option value="soporte">Necesito soporte</option>
+            <option value="otro">Otro</option>
+          </select>
+          <textarea
+            value={inq}
+            onChange={(e) => setInq(e.target.value)}
+            rows={3}
+            maxLength={1500}
+            placeholder="Cuéntanos en qué te ayudamos…"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => void sendInquiry()}
+              disabled={inqBusy}
+              className="rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
+            >
+              {inqBusy ? "Enviando…" : "Enviar"}
+            </button>
+            {inqMsg && <span className="text-xs text-slate-600">{inqMsg}</span>}
+          </div>
         </div>
       </div>
     </div>
