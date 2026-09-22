@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import { addCredits, createAgency } from "@/lib/agencies/agencyStore";
-import { AGENCY_TRIAL_CREDITS } from "@/domain/agencies/types";
+import { addCredits, createAgency, listAgenciesForEmail } from "@/lib/agencies/agencyStore";
+import { AGENCY_TRIAL_CREDITS, normalizeAgencyEmail } from "@/domain/agencies/types";
 import { sendEmail } from "@/services/email/sendEmail";
 import { sendTelegram } from "@/services/telegram/sendTelegram";
 import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequest } from "@/lib/security/rate-limit";
@@ -54,6 +54,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, errors: parsed.error.issues.map((i) => ({ field: i.path.join("."), message: i.message })) }, { status: 422 });
   }
   const d = parsed.data;
+
+  // Anti-abuso/duplicados: un correo = una agencia. Si ya existe, lo mandamos a
+  // su panel en vez de crear otra prueba (evita farmear créditos gratis).
+  const existing = await listAgenciesForEmail(firestore, normalizeAgencyEmail(d.contactEmail)).catch(() => []);
+  if (existing.length > 0) {
+    return NextResponse.json(
+      { success: false, errors: [{ field: "contactEmail", message: "Ya existe una cuenta con este correo. Entra a tu panel en /agency." }] },
+      { status: 409 },
+    );
+  }
 
   try {
     const now = new Date().toISOString();
