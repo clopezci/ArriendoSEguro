@@ -49,12 +49,16 @@ function addMonthsIso(startIso: string, months: number): string {
  * reutilizable de la agencia y una fila de datos. Rellena valores por defecto
  * seguros (servicios a cargo del arrendatario, umbral de mora, versión activa)
  * y el canon en letras. Si no hay valor comercial, marca `commercialValueUnknown`
- * + `noCapAcknowledgement` (la agencia asume la responsabilidad del tope).
+ * y sólo marca `noCapAcknowledgement` si la agencia **aceptó explícitamente** la
+ * declaración de responsabilidad (`opts.noCapAcknowledged`). Si no la aceptó, el
+ * pago queda sin reconocimiento y `validateContractData` lo rechaza — así el tope
+ * legal (Ley 820) no se omite en silencio; requiere una aceptación humana.
  */
 export function buildLeasePayloadFromRow(
   landlord: PersonParty,
   row: BulkContractRow,
   defaults: AgencyContractDefaults = DEFAULT_AGENCY_CONTRACT_DEFAULTS,
+  opts: { noCapAcknowledged?: boolean } = {},
 ): ResidentialLeaseContractInput {
   const generatedAt = new Date().toISOString();
   const endDate = row.lease.endDate?.trim() || addMonthsIso(row.lease.startDate, row.lease.termMonths);
@@ -72,7 +76,7 @@ export function buildLeasePayloadFromRow(
       registryNumber: row.property.registryNumber ?? "",
       commercialValue: hasCommercialValue ? (row.property.commercialValue as number) : 0,
       legalRentCap: hasCommercialValue ? Math.round((row.property.commercialValue as number) * 0.01) : 0,
-      ...(hasCommercialValue ? {} : { commercialValueUnknown: true, noCapAcknowledgement: true }),
+      ...(hasCommercialValue ? {} : { commercialValueUnknown: true, noCapAcknowledgement: opts.noCapAcknowledged === true }),
     },
     lease: {
       monthlyRent: row.lease.monthlyRent,

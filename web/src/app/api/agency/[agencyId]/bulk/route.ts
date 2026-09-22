@@ -47,6 +47,9 @@ const rowSchema = z.object({
 const bodySchema = z.object({
   landlordId: z.string().trim().min(1),
   rows: z.array(rowSchema).min(1).max(MAX_ROWS),
+  /** Aceptación de responsabilidad para las filas sin valor comercial (se omite
+   * el tope del 1%). Sin esto, esas filas se rechazan con su error. */
+  noCapAcknowledged: z.boolean().optional(),
 });
 
 /**
@@ -91,7 +94,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   for (let i = 0; i < parsed.data.rows.length; i++) {
     const row = parsed.data.rows[i] as BulkContractRow;
     try {
-      const payload = buildLeasePayloadFromRow(landlord.party, row, defaults);
+      const payload = buildLeasePayloadFromRow(landlord.party, row, defaults, {
+        noCapAcknowledged: parsed.data.noCapAcknowledged === true,
+      });
       const validation = validateContractData(payload);
       if (!validation.ok) {
         results.push({ index: i, ok: false, tenantName: row.tenant.fullName, errors: validation.issues });

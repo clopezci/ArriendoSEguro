@@ -37,6 +37,9 @@ const schema = z.object({
     startDate: z.string().trim().min(1),
     termMonths: z.number().int().min(1).max(120),
   }),
+  /** Aceptación explícita de responsabilidad cuando no se conoce el valor
+   * comercial (se omite el tope del 1%). Sin esto, la generación se rechaza. */
+  noCapAcknowledged: z.boolean().optional(),
 });
 
 /**
@@ -126,7 +129,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
     },
   };
 
-  const payload = buildLeasePayloadFromRow(landlord.party, row, effectiveAgencyDefaults(gate.agency));
+  const payload = buildLeasePayloadFromRow(landlord.party, row, effectiveAgencyDefaults(gate.agency), {
+    noCapAcknowledged: parsed.data.noCapAcknowledged === true,
+  });
   const validation = validateContractData(payload);
   if (!validation.ok) {
     return NextResponse.json({ success: false, errors: validation.issues }, { status: 422 });

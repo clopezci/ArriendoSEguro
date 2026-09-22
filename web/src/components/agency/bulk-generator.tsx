@@ -115,6 +115,7 @@ export function BulkGenerator({ agencyId, onGenerated }: { agencyId: string; onG
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<RowResult[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [noCapAck, setNoCapAck] = useState(false);
 
   const loadLandlords = useCallback(async () => {
     const res = await fetch(`/api/agency/${agencyId}/landlords`, { headers: { ...(await buildAuthHeaders(user)) } });
@@ -159,7 +160,7 @@ export function BulkGenerator({ agencyId, onGenerated }: { agencyId: string; onG
       const res = await fetch(`/api/agency/${agencyId}/bulk`, {
         method: "POST",
         headers: { "content-type": "application/json", ...(await buildAuthHeaders(user)) },
-        body: JSON.stringify({ landlordId, rows }),
+        body: JSON.stringify({ landlordId, rows, noCapAcknowledged: noCapAck }),
       });
       const json = (await res.json()) as { success?: boolean; results?: RowResult[]; errors?: { message?: string }[] };
       if (!res.ok || !json.success) setErr(json.errors?.[0]?.message ?? "No se pudo generar el lote.");
@@ -185,7 +186,11 @@ export function BulkGenerator({ agencyId, onGenerated }: { agencyId: string; onG
           1) Elige el arrendador. 2) Descarga la plantilla, llénala con tus inquilinos e inmuebles. 3) Súbela o
           pégala aquí y genera. Los contratos quedan como borradores en tu cartera, listos para enviar a firma.
         </p>
-        <p className="mt-1 text-[11px] text-slate-400">Si no pones valor comercial, el tope legal del 1% queda bajo tu responsabilidad (la app lo deja constar).</p>
+        <p className="mt-1 text-[11px] text-slate-400">Pon el valor comercial de cada inmueble para validar el tope legal del 1% (Ley 820). Para las filas sin valor comercial, marca la casilla de responsabilidad abajo; si no, esas filas se rechazan.</p>
+        <label className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50/60 p-2.5 text-[11px] text-amber-900">
+          <input type="checkbox" checked={noCapAck} onChange={(e) => setNoCapAck(e.target.checked)} className="mt-0.5" />
+          <span>Declaro que para las filas sin valor comercial no conozco el avalúo y asumo la responsabilidad del canon (se omite el tope del 1%).</span>
+        </label>
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
