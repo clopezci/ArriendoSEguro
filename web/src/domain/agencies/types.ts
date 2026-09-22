@@ -19,8 +19,12 @@ export const AGENCY_LANDLORDS_COLLECTION = "agency_landlords";
 export const AGENCY_PROPERTIES_COLLECTION = "agency_properties";
 export const AGENCY_CREDITS_COLLECTION = "agency_credits";
 
-/** Créditos gratuitos que recibe una agencia al registrarse sola (prueba). */
-export const AGENCY_TRIAL_CREDITS = 3;
+/**
+ * Créditos gratuitos que recibe una agencia al registrarse sola (prueba).
+ * Bastan 2: la experiencia es idéntica para 2 o 100 contratos. Si la agencia
+ * quiere una prueba más grande, lo solicita (o compra) desde el panel.
+ */
+export const AGENCY_TRIAL_CREDITS = 2;
 
 export type AgencyStatus = "active" | "suspended";
 

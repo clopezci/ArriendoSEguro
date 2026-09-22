@@ -8,7 +8,7 @@ import { sendTelegram } from "@/services/telegram/sendTelegram";
 export const runtime = "nodejs";
 
 const schema = z.object({
-  topic: z.enum(["plan", "duda", "soporte", "otro"]).optional(),
+  topic: z.enum(["prueba_ampliada", "plan", "duda", "soporte", "otro"]).optional(),
   message: z.string().trim().min(3, "Escribe tu mensaje.").max(1500),
 });
 

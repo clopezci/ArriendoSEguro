@@ -24,7 +24,7 @@ export function BuyCredits({ agencyId }: { agencyId: string }) {
 
   // Dudas / solicitudes (llegan al equipo por correo + Telegram)
   const [inq, setInq] = useState("");
-  const [inqTopic, setInqTopic] = useState<"plan" | "duda" | "soporte" | "otro">("plan");
+  const [inqTopic, setInqTopic] = useState<"prueba_ampliada" | "plan" | "duda" | "soporte" | "otro">("prueba_ampliada");
   const [inqBusy, setInqBusy] = useState(false);
   const [inqMsg, setInqMsg] = useState<string | null>(null);
 
@@ -202,14 +202,15 @@ export function BuyCredits({ agencyId }: { agencyId: string }) {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-4">
-        <p className="text-sm font-bold text-slate-800">💬 ¿Dudas o quieres un plan a tu medida?</p>
-        <p className="mt-1 text-xs text-slate-600">Escríbenos y te respondemos pronto. Útil si se te acabaron los créditos o necesitas un volumen mayor.</p>
+        <p className="text-sm font-bold text-slate-800">💬 ¿Quieres probar más antes de comprar, o tienes dudas?</p>
+        <p className="mt-1 text-xs text-slate-600">Si se te acabó la prueba y quieres ver más antes de decidir, cuéntanos y te ampliamos la prueba. También puedes preguntar cualquier cosa o pedir un plan a tu medida.</p>
         <div className="mt-3 flex flex-col gap-2">
           <select
             value={inqTopic}
             onChange={(e) => setInqTopic(e.target.value as typeof inqTopic)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm sm:w-56"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm sm:w-72"
           >
+            <option value="prueba_ampliada">Quiero probar más antes de comprar</option>
             <option value="plan">Quiero un plan / más créditos</option>
             <option value="duda">Tengo una duda</option>
             <option value="soporte">Necesito soporte</option>
