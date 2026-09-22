@@ -27,11 +27,21 @@ export async function triggerAutoRechargeIfNeeded(
     const balance = (await getCredits(firestore, agencyId)).balance;
     if (balance > (cfg.thresholdCredits ?? 0)) return;
 
-    // ¿Ya hay una orden de auto-recarga pendiente? No dupliques.
+    // ¿Ya hay una orden de auto-recarga pendiente? No dupliques… salvo que esté
+    // ABANDONADA (checkout nunca pagado): si lleva >24h en pending/created, la
+    // damos por vencida y permitimos generar una nueva (si no, la auto-recarga
+    // quedaría bloqueada para siempre con saldo en 0).
+    const ABANDON_MS = 24 * 60 * 60 * 1000;
     if (cfg.pendingOrderId) {
       const snap = await firestore.collection("platform_orders").doc(cfg.pendingOrderId).get();
-      const st = snap.exists ? (snap.data() as { status?: string }).status : null;
-      if (st === "pending" || st === "created") return;
+      const data = snap.exists ? (snap.data() as { status?: string; createdAt?: string }) : null;
+      const st = data?.status ?? null;
+      if (st === "approved" || st === "settled") return; // ya se pagó/liquidó
+      if (st === "pending" || st === "created") {
+        const ageMs = data?.createdAt ? Date.now() - new Date(data.createdAt).getTime() : Number.POSITIVE_INFINITY;
+        if (ageMs < ABANDON_MS) return; // aún vigente: no dupliques
+        // vencida → continúa y se generará una nueva orden (se reemplaza pendingOrderId)
+      }
     }
 
     const plan = await getAgencyPlan(firestore, cfg.planCode);

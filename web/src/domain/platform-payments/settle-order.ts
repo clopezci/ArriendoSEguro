@@ -1,6 +1,6 @@
 import "server-only";
 import { FieldValue } from "firebase-admin/firestore";
-import type { Firestore } from "firebase-admin/firestore";
+import type { DocumentReference, Firestore } from "firebase-admin/firestore";
 import { auditPlatformPaymentEvent } from "./audit";
 import type { PlatformProvider } from "./types";
 import { sendEmail } from "@/services/email/sendEmail";
@@ -17,6 +17,38 @@ import { addCredits } from "@/lib/agencies/agencyStore";
  * Sirve para cualquier proveedor (Bre-B, y a futuro otros). El webhook de Wompi
  * mantiene su propia liquidación por compatibilidad; este helper es la base común.
  */
+/**
+ * Reclama de forma ATÓMICA la liquidación de una orden: marca `settledAt` solo
+ * si aún no estaba liquidada, dentro de una transacción. Devuelve `true` para el
+ * único ganador; `false` si otra ejecución ya la reclamó (webhook duplicado,
+ * carrera webhook↔barrido, doble entrega de Wompi). Cierra el hueco de doble
+ * acreditación de créditos / doble acceso Plus (check-then-act no atómico).
+ */
+export async function claimOrderForSettlement(
+  firestore: Firestore,
+  orderRef: DocumentReference,
+  providerPaymentId: string,
+  nowIso: string,
+): Promise<boolean> {
+  return firestore.runTransaction(async (tx) => {
+    const snap = await tx.get(orderRef);
+    const data = snap.data() as { settledAt?: string } | undefined;
+    if (data?.settledAt) return false; // ya liquidada por otra ejecución
+    tx.set(
+      orderRef,
+      {
+        status: "approved",
+        settledAt: nowIso,
+        settledPaymentId: providerPaymentId || null,
+        updatedAt: nowIso,
+        updatedAtServer: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+    return true;
+  });
+}
+
 export async function settleApprovedPlatformOrder(
   firestore: Firestore,
   params: {
@@ -65,10 +97,10 @@ export async function settleApprovedPlatformOrder(
   }
 
   const now = new Date(params.nowMs).toISOString();
-  await orderDoc.ref.set(
-    { status: "approved", updatedAt: now, updatedAtServer: FieldValue.serverTimestamp() },
-    { merge: true },
-  );
+  // Reclamo atómico: solo el ganador liquida (evita doble acreditación por
+  // webhook duplicado o carrera con el barrido diario).
+  const claimed = await claimOrderForSettlement(firestore, orderDoc.ref, params.providerPaymentId, now);
+  if (!claimed) return { httpStatus: 200, body: { success: true, duplicated: true } };
 
   const payRef = firestore.collection("platform_payments").doc();
   await payRef.set({

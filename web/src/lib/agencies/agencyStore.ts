@@ -16,6 +16,7 @@ import {
 } from "@/domain/agencies/types";
 import type { PersonParty } from "@/domain/contracts/types";
 import { sanitizeStudyRules } from "@/domain/agencies/studyRules";
+import { CONTRACT_LIFECYCLE_COLLECTION } from "@/domain/contracts/contractLifecycle";
 
 const nowIso = () => new Date().toISOString();
 
@@ -238,6 +239,58 @@ export async function addCredits(firestore: Firestore, agencyId: string, amount:
       { merge: true },
     );
     return balance;
+  });
+}
+
+/**
+ * Consume un crédito **y** marca el lifecycle del contrato en UNA transacción, de
+ * forma idempotente: si el contrato ya está iniciado/consumido, no cobra otra vez;
+ * si no hay saldo, no cobra. Cierra la carrera de doble cobro por reintentos/doble
+ * clic de `send-signatures` (check-then-act no atómico).
+ *
+ * Devuelve `alreadyPaid` (ya estaba cubierto), `consumed` (se cobró ahora) o
+ * `noCredits` (sin saldo). El llamador no debe volver a tocar el lifecycle ni el
+ * saldo para el cobro.
+ */
+export async function consumeCreditForContract(
+  firestore: Firestore,
+  agencyId: string,
+  contractId: string,
+  actorUid: string,
+): Promise<{ alreadyPaid: boolean; consumed: boolean; noCredits: boolean }> {
+  const creditsRef = firestore.collection(AGENCY_CREDITS_COLLECTION).doc(agencyId);
+  const lifeRef = firestore.collection(CONTRACT_LIFECYCLE_COLLECTION).doc(contractId);
+  return firestore.runTransaction(async (tx) => {
+    const [lifeSnap, credSnap] = await Promise.all([tx.get(lifeRef), tx.get(creditsRef)]);
+    const life = lifeSnap.exists ? (lifeSnap.data() as { started?: boolean; entitlementConsumed?: boolean; unlockedByAdminAt?: unknown }) : {};
+    if (life.entitlementConsumed === true || life.started === true || Boolean(life.unlockedByAdminAt)) {
+      return { alreadyPaid: true, consumed: false, noCredits: false };
+    }
+    const cur = credSnap.exists ? (credSnap.data() as AgencyCredits) : { balance: 0, totalPurchased: 0, totalConsumed: 0 };
+    const balance = cur.balance ?? 0;
+    if (balance <= 0) return { alreadyPaid: false, consumed: false, noCredits: true };
+    const nowISO = nowIso();
+    tx.set(
+      creditsRef,
+      { agencyId, balance: balance - 1, totalPurchased: cur.totalPurchased ?? 0, totalConsumed: (cur.totalConsumed ?? 0) + 1, updatedAt: nowISO },
+      { merge: true },
+    );
+    tx.set(
+      lifeRef,
+      {
+        contractId,
+        started: true,
+        startedAt: nowISO,
+        startedByUid: actorUid,
+        entitlementConsumed: true,
+        entitlementVia: "agency_credit",
+        agencyId,
+        updatedAt: nowISO,
+        updatedAtServer: FieldValue.serverTimestamp(),
+      },
+      { merge: true },
+    );
+    return { alreadyPaid: false, consumed: true, noCredits: false };
   });
 }
 

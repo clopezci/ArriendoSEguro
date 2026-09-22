@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAgencyMember } from "@/lib/auth/requireAgencyMember";
 import { getExternalConfig, setExternalConfig } from "@/lib/agencies/externalStudy";
+import { validateOutboundUrl } from "@/lib/security/outbound-url";
 
 export const runtime = "nodejs";
 
@@ -34,6 +35,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ agen
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ success: false, errors: parsed.error.issues.map((i) => ({ field: i.path.join("."), message: i.message })) }, { status: 422 });
+  }
+  // Anti-SSRF: el servidor hace fetch a este endpoint con la API key → exige https y bloquea red interna.
+  if (parsed.data.endpoint) {
+    const check = validateOutboundUrl(parsed.data.endpoint);
+    if (!check.ok) {
+      return NextResponse.json({ success: false, errors: [{ field: "endpoint", message: check.error }] }, { status: 422 });
+    }
   }
   const result = await setExternalConfig(gate.firestore, agencyId, parsed.data);
   if (!result.ok) {

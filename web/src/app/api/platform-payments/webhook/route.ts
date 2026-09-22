@@ -10,6 +10,7 @@ import { plusAccessConfirmedEmail } from "@/services/email/emailTemplates";
 import { sendEmail } from "@/services/email/sendEmail";
 import { notifyLegalPartnerForPaidClause } from "@/lib/legal/notifySpecialClause";
 import { recordSaleFromPayment } from "@/lib/sales/salesLedger";
+import { claimOrderForSettlement } from "@/domain/platform-payments/settle-order";
 import { addCredits } from "@/lib/agencies/agencyStore";
 import { logServerError } from "@/lib/observability/observability";
 
@@ -190,10 +191,11 @@ export async function POST(request: Request) {
         .get();
       if (!duplicatePayment.empty) return NextResponse.json({ success: true, duplicated: true });
 
-      await orderDoc.ref.set(
-        { status: "approved", updatedAt: now, updatedAtServer: FieldValue.serverTimestamp() },
-        { merge: true },
-      );
+      // Reclamo atómico: solo el ganador liquida (mismo candado que el settler
+      // compartido, por el order.id) → sin doble acreditación por carrera.
+      const claimed = await claimOrderForSettlement(firestore, orderDoc.ref, providerPaymentId, now);
+      if (!claimed) return NextResponse.json({ success: true, duplicated: true });
+
       const payRef = firestore.collection("platform_payments").doc();
       await payRef.set({
         id: payRef.id,

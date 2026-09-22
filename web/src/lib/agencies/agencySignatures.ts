@@ -6,9 +6,7 @@ import { generateSignatureToken } from "@/domain/signatures/generateSignatureTok
 import { sendSignatureEmail } from "@/features/signatures/sendSignatureEmail";
 import { sendPhoneNotice } from "@/services/notify/phoneChannel";
 import type { SignaturePartyType } from "@/domain/signatures/types";
-import { getContractLifecycle } from "@/lib/contracts/lifecycle";
-import { CONTRACT_LIFECYCLE_COLLECTION } from "@/domain/contracts/contractLifecycle";
-import { consumeCredit } from "@/lib/agencies/agencyStore";
+import { consumeCreditForContract } from "@/lib/agencies/agencyStore";
 import { CONTRACTS_COLLECTION, CONTRACT_VERSIONS_COLLECTION } from "@/lib/agencies/agencyContracts";
 import { triggerAutoRechargeIfNeeded } from "@/lib/agencies/autoRecharge";
 
@@ -74,31 +72,12 @@ export async function sendAgencySignaturesForContract(
     const version = versionSnap.exists ? (versionSnap.data() as { documentHash?: string; contractPayload?: Payload }) : null;
     if (!version?.contractPayload || !version.documentHash) return { contractId, ok: false, error: "no_version" };
 
-    // Cobro idempotente: 1 crédito por contrato. Si ya se consumó (o el contrato
-    // ya se inició), no se vuelve a cobrar (permite reenviar sin doble cobro).
-    const life = await getContractLifecycle(firestore, contractId);
-    const alreadyPaid = life.entitlementConsumed === true || life.started === true || Boolean(life.unlockedByAdminAt);
-    let creditConsumed = false;
-    if (!alreadyPaid) {
-      const res = await consumeCredit(firestore, agencyId);
-      if (!res.ok) return { contractId, ok: false, error: "no_credits" };
-      creditConsumed = true;
-      const nowISO = new Date().toISOString();
-      await firestore.collection(CONTRACT_LIFECYCLE_COLLECTION).doc(contractId).set(
-        {
-          contractId,
-          started: true,
-          startedAt: nowISO,
-          startedByUid: actorUid,
-          entitlementConsumed: true,
-          entitlementVia: "agency_credit",
-          agencyId,
-          updatedAt: nowISO,
-          updatedAtServer: FieldValue.serverTimestamp(),
-        },
-        { merge: true },
-      );
-    }
+    // Cobro idempotente y ATÓMICO: 1 crédito por contrato en una sola transacción
+    // (lifecycle + saldo). Evita el doble cobro por reintentos/doble clic
+    // concurrentes de send-signatures, y no cobra si ya se inició o no hay saldo.
+    const charge = await consumeCreditForContract(firestore, agencyId, contractId, actorUid);
+    if (charge.noCredits) return { contractId, ok: false, error: "no_credits" };
+    const creditConsumed = charge.consumed;
 
     const payload = version.contractPayload;
     const parties = requiredParties(codebtorsOf(payload).length);

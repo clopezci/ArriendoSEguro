@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAgencyMember } from "@/lib/auth/requireAgencyMember";
 import { getAutomationConfig, setAutomationConfig } from "@/lib/agencies/automation";
+import { validateOutboundUrl } from "@/lib/security/outbound-url";
 
 export const runtime = "nodejs";
 
@@ -33,6 +34,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ agen
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ success: false, errors: parsed.error.issues.map((i) => ({ field: i.path.join("."), message: i.message })) }, { status: 422 });
+  }
+  // Anti-SSRF: la URL la usa el servidor para hacer fetch → exige https y bloquea red interna.
+  if (parsed.data.webhookUrl) {
+    const check = validateOutboundUrl(parsed.data.webhookUrl);
+    if (!check.ok) {
+      return NextResponse.json({ success: false, errors: [{ field: "webhookUrl", message: check.error }] }, { status: 422 });
+    }
   }
   const result = await setAutomationConfig(gate.firestore, agencyId, parsed.data);
   if (!result.ok) {

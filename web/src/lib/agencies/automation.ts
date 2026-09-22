@@ -3,6 +3,7 @@ import { FieldValue } from "firebase-admin/firestore";
 import type { Firestore } from "firebase-admin/firestore";
 import { encryptSecret, decryptSecret, secretsConfigured } from "@/lib/security/agencySecrets";
 import { AGENCY_SECRETS_COLLECTION } from "@/lib/agencies/externalStudy";
+import { validateOutboundUrl } from "@/lib/security/outbound-url";
 
 /**
  * Automatización por agencia (Fase C): en vez de incrustar un motor, emitimos
@@ -56,6 +57,8 @@ export async function emitAgencyEvent(
     const snap = await firestore.collection(AGENCY_SECRETS_COLLECTION).doc(agencyId).get();
     const cfg = snap.exists ? (snap.data() as StoredAutomation) : null;
     if (!cfg?.webhookUrl) return;
+    // Defensa-en-profundidad anti-SSRF también en el emit (por si hubiera config previa).
+    if (!validateOutboundUrl(cfg.webhookUrl).ok) return;
     const secret = decryptSecret(cfg.webhookSecretEnc);
     await fetch(cfg.webhookUrl, {
       method: "POST",
