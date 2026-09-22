@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAgencyMember } from "@/lib/auth/requireAgencyMember";
 import { verifyIdentity, isIdentityConfigured } from "@/lib/identity/hubClient";
 import { isIdentityEnabledForAgency } from "@/domain/agencies/types";
+import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 const MAX_JSON_BYTES = 12_000_000;
@@ -23,6 +24,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ age
   const { agencyId } = await params;
   const gate = await requireAgencyMember(request, agencyId);
   if (!gate.ok) return gate.response;
+  // Rate-limit: cada verificación es una llamada (facturable) al hub de identidad.
+  const rl = await checkRateLimit(`agency-verify:${agencyId}`, RATE_LIMIT_RULES.leads);
+  if (!rl.ok) {
+    const { body, headers } = tooManyRequestsJson(rl.retryAfterSeconds);
+    return NextResponse.json(body, { status: 429, headers });
+  }
   if (!isIdentityConfigured()) {
     return NextResponse.json({ success: false, errors: [{ field: "server", message: "Módulo de identidad no configurado." }] }, { status: 503 });
   }

@@ -25,6 +25,22 @@ function empty(v: string | undefined) {
   return v && v.trim() ? v.trim() : undefined;
 }
 
+/** Escapa HTML para no permitir inyección de marcado en los correos (el de admin
+ * se arma con datos de un formulario público sin sesión). */
+function esc(v: string | undefined): string {
+  return (v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Quita saltos de línea de un valor que va en el asunto del correo. */
+function oneLine(v: string): string {
+  return v.replace(/[\r\n]+/g, " ").trim();
+}
+
 /**
  * POST /api/agencias/registro — auto-registro público de una agencia. Crea la
  * agencia YA (con créditos de prueba), sin aprobación manual: al admin solo le
@@ -55,10 +71,23 @@ export async function POST(request: Request) {
   }
   const d = parsed.data;
 
-  // Anti-abuso/duplicados: un correo = una agencia. Si ya existe, lo mandamos a
-  // su panel en vez de crear otra prueba (evita farmear créditos gratis).
-  const existing = await listAgenciesForEmail(firestore, normalizeAgencyEmail(d.contactEmail)).catch(() => []);
+  // Anti-abuso/duplicados: un correo = una agencia. Chequeo amable primero…
+  const normEmail = normalizeAgencyEmail(d.contactEmail);
+  const existing = await listAgenciesForEmail(firestore, normEmail).catch(() => []);
   if (existing.length > 0) {
+    return NextResponse.json(
+      { success: false, errors: [{ field: "contactEmail", message: "Ya existe una cuenta con este correo. Entra a tu panel en /agency." }] },
+      { status: 409 },
+    );
+  }
+
+  // …y candado ATÓMICO por correo: `create()` falla si ya existe, así que dos
+  // registros concurrentes (incluso desde IPs distintas que evaden el rate-limit)
+  // no pueden farmear varias pruebas con el mismo correo.
+  const lockRef = firestore.collection("agency_signup_locks").doc(encodeURIComponent(normEmail));
+  try {
+    await lockRef.create({ email: normEmail, createdAt: new Date().toISOString() });
+  } catch {
     return NextResponse.json(
       { success: false, errors: [{ field: "contactEmail", message: "Ya existe una cuenta con este correo. Entra a tu panel en /agency." }] },
       { status: 409 },
@@ -87,8 +116,8 @@ export async function POST(request: Request) {
     try {
       await sendEmail({
         to: agency.contactEmail,
-        subject: `Tu prueba en ArriendoSeguro está lista — ${agency.name}`,
-        html: `<p>Hola ${d.contactName},</p><p>Tu inmobiliaria <strong>${agency.name}</strong> ya tiene una prueba activa con <strong>${AGENCY_TRIAL_CREDITS} contratos gratis</strong>.</p><p>Entra con este mismo correo (${agency.contactEmail}) a tu panel:</p><p><a href="${panelUrl}">Abrir mi panel de agencia</a></p><p>Ahí puedes cargar tus inmuebles, capturar inquilinos con tu enlace/QR y enviar contratos a firma.</p>`,
+        subject: `Tu prueba en ArriendoSeguro está lista — ${oneLine(agency.name)}`,
+        html: `<p>Hola ${esc(d.contactName)},</p><p>Tu inmobiliaria <strong>${esc(agency.name)}</strong> ya tiene una prueba activa con <strong>${AGENCY_TRIAL_CREDITS} contratos gratis</strong>.</p><p>Entra con este mismo correo (${esc(agency.contactEmail)}) a tu panel:</p><p><a href="${panelUrl}">Abrir mi panel de agencia</a></p><p>Ahí puedes cargar tus inmuebles, capturar inquilinos con tu enlace/QR y enviar contratos a firma.</p>`,
         text: `Tu prueba en ArriendoSeguro está lista. ${AGENCY_TRIAL_CREDITS} contratos gratis. Entra con ${agency.contactEmail}: ${panelUrl}`,
         templateCode: "agencyTrialWelcomeEmail",
         relatedEntityType: "agency",
@@ -103,8 +132,8 @@ export async function POST(request: Request) {
     try {
       await sendEmail({
         to: inbox,
-        subject: `🏢 Nueva agencia en prueba — ${agency.name}`,
-        html: `<p>Se registró una agencia y la prueba se activó automáticamente.</p><ul><li><strong>Agencia:</strong> ${agency.name}${d.nit ? ` (NIT ${d.nit})` : ""}</li><li><strong>Contacto:</strong> ${d.contactName} — ${agency.contactEmail}${empty(d.contactPhone) ? ` — ${d.contactPhone}` : ""}</li><li><strong>Ciudad:</strong> ${empty(d.city) ?? "—"}</li><li><strong>Contratos/mes:</strong> ${empty(d.monthlyVolume) ?? "—"}</li><li><strong>Escalamiento:</strong> ${agency.escalationEmail}</li>${empty(d.message) ? `<li><strong>Mensaje:</strong> ${d.message}</li>` : ""}</ul><p>Puedes revisar o revocar la prueba en <a href="${appUrl}/admin">/admin → Agencias</a>.</p>`,
+        subject: `🏢 Nueva agencia en prueba — ${oneLine(agency.name)}`,
+        html: `<p>Se registró una agencia y la prueba se activó automáticamente.</p><ul><li><strong>Agencia:</strong> ${esc(agency.name)}${d.nit ? ` (NIT ${esc(d.nit)})` : ""}</li><li><strong>Contacto:</strong> ${esc(d.contactName)} — ${esc(agency.contactEmail)}${empty(d.contactPhone) ? ` — ${esc(d.contactPhone)}` : ""}</li><li><strong>Ciudad:</strong> ${esc(empty(d.city)) || "—"}</li><li><strong>Contratos/mes:</strong> ${esc(empty(d.monthlyVolume)) || "—"}</li><li><strong>Escalamiento:</strong> ${esc(agency.escalationEmail)}</li>${empty(d.message) ? `<li><strong>Mensaje:</strong> ${esc(d.message)}</li>` : ""}</ul><p>Puedes revisar o revocar la prueba en <a href="${appUrl}/admin">/admin → Agencias</a>.</p>`,
         text: `Nueva agencia en prueba: ${agency.name}. Contacto: ${d.contactName} ${agency.contactEmail}. Revisar/revocar en ${appUrl}/admin`,
         templateCode: "agencyTrialAdminEmail",
         relatedEntityType: "agency",
@@ -123,6 +152,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, agencyId: agency.id });
   } catch (err) {
+    // Libera el candado para permitir reintento si la creación falló.
+    await lockRef.delete().catch(() => {});
     if (process.env.NODE_ENV !== "production") console.error("agencias/registro POST", err);
     return NextResponse.json({ success: false, errors: [{ field: "server", message: "No se pudo completar el registro. Intenta de nuevo." }] }, { status: 500 });
   }

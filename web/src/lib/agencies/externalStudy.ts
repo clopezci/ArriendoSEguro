@@ -2,6 +2,7 @@ import "server-only";
 import { FieldValue } from "firebase-admin/firestore";
 import type { Firestore } from "firebase-admin/firestore";
 import { encryptSecret, decryptSecret, secretsConfigured } from "@/lib/security/agencySecrets";
+import { validateOutboundUrl } from "@/lib/security/outbound-url";
 
 /**
  * Configuración de estudio externo por agencia (DataCrédito u otro proveedor).
@@ -74,6 +75,8 @@ export async function runExternalStudy(
   if (!cfg?.endpoint || !cfg?.keyEnc) return { available: false, error: "not_configured" };
   const apiKey = decryptSecret(cfg.keyEnc);
   if (!apiKey) return { available: false, error: "decrypt_failed" };
+  // Defensa-en-profundidad anti-SSRF (además de la validación al guardar).
+  if (!validateOutboundUrl(cfg.endpoint).ok) return { available: false, error: "blocked_endpoint" };
   try {
     const res = await fetch(cfg.endpoint, {
       method: "POST",
