@@ -11,6 +11,7 @@ import {
   type Agency,
   type AgencyCredits,
   type AgencyLandlord,
+  type AgencyOrigin,
   type AgencyProperty,
 } from "@/domain/agencies/types";
 import type { PersonParty } from "@/domain/contracts/types";
@@ -57,6 +58,10 @@ export type CreateAgencyParams = {
   ownerUid: string;
   /** Correos miembros (se normalizan). Se incluye el contactEmail por defecto. */
   memberEmails?: string[];
+  /** Origen del alta (por defecto "admin"). */
+  origin?: AgencyOrigin;
+  /** Prueba gratuita (auto-registro): marca la agencia como en prueba. */
+  trial?: { active: boolean; startedAt: string; creditsGranted: number };
 };
 
 export async function createAgency(firestore: Firestore, params: CreateAgencyParams): Promise<Agency> {
@@ -73,6 +78,8 @@ export async function createAgency(firestore: Firestore, params: CreateAgencyPar
     escalationEmail: normalizeAgencyEmail(params.escalationEmail),
     identityEnabled: true,
     memberEmails: Array.from(members),
+    origin: params.origin ?? "admin",
+    ...(params.trial ? { trial: params.trial } : {}),
     ownerUid: params.ownerUid,
     status: "active",
     createdAt: nowIso(),
@@ -90,7 +97,7 @@ export async function createAgency(firestore: Firestore, params: CreateAgencyPar
 export async function updateAgency(
   firestore: Firestore,
   agencyId: string,
-  patch: Partial<Pick<Agency, "name" | "nit" | "contactEmail" | "contactPhone" | "escalationEmail" | "identityEnabled" | "whatsappNumber" | "intakeFields" | "defaults" | "studyRules" | "autoRecharge" | "logoUrl" | "memberEmails" | "status">>,
+  patch: Partial<Pick<Agency, "name" | "nit" | "contactEmail" | "contactPhone" | "escalationEmail" | "identityEnabled" | "whatsappNumber" | "intakeFields" | "defaults" | "studyRules" | "autoRecharge" | "logoUrl" | "memberEmails" | "status" | "suspendedMessage" | "suspendedAt" | "trial">>,
 ): Promise<void> {
   const clean: Record<string, unknown> = { updatedAt: nowIso() };
   if (typeof patch.name === "string") clean.name = patch.name.trim();
@@ -125,6 +132,14 @@ export async function updateAgency(
   }
   if (typeof patch.logoUrl === "string") clean.logoUrl = patch.logoUrl.trim();
   if (patch.status) clean.status = patch.status;
+  if (typeof patch.suspendedMessage === "string") clean.suspendedMessage = patch.suspendedMessage.slice(0, 500);
+  if (typeof patch.suspendedAt === "string") clean.suspendedAt = patch.suspendedAt;
+  if (patch.trial !== undefined) {
+    const t = patch.trial;
+    clean.trial = t
+      ? { active: t.active === true, startedAt: String(t.startedAt ?? nowIso()), creditsGranted: Math.max(0, Math.floor(Number(t.creditsGranted ?? 0))) }
+      : null;
+  }
   if (Array.isArray(patch.memberEmails)) {
     clean.memberEmails = Array.from(new Set(patch.memberEmails.map(normalizeAgencyEmail).filter(Boolean)));
   }
