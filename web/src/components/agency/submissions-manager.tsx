@@ -20,7 +20,7 @@ type Submission = {
 };
 
 type Landlord = { id: string; party: { fullName: string } };
-type Property = { id: string; alias?: string; address: string; city?: string; externalId?: string; defaultRent?: number; landlordId?: string };
+type Property = { id: string; alias?: string; address: string; city?: string; externalId?: string; defaultRent?: number; landlordId?: string; commercialValue?: number };
 
 export function SubmissionsManager({ agencyId, onGenerated }: { agencyId: string; onGenerated?: () => void }) {
   const { user } = useAuth();
@@ -253,6 +253,7 @@ function GenerateForm({
     startDate: "",
     termMonths: "12",
   });
+  const [noCapAck, setNoCapAck] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -295,7 +296,7 @@ function GenerateForm({
         termMonths: Math.floor(Number(f.termMonths)) || 12,
       };
       const body = usingProperty
-        ? { propertyId: f.propertyId, lease }
+        ? { propertyId: f.propertyId, lease, noCapAcknowledged: noCapAck }
         : {
             landlordId: f.landlordId,
             property: {
@@ -307,6 +308,7 @@ function GenerateForm({
               commercialValue: f.commercialValue ? Math.floor(Number(f.commercialValue)) : undefined,
             },
             lease,
+            noCapAcknowledged: noCapAck,
           };
       const res = await fetch(`/api/agency/${agencyId}/submissions/${submission.id}/generate`, {
         method: "POST",
@@ -325,6 +327,11 @@ function GenerateForm({
 
   const input = "rounded-lg border border-slate-300 px-3 py-2 text-sm";
   const useProperty = !manual && props.length > 0;
+  const selectedProp = props.find((x) => x.id === f.propertyId);
+  const commercialValueKnown =
+    !manual && f.propertyId
+      ? Boolean(selectedProp?.commercialValue && selectedProp.commercialValue > 0)
+      : Boolean(f.commercialValue && Number(f.commercialValue) > 0);
 
   return (
     <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
@@ -366,6 +373,13 @@ function GenerateForm({
         <input className={input} type="date" value={f.startDate} onChange={(e) => set("startDate", e.target.value)} />
         <input className={input} type="number" placeholder="Meses" value={f.termMonths} onChange={(e) => set("termMonths", e.target.value)} />
       </div>
+
+      {!commercialValueKnown && (
+        <label className="mt-2 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50/60 p-2.5 text-[11px] text-amber-900">
+          <input type="checkbox" checked={noCapAck} onChange={(e) => setNoCapAck(e.target.checked)} className="mt-0.5" />
+          <span>Sin el valor comercial no se puede validar el tope legal del canon (1%, Ley 820). Declaro que no lo conozco y asumo la responsabilidad. (O agrega el valor comercial del inmueble para validarlo.)</span>
+        </label>
+      )}
 
       <button type="button" onClick={() => void generate()} disabled={busy} className="mt-3 rounded-lg bg-[#5646E5] px-4 py-2 text-sm font-bold text-white disabled:opacity-40">
         {busy ? "Generando…" : useProperty && f.propertyId ? "Generar contrato (inmueble elegido)" : "Generar contrato"}
