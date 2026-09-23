@@ -109,6 +109,44 @@ export function hasAnyAiProvider(): boolean {
   return resolveChatProviders().length > 0;
 }
 
+/**
+ * Diagnóstico: hace un "ping" mínimo (1 token) a CADA proveedor configurado y
+ * reporta si responde. NO devuelve ni registra las llaves. Sirve para confirmar
+ * en /admin que una API key nueva quedó válida. El orden es el de la cadena.
+ */
+export async function pingAllProviders(): Promise<
+  { id: string; paid: boolean; model: string; ok: boolean; detail?: string }[]
+> {
+  const providers = resolveChatProviders();
+  const out: { id: string; paid: boolean; model: string; ok: boolean; detail?: string }[] = [];
+  for (const p of providers) {
+    const model = p.textModels[0] ?? "";
+    try {
+      const res = await fetch(`${p.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${p.apiKey}` },
+        cache: "no-store",
+        signal: AbortSignal.timeout(15_000),
+        body: JSON.stringify({
+          model,
+          max_tokens: 1,
+          temperature: 0,
+          messages: [{ role: "user", content: "ping" }],
+        }),
+      });
+      if (res.ok) {
+        out.push({ id: p.id, paid: p.paid, model, ok: true });
+      } else {
+        const body = (await res.text().catch(() => "")).slice(0, 160);
+        out.push({ id: p.id, paid: p.paid, model, ok: false, detail: `HTTP ${res.status}: ${body}` });
+      }
+    } catch (e) {
+      out.push({ id: p.id, paid: p.paid, model, ok: false, detail: e instanceof Error ? e.message : "error de red" });
+    }
+  }
+  return out;
+}
+
 type ChatMessage = { role: "system" | "user" | "assistant"; content: unknown };
 
 export type ChatResult =

@@ -429,6 +429,28 @@ export default function AdminPage() {
     }
   }
 
+  // Diagnóstico de IA: pinguea cada proveedor configurado (Groq/Gemini/OpenRouter/
+  // OpenAI/DeepSeek) y dice cuál responde. Para confirmar que una key nueva quedó válida.
+  const [aiDiagBusy, setAiDiagBusy] = useState(false);
+  const [aiDiagOut, setAiDiagOut] = useState("");
+  async function loadAiDiag() {
+    if (!user) return;
+    setAiDiagBusy(true);
+    setAiDiagOut("Pingueando proveedores de IA…");
+    try {
+      const res = await fetch("/api/admin/ai/diagnose", {
+        headers: { ...(await buildAuthHeaders(user)) },
+        cache: "no-store",
+      });
+      const j = await res.json();
+      setAiDiagOut(JSON.stringify(j, null, 2));
+    } catch {
+      setAiDiagOut("No se pudo consultar el diagnóstico de IA.");
+    } finally {
+      setAiDiagBusy(false);
+    }
+  }
+
   const hintSet = useMemo(() => new Set(publicAdminHintEmails()), []);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -2142,6 +2164,26 @@ export default function AdminPage() {
               {payDiagOut && (
                 <pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-sky-100">
                   {payDiagOut}
+                </pre>
+              )}
+            </div>
+            <div className="mt-4 border-t border-slate-200 pt-3">
+              <h3 className="text-xs font-semibold text-slate-800">Diagnóstico de IA (proveedores)</h3>
+              <p className="mt-1 text-[11px] text-slate-600">
+                Pinguea cada proveedor con clave configurada (Groq → Gemini → OpenRouter → OpenAI → DeepSeek) y dice cuál
+                responde. Úsalo tras agregar una API key nueva en Vercel (recuerda: requiere <strong>redeploy</strong>). No expone las llaves.
+              </p>
+              <button
+                type="button"
+                disabled={aiDiagBusy}
+                onClick={() => void loadAiDiag()}
+                className="mt-2 rounded border border-violet-600/60 bg-violet-50 px-3 py-1.5 text-sm font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-50"
+              >
+                {aiDiagBusy ? "Pingueando…" : "Ver diagnóstico de IA"}
+              </button>
+              {aiDiagOut && (
+                <pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-900/90 p-3 text-[11px] leading-relaxed text-violet-100">
+                  {aiDiagOut}
                 </pre>
               )}
             </div>
