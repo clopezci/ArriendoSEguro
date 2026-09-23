@@ -4,18 +4,22 @@ import "server-only";
  * Cadena de proveedores de IA con RESPALDO y ESCALAMIENTO (tipo OpenRouter, pero
  * directo a cada proveedor para aprovechar sus capas GRATIS reales):
  *
- *   1) Groq   (GRATIS)  → GROQ_API_KEY  (o AI_API_KEY por compatibilidad)
- *   2) Gemini (GRATIS)  → GEMINI_API_KEY
- *   3) OpenAI (PAGO)    → OPENAI_API_KEY
+ *   1) Groq       (GRATIS) → GROQ_API_KEY  (o AI_API_KEY por compatibilidad)
+ *   2) Gemini     (GRATIS) → GEMINI_API_KEY
+ *   3) OpenRouter (GRATIS) → OPENROUTER_API_KEY   (modelos ":free" como respaldo)
+ *   4) OpenAI     (PAGO)   → OPENAI_API_KEY
+ *   5) DeepSeek   (PAGO)   → DEEPSEEK_API_KEY      (último recurso: barato)
  *
  * `chatWithFallback` intenta en ese orden y, además, VALIDA cada respuesta con un
  * criterio `accept` (p. ej. "el JSON trae datos"): si un proveedor falla, se cae
  * o entrega un resultado insuficiente, ESCALA al siguiente. Así SIEMPRE responde
  * con el mejor resultado disponible. Todos exponen API compatible con OpenAI
- * (`/chat/completions`), así que un solo cliente sirve para texto y visión.
+ * (`/chat/completions`), así que un solo cliente sirve para texto y visión. Solo
+ * entran a la cadena los proveedores con clave configurada (agregar más = agregar
+ * su env, sin tocar nada más).
  */
 export type ChatProvider = {
-  id: "groq" | "gemini" | "openai";
+  id: "groq" | "gemini" | "openrouter" | "openai" | "deepseek";
   baseUrl: string;
   apiKey: string;
   textModels: string[];
@@ -58,7 +62,20 @@ export function resolveChatProviders(): ChatProvider[] {
     });
   }
 
-  // 3) OpenAI (pago; el mejor en visión).
+  // 3) OpenRouter (capa GRATIS con modelos ":free"; buen respaldo adicional).
+  const orKey = process.env.OPENROUTER_API_KEY?.trim();
+  if (orKey) {
+    providers.push({
+      id: "openrouter",
+      baseUrl: (process.env.OPENROUTER_BASE_URL?.trim() || "https://openrouter.ai/api/v1").replace(/\/$/, ""),
+      apiKey: orKey,
+      textModels: clean(process.env.OPENROUTER_MODEL, "meta-llama/llama-3.3-70b-instruct:free", "google/gemma-2-9b-it:free"),
+      visionModels: clean(process.env.OPENROUTER_VISION_MODEL, "meta-llama/llama-3.2-11b-vision-instruct:free"),
+      paid: false,
+    });
+  }
+
+  // 4) OpenAI (pago; el mejor en visión).
   const oaKey = process.env.OPENAI_API_KEY?.trim();
   if (oaKey) {
     providers.push({
@@ -67,6 +84,19 @@ export function resolveChatProviders(): ChatProvider[] {
       apiKey: oaKey,
       textModels: clean(process.env.OPENAI_MODEL, "gpt-4o-mini"),
       visionModels: clean(process.env.OPENAI_VISION_MODEL, process.env.OPENAI_MODEL, "gpt-4o-mini"),
+      paid: true,
+    });
+  }
+
+  // 5) DeepSeek (pago, barato; ÚLTIMO recurso). No hace visión → solo texto.
+  const dsKey = process.env.DEEPSEEK_API_KEY?.trim();
+  if (dsKey) {
+    providers.push({
+      id: "deepseek",
+      baseUrl: (process.env.DEEPSEEK_BASE_URL?.trim() || "https://api.deepseek.com/v1").replace(/\/$/, ""),
+      apiKey: dsKey,
+      textModels: clean(process.env.DEEPSEEK_MODEL, "deepseek-chat"),
+      visionModels: [],
       paid: true,
     });
   }
