@@ -4,6 +4,7 @@ import { retrieveLegalContext, type LegalEntry } from "@/domain/legal/legalKnowl
 import { checkRateLimit, RATE_LIMIT_RULES, tooManyRequestsJson, clientIpFromRequest } from "@/lib/security/rate-limit";
 import { chatWithFallback, hasAnyAiProvider } from "@/lib/ai/providerChain";
 import { legalAiDisclaimer } from "@/lib/ai/legalDisclaimer";
+import { scopeInstruction, isOffTopic, offTopicMessage } from "@/lib/ai/topicGuard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -69,7 +70,8 @@ export async function POST(request: Request) {
     "Responde ÚNICAMENTE con base en el CONTEXTO normativo entregado. Si la respuesta no está en el contexto, dilo " +
     "claramente y sugiere consultar a un abogado; NO inventes normas, artículos ni cifras. Cita SIEMPRE la norma y el " +
     "artículo entre paréntesis (por ejemplo, «(Ley 820 de 2003, Art. 18)»). Responde en español, claro y breve, " +
-    "orientado a una persona sin formación jurídica. No des consejos que excedan lo que dice el contexto.";
+    "orientado a una persona sin formación jurídica. No des consejos que excedan lo que dice el contexto." +
+    scopeInstruction("temas legales del arrendamiento de vivienda y propiedad raíz en Colombia");
   const prompt =
     `CONTEXTO NORMATIVO:\n${context}\n\n` +
     `PREGUNTA DEL USUARIO:\n${question}\n\n` +
@@ -81,6 +83,10 @@ export async function POST(request: Request) {
     messages: [{ role: "system", content: system }, { role: "user", content: prompt }],
   });
   if (result.ok && result.content.trim()) {
+    // Limitador de alcance (defensa adicional a la base normativa).
+    if (isOffTopic(result.content)) {
+      return NextResponse.json({ success: true, answer: offTopicMessage("legal"), offTopic: true, sources: [], disclaimer });
+    }
     return NextResponse.json({ success: true, answer: result.content.trim(), sources: sources(entries), disclaimer });
   }
 

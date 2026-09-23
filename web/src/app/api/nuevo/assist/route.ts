@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { chatWithFallback, hasAnyAiProvider } from "@/lib/ai/providerChain";
 import { withLegalDisclaimer } from "@/lib/ai/legalDisclaimer";
+import { scopeInstruction, isOffTopic, offTopicMessage } from "@/lib/ai/topicGuard";
+
+/** Alcance del asistente de la app (amplio, para no bloquear lo legítimo). */
+const ASSISTANT_SCOPE =
+  "el arrendamiento de vivienda en Colombia y el uso de ArriendoSeguro: crear, firmar y administrar el " +
+  "contrato de arriendo, cláusulas, canon, inquilino y codeudor, solvencia, pagos y recordatorios, inventario " +
+  "y acta de entrega, reputación, terminación, y las leyes del arriendo (Ley 820, Ley 527, Ley 1581), además de " +
+  "los planes, precios y pasos de la app";
 
 export const runtime = "nodejs";
 
@@ -120,7 +128,7 @@ export async function POST(request: Request) {
     maxTokens: isExtract ? 1024 : 220,
     accept,
     messages: [
-      { role: "system", content: isExtract ? EXTRACT_SYSTEM : ASK_SYSTEM },
+      { role: "system", content: isExtract ? EXTRACT_SYSTEM : ASK_SYSTEM + scopeInstruction(ASSISTANT_SCOPE) },
       {
         role: "user",
         content:
@@ -142,6 +150,11 @@ export async function POST(request: Request) {
     // `accept` ya garantizó que parsea; re-parseamos para responder el objeto.
     const data = JSON.parse(extractJsonBlock(result.content)) as Record<string, unknown>;
     return NextResponse.json({ success: true, available: true, data, provider: result.providerId });
+  }
+  // Limitador de alcance: si la IA marcó la pregunta como ajena, mostramos el
+  // mensaje predeterminado (sin cierre legal, no aplica).
+  if (isOffTopic(result.content)) {
+    return NextResponse.json({ success: true, available: true, answer: offTopicMessage("assistant"), offTopic: true, provider: result.providerId });
   }
   // Cierre legal obligatorio: la respuesta puede tocar cláusulas/temas de la Ley 820.
   return NextResponse.json({ success: true, available: true, answer: withLegalDisclaimer(result.content, ["Ley 820 de 2003"]), provider: result.providerId });
