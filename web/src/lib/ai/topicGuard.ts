@@ -21,16 +21,9 @@ export const OFF_TOPIC_TOKEN = "FUERA_DE_ALCANCE";
  */
 export function scopeInstruction(scope: string): string {
   return (
-    "\n\nALCANCE (OBLIGATORIO): solo puedes ayudar con " +
-    scope +
-    ". Si la pregunta del usuario claramente NO tiene relación con eso " +
-    "(por ejemplo: cultura general, matemáticas, programación, recetas, noticias, deportes, " +
-    "entretenimiento, salud, política u otros temas ajenos), NO la respondas: responde EXACTAMENTE " +
-    "con el texto " +
-    OFF_TOPIC_TOKEN +
-    " y nada más. Muy importante: ante la MENOR duda, o si hay CUALQUIER relación razonable con el alcance, " +
-    "responde con normalidad y NO uses ese texto. Un saludo, una duda sobre cómo usar la app, o una pregunta " +
-    "sobre arriendo, contrato, cláusulas, pagos o leyes del arriendo SIEMPRE están dentro del alcance."
+    ` Solo ayudas con ${scope}. Si la pregunta claramente no tiene relación con eso, responde solo con ` +
+    `${OFF_TOPIC_TOKEN} (nada más). Ante la duda, o si hay cualquier relación, responde con normalidad; ` +
+    "los saludos y las dudas del arriendo siempre están dentro del alcance."
   );
 }
 
