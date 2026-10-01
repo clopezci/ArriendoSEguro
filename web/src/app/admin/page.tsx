@@ -7,6 +7,7 @@ import { UtmBuilder } from "@/components/admin/utm-builder";
 import { AdminsPanel } from "@/components/admin/admins-panel";
 import { AgenciasPanel } from "@/components/admin/agencies-panel";
 import { SalesPanel } from "@/components/admin/sales-panel";
+import { AdminMfaGate } from "@/components/admin/admin-mfa-gate";
 import { PLAN_PLUS_CUSTOM_COP_LIMITS } from "@/domain/platform-payments/plan-plus-pricing";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -142,6 +143,33 @@ function publicAdminHintEmails(): string[] {
 export default function AdminPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  // Segundo factor (TOTP) del panel: estado de la sesión MFA.
+  const [mfaStatus, setMfaStatus] = useState<{ enrolled: boolean; verified: boolean } | "skip" | null>(null);
+  const [mfaChecked, setMfaChecked] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/mfa/status", { headers: { ...(await buildAuthHeaders(user)) }, cache: "no-store" });
+        if (cancelled) return;
+        if (res.ok) {
+          const j = (await res.json()) as { enrolled?: boolean; verified?: boolean };
+          setMfaStatus({ enrolled: Boolean(j.enrolled), verified: Boolean(j.verified) });
+        } else {
+          // No admin u otro error: no bloqueamos por MFA; el flujo normal maneja el acceso.
+          setMfaStatus("skip");
+        }
+      } catch {
+        if (!cancelled) setMfaStatus("skip");
+      } finally {
+        if (!cancelled) setMfaChecked(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
   const [tab, setTab] = useState<
     | "resumen"
     | "lean"
@@ -1538,6 +1566,19 @@ export default function AdminPage() {
         <p className="text-sm">Cargando sesión…</p>
       </div>
     );
+  }
+
+  // Segundo factor: espera el chequeo y, si hace falta, muestra la compuerta MFA
+  // (enrolar o verificar) ANTES de pintar el panel.
+  if (!mfaChecked) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center bg-slate-100 text-slate-600">
+        <p className="text-sm">Verificando acceso…</p>
+      </div>
+    );
+  }
+  if (mfaStatus && mfaStatus !== "skip" && (!mfaStatus.enrolled || !mfaStatus.verified)) {
+    return <AdminMfaGate user={user} enrolled={mfaStatus.enrolled} onVerified={() => window.location.reload()} />;
   }
 
   const emailLc = user.email?.toLowerCase() ?? "";
