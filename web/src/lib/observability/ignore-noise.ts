@@ -40,6 +40,11 @@ const BENIGN_PATTERNS: RegExp[] = [
   //    objeto congelado (p. ej. añadir `.code` a un Error inmutable).
   /\be\[o\] is not a function\b/i,
   /object is not extensible/i,
+  // Síntesis de voz de Safari/iOS o extensiones de lectura: error del motor de
+  // voz del navegador al evaluar `Object.getPrototypeOf(voice)`. Nuestro código
+  // de voz (read-aloud.tsx / useVoice.ts) asigna la voz solo con guarda y va
+  // minificado (no nombraría `voice`), así que este error es externo, no un bug.
+  /Object\.getPrototypeOf\(voice\)/i,
 ];
 
 /** ¿El mensaje de error es ruido benigno que debemos ignorar? */
