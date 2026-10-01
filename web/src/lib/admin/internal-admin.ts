@@ -80,7 +80,12 @@ export function isFounderEmail(email: string | null | undefined): boolean {
   return isFounderAdminEmail(email);
 }
 
-export async function requireInternalAdmin(request: Request): Promise<
+/**
+ * Verificación de admin SIN segundo factor. Úsala SOLO en los endpoints del
+ * propio flujo de MFA (status/enroll/confirm/verify), que deben ser alcanzables
+ * para poder enrolar/validar. El resto usa `requireInternalAdmin` (con MFA).
+ */
+export async function requireInternalAdminBase(request: Request): Promise<
   | { ok: true; user: { uid: string; email: string; decoded: DecodedIdToken } }
   | { ok: false; response: NextResponse }
 > {
@@ -98,4 +103,40 @@ export async function requireInternalAdmin(request: Request): Promise<
   }
 
   return { ok: true, user: auth.user };
+}
+
+/**
+ * Verificación de admin CON segundo factor (TOTP). Es la que usan TODOS los
+ * endpoints del panel. Si el admin ya enroló su autenticador y no tiene una
+ * sesión MFA vigente, devuelve 403 con `field:"mfa"` para que el cliente pida el
+ * código. Si aún no ha enrolado, deja pasar (para que pueda enrolarse).
+ */
+export async function requireInternalAdmin(request: Request): Promise<
+  | { ok: true; user: { uid: string; email: string; decoded: DecodedIdToken } }
+  | { ok: false; response: NextResponse }
+> {
+  const base = await requireInternalAdminBase(request);
+  if (!base.ok) return base;
+
+  try {
+    const firestore = getAdminFirestore();
+    if (firestore) {
+      const { isAdminMfaBlocking } = await import("@/lib/admin/adminMfa");
+      if (await isAdminMfaBlocking(firestore, base.user.uid)) {
+        return {
+          ok: false,
+          response: NextResponse.json(
+            { success: false, errors: [{ field: "mfa", message: "Se requiere verificación en dos pasos." }] },
+            { status: 403 },
+          ),
+        };
+      }
+    }
+  } catch {
+    // Si el chequeo de MFA falla por un problema transitorio, no bloqueamos el
+    // acceso del admin ya autenticado (fail-open SOLO ante error interno, nunca
+    // ante "sesión MFA ausente", que sí bloquea arriba).
+  }
+
+  return { ok: true, user: base.user };
 }
