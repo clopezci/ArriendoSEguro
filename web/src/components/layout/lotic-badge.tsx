@@ -22,14 +22,18 @@ export function LoticBadge({
   tone?: "onLight" | "onDark";
   className?: string;
 }) {
+  // `lotic-logo-wordmark.png` es el logo OFICIAL recortado (sin el margen negro
+  // que hacía que la palabra midiera ~5px en el footer). `screen` elimina su fondo
+  // oscuro para que se vea el color del recuadro, y el filtro aviva el violeta del
+  // "LO", que sobre negro casi no se distinguía.
   const logo = (
     <img
-      src="/lotic-logo.png"
+      src="/lotic-logo-wordmark.png"
       alt="LOTIC"
-      width={1024}
-      height={683}
-      className="h-[1.35em] w-auto"
-      style={tone === "onDark" ? { mixBlendMode: "screen" } : undefined}
+      width={317}
+      height={96}
+      className="h-[1.15em] w-auto"
+      style={{ mixBlendMode: "screen", filter: "brightness(1.4) saturate(1.15)" }}
     />
   );
   return (
@@ -42,7 +46,7 @@ export function LoticBadge({
     >
       {withPrefix && <span className="opacity-80">Un producto de</span>}
       {tone === "onLight" ? (
-        <span className="inline-flex items-center rounded-md bg-[#0a0a11] px-1.5 py-[3px]">{logo}</span>
+        <span className="inline-flex items-center rounded-md bg-[#2d2850] px-2 py-1">{logo}</span>
       ) : (
         logo
       )}
