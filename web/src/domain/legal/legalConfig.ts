@@ -19,6 +19,8 @@ export type LegalConfig = {
   ipcPreviousYear: number;
   ipcAppliesToYear: number;
   ipcSource: string;
+  /** Enlace a la fuente oficial (lo fija la actualización automática del DANE). */
+  ipcSourceUrl: string | null;
   ipcUpdatedAt: string | null;
   ipcUpdatedByEmail: string | null;
   /** Año para el cual el admin ya confirmó el IPC (corta el correo anual). */
@@ -45,6 +47,7 @@ const schema = z.object({
   ipcPreviousYear: z.number().int().min(2000).max(2100).optional(),
   ipcAppliesToYear: z.number().int().min(2000).max(2100).optional(),
   ipcSource: z.string().max(200).optional(),
+  ipcSourceUrl: z.string().url().max(500).nullable().optional(),
   ipcUpdatedAt: z.string().nullable().optional(),
   ipcUpdatedByEmail: z.string().nullable().optional(),
   ipcConfirmedForYear: z.number().int().nullable().optional(),
@@ -59,6 +62,7 @@ export function defaultLegalConfig(): LegalConfig {
     ipcPreviousYear: IPC_REFERENCE.previousYear,
     ipcAppliesToYear: IPC_REFERENCE.appliesToYear,
     ipcSource: IPC_REFERENCE.source,
+    ipcSourceUrl: null,
     ipcUpdatedAt: null,
     ipcUpdatedByEmail: null,
     ipcConfirmedForYear: null,
@@ -78,6 +82,7 @@ export function resolveLegalConfig(stored: unknown): LegalConfig {
     ipcPreviousYear: s.ipcPreviousYear ?? d.ipcPreviousYear,
     ipcAppliesToYear: s.ipcAppliesToYear ?? d.ipcAppliesToYear,
     ipcSource: s.ipcSource ?? d.ipcSource,
+    ipcSourceUrl: s.ipcSourceUrl ?? d.ipcSourceUrl,
     ipcUpdatedAt: s.ipcUpdatedAt ?? d.ipcUpdatedAt,
     ipcUpdatedByEmail: s.ipcUpdatedByEmail ?? d.ipcUpdatedByEmail,
     ipcConfirmedForYear: s.ipcConfirmedForYear ?? d.ipcConfirmedForYear,

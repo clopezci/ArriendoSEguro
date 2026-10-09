@@ -33,6 +33,8 @@ export interface TaxConfig {
   autoActivatedAt?: string;
   /** Última vez que se avisó "te acercas al tope" (para no repetir el aviso). */
   thresholdWarnedAt?: string;
+  /** Última vez que se cambió la UVT (valor o año), para el aviso "actualizado el…". */
+  uvtUpdatedAt?: string;
   updatedAt?: string;
   updatedByEmail?: string;
 }
@@ -69,6 +71,7 @@ export function resolveTaxConfig(stored: unknown): TaxConfig {
   };
   if (typeof o.autoActivatedAt === "string") config.autoActivatedAt = o.autoActivatedAt;
   if (typeof o.thresholdWarnedAt === "string") config.thresholdWarnedAt = o.thresholdWarnedAt;
+  if (typeof o.uvtUpdatedAt === "string") config.uvtUpdatedAt = o.uvtUpdatedAt;
   if (typeof o.updatedAt === "string") config.updatedAt = o.updatedAt;
   if (typeof o.updatedByEmail === "string") config.updatedByEmail = o.updatedByEmail;
   return config;

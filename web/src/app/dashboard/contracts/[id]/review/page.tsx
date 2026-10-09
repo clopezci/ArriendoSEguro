@@ -12,7 +12,7 @@ import {
 import { appendAudit, updateDraft } from "@/features/contracts/wizard-state";
 import { LegalComplianceSeal } from "@/components/contracts/legal-semaphore";
 import { evaluateLegalCompliance } from "@/domain/contracts/legalCompliance";
-import { IPC_REFERENCE } from "@/lib/domain/rent-law";
+import { useCurrentIpcPercent } from "@/lib/annual/currentIpc";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 
@@ -28,6 +28,7 @@ export default function ReviewStepPage() {
   const id = String(useParams<{ id: string }>().id);
   const { draft, state } = useDraftGuard(id);
   const router = useRouter();
+  const ipcPercent = useCurrentIpcPercent();
 
   if (state !== "ready" || !draft) return <p className="text-sm text-slate-700">Cargando…</p>;
 
@@ -51,7 +52,7 @@ export default function ReviewStepPage() {
       latePaymentMonthsThreshold: Number(draft.lease.latePaymentMonthsThreshold ?? 0),
     },
     utilityServicesGuarantee: draft.utilityServicesGuarantee,
-    ipcPercent: IPC_REFERENCE.percent,
+    ipcPercent,
   });
 
   return (

@@ -4,19 +4,25 @@ import Link from "next/link";
 import { JsonLdScript } from "@/components/blog/json-ld";
 import { absoluteUrl } from "@/content/blog/seo";
 import { RentIpcCalculator } from "@/components/calculators/rent-ipc-calculator";
-import { getLegalConfig } from "@/domain/legal/legalConfig";
 import { getAdminFirestore } from "@/lib/firebase/admin";
+import { getAnnualValuesView } from "@/lib/annual/annualValuesServer";
+import { AnnualValueNotice } from "@/components/annual/annual-value-notice";
+
+// El IPC vigente lo actualiza el admin o la revisión automática del DANE (que
+// además refresca esta página al instante); esto es solo la red de seguridad.
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Calculadora de reajuste del canon de arriendo por IPC",
   description:
     "Calcula cuánto puede subir tu arriendo este año según el IPC del año anterior (Ley 820 de 2003, art. 20). Gratis y sin registro.",
   alternates: { canonical: "/calculadoras/reajuste-canon" },
-  keywords: ["reajuste canon arrendamiento", "cuánto puede subir el arriendo", "IPC 2025", "Ley 820 artículo 20"],
+  keywords: ["reajuste canon arrendamiento", "cuánto puede subir el arriendo", "IPC año anterior", "Ley 820 artículo 20"],
 };
 
 export default async function ReajusteCanonPage() {
-  const legal = await getLegalConfig(getAdminFirestore());
+  const annual = await getAnnualValuesView(getAdminFirestore());
+  const ipc = annual.values.ipc;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -50,10 +56,17 @@ export default async function ReajusteCanonPage() {
           </header>
 
           <RentIpcCalculator
-            ipcPercent={legal.ipcPercent}
-            ipcPreviousYear={legal.ipcPreviousYear}
-            ipcAppliesToYear={legal.ipcAppliesToYear}
-            ipcSource={legal.ipcSource}
+            ipcPercent={ipc.percent}
+            ipcPreviousYear={ipc.year}
+            ipcAppliesToYear={ipc.appliesTo}
+            ipcSource={ipc.source}
+          />
+
+          <AnnualValueNotice
+            status={annual.status.ipc}
+            text={annual.notice.ipc}
+            source={ipc.source}
+            sourceUrl={ipc.sourceUrl}
           />
 
           <section className="rounded-2xl border border-slate-300 bg-white/65 p-6 text-sm text-slate-700">
@@ -61,7 +74,7 @@ export default async function ReajusteCanonPage() {
             <p className="mt-2">
               El arrendador puede aumentar el canon una vez cumplidos 12 meses bajo el mismo precio, hasta el 100 % del
               IPC del año anterior, e informando el monto y la fecha. Más detalle en la{" "}
-              <Link href="/blog/reajuste-canon-arrendamiento-ipc-2026" className="text-violet-700 underline">
+              <Link href="/blog/reajuste-canon-arrendamiento-ipc" className="text-violet-700 underline">
                 guía de reajuste del canon
               </Link>
               .

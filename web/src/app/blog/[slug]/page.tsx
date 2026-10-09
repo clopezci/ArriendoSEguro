@@ -1,4 +1,8 @@
-import { ArticleBody } from "@/components/blog/article-body";
+import { ArticleBody, type AnnualNotices } from "@/components/blog/article-body";
+import { annualKeysUsed, resolveArticleAnnual } from "@/content/blog/annual";
+import type { BlogArticle } from "@/content/blog/types";
+import { getAdminFirestore } from "@/lib/firebase/admin";
+import { getAnnualValuesView } from "@/lib/annual/annualValuesServer";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { JsonLdScript } from "@/components/blog/json-ld";
 import { BLOG_ARTICLES, getArticleBySlug, getRelatedArticles } from "@/content/blog/articles";
@@ -10,24 +14,48 @@ import { notFound } from "next/navigation";
 
 type Props = { params: Promise<{ slug: string }> };
 
+// Los artículos con valores anuales (IPC…) se regeneran al cambiar el dato
+// (revalidatePath desde admin/cron); esto es solo la red de seguridad.
+export const revalidate = 3600;
+
+/**
+ * Artículo con las variables anuales ya resueltas + sus avisos. Solo lee
+ * Firestore si el artículo usa variables (`{ipc.…}`).
+ */
+async function loadArticle(slug: string): Promise<{ article: BlogArticle; notices: AnnualNotices } | null> {
+  const raw = getArticleBySlug(slug);
+  if (!raw) return null;
+  const keys = annualKeysUsed(raw);
+  if (keys.length === 0) return { article: raw, notices: {} };
+  const view = await getAnnualValuesView(getAdminFirestore());
+  const notices: AnnualNotices = {};
+  for (const k of keys) {
+    notices[k] = { status: view.status[k], text: view.notice[k], source: view.values[k].source, sourceUrl: view.values[k].sourceUrl };
+  }
+  return { article: resolveArticleAnnual(raw, view.values), notices };
+}
+
 export function generateStaticParams() {
   return BLOG_ARTICLES.map((a) => ({ slug: a.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
-  if (!article) return { title: "Artículo no encontrado" };
+  const loaded = await loadArticle(slug);
+  if (!loaded) return { title: "Artículo no encontrado" };
+  const { article } = loaded;
+  const seoTitle = article.metaTitle ?? article.title;
+  const seoDescription = article.metaDescription ?? article.description;
 
-  const title = `${article.title} | Blog`;
+  const title = `${seoTitle} | Blog`;
   return {
     title,
-    description: article.description,
+    description: seoDescription,
     keywords: article.keywords,
     alternates: { canonical: `/blog/${article.slug}` },
     openGraph: {
-      title: `${article.title} | ${appConfig.name}`,
-      description: article.description,
+      title: `${seoTitle} | ${appConfig.name}`,
+      description: seoDescription,
       type: "article",
       locale: "es_CO",
       publishedTime: article.datePublished,
@@ -39,8 +67,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BlogArticlePage({ params }: Props) {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
-  if (!article) notFound();
+  const loaded = await loadArticle(slug);
+  if (!loaded) notFound();
+  const { article, notices } = loaded;
 
   const related = getRelatedArticles(slug, 3);
   const url = absoluteUrl(`/blog/${article.slug}`);
@@ -48,8 +77,8 @@ export default async function BlogArticlePage({ params }: Props) {
   const postingJsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
-    headline: article.title,
-    description: article.description,
+    headline: article.metaTitle ?? article.title,
+    description: article.metaDescription ?? article.description,
     datePublished: article.datePublished,
     dateModified: article.dateModified,
     url,
@@ -96,7 +125,7 @@ export default async function BlogArticlePage({ params }: Props) {
             </div>
           </header>
 
-          <ArticleBody blocks={article.blocks} />
+          <ArticleBody blocks={article.blocks} annualNotices={notices} />
 
           <AdSlot placement="blog_article" />
 

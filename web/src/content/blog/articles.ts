@@ -319,18 +319,23 @@ export const BLOG_ARTICLES: BlogArticle[] = [
     ],
   },
   {
-    slug: "reajuste-canon-arrendamiento-ipc-2026",
-    title: "Reajuste del canon de arrendamiento con el IPC: cuánto puede subir en 2026",
+    slug: "reajuste-canon-arrendamiento-ipc",
+    // Cifras y años salen de variables ({ipc.…}) con el IPC vigente (admin o
+    // revisión automática del DANE en enero–febrero): el artículo no envejece.
+    title: "Reajuste del canon de arrendamiento con el IPC: cuánto puede subir este año",
     description:
-      "Cómo se calcula el incremento anual del canon en vivienda urbana según el artículo 20 de la Ley 820 de 2003 y el IPC del año anterior. En 2026 el tope es 5,10 %.",
+      "Cómo se calcula el incremento anual del canon en vivienda urbana según el artículo 20 de la Ley 820 de 2003, con el tope vigente según el IPC certificado por el DANE.",
+    metaTitle: "Reajuste del canon con el IPC: cuánto puede subir el arriendo en {ipc.appliesTo}",
+    metaDescription:
+      "Cómo se calcula el incremento anual del canon en vivienda urbana según el artículo 20 de la Ley 820 de 2003. En {ipc.appliesTo} el tope es {ipc.percent} % (IPC {ipc.year}, DANE).",
     datePublished: "2026-06-03",
-    dateModified: "2026-06-03",
+    dateModified: "2026-10-09",
     category: "ley820",
     categoryLabel: BLOG_CATEGORIES.ley820.label,
     keywords: [
       "reajuste canon arrendamiento",
-      "incremento arriendo 2026",
-      "IPC 2025 Colombia",
+      "incremento arriendo {ipc.appliesTo}",
+      "IPC {ipc.year} Colombia",
       "Ley 820 artículo 20",
       "cuánto sube el arriendo",
     ],
@@ -341,21 +346,28 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       },
       {
         type: "h2",
-        text: "¿Cuánto puede subir en 2026?",
+        text: "¿Cuánto puede subir en {ipc.appliesTo}?",
       },
+      { type: "annualNotice", key: "ipc" },
       {
         type: "p",
-        text: "El DANE certificó que el IPC de 2025 fue de 5,10 %. Por eso, los reajustes que se cumplan durante 2026 pueden incrementar el canon hasta un máximo de 5,10 %. El plazo se cuenta desde la fecha exacta de inicio o renovación del contrato, no por año calendario: si firmaste en marzo, el reajuste aplica desde marzo del año siguiente.",
+        text: "El DANE certificó que el IPC de {ipc.year} fue de {ipc.percent} %. Por eso, los reajustes que se cumplan durante {ipc.appliesTo} pueden incrementar el canon hasta un máximo de {ipc.percent} %. El plazo se cuenta desde la fecha exacta de inicio o renovación del contrato, no por año calendario: si firmaste en marzo, el reajuste aplica desde marzo del año siguiente.",
       },
       {
         type: "table",
-        caption: "Ejemplo con el tope de 5,10 % (IPC 2025)",
-        headers: ["Canon actual", "Reajuste máximo (5,10 %)", "Nuevo canon"],
+        caption: "Ejemplo con el tope de {ipc.percent} % (IPC {ipc.year})",
+        headers: ["Canon actual", "Reajuste máximo ({ipc.percent} %)", "Nuevo canon"],
         rows: [
-          ["$1.000.000", "$51.000", "$1.051.000"],
-          ["$1.500.000", "$76.500", "$1.576.500"],
-          ["$2.000.000", "$102.000", "$2.102.000"],
+          ["$1.000.000", "{ipc.raise:1000000}", "{ipc.newRent:1000000}"],
+          ["$1.500.000", "{ipc.raise:1500000}", "{ipc.newRent:1500000}"],
+          ["$2.000.000", "{ipc.raise:2000000}", "{ipc.newRent:2000000}"],
         ],
+      },
+      {
+        type: "cta",
+        href: "/calculadoras/reajuste-canon",
+        label: "Calcula tu reajuste con el IPC vigente",
+        description: "Escribe tu canon actual y te mostramos el máximo legal, gratis y sin registro.",
       },
       {
         type: "h2",
@@ -372,13 +384,13 @@ export const BLOG_ARTICLES: BlogArticle[] = [
       },
       {
         type: "note",
-        text: "El porcentaje cambia cada año. Verifica siempre el IPC del año inmediatamente anterior en el DANE antes de aplicar un reajuste.",
+        text: "El porcentaje cambia cada año: el DANE publica el IPC de diciembre en la primera quincena de enero. Esta guía revisa la cifra oficial cada semana de enero y febrero y la actualiza sola; aun así, verifica el dato en el DANE antes de aplicar un reajuste.",
       },
       {
         type: "sources",
         items: [
           { label: "Ley 820 de 2003, art. 20 — Función Pública (Gestor Normativo)", href: "https://www.funcionpublica.gov.co/eva/gestornormativo/norma.php?i=8738" },
-          { label: "DANE — Boletín IPC diciembre 2025 (variación anual 5,10 %)", href: "https://www.dane.gov.co/files/operaciones/IPC/dic2025/cp-IPC-dic2025.pdf" },
+          { label: "DANE — IPC, información técnica (variación anual a diciembre de {ipc.year}: {ipc.percent} %)", href: "{ipc.sourceUrl}" },
           { label: "DANE — IPC histórico", href: "https://www.dane.gov.co/index.php/estadisticas-por-tema/precios-y-costos/indice-de-precios-al-consumidor-ipc/ipc-historico" },
         ],
       },
