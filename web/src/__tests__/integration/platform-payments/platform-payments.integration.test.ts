@@ -285,3 +285,29 @@ test("15) webhook duplicado no duplica payment ni entitlement", async () => {
   cleanup();
 });
 
+
+test("16) dos webhooks SIMULTÁNEOS del mismo pago acreditan una sola vez (candado atómico)", async () => {
+  const firestore = setup();
+  process.env.WOMPI_EVENTS_SECRET = "sec_test";
+  const order = makePlatformOrder({ id: "order_webhook_race", providerReference: "AS_PLUS_REF_RACE", userId: users.owner.uid, userEmail: users.owner.email });
+  firestore.seed("platform_orders", order.id, order);
+  const event = makeWompiEvent({
+    reference: order.providerReference,
+    status: "APPROVED",
+    amountInCents: 4_990_000,
+    currency: "COP",
+    txId: "tx_race",
+    secret: "sec_test",
+  });
+  // Ambos pasan el chequeo de "pago ya registrado" antes de que exista: solo el
+  // reclamo transaccional de la orden evita el doble acceso Plus.
+  const [a, b] = await Promise.all([
+    webhookPOST(jsonPost("http://t/api/platform-payments/webhook", event)),
+    webhookPOST(jsonPost("http://t/api/platform-payments/webhook", event)),
+  ]);
+  assert.equal(a.status, 200);
+  assert.equal(b.status, 200);
+  assert.equal(firestore.all("platform_payments").length, 1);
+  assert.equal(firestore.all("access_entitlements").length, 1);
+  cleanup();
+});
