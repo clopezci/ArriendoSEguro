@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { IPC_REFERENCE } from "@/lib/domain/rent-law";
+import { fetchCurrentIpcPercent } from "@/lib/annual/currentIpc";
 
 function isoAddDays(iso: string, days: number): string {
   const d = new Date(`${iso}T00:00:00`);
@@ -37,6 +38,8 @@ export default function RenovarPage() {
   const [newEnd, setNewEnd] = useState("");
   const [newRent, setNewRent] = useState(0);
   const [newRentText, setNewRentText] = useState("");
+  // IPC vigente (admin / DANE automático), no la cifra fija del código.
+  const [ipcPercent, setIpcPercent] = useState<number>(IPC_REFERENCE.percent);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<{ newStart: string; newEnd: string; newRent: number; termMonths: number; ipcPercent: number; pdfUrl?: string; emailDelivery?: string } | null>(null);
@@ -44,7 +47,11 @@ export default function RenovarPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/contracts/latest-version?contractId=${encodeURIComponent(id)}`);
+      const [res, ipc] = await Promise.all([
+        fetch(`/api/contracts/latest-version?contractId=${encodeURIComponent(id)}`),
+        fetchCurrentIpcPercent(),
+      ]);
+      setIpcPercent(ipc);
       const data = await res.json();
       const st = String(data?.contract?.status ?? "");
       const vId = String(data?.version?.id ?? data?.contract?.currentVersionId ?? "");
@@ -56,7 +63,7 @@ export default function RenovarPage() {
         const term = Number(ls.termMonths ?? 12) || 12;
         const start = ls.endDate ? isoAddDays(String(ls.endDate), 1) : "";
         const end = start ? isoAddMonths(start, term) : "";
-        const rent = Math.round(Number(ls.monthlyRent ?? 0) * (1 + IPC_REFERENCE.percent / 100));
+        const rent = Math.round(Number(ls.monthlyRent ?? 0) * (1 + ipc / 100));
         setNewStart(start);
         setNewEnd(end);
         setNewRent(rent);
@@ -109,7 +116,7 @@ export default function RenovarPage() {
   const isActive = status === "signed";
   // Tope legal del reajuste (Art. 20 Ley 820): el aumento no puede exceder el IPC.
   const currentRentNum = Number(lease?.monthlyRent ?? 0) || 0;
-  const legalMaxRent = Math.round(currentRentNum * (1 + IPC_REFERENCE.percent / 100));
+  const legalMaxRent = Math.round(currentRentNum * (1 + ipcPercent / 100));
   const overLegalCap = mode === "custom" && currentRentNum > 0 && newRent > legalMaxRent;
 
   return (
@@ -162,7 +169,7 @@ export default function RenovarPage() {
           <section className="space-y-3 rounded-2xl border border-slate-200 bg-white/95 shadow-[0_6px_20px_rgba(86,70,229,0.06)] p-4">
             <p className="text-xs text-slate-600">
               Canon actual: <strong>{money(Number(lease.monthlyRent ?? 0))}</strong> · Vence:{" "}
-              <strong>{lease.endDate ?? "—"}</strong> · Reajuste IPC sugerido: <strong>{IPC_REFERENCE.percent}%</strong>
+              <strong>{lease.endDate ?? "—"}</strong> · Reajuste IPC sugerido: <strong>{ipcPercent}%</strong>
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-sm">
@@ -178,17 +185,17 @@ export default function RenovarPage() {
                 <input type="number" value={newRent || ""} onChange={(e) => setNewRent(Number(e.target.value) || 0)} disabled={mode === "auto"} className="w-full rounded border border-slate-300 bg-slate-100 px-3 py-2 text-sm disabled:opacity-70" />
                 {(() => {
                   const currentRent = Number(lease.monthlyRent ?? 0) || 0;
-                  const legalMax = Math.round(currentRent * (1 + IPC_REFERENCE.percent / 100));
+                  const legalMax = Math.round(currentRent * (1 + ipcPercent / 100));
                   if (mode !== "custom" || currentRent <= 0) return null;
                   if (newRent > legalMax) {
                     return (
                       <span className="mt-1 block rounded-lg border border-rose-300 bg-rose-50 p-2 text-[11px] font-medium text-rose-800">
-                        ⚠️ El nuevo canon <b>supera el tope legal</b>: el reajuste anual no puede exceder el IPC ({IPC_REFERENCE.percent}%). Máximo permitido: <b>{money(legalMax)}</b> (Ley 820, art. 20).
+                        ⚠️ El nuevo canon <b>supera el tope legal</b>: el reajuste anual no puede exceder el IPC ({ipcPercent}%). Máximo permitido: <b>{money(legalMax)}</b> (Ley 820, art. 20).
                       </span>
                     );
                   }
                   return (
-                    <span className="mt-1 block text-[11px] text-emerald-700">✓ Dentro del tope legal (máx. {money(legalMax)}, IPC {IPC_REFERENCE.percent}%).</span>
+                    <span className="mt-1 block text-[11px] text-emerald-700">✓ Dentro del tope legal (máx. {money(legalMax)}, IPC {ipcPercent}%).</span>
                   );
                 })()}
               </label>

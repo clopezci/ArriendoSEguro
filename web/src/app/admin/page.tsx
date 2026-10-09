@@ -5,6 +5,7 @@ import { buildAuthHeaders } from "@/lib/auth/authHeaders";
 import { PitchTab } from "@/components/admin/pitch-tab";
 import { UtmBuilder } from "@/components/admin/utm-builder";
 import { AdminsPanel } from "@/components/admin/admins-panel";
+import { AnnualValuesPanel } from "@/components/admin/annual-values-panel";
 import { AgenciasPanel } from "@/components/admin/agencies-panel";
 import { SalesPanel } from "@/components/admin/sales-panel";
 import { AdminMfaGate } from "@/components/admin/admin-mfa-gate";
@@ -2244,6 +2245,8 @@ export default function AdminPage() {
           </section>
         )}
 
+        {data && <AnnualValuesPanel onChanged={() => { void loadLegal(); void loadTax(); }} />}
+
         {data && (
           <section className="mb-6 rounded-xl border border-violet-400/40 bg-white/95 p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-900">Impuestos (IVA)</h2>
@@ -2318,8 +2321,9 @@ export default function AdminPage() {
           <section className="mb-6 rounded-xl border border-amber-400/50 bg-amber-50/60 p-4">
             <h2 className="text-sm font-semibold text-slate-900">IPC para reajuste del canon (Ley 820)</h2>
             <p className="mt-1 text-xs leading-relaxed text-slate-600">
-              Este valor alimenta la calculadora de reajuste. Actualízalo cada año con la cifra oficial del DANE. Cada
-              enero (2ª semana) recibirás un recordatorio por correo hasta que guardes o confirmes aquí.
+              Este valor alimenta la calculadora, las renovaciones y el blog. Se actualiza solo desde el DANE (revisión
+              semanal en enero y febrero, panel de arriba). Si la revisión automática no lo logra, desde la 2ª semana de
+              enero recibirás un recordatorio por correo hasta que lo guardes o confirmes aquí.
             </p>
             <p className="mt-2 text-xs text-slate-800">
               Vigente: <strong>{legal.config.ipcPercent}%</strong> (IPC {legal.config.ipcPreviousYear}) ·{" "}

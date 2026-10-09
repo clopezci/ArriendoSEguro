@@ -9,6 +9,8 @@ import {
   getLegalConfig,
 } from "@/domain/legal/legalConfig";
 import { auditEvent } from "@/features/contracts/audit-server";
+import { IPC_DEFAULT_SOURCE, IPC_DEFAULT_SOURCE_URL } from "@/domain/annual/annualValues";
+import { revalidateAnnualPages } from "@/lib/annual/annualValuesServer";
 
 export const runtime = "nodejs";
 
@@ -84,6 +86,10 @@ export async function PATCH(request: Request) {
       if (parsed.data.ipcPreviousYear != null) update.ipcPreviousYear = parsed.data.ipcPreviousYear;
       if (parsed.data.ipcAppliesToYear != null) update.ipcAppliesToYear = parsed.data.ipcAppliesToYear;
       if (parsed.data.ipcSource != null) update.ipcSource = parsed.data.ipcSource;
+      // Cifra nueva tecleada a mano: la fuente deja de ser el texto viejo
+      // ("DANE (… diciembre de 2025)") y vuelve al enlace oficial del DANE.
+      else if (parsed.data.ipcPercent != null || parsed.data.ipcPreviousYear != null) update.ipcSource = IPC_DEFAULT_SOURCE;
+      update.ipcSourceUrl = IPC_DEFAULT_SOURCE_URL;
     }
   }
 
@@ -98,6 +104,8 @@ export async function PATCH(request: Request) {
     ipcPercent: parsed.data.ipcPercent ?? null,
     year: currentYear,
   });
+
+  if (touchesIpc) revalidateAnnualPages();
 
   const config = await getLegalConfig(firestore);
   return NextResponse.json({ success: true, config, currentYear });

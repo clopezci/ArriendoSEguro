@@ -93,6 +93,9 @@ const nextConfig: NextConfig = {
       "review",
     ];
     return [
+      // El artículo del IPC dejó de llevar el año en la URL (sus cifras se
+      // actualizan solas cada año): el enlace viejo pasa al permanente.
+      { source: "/blog/reajuste-canon-arrendamiento-ipc-2026", destination: "/blog/reajuste-canon-arrendamiento-ipc", permanent: true },
       { source: "/dashboard", destination: "/nuevo", permanent: false },
       { source: "/dashboard/contracts/new", destination: "/nuevo", permanent: false },
       { source: "/dashboard/contracts", destination: "/nuevo/contratos", permanent: false },

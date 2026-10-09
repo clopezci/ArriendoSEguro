@@ -5,6 +5,7 @@ import { isInternalAdminEmailAsync } from "@/lib/admin/internal-admin";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { getTaxConfig, saveTaxConfig } from "@/lib/tax/serverTaxConfig";
 import { ivaResponsableThresholdCop } from "@/domain/tax/taxConfig";
+import { revalidateAnnualPages } from "@/lib/annual/annualValuesServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,6 +56,9 @@ export async function PUT(request: Request) {
   // auto-activación (para no confundir el origen).
   const patch = { ...parsed.data } as Record<string, unknown>;
   if (typeof parsed.data.ivaResponsable === "boolean") patch.autoActivatedAt = "";
+  const touchesUvt = parsed.data.uvtValue != null || parsed.data.uvtYear != null;
+  if (touchesUvt) patch.uvtUpdatedAt = new Date().toISOString();
   const config = await saveTaxConfig(firestore, patch, auth.user.email);
+  if (touchesUvt) revalidateAnnualPages();
   return NextResponse.json({ success: true, config, thresholdCop: ivaResponsableThresholdCop(config) });
 }

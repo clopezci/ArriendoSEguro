@@ -1,5 +1,12 @@
 import Link from "next/link";
 import type { ContentBlock } from "@/content/blog/types";
+import { AnnualValueNotice } from "@/components/annual/annual-value-notice";
+import type { AnnualValueKey, AnnualValueStatus } from "@/domain/annual/annualValues";
+
+/** Aviso ya calculado (estado + texto + fuente) por cada valor anual. */
+export type AnnualNotices = Partial<
+  Record<AnnualValueKey, { status: AnnualValueStatus; text: string; source: string; sourceUrl: string }>
+>;
 
 function BulletList({ items }: { items: string[] }) {
   return (
@@ -32,7 +39,7 @@ function NumberedList({ items }: { items: string[] }) {
   );
 }
 
-export function ArticleBody({ blocks }: { blocks: ContentBlock[] }) {
+export function ArticleBody({ blocks, annualNotices }: { blocks: ContentBlock[]; annualNotices?: AnnualNotices }) {
   return (
     <div className="prose prose-slate max-w-none">
       {blocks.map((block, idx) => {
@@ -145,6 +152,10 @@ export function ArticleBody({ blocks }: { blocks: ContentBlock[] }) {
                 ) : null}
               </div>
             );
+          case "annualNotice": {
+            const n = annualNotices?.[block.key];
+            return n ? <AnnualValueNotice key={key} className="my-4" {...n} /> : null;
+          }
           default:
             return null;
         }
