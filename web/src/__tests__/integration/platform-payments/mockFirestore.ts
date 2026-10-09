@@ -37,6 +37,50 @@ class MockDocRef {
     c.set(this.id, opts?.merge ? { ...prev, ...payload } : payload);
     this.store.set(this.collectionName, c);
   }
+
+  async update(payload: Row) {
+    const c = this.store.get(this.collectionName);
+    if (!c?.has(this.id)) throw new Error(`NOT_FOUND: ${this.collectionName}/${this.id}`);
+    await this.set(payload, { merge: true });
+  }
+
+  async create(payload: Row) {
+    if (this.store.get(this.collectionName)?.has(this.id)) {
+      throw new Error(`ALREADY_EXISTS: ${this.collectionName}/${this.id}`);
+    }
+    await this.set(payload);
+  }
+}
+
+/**
+ * Transacción simulada: lecturas inmediatas y escrituras en búfer que se
+ * aplican al final (como Firestore: si la función lanza, no se escribe nada).
+ */
+class MockTransaction {
+  private readonly writes: Array<() => Promise<void>> = [];
+
+  async get(ref: MockDocRef | MockQuery) {
+    return ref.get();
+  }
+
+  set(ref: MockDocRef, payload: Row, opts?: { merge?: boolean }) {
+    this.writes.push(() => ref.set(payload, opts));
+    return this;
+  }
+
+  update(ref: MockDocRef, payload: Row) {
+    this.writes.push(() => ref.update(payload));
+    return this;
+  }
+
+  create(ref: MockDocRef, payload: Row) {
+    this.writes.push(() => ref.create(payload));
+    return this;
+  }
+
+  async commit() {
+    for (const w of this.writes) await w();
+  }
 }
 
 class MockQuery {
@@ -91,6 +135,19 @@ class MockCollectionRef extends MockQuery {
 
 export class MockFirestore {
   private readonly store = new Map<string, Map<string, Row>>();
+  /** Cola que serializa transacciones: simula el aislamiento de Firestore. */
+  private txQueue: Promise<unknown> = Promise.resolve();
+
+  runTransaction<T>(fn: (tx: MockTransaction) => Promise<T>): Promise<T> {
+    const run = this.txQueue.then(async () => {
+      const tx = new MockTransaction();
+      const result = await fn(tx);
+      await tx.commit();
+      return result;
+    });
+    this.txQueue = run.catch(() => undefined);
+    return run;
+  }
 
   collection(name: string) {
     if (!this.store.has(name)) this.store.set(name, new Map<string, Row>());
